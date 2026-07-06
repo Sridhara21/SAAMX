@@ -1,0 +1,3499 @@
+{
+  "securities": [
+    {
+      "id": "S01",
+      "ticker": "APXT",
+      "name": "Apex Tech Solutions",
+      "sector": "Technology",
+      "type": "Stock",
+      "basePrice": 361,
+      "currentPrice": 104.92,
+      "totalUnits": 109,
+      "availableUnits": 2,
+      "volatility": 0.72,
+      "riskRating": "High",
+      "growthRating": 3,
+      "status": "Active",
+      "description": "Leading enterprise specializing in technology services, catering to regional and global market segments.",
+      "ceoName": "Ananya Mehta",
+      "foundedYear": 2014,
+      "headquarters": "New Delhi",
+      "logoInitials": "AP",
+      "dividendYield": 3.93,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651411,
+          "price": 361
+        },
+        {
+          "timestamp": 1782916651437,
+          "price": 363.38
+        },
+        {
+          "timestamp": 1782916651444,
+          "price": 365.78
+        },
+        {
+          "timestamp": 1782916651450,
+          "price": 368.2
+        },
+        {
+          "timestamp": 1782916651456,
+          "price": 370.63
+        },
+        {
+          "timestamp": 1782916651462,
+          "price": 373.08
+        },
+        {
+          "timestamp": 1782916651469,
+          "price": 378.01
+        },
+        {
+          "timestamp": 1782916651482,
+          "price": 100
+        },
+        {
+          "timestamp": 1782916651487,
+          "price": 105.28
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 104.82
+        },
+        {
+          "timestamp": 1782916655157,
+          "price": 105.38
+        },
+        {
+          "timestamp": 1782916658161,
+          "price": 105.2
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 104.7
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 104.92
+        }
+      ]
+    },
+    {
+      "id": "S02",
+      "ticker": "BPCL",
+      "name": "Bharat Petroleum Corp",
+      "sector": "Energy",
+      "type": "Stock",
+      "basePrice": 180,
+      "currentPrice": 185.71,
+      "totalUnits": 123,
+      "availableUnits": 118,
+      "volatility": 0.79,
+      "riskRating": "High",
+      "growthRating": 4,
+      "status": "Active",
+      "description": "Leading enterprise specializing in energy services, catering to regional and global market segments.",
+      "ceoName": "Ananya Rao",
+      "foundedYear": 2013,
+      "headquarters": "Kolkata",
+      "logoInitials": "BP",
+      "dividendYield": 3.33,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651411,
+          "price": 180
+        },
+        {
+          "timestamp": 1782916651474,
+          "price": 185.78
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 186.87
+        },
+        {
+          "timestamp": 1782916658161,
+          "price": 187.23
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 186.27
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 185.71
+        }
+      ]
+    },
+    {
+      "id": "S03",
+      "ticker": "CNBK",
+      "name": "Centrum Banking Group",
+      "sector": "Banking",
+      "type": "Stock",
+      "basePrice": 446,
+      "currentPrice": 441.32,
+      "totalUnits": 143,
+      "availableUnits": 143,
+      "volatility": 0.97,
+      "riskRating": "High",
+      "growthRating": 4,
+      "status": "Active",
+      "description": "Leading enterprise specializing in banking services, catering to regional and global market segments.",
+      "ceoName": "Ananya Iyer",
+      "foundedYear": 2021,
+      "headquarters": "Gurugram",
+      "logoInitials": "CN",
+      "dividendYield": 1.66,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651411,
+          "price": 446
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 444.62
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 443.82
+        },
+        {
+          "timestamp": 1782916658161,
+          "price": 446.18
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 444.5
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 441.32
+        }
+      ]
+    },
+    {
+      "id": "S04",
+      "ticker": "DTAI",
+      "name": "Delta AI Labs",
+      "sector": "AI",
+      "type": "Stock",
+      "basePrice": 327,
+      "currentPrice": 323.58,
+      "totalUnits": 117,
+      "availableUnits": 117,
+      "volatility": 0.68,
+      "riskRating": "Medium",
+      "growthRating": 2,
+      "status": "Active",
+      "description": "Leading enterprise specializing in ai services, catering to regional and global market segments.",
+      "ceoName": "Ananya Choudhury",
+      "foundedYear": 2021,
+      "headquarters": "Kolkata",
+      "logoInitials": "DT",
+      "dividendYield": 2.85,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651411,
+          "price": 327
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 325.9
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 324.19
+        },
+        {
+          "timestamp": 1782916658161,
+          "price": 323.41
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 321.93
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 323.58
+        }
+      ]
+    },
+    {
+      "id": "S05",
+      "ticker": "ELXR",
+      "name": "Elixir Pharma India",
+      "sector": "Healthcare",
+      "type": "Stock",
+      "basePrice": 104,
+      "currentPrice": 105.19,
+      "totalUnits": 115,
+      "availableUnits": 115,
+      "volatility": 0.86,
+      "riskRating": "High",
+      "growthRating": 4,
+      "status": "Active",
+      "description": "Leading enterprise specializing in healthcare services, catering to regional and global market segments.",
+      "ceoName": "Rajesh Choudhury",
+      "foundedYear": 2023,
+      "headquarters": "Chennai",
+      "logoInitials": "EL",
+      "dividendYield": 1.56,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651411,
+          "price": 104
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 104.49
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 104.79
+        },
+        {
+          "timestamp": 1782916658161,
+          "price": 104.74
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 104.92
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 105.19
+        }
+      ]
+    },
+    {
+      "id": "S06",
+      "ticker": "FTUR",
+      "name": "Future Retail India",
+      "sector": "Retail",
+      "type": "Stock",
+      "basePrice": 485,
+      "currentPrice": 477.62,
+      "totalUnits": 113,
+      "availableUnits": 113,
+      "volatility": 0.77,
+      "riskRating": "High",
+      "growthRating": 4,
+      "status": "Active",
+      "description": "Leading enterprise specializing in retail services, catering to regional and global market segments.",
+      "ceoName": "Rohan Reddy",
+      "foundedYear": 2017,
+      "headquarters": "Gurugram",
+      "logoInitials": "FT",
+      "dividendYield": 2.04,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651411,
+          "price": 485
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 482.91
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 480.27
+        },
+        {
+          "timestamp": 1782916658161,
+          "price": 480.32
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 477.46
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 477.62
+        }
+      ]
+    },
+    {
+      "id": "S07",
+      "ticker": "GIGN",
+      "name": "Giga Telecom Network",
+      "sector": "Telecom",
+      "type": "Stock",
+      "basePrice": 439,
+      "currentPrice": 438.74,
+      "totalUnits": 98,
+      "availableUnits": 98,
+      "volatility": 0.31,
+      "riskRating": "Low",
+      "growthRating": 5,
+      "status": "Active",
+      "description": "Leading enterprise specializing in telecom services, catering to regional and global market segments.",
+      "ceoName": "Rajesh Rao",
+      "foundedYear": 1994,
+      "headquarters": "New Delhi",
+      "logoInitials": "GI",
+      "dividendYield": 2.3,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651411,
+          "price": 439
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 438.89
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 438.24
+        },
+        {
+          "timestamp": 1782916658161,
+          "price": 437.45
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 438.27
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 438.74
+        }
+      ]
+    },
+    {
+      "id": "S08",
+      "ticker": "HLXR",
+      "name": "Helix Renewable Power",
+      "sector": "Renewable Energy",
+      "type": "Stock",
+      "basePrice": 109,
+      "currentPrice": 108.6,
+      "totalUnits": 168,
+      "availableUnits": 168,
+      "volatility": 0.67,
+      "riskRating": "Medium",
+      "growthRating": 2,
+      "status": "Active",
+      "description": "Leading enterprise specializing in renewable energy services, catering to regional and global market segments.",
+      "ceoName": "Priya Reddy",
+      "foundedYear": 2024,
+      "headquarters": "Gurugram",
+      "logoInitials": "HL",
+      "dividendYield": 4.1,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651411,
+          "price": 109
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 108.52
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 108.51
+        },
+        {
+          "timestamp": 1782916658161,
+          "price": 108.7
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 108.2
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 108.6
+        }
+      ]
+    },
+    {
+      "id": "S09",
+      "ticker": "INDH",
+      "name": "Indus Industrial Heavy",
+      "sector": "Manufacturing",
+      "type": "Stock",
+      "basePrice": 234,
+      "currentPrice": 233.96,
+      "totalUnits": 133,
+      "availableUnits": 133,
+      "volatility": 0.54,
+      "riskRating": "Medium",
+      "growthRating": 3,
+      "status": "Active",
+      "description": "Leading enterprise specializing in manufacturing services, catering to regional and global market segments.",
+      "ceoName": "Priya Verma",
+      "foundedYear": 2021,
+      "headquarters": "New Delhi",
+      "logoInitials": "IN",
+      "dividendYield": 4.48,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651411,
+          "price": 234
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 234.47
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 234.82
+        },
+        {
+          "timestamp": 1782916658161,
+          "price": 234.49
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 233.76
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 233.96
+        }
+      ]
+    },
+    {
+      "id": "S10",
+      "ticker": "JUPR",
+      "name": "Jupiter REIT Trust",
+      "sector": "REIT",
+      "type": "REIT",
+      "basePrice": 173,
+      "currentPrice": 173.59,
+      "totalUnits": 143,
+      "availableUnits": 143,
+      "volatility": 0.64,
+      "riskRating": "Medium",
+      "growthRating": 3,
+      "status": "Active",
+      "description": "Leading enterprise specializing in reit services, catering to regional and global market segments.",
+      "ceoName": "Ananya Joshi",
+      "foundedYear": 1990,
+      "headquarters": "Mumbai",
+      "logoInitials": "JU",
+      "dividendYield": 1.09,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651411,
+          "price": 173
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 173.22
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 173.7
+        },
+        {
+          "timestamp": 1782916658161,
+          "price": 174.25
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 173.72
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 173.59
+        }
+      ]
+    },
+    {
+      "id": "S11",
+      "ticker": "KRPB",
+      "name": "Krypton Bond Fund",
+      "sector": "ETF",
+      "type": "ETF",
+      "basePrice": 212,
+      "currentPrice": 210.32,
+      "totalUnits": 132,
+      "availableUnits": 132,
+      "volatility": 0.4,
+      "riskRating": "Medium",
+      "growthRating": 5,
+      "status": "Active",
+      "description": "Leading enterprise specializing in etf services, catering to regional and global market segments.",
+      "ceoName": "Pooja Patel",
+      "foundedYear": 2009,
+      "headquarters": "Bengaluru",
+      "logoInitials": "KR",
+      "dividendYield": 1.84,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 212
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 212.15
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 211.75
+        },
+        {
+          "timestamp": 1782916658161,
+          "price": 211.21
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 210.77
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 210.32
+        }
+      ]
+    },
+    {
+      "id": "S12",
+      "ticker": "NFTY",
+      "name": "Nifty Index Tracker",
+      "sector": "Mutual Fund",
+      "type": "MutualFund",
+      "basePrice": 410,
+      "currentPrice": 411.13,
+      "totalUnits": 105,
+      "availableUnits": 105,
+      "volatility": 0.59,
+      "riskRating": "Medium",
+      "growthRating": 5,
+      "status": "Active",
+      "description": "Leading enterprise specializing in mutual fund services, catering to regional and global market segments.",
+      "ceoName": "Sanjay Rao",
+      "foundedYear": 2006,
+      "headquarters": "Hyderabad",
+      "logoInitials": "NF",
+      "dividendYield": 2.71,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 410
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 409.97
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 409
+        },
+        {
+          "timestamp": 1782916658161,
+          "price": 409.68
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 410.85
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 411.13
+        }
+      ]
+    },
+    {
+      "id": "S13",
+      "ticker": "GOVT",
+      "name": "Secured Sovereign Bond",
+      "sector": "Government Bond",
+      "type": "Bond",
+      "basePrice": 484,
+      "currentPrice": 486.15,
+      "totalUnits": 181,
+      "availableUnits": 181,
+      "volatility": 0.58,
+      "riskRating": "Medium",
+      "growthRating": 4,
+      "status": "Active",
+      "description": "Leading enterprise specializing in government bond services, catering to regional and global market segments.",
+      "ceoName": "Neha Sharma",
+      "foundedYear": 1999,
+      "headquarters": "Chennai",
+      "logoInitials": "GO",
+      "dividendYield": 3.95,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 484
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 484.55
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 484.16
+        },
+        {
+          "timestamp": 1782916658161,
+          "price": 485
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 484.95
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 486.15
+        }
+      ]
+    },
+    {
+      "id": "S14",
+      "ticker": "TCDB",
+      "name": "Tata Corp Debt Issue",
+      "sector": "Corporate Bond",
+      "type": "Bond",
+      "basePrice": 201,
+      "currentPrice": 200.22,
+      "totalUnits": 63,
+      "availableUnits": 63,
+      "volatility": 0.35,
+      "riskRating": "Low",
+      "growthRating": 5,
+      "status": "Active",
+      "description": "Leading enterprise specializing in corporate bond services, catering to regional and global market segments.",
+      "ceoName": "Vikram Rao",
+      "foundedYear": 2017,
+      "headquarters": "Kolkata",
+      "logoInitials": "TC",
+      "dividendYield": 4.18,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 201
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 200.49
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 200.9
+        },
+        {
+          "timestamp": 1782916658161,
+          "price": 200.98
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 200.74
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 200.22
+        }
+      ]
+    },
+    {
+      "id": "S15",
+      "ticker": "VGAI",
+      "name": "Vanguard AI Capital",
+      "sector": "AI",
+      "type": "Stock",
+      "basePrice": 309,
+      "currentPrice": 309,
+      "totalUnits": 85,
+      "availableUnits": 85,
+      "volatility": 0.41,
+      "riskRating": "Medium",
+      "growthRating": 3,
+      "status": "Active",
+      "description": "Leading enterprise specializing in ai services, catering to regional and global market segments.",
+      "ceoName": "Rajesh Joshi",
+      "foundedYear": 2005,
+      "headquarters": "Hyderabad",
+      "logoInitials": "VG",
+      "dividendYield": 2.91,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 309
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 308.34
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 307.82
+        },
+        {
+          "timestamp": 1782916658161,
+          "price": 308.8
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 308.24
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 309
+        }
+      ]
+    },
+    {
+      "id": "S16",
+      "ticker": "ZNBM",
+      "name": "Zenith BioMed Hub",
+      "sector": "Healthcare",
+      "type": "Stock",
+      "basePrice": 468,
+      "currentPrice": 469.04,
+      "totalUnits": 93,
+      "availableUnits": 93,
+      "volatility": 0.59,
+      "riskRating": "Medium",
+      "growthRating": 4,
+      "status": "Active",
+      "description": "Leading enterprise specializing in healthcare services, catering to regional and global market segments.",
+      "ceoName": "Deepak Nair",
+      "foundedYear": 1991,
+      "headquarters": "Ahmedabad",
+      "logoInitials": "ZN",
+      "dividendYield": 1.22,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 468
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 466.73
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 468.18
+        },
+        {
+          "timestamp": 1782916658161,
+          "price": 470.16
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 468.51
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 469.04
+        }
+      ]
+    },
+    {
+      "id": "S17",
+      "ticker": "QCLD",
+      "name": "Quantum Cloud Tech",
+      "sector": "Technology",
+      "type": "Stock",
+      "basePrice": 109,
+      "currentPrice": 109.49,
+      "totalUnits": 159,
+      "availableUnits": 159,
+      "volatility": 0.85,
+      "riskRating": "High",
+      "growthRating": 5,
+      "status": "Active",
+      "description": "Leading enterprise specializing in technology services, catering to regional and global market segments.",
+      "ceoName": "Rohan Iyer",
+      "foundedYear": 1995,
+      "headquarters": "Pune",
+      "logoInitials": "QC",
+      "dividendYield": 3.9,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 109
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 109.08
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 109.76
+        },
+        {
+          "timestamp": 1782916658161,
+          "price": 109.56
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 108.99
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 109.49
+        }
+      ]
+    },
+    {
+      "id": "S18",
+      "ticker": "SUNR",
+      "name": "Sun Power Renewables",
+      "sector": "Renewable Energy",
+      "type": "Stock",
+      "basePrice": 256,
+      "currentPrice": 258.35,
+      "totalUnits": 56,
+      "availableUnits": 56,
+      "volatility": 0.43,
+      "riskRating": "Medium",
+      "growthRating": 1,
+      "status": "Active",
+      "description": "Leading enterprise specializing in renewable energy services, catering to regional and global market segments.",
+      "ceoName": "Aarav Reddy",
+      "foundedYear": 2017,
+      "headquarters": "Bengaluru",
+      "logoInitials": "SU",
+      "dividendYield": 1.89,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 256
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 255.65
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 256.04
+        },
+        {
+          "timestamp": 1782916658162,
+          "price": 256.64
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 257.51
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 258.35
+        }
+      ]
+    },
+    {
+      "id": "S19",
+      "ticker": "OCBS",
+      "name": "Oceanic Blue Shipping",
+      "sector": "Manufacturing",
+      "type": "Stock",
+      "basePrice": 477,
+      "currentPrice": 477.29,
+      "totalUnits": 103,
+      "availableUnits": 103,
+      "volatility": 0.38,
+      "riskRating": "Low",
+      "growthRating": 1,
+      "status": "Active",
+      "description": "Leading enterprise specializing in manufacturing services, catering to regional and global market segments.",
+      "ceoName": "Anil Rao",
+      "foundedYear": 2007,
+      "headquarters": "Chennai",
+      "logoInitials": "OC",
+      "dividendYield": 4.95,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 477
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 476.15
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 476.76
+        },
+        {
+          "timestamp": 1782916658162,
+          "price": 476.04
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 477.39
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 477.29
+        }
+      ]
+    },
+    {
+      "id": "S20",
+      "ticker": "NIMF",
+      "name": "National Infra Mutual",
+      "sector": "Mutual Fund",
+      "type": "MutualFund",
+      "basePrice": 172,
+      "currentPrice": 173.01,
+      "totalUnits": 176,
+      "availableUnits": 176,
+      "volatility": 0.53,
+      "riskRating": "Medium",
+      "growthRating": 2,
+      "status": "Active",
+      "description": "Leading enterprise specializing in mutual fund services, catering to regional and global market segments.",
+      "ceoName": "Deepak Joshi",
+      "foundedYear": 2012,
+      "headquarters": "Gurugram",
+      "logoInitials": "NI",
+      "dividendYield": 2.76,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 172
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 172.59
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 172.93
+        },
+        {
+          "timestamp": 1782916658162,
+          "price": 173.43
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 173.58
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 173.01
+        }
+      ]
+    },
+    {
+      "id": "S21",
+      "ticker": "HCRE",
+      "name": "HDFC Capital REIT",
+      "sector": "REIT",
+      "type": "REIT",
+      "basePrice": 202,
+      "currentPrice": 202.54,
+      "totalUnits": 128,
+      "availableUnits": 128,
+      "volatility": 0.95,
+      "riskRating": "High",
+      "growthRating": 2,
+      "status": "Active",
+      "description": "Leading enterprise specializing in reit services, catering to regional and global market segments.",
+      "ceoName": "Pooja Sharma",
+      "foundedYear": 2024,
+      "headquarters": "Gurugram",
+      "logoInitials": "HC",
+      "dividendYield": 1.07,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 202
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 201.6
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 201.91
+        },
+        {
+          "timestamp": 1782916658162,
+          "price": 201.47
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 202.45
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 202.54
+        }
+      ]
+    },
+    {
+      "id": "S22",
+      "ticker": "REGR",
+      "name": "Reliance Energy Grid",
+      "sector": "Energy",
+      "type": "Stock",
+      "basePrice": 304,
+      "currentPrice": 304.07,
+      "totalUnits": 92,
+      "availableUnits": 92,
+      "volatility": 0.63,
+      "riskRating": "Medium",
+      "growthRating": 1,
+      "status": "Active",
+      "description": "Leading enterprise specializing in energy services, catering to regional and global market segments.",
+      "ceoName": "Sanjay Mehta",
+      "foundedYear": 2019,
+      "headquarters": "Hyderabad",
+      "logoInitials": "RE",
+      "dividendYield": 2.22,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 304
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 303.64
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 303.78
+        },
+        {
+          "timestamp": 1782916658162,
+          "price": 305.09
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 304.03
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 304.07
+        }
+      ]
+    },
+    {
+      "id": "S23",
+      "ticker": "SBIS",
+      "name": "State Bank Sovereign",
+      "sector": "Banking",
+      "type": "Stock",
+      "basePrice": 169,
+      "currentPrice": 169.21,
+      "totalUnits": 122,
+      "availableUnits": 122,
+      "volatility": 0.38,
+      "riskRating": "Low",
+      "growthRating": 3,
+      "status": "Active",
+      "description": "Leading enterprise specializing in banking services, catering to regional and global market segments.",
+      "ceoName": "Rajesh Patel",
+      "foundedYear": 1994,
+      "headquarters": "Noida",
+      "logoInitials": "SB",
+      "dividendYield": 3.4,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 169
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 169.41
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 169.15
+        },
+        {
+          "timestamp": 1782916658162,
+          "price": 169.32
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 169.17
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 169.21
+        }
+      ]
+    },
+    {
+      "id": "S24",
+      "ticker": "INTS",
+      "name": "Intellect Softworks",
+      "sector": "Technology",
+      "type": "Stock",
+      "basePrice": 442,
+      "currentPrice": 441.29,
+      "totalUnits": 84,
+      "availableUnits": 84,
+      "volatility": 0.96,
+      "riskRating": "High",
+      "growthRating": 3,
+      "status": "Active",
+      "description": "Leading enterprise specializing in technology services, catering to regional and global market segments.",
+      "ceoName": "Vikram Sen",
+      "foundedYear": 2018,
+      "headquarters": "Hyderabad",
+      "logoInitials": "IN",
+      "dividendYield": 2.69,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 442
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 444.33
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 442.57
+        },
+        {
+          "timestamp": 1782916658162,
+          "price": 441.9
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 441.99
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 441.29
+        }
+      ]
+    },
+    {
+      "id": "S25",
+      "ticker": "SOV2",
+      "name": "Sovereign Treasury II",
+      "sector": "Government Bond",
+      "type": "Bond",
+      "basePrice": 483,
+      "currentPrice": 480.17,
+      "totalUnits": 184,
+      "availableUnits": 184,
+      "volatility": 0.88,
+      "riskRating": "High",
+      "growthRating": 2,
+      "status": "Active",
+      "description": "Leading enterprise specializing in government bond services, catering to regional and global market segments.",
+      "ceoName": "Vijay Reddy",
+      "foundedYear": 2013,
+      "headquarters": "Bengaluru",
+      "logoInitials": "SO",
+      "dividendYield": 4.4,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 483
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 481.3
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 482.62
+        },
+        {
+          "timestamp": 1782916658162,
+          "price": 481.43
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 478.54
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 480.17
+        }
+      ]
+    },
+    {
+      "id": "S26",
+      "ticker": "ACYB",
+      "name": "Aether Cyber Security",
+      "sector": "AI",
+      "type": "Stock",
+      "basePrice": 155,
+      "currentPrice": 153.96,
+      "totalUnits": 84,
+      "availableUnits": 84,
+      "volatility": 0.95,
+      "riskRating": "High",
+      "growthRating": 5,
+      "status": "Active",
+      "description": "Leading enterprise specializing in ai services, catering to regional and global market segments.",
+      "ceoName": "Anil Joshi",
+      "foundedYear": 2000,
+      "headquarters": "Gurugram",
+      "logoInitials": "AC",
+      "dividendYield": 4.4,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 155
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 154.73
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 154.12
+        },
+        {
+          "timestamp": 1782916658162,
+          "price": 153.83
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 154
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 153.96
+        }
+      ]
+    },
+    {
+      "id": "S27",
+      "ticker": "MDIX",
+      "name": "Matrix Diagnostic Inc",
+      "sector": "Healthcare",
+      "type": "Stock",
+      "basePrice": 299,
+      "currentPrice": 297.93,
+      "totalUnits": 192,
+      "availableUnits": 192,
+      "volatility": 0.98,
+      "riskRating": "High",
+      "growthRating": 3,
+      "status": "Active",
+      "description": "Leading enterprise specializing in healthcare services, catering to regional and global market segments.",
+      "ceoName": "Vijay Mehta",
+      "foundedYear": 1991,
+      "headquarters": "Chennai",
+      "logoInitials": "MD",
+      "dividendYield": 1.25,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 299
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 301.3
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 299
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 299.97
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 298.91
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 297.93
+        }
+      ]
+    },
+    {
+      "id": "S28",
+      "ticker": "NIBY",
+      "name": "Nippon Bond Yield",
+      "sector": "ETF",
+      "type": "ETF",
+      "basePrice": 449,
+      "currentPrice": 441.23,
+      "totalUnits": 198,
+      "availableUnits": 198,
+      "volatility": 0.91,
+      "riskRating": "High",
+      "growthRating": 2,
+      "status": "Active",
+      "description": "Leading enterprise specializing in etf services, catering to regional and global market segments.",
+      "ceoName": "Sanjay Gupta",
+      "foundedYear": 2021,
+      "headquarters": "Mumbai",
+      "logoInitials": "NI",
+      "dividendYield": 1.72,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 449
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 447.08
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 445.84
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 443.64
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 443.76
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 441.23
+        }
+      ]
+    },
+    {
+      "id": "S29",
+      "ticker": "BYRT",
+      "name": "Banyan Tree Retail",
+      "sector": "Retail",
+      "type": "Stock",
+      "basePrice": 396,
+      "currentPrice": 398.54,
+      "totalUnits": 192,
+      "availableUnits": 192,
+      "volatility": 0.58,
+      "riskRating": "Medium",
+      "growthRating": 5,
+      "status": "Active",
+      "description": "Leading enterprise specializing in retail services, catering to regional and global market segments.",
+      "ceoName": "Aarav Patel",
+      "foundedYear": 1991,
+      "headquarters": "Noida",
+      "logoInitials": "BY",
+      "dividendYield": 1.18,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 396
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 397.69
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 398.73
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 398.45
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 398.57
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 398.54
+        }
+      ]
+    },
+    {
+      "id": "S30",
+      "ticker": "FACA",
+      "name": "Falcon Aerospace Corp",
+      "sector": "Manufacturing",
+      "type": "Stock",
+      "basePrice": 215,
+      "currentPrice": 211.67,
+      "totalUnits": 100,
+      "availableUnits": 100,
+      "volatility": 0.81,
+      "riskRating": "High",
+      "growthRating": 1,
+      "status": "Active",
+      "description": "Leading enterprise specializing in manufacturing services, catering to regional and global market segments.",
+      "ceoName": "Amit Iyer",
+      "foundedYear": 1992,
+      "headquarters": "Ahmedabad",
+      "logoInitials": "FA",
+      "dividendYield": 4.68,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 215
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 213.76
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 213.49
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 213.88
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 212.92
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 211.67
+        }
+      ]
+    },
+    {
+      "id": "S31",
+      "ticker": "IGCO",
+      "name": "Indraprastha Gas Corp",
+      "sector": "Energy",
+      "type": "Stock",
+      "basePrice": 181,
+      "currentPrice": 180.61,
+      "totalUnits": 194,
+      "availableUnits": 194,
+      "volatility": 0.34,
+      "riskRating": "Low",
+      "growthRating": 3,
+      "status": "Active",
+      "description": "Leading enterprise specializing in energy services, catering to regional and global market segments.",
+      "ceoName": "Aarav Patel",
+      "foundedYear": 2001,
+      "headquarters": "Hyderabad",
+      "logoInitials": "IG",
+      "dividendYield": 3.41,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 181
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 181.09
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 181.06
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 180.63
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 180.39
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 180.61
+        }
+      ]
+    },
+    {
+      "id": "S32",
+      "ticker": "KAGF",
+      "name": "Kotak Alpha Growth",
+      "sector": "Mutual Fund",
+      "type": "MutualFund",
+      "basePrice": 423,
+      "currentPrice": 422.32,
+      "totalUnits": 179,
+      "availableUnits": 179,
+      "volatility": 0.63,
+      "riskRating": "Medium",
+      "growthRating": 5,
+      "status": "Active",
+      "description": "Leading enterprise specializing in mutual fund services, catering to regional and global market segments.",
+      "ceoName": "Rajesh Banerjee",
+      "foundedYear": 1999,
+      "headquarters": "Hyderabad",
+      "logoInitials": "KA",
+      "dividendYield": 1.7,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 423
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 422.63
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 422.21
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 423.44
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 421.36
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 422.32
+        }
+      ]
+    },
+    {
+      "id": "S33",
+      "ticker": "ACYD",
+      "name": "Axis Corporate Yield",
+      "sector": "Corporate Bond",
+      "type": "Bond",
+      "basePrice": 440,
+      "currentPrice": 442.42,
+      "totalUnits": 169,
+      "availableUnits": 169,
+      "volatility": 0.94,
+      "riskRating": "High",
+      "growthRating": 5,
+      "status": "Active",
+      "description": "Leading enterprise specializing in corporate bond services, catering to regional and global market segments.",
+      "ceoName": "Vikram Sen",
+      "foundedYear": 2001,
+      "headquarters": "Mumbai",
+      "logoInitials": "AC",
+      "dividendYield": 1.6,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 440
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 441.47
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 441.43
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 441.52
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 439.95
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 442.42
+        }
+      ]
+    },
+    {
+      "id": "S34",
+      "ticker": "NEUR",
+      "name": "Neural Robotics Ltd",
+      "sector": "AI",
+      "type": "Stock",
+      "basePrice": 404,
+      "currentPrice": 400.91,
+      "totalUnits": 176,
+      "availableUnits": 176,
+      "volatility": 0.62,
+      "riskRating": "Medium",
+      "growthRating": 3,
+      "status": "Active",
+      "description": "Leading enterprise specializing in ai services, catering to regional and global market segments.",
+      "ceoName": "Anil Joshi",
+      "foundedYear": 1998,
+      "headquarters": "Hyderabad",
+      "logoInitials": "NE",
+      "dividendYield": 4.12,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 404
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 405.61
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 403.96
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 402.67
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 401.92
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 400.91
+        }
+      ]
+    },
+    {
+      "id": "S35",
+      "ticker": "AROG",
+      "name": "Arogya Med Care",
+      "sector": "Healthcare",
+      "type": "Stock",
+      "basePrice": 223,
+      "currentPrice": 227.08,
+      "totalUnits": 163,
+      "availableUnits": 163,
+      "volatility": 0.87,
+      "riskRating": "High",
+      "growthRating": 1,
+      "status": "Active",
+      "description": "Leading enterprise specializing in healthcare services, catering to regional and global market segments.",
+      "ceoName": "Anil Choudhury",
+      "foundedYear": 2020,
+      "headquarters": "Bengaluru",
+      "logoInitials": "AR",
+      "dividendYield": 1.64,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 223
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 224.52
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 224.88
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 225.24
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 226.79
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 227.08
+        }
+      ]
+    },
+    {
+      "id": "S36",
+      "ticker": "WEIN",
+      "name": "Wind Energy India",
+      "sector": "Renewable Energy",
+      "type": "Stock",
+      "basePrice": 489,
+      "currentPrice": 490.19,
+      "totalUnits": 73,
+      "availableUnits": 73,
+      "volatility": 0.33,
+      "riskRating": "Low",
+      "growthRating": 5,
+      "status": "Active",
+      "description": "Leading enterprise specializing in renewable energy services, catering to regional and global market segments.",
+      "ceoName": "Rohan Reddy",
+      "foundedYear": 2001,
+      "headquarters": "Bengaluru",
+      "logoInitials": "WE",
+      "dividendYield": 1.24,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 489
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 488.43
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 489.45
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 488.82
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 489.37
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 490.19
+        }
+      ]
+    },
+    {
+      "id": "S37",
+      "ticker": "MMWC",
+      "name": "Maha Metroworks Corp",
+      "sector": "Manufacturing",
+      "type": "Stock",
+      "basePrice": 246,
+      "currentPrice": 248.06,
+      "totalUnits": 106,
+      "availableUnits": 106,
+      "volatility": 0.96,
+      "riskRating": "High",
+      "growthRating": 5,
+      "status": "Active",
+      "description": "Leading enterprise specializing in manufacturing services, catering to regional and global market segments.",
+      "ceoName": "Amit Gupta",
+      "foundedYear": 2018,
+      "headquarters": "New Delhi",
+      "logoInitials": "MM",
+      "dividendYield": 2.61,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 246
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 245.61
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 245.11
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 245.42
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 246.91
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 248.06
+        }
+      ]
+    },
+    {
+      "id": "S38",
+      "ticker": "EITR",
+      "name": "Embassy IT REIT",
+      "sector": "REIT",
+      "type": "REIT",
+      "basePrice": 301,
+      "currentPrice": 300.7,
+      "totalUnits": 146,
+      "availableUnits": 146,
+      "volatility": 0.31,
+      "riskRating": "Low",
+      "growthRating": 1,
+      "status": "Active",
+      "description": "Leading enterprise specializing in reit services, catering to regional and global market segments.",
+      "ceoName": "Rahul Rao",
+      "foundedYear": 1991,
+      "headquarters": "Ahmedabad",
+      "logoInitials": "EI",
+      "dividendYield": 4.03,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 301
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 300.78
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 301
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 301.49
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 301.24
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 300.7
+        }
+      ]
+    },
+    {
+      "id": "S39",
+      "ticker": "VIBD",
+      "name": "Voda-Idea Broad",
+      "sector": "Telecom",
+      "type": "Stock",
+      "basePrice": 196,
+      "currentPrice": 198.04,
+      "totalUnits": 80,
+      "availableUnits": 80,
+      "volatility": 0.46,
+      "riskRating": "Medium",
+      "growthRating": 2,
+      "status": "Active",
+      "description": "Leading enterprise specializing in telecom services, catering to regional and global market segments.",
+      "ceoName": "Aarav Joshi",
+      "foundedYear": 2022,
+      "headquarters": "Pune",
+      "logoInitials": "VI",
+      "dividendYield": 3.85,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 196
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 196.57
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 197.27
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 197.16
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 197.78
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 198.04
+        }
+      ]
+    },
+    {
+      "id": "S40",
+      "ticker": "TMDB",
+      "name": "Tata Motors Debt",
+      "sector": "Corporate Bond",
+      "type": "Bond",
+      "basePrice": 306,
+      "currentPrice": 304.78,
+      "totalUnits": 109,
+      "availableUnits": 109,
+      "volatility": 0.41,
+      "riskRating": "Medium",
+      "growthRating": 5,
+      "status": "Active",
+      "description": "Leading enterprise specializing in corporate bond services, catering to regional and global market segments.",
+      "ceoName": "Aarav Patel",
+      "foundedYear": 2000,
+      "headquarters": "Chennai",
+      "logoInitials": "TM",
+      "dividendYield": 1.28,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 306
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 305.3
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 304.68
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 304.62
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 304.78
+        }
+      ]
+    },
+    {
+      "id": "S41",
+      "ticker": "DSPS",
+      "name": "DSP Small Cap ETF",
+      "sector": "ETF",
+      "type": "ETF",
+      "basePrice": 177,
+      "currentPrice": 176.68,
+      "totalUnits": 154,
+      "availableUnits": 154,
+      "volatility": 0.67,
+      "riskRating": "Medium",
+      "growthRating": 3,
+      "status": "Active",
+      "description": "Leading enterprise specializing in etf services, catering to regional and global market segments.",
+      "ceoName": "Anil Gupta",
+      "foundedYear": 1996,
+      "headquarters": "Pune",
+      "logoInitials": "DS",
+      "dividendYield": 3.72,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 177
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 176.9
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 176.56
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 176.78
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 177.22
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 176.68
+        }
+      ]
+    },
+    {
+      "id": "S42",
+      "ticker": "ADRT",
+      "name": "Aditya Retail Hub",
+      "sector": "Retail",
+      "type": "Stock",
+      "basePrice": 211,
+      "currentPrice": 210.38,
+      "totalUnits": 141,
+      "availableUnits": 141,
+      "volatility": 0.85,
+      "riskRating": "High",
+      "growthRating": 3,
+      "status": "Active",
+      "description": "Leading enterprise specializing in retail services, catering to regional and global market segments.",
+      "ceoName": "Rajesh Gupta",
+      "foundedYear": 1998,
+      "headquarters": "Kolkata",
+      "logoInitials": "AD",
+      "dividendYield": 2.67,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 211
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 209.6
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 209.87
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 210.51
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 211.6
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 210.38
+        }
+      ]
+    },
+    {
+      "id": "S43",
+      "ticker": "SGB1",
+      "name": "Sovereign Gold Bond",
+      "sector": "Government Bond",
+      "type": "Bond",
+      "basePrice": 280,
+      "currentPrice": 279.99,
+      "totalUnits": 88,
+      "availableUnits": 88,
+      "volatility": 0.65,
+      "riskRating": "Medium",
+      "growthRating": 2,
+      "status": "Active",
+      "description": "Leading enterprise specializing in government bond services, catering to regional and global market segments.",
+      "ceoName": "Neha Rao",
+      "foundedYear": 2008,
+      "headquarters": "Mumbai",
+      "logoInitials": "SG",
+      "dividendYield": 1.19,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 280
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 278.59
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 279.69
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 279.64
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 279.4
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 279.99
+        }
+      ]
+    },
+    {
+      "id": "S44",
+      "ticker": "PARM",
+      "name": "Param AI Processing",
+      "sector": "AI",
+      "type": "Stock",
+      "basePrice": 108,
+      "currentPrice": 108.48,
+      "totalUnits": 175,
+      "availableUnits": 175,
+      "volatility": 0.71,
+      "riskRating": "High",
+      "growthRating": 4,
+      "status": "Active",
+      "description": "Leading enterprise specializing in ai services, catering to regional and global market segments.",
+      "ceoName": "Amit Patel",
+      "foundedYear": 1995,
+      "headquarters": "Noida",
+      "logoInitials": "PA",
+      "dividendYield": 4.22,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 108
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 107.46
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 107.72
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 107.93
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 108.08
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 108.48
+        }
+      ]
+    },
+    {
+      "id": "S45",
+      "ticker": "INNT",
+      "name": "Innovate Tech Corp",
+      "sector": "Technology",
+      "type": "Stock",
+      "basePrice": 361,
+      "currentPrice": 359.86,
+      "totalUnits": 159,
+      "availableUnits": 159,
+      "volatility": 0.53,
+      "riskRating": "Medium",
+      "growthRating": 1,
+      "status": "Active",
+      "description": "Leading enterprise specializing in technology services, catering to regional and global market segments.",
+      "ceoName": "Neha Reddy",
+      "foundedYear": 2000,
+      "headquarters": "Bengaluru",
+      "logoInitials": "IN",
+      "dividendYield": 2.66,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 361
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 360.42
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 359.83
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 360.65
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 360.83
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 359.86
+        }
+      ]
+    },
+    {
+      "id": "S46",
+      "ticker": "PIRW",
+      "name": "Piramal Wellness Group",
+      "sector": "Healthcare",
+      "type": "Stock",
+      "basePrice": 346,
+      "currentPrice": 345.45,
+      "totalUnits": 194,
+      "availableUnits": 194,
+      "volatility": 0.86,
+      "riskRating": "High",
+      "growthRating": 4,
+      "status": "Active",
+      "description": "Leading enterprise specializing in healthcare services, catering to regional and global market segments.",
+      "ceoName": "Amit Mehta",
+      "foundedYear": 2006,
+      "headquarters": "Mumbai",
+      "logoInitials": "PI",
+      "dividendYield": 3.5,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 346
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 345.78
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 344.43
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 345.25
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 344.81
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 345.45
+        }
+      ]
+    },
+    {
+      "id": "S47",
+      "ticker": "SGFU",
+      "name": "Sterling Green Fuels",
+      "sector": "Renewable Energy",
+      "type": "Stock",
+      "basePrice": 193,
+      "currentPrice": 193.67,
+      "totalUnits": 86,
+      "availableUnits": 86,
+      "volatility": 0.97,
+      "riskRating": "High",
+      "growthRating": 1,
+      "status": "Active",
+      "description": "Leading enterprise specializing in renewable energy services, catering to regional and global market segments.",
+      "ceoName": "Pooja Joshi",
+      "foundedYear": 2009,
+      "headquarters": "Noida",
+      "logoInitials": "SG",
+      "dividendYield": 1.63,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 193
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 191.62
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 192.6
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 193.67
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 192.75
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 193.67
+        }
+      ]
+    },
+    {
+      "id": "S48",
+      "ticker": "LTHE",
+      "name": "L&T Heavy Engineering",
+      "sector": "Manufacturing",
+      "type": "Stock",
+      "basePrice": 458,
+      "currentPrice": 456.99,
+      "totalUnits": 69,
+      "availableUnits": 69,
+      "volatility": 0.88,
+      "riskRating": "High",
+      "growthRating": 3,
+      "status": "Active",
+      "description": "Leading enterprise specializing in manufacturing services, catering to regional and global market segments.",
+      "ceoName": "Deepak Choudhury",
+      "foundedYear": 2001,
+      "headquarters": "New Delhi",
+      "logoInitials": "LT",
+      "dividendYield": 1.48,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 458
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 459.24
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 460.56
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 460.66
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 458.78
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 456.99
+        }
+      ]
+    },
+    {
+      "id": "S49",
+      "ticker": "IPRE",
+      "name": "ICICI Prudential REIT",
+      "sector": "REIT",
+      "type": "REIT",
+      "basePrice": 253,
+      "currentPrice": 256.29,
+      "totalUnits": 102,
+      "availableUnits": 102,
+      "volatility": 0.58,
+      "riskRating": "Medium",
+      "growthRating": 4,
+      "status": "Active",
+      "description": "Leading enterprise specializing in reit services, catering to regional and global market segments.",
+      "ceoName": "Ananya Singh",
+      "foundedYear": 1994,
+      "headquarters": "New Delhi",
+      "logoInitials": "IP",
+      "dividendYield": 2.77,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 253
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 253.87
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 254.17
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 255
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 255.13
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 256.29
+        }
+      ]
+    },
+    {
+      "id": "S50",
+      "ticker": "SBIE",
+      "name": "SBI Equity Index",
+      "sector": "Mutual Fund",
+      "type": "MutualFund",
+      "basePrice": 155,
+      "currentPrice": 154.16,
+      "totalUnits": 58,
+      "availableUnits": 58,
+      "volatility": 0.39,
+      "riskRating": "Low",
+      "growthRating": 1,
+      "status": "Active",
+      "description": "Leading enterprise specializing in mutual fund services, catering to regional and global market segments.",
+      "ceoName": "Amit Choudhury",
+      "foundedYear": 2013,
+      "headquarters": "Chennai",
+      "logoInitials": "SB",
+      "dividendYield": 2.46,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 155
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 154.86
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 154.45
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 154.43
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 154.16
+        }
+      ]
+    },
+    {
+      "id": "S51",
+      "ticker": "KPTL",
+      "name": "Kochi Port Logistics",
+      "sector": "Manufacturing",
+      "type": "Stock",
+      "basePrice": 288,
+      "currentPrice": 288.29,
+      "totalUnits": 63,
+      "availableUnits": 63,
+      "volatility": 0.63,
+      "riskRating": "Medium",
+      "growthRating": 1,
+      "status": "Active",
+      "description": "Leading enterprise specializing in manufacturing services, catering to regional and global market segments.",
+      "ceoName": "Rohan Iyer",
+      "foundedYear": 2016,
+      "headquarters": "Noida",
+      "logoInitials": "KP",
+      "dividendYield": 3.92,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 288
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 288.95
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 288.48
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 287.34
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 287.85
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 288.29
+        }
+      ]
+    },
+    {
+      "id": "S52",
+      "ticker": "DPTC",
+      "name": "Delhi Power Transmission",
+      "sector": "Energy",
+      "type": "Stock",
+      "basePrice": 343,
+      "currentPrice": 338.63,
+      "totalUnits": 182,
+      "availableUnits": 182,
+      "volatility": 0.81,
+      "riskRating": "High",
+      "growthRating": 5,
+      "status": "Active",
+      "description": "Leading enterprise specializing in energy services, catering to regional and global market segments.",
+      "ceoName": "Rajesh Choudhury",
+      "foundedYear": 2016,
+      "headquarters": "New Delhi",
+      "logoInitials": "DP",
+      "dividendYield": 4.78,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 343
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 344.74
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 343.27
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 342.47
+        },
+        {
+          "timestamp": 1782916661183,
+          "price": 340.64
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 338.63
+        }
+      ]
+    },
+    {
+      "id": "S53",
+      "ticker": "PAGF",
+      "name": "Punjab Agro Foods",
+      "sector": "Retail",
+      "type": "Stock",
+      "basePrice": 178,
+      "currentPrice": 177.61,
+      "totalUnits": 198,
+      "availableUnits": 198,
+      "volatility": 0.68,
+      "riskRating": "Medium",
+      "growthRating": 1,
+      "status": "Active",
+      "description": "Leading enterprise specializing in retail services, catering to regional and global market segments.",
+      "ceoName": "Vijay Rao",
+      "foundedYear": 1991,
+      "headquarters": "Gurugram",
+      "logoInitials": "PA",
+      "dividendYield": 2.41,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 178
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 177.17
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 177.01
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 176.88
+        },
+        {
+          "timestamp": 1782916661184,
+          "price": 177.57
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 177.61
+        }
+      ]
+    },
+    {
+      "id": "S54",
+      "ticker": "ODMC",
+      "name": "Odisha Mining Corp",
+      "sector": "Manufacturing",
+      "type": "Stock",
+      "basePrice": 100,
+      "currentPrice": 101.51,
+      "totalUnits": 67,
+      "availableUnits": 67,
+      "volatility": 0.86,
+      "riskRating": "High",
+      "growthRating": 4,
+      "status": "Active",
+      "description": "Leading enterprise specializing in manufacturing services, catering to regional and global market segments.",
+      "ceoName": "Amit Iyer",
+      "foundedYear": 2003,
+      "headquarters": "Kolkata",
+      "logoInitials": "OD",
+      "dividendYield": 1.01,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 100
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 100.33
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 100.8
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 101.15
+        },
+        {
+          "timestamp": 1782916661184,
+          "price": 101.47
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 101.51
+        }
+      ]
+    },
+    {
+      "id": "S55",
+      "ticker": "HMSP",
+      "name": "Himalayan Mineral Springs",
+      "sector": "Healthcare",
+      "type": "Stock",
+      "basePrice": 183,
+      "currentPrice": 183.67,
+      "totalUnits": 190,
+      "availableUnits": 190,
+      "volatility": 0.99,
+      "riskRating": "High",
+      "growthRating": 3,
+      "status": "Active",
+      "description": "Leading enterprise specializing in healthcare services, catering to regional and global market segments.",
+      "ceoName": "Aarav Joshi",
+      "foundedYear": 1994,
+      "headquarters": "Ahmedabad",
+      "logoInitials": "HM",
+      "dividendYield": 4.13,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 183
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 183.02
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 182.72
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 181.79
+        },
+        {
+          "timestamp": 1782916661184,
+          "price": 182.82
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 183.67
+        }
+      ]
+    },
+    {
+      "id": "S56",
+      "ticker": "GNTL",
+      "name": "Ganges Tech Labs",
+      "sector": "Technology",
+      "type": "Stock",
+      "basePrice": 429,
+      "currentPrice": 429.14,
+      "totalUnits": 82,
+      "availableUnits": 82,
+      "volatility": 0.58,
+      "riskRating": "Medium",
+      "growthRating": 1,
+      "status": "Active",
+      "description": "Leading enterprise specializing in technology services, catering to regional and global market segments.",
+      "ceoName": "Rahul Verma",
+      "foundedYear": 2011,
+      "headquarters": "Gurugram",
+      "logoInitials": "GN",
+      "dividendYield": 2.57,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 429
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 428.73
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 427.93
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 427.74
+        },
+        {
+          "timestamp": 1782916661184,
+          "price": 428.07
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 429.14
+        }
+      ]
+    },
+    {
+      "id": "S57",
+      "ticker": "KSFC",
+      "name": "Kashmiri Saffron Co",
+      "sector": "Retail",
+      "type": "Stock",
+      "basePrice": 137,
+      "currentPrice": 138,
+      "totalUnits": 193,
+      "availableUnits": 193,
+      "volatility": 0.97,
+      "riskRating": "High",
+      "growthRating": 3,
+      "status": "Active",
+      "description": "Leading enterprise specializing in retail services, catering to regional and global market segments.",
+      "ceoName": "Anil Patel",
+      "foundedYear": 2008,
+      "headquarters": "Ahmedabad",
+      "logoInitials": "KS",
+      "dividendYield": 4.17,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 137
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 137.61
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 136.71
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 137.62
+        },
+        {
+          "timestamp": 1782916661184,
+          "price": 138.34
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 138
+        }
+      ]
+    },
+    {
+      "id": "S58",
+      "ticker": "GOHL",
+      "name": "Goa Hotels & Leisure",
+      "sector": "REIT",
+      "type": "REIT",
+      "basePrice": 461,
+      "currentPrice": 455.48,
+      "totalUnits": 183,
+      "availableUnits": 183,
+      "volatility": 0.49,
+      "riskRating": "Medium",
+      "growthRating": 1,
+      "status": "Active",
+      "description": "Leading enterprise specializing in reit services, catering to regional and global market segments.",
+      "ceoName": "Deepak Reddy",
+      "foundedYear": 2004,
+      "headquarters": "Chennai",
+      "logoInitials": "GO",
+      "dividendYield": 1.25,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 461
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 461.01
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 459.93
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 458.37
+        },
+        {
+          "timestamp": 1782916661184,
+          "price": 457.21
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 455.48
+        }
+      ]
+    },
+    {
+      "id": "S59",
+      "ticker": "RSPF",
+      "name": "Rajasthan Solar Parks",
+      "sector": "Renewable Energy",
+      "type": "Stock",
+      "basePrice": 141,
+      "currentPrice": 140.65,
+      "totalUnits": 196,
+      "availableUnits": 196,
+      "volatility": 0.32,
+      "riskRating": "Low",
+      "growthRating": 1,
+      "status": "Active",
+      "description": "Leading enterprise specializing in renewable energy services, catering to regional and global market segments.",
+      "ceoName": "Vikram Reddy",
+      "foundedYear": 2004,
+      "headquarters": "New Delhi",
+      "logoInitials": "RS",
+      "dividendYield": 3.39,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 141
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 140.97
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 140.91
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 140.62
+        },
+        {
+          "timestamp": 1782916661184,
+          "price": 140.93
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 140.65
+        }
+      ]
+    },
+    {
+      "id": "S60",
+      "ticker": "SOV3",
+      "name": "Sovereign Treasury III",
+      "sector": "Government Bond",
+      "type": "Bond",
+      "basePrice": 343,
+      "currentPrice": 341.22,
+      "totalUnits": 84,
+      "availableUnits": 84,
+      "volatility": 0.86,
+      "riskRating": "High",
+      "growthRating": 1,
+      "status": "Active",
+      "description": "Leading enterprise specializing in government bond services, catering to regional and global market segments.",
+      "ceoName": "Vijay Mehta",
+      "foundedYear": 2000,
+      "headquarters": "Mumbai",
+      "logoInitials": "SO",
+      "dividendYield": 2.17,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 343
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 343.15
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 341.19
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 341.37
+        },
+        {
+          "timestamp": 1782916661184,
+          "price": 341.82
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 341.22
+        }
+      ]
+    },
+    {
+      "id": "S61",
+      "ticker": "TSBY",
+      "name": "Tata Steel Bond Yield",
+      "sector": "Corporate Bond",
+      "type": "Bond",
+      "basePrice": 438,
+      "currentPrice": 439.73,
+      "totalUnits": 132,
+      "availableUnits": 132,
+      "volatility": 0.75,
+      "riskRating": "High",
+      "growthRating": 4,
+      "status": "Active",
+      "description": "Leading enterprise specializing in corporate bond services, catering to regional and global market segments.",
+      "ceoName": "Rohan Patel",
+      "foundedYear": 1996,
+      "headquarters": "Gurugram",
+      "logoInitials": "TS",
+      "dividendYield": 2.9,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 438
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 439.16
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 440.26
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 440.34
+        },
+        {
+          "timestamp": 1782916661184,
+          "price": 440.57
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 439.73
+        }
+      ]
+    },
+    {
+      "id": "S62",
+      "ticker": "ITIF",
+      "name": "ICICI Tech Index Fund",
+      "sector": "ETF",
+      "type": "ETF",
+      "basePrice": 215,
+      "currentPrice": 214.89,
+      "totalUnits": 125,
+      "availableUnits": 125,
+      "volatility": 0.91,
+      "riskRating": "High",
+      "growthRating": 2,
+      "status": "Active",
+      "description": "Leading enterprise specializing in etf services, catering to regional and global market segments.",
+      "ceoName": "Rahul Nair",
+      "foundedYear": 2013,
+      "headquarters": "Mumbai",
+      "logoInitials": "IT",
+      "dividendYield": 1.85,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 215
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 213.82
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 214.77
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 213.52
+        },
+        {
+          "timestamp": 1782916661184,
+          "price": 214.69
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 214.89
+        }
+      ]
+    },
+    {
+      "id": "S63",
+      "ticker": "SHMF",
+      "name": "SBI Healthcare Mutual",
+      "sector": "Mutual Fund",
+      "type": "MutualFund",
+      "basePrice": 163,
+      "currentPrice": 165.7,
+      "totalUnits": 79,
+      "availableUnits": 79,
+      "volatility": 0.69,
+      "riskRating": "Medium",
+      "growthRating": 4,
+      "status": "Active",
+      "description": "Leading enterprise specializing in mutual fund services, catering to regional and global market segments.",
+      "ceoName": "Rohan Verma",
+      "foundedYear": 1993,
+      "headquarters": "Hyderabad",
+      "logoInitials": "SH",
+      "dividendYield": 1.34,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 163
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 163.35
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 163.52
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 164.32
+        },
+        {
+          "timestamp": 1782916661184,
+          "price": 165.14
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 165.7
+        }
+      ]
+    },
+    {
+      "id": "S64",
+      "ticker": "GFIN",
+      "name": "Giga Fiber Infra",
+      "sector": "Telecom",
+      "type": "Stock",
+      "basePrice": 235,
+      "currentPrice": 234.75,
+      "totalUnits": 140,
+      "availableUnits": 140,
+      "volatility": 0.85,
+      "riskRating": "High",
+      "growthRating": 4,
+      "status": "Active",
+      "description": "Leading enterprise specializing in telecom services, catering to regional and global market segments.",
+      "ceoName": "Ananya Nair",
+      "foundedYear": 1992,
+      "headquarters": "Chennai",
+      "logoInitials": "GF",
+      "dividendYield": 1.76,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 235
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 235.56
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 235.67
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 235.48
+        },
+        {
+          "timestamp": 1782916661184,
+          "price": 234.07
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 234.75
+        }
+      ]
+    },
+    {
+      "id": "S65",
+      "ticker": "AAIV",
+      "name": "Apex AI Ventures",
+      "sector": "AI",
+      "type": "Stock",
+      "basePrice": 147,
+      "currentPrice": 148.17,
+      "totalUnits": 63,
+      "availableUnits": 63,
+      "volatility": 0.5,
+      "riskRating": "Medium",
+      "growthRating": 3,
+      "status": "Active",
+      "description": "Leading enterprise specializing in ai services, catering to regional and global market segments.",
+      "ceoName": "Sunil Sen",
+      "foundedYear": 2016,
+      "headquarters": "Chennai",
+      "logoInitials": "AA",
+      "dividendYield": 3.13,
+      "priceHistory": [
+        {
+          "timestamp": 1782916651412,
+          "price": 147
+        },
+        {
+          "timestamp": 1782916652144,
+          "price": 146.87
+        },
+        {
+          "timestamp": 1782916655158,
+          "price": 147.34
+        },
+        {
+          "timestamp": 1782916658165,
+          "price": 147.28
+        },
+        {
+          "timestamp": 1782916661184,
+          "price": 147.68
+        },
+        {
+          "timestamp": 1782916664193,
+          "price": 148.17
+        }
+      ]
+    }
+  ],
+  "teams": [
+    {
+      "id": "T01",
+      "teamCode": "T01",
+      "teamName": "Trader Elite 1",
+      "teamType": "Retail",
+      "cashBalance": 95724.85,
+      "holdings": {
+        "S01": 15,
+        "S02": 5
+      },
+      "isActive": true,
+      "createdAt": 1782916651412
+    },
+    {
+      "id": "T02",
+      "teamCode": "T02",
+      "teamName": "Trader Elite 2",
+      "teamType": "Retail",
+      "cashBalance": 100000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782916651412
+    },
+    {
+      "id": "T03",
+      "teamCode": "T03",
+      "teamName": "Trader Elite 3",
+      "teamType": "Retail",
+      "cashBalance": 100000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782916651412
+    },
+    {
+      "id": "T04",
+      "teamCode": "T04",
+      "teamName": "Trader Elite 4",
+      "teamType": "Retail",
+      "cashBalance": 100000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782916651412
+    },
+    {
+      "id": "T05",
+      "teamCode": "T05",
+      "teamName": "Aura Trust 5",
+      "teamType": "MutualFund",
+      "cashBalance": 300000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782916651412
+    },
+    {
+      "id": "T06",
+      "teamCode": "T06",
+      "teamName": "Titan Alpha 6",
+      "teamType": "HedgeFund",
+      "cashBalance": 500000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782916651412
+    },
+    {
+      "id": "T07",
+      "teamCode": "T07",
+      "teamName": "Trader Elite 7",
+      "teamType": "Retail",
+      "cashBalance": 100000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782916651412
+    },
+    {
+      "id": "T08",
+      "teamCode": "T08",
+      "teamName": "Trader Elite 8",
+      "teamType": "Retail",
+      "cashBalance": 100000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782916651412
+    },
+    {
+      "id": "T09",
+      "teamCode": "T09",
+      "teamName": "Trader Elite 9",
+      "teamType": "Retail",
+      "cashBalance": 100000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782916651412
+    },
+    {
+      "id": "T10",
+      "teamCode": "T10",
+      "teamName": "Aura Trust 10",
+      "teamType": "MutualFund",
+      "cashBalance": 300000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782916651412
+    },
+    {
+      "id": "T11",
+      "teamCode": "T11",
+      "teamName": "Trader Elite 11",
+      "teamType": "Retail",
+      "cashBalance": 100000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782916651412
+    },
+    {
+      "id": "T12",
+      "teamCode": "T12",
+      "teamName": "Titan Alpha 12",
+      "teamType": "HedgeFund",
+      "cashBalance": 500000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782916651412
+    },
+    {
+      "id": "T13",
+      "teamCode": "T13",
+      "teamName": "Trader Elite 13",
+      "teamType": "Retail",
+      "cashBalance": 100000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782916651412
+    },
+    {
+      "id": "T14",
+      "teamCode": "T14",
+      "teamName": "Trader Elite 14",
+      "teamType": "Retail",
+      "cashBalance": 100000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782916651412
+    },
+    {
+      "id": "T15",
+      "teamCode": "T15",
+      "teamName": "Aura Trust 15",
+      "teamType": "MutualFund",
+      "cashBalance": 300000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782916651412
+    },
+    {
+      "id": "T16",
+      "teamCode": "T16",
+      "teamName": "Trader Elite 16",
+      "teamType": "Retail",
+      "cashBalance": 100000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782916651412
+    },
+    {
+      "id": "T17",
+      "teamCode": "T17",
+      "teamName": "Trader Elite 17",
+      "teamType": "Retail",
+      "cashBalance": 100000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782916651412
+    },
+    {
+      "id": "T18",
+      "teamCode": "T18",
+      "teamName": "Titan Alpha 18",
+      "teamType": "HedgeFund",
+      "cashBalance": 500000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782916651412
+    },
+    {
+      "id": "T19",
+      "teamCode": "T19",
+      "teamName": "Trader Elite 19",
+      "teamType": "Retail",
+      "cashBalance": 100000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782916651412
+    },
+    {
+      "id": "T20",
+      "teamCode": "T20",
+      "teamName": "Aura Trust 20",
+      "teamType": "MutualFund",
+      "cashBalance": 300000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782916651412
+    }
+  ],
+  "transactions": [
+    {
+      "id": "TX0001",
+      "timestamp": 1782916651438,
+      "teamId": "T01",
+      "teamCode": "T01",
+      "teamName": "Trader Elite 1",
+      "teamType": "Retail",
+      "securityId": "S01",
+      "ticker": "APXT",
+      "action": "BUY",
+      "quantity": 1,
+      "priceAtExecution": 361,
+      "totalValue": 361,
+      "enteredBy": "Sequential-Test-Bot-1",
+      "voided": false
+    },
+    {
+      "id": "TX0002",
+      "timestamp": 1782916651444,
+      "teamId": "T01",
+      "teamCode": "T01",
+      "teamName": "Trader Elite 1",
+      "teamType": "Retail",
+      "securityId": "S01",
+      "ticker": "APXT",
+      "action": "BUY",
+      "quantity": 1,
+      "priceAtExecution": 363.38,
+      "totalValue": 363.38,
+      "enteredBy": "Sequential-Test-Bot-2",
+      "voided": false
+    },
+    {
+      "id": "TX0003",
+      "timestamp": 1782916651450,
+      "teamId": "T01",
+      "teamCode": "T01",
+      "teamName": "Trader Elite 1",
+      "teamType": "Retail",
+      "securityId": "S01",
+      "ticker": "APXT",
+      "action": "BUY",
+      "quantity": 1,
+      "priceAtExecution": 365.78,
+      "totalValue": 365.78,
+      "enteredBy": "Sequential-Test-Bot-3",
+      "voided": false
+    },
+    {
+      "id": "TX0004",
+      "timestamp": 1782916651456,
+      "teamId": "T01",
+      "teamCode": "T01",
+      "teamName": "Trader Elite 1",
+      "teamType": "Retail",
+      "securityId": "S01",
+      "ticker": "APXT",
+      "action": "BUY",
+      "quantity": 1,
+      "priceAtExecution": 368.2,
+      "totalValue": 368.2,
+      "enteredBy": "Sequential-Test-Bot-4",
+      "voided": false
+    },
+    {
+      "id": "TX0005",
+      "timestamp": 1782916651463,
+      "teamId": "T01",
+      "teamCode": "T01",
+      "teamName": "Trader Elite 1",
+      "teamType": "Retail",
+      "securityId": "S01",
+      "ticker": "APXT",
+      "action": "BUY",
+      "quantity": 1,
+      "priceAtExecution": 370.63,
+      "totalValue": 370.63,
+      "enteredBy": "Sequential-Test-Bot-5",
+      "voided": false
+    },
+    {
+      "id": "TX0006",
+      "timestamp": 1782916651469,
+      "teamId": "T01",
+      "teamCode": "T01",
+      "teamName": "Trader Elite 1",
+      "teamType": "Retail",
+      "securityId": "S01",
+      "ticker": "APXT",
+      "action": "BUY",
+      "quantity": 2,
+      "priceAtExecution": 373.08,
+      "totalValue": 746.16,
+      "enteredBy": "Concurrent-Bot-A",
+      "voided": false
+    },
+    {
+      "id": "TX0007",
+      "timestamp": 1782916651474,
+      "teamId": "T01",
+      "teamCode": "T01",
+      "teamName": "Trader Elite 1",
+      "teamType": "Retail",
+      "securityId": "S02",
+      "ticker": "BPCL",
+      "action": "BUY",
+      "quantity": 5,
+      "priceAtExecution": 180,
+      "totalValue": 900,
+      "enteredBy": "Concurrent-Bot-B",
+      "voided": false
+    },
+    {
+      "id": "TX0008",
+      "timestamp": 1782916651487,
+      "teamId": "T01",
+      "teamCode": "T01",
+      "teamName": "Trader Elite 1",
+      "teamType": "Retail",
+      "securityId": "S01",
+      "ticker": "APXT",
+      "action": "BUY",
+      "quantity": 8,
+      "priceAtExecution": 100,
+      "totalValue": 800,
+      "enteredBy": "Race-Client-1",
+      "voided": false
+    }
+  ],
+  "newsEvents": [
+    {
+      "id": "N01",
+      "headline": "SEBI Announces Structural Policy Reforms",
+      "description": "New guidelines bolster credit markets and ease manufacturing listings.",
+      "affectedSector": "Banking",
+      "sentiment": "Positive",
+      "impactPercent": 12,
+      "isCustom": false,
+      "category": "Policy"
+    },
+    {
+      "id": "N02",
+      "headline": "Flares of Crisis in Middle East Fuel Oil Surge",
+      "description": "Energy supply lines disrupted, driving crude prices higher.",
+      "affectedSector": "Energy",
+      "sentiment": "Positive",
+      "impactPercent": 15,
+      "isCustom": false,
+      "category": "Macro"
+    },
+    {
+      "id": "N03",
+      "headline": "AI Chip Shortages Halt Tech Output",
+      "description": "Key components delayed, raising production costs across tech hubs.",
+      "affectedSector": "Technology",
+      "sentiment": "Negative",
+      "impactPercent": 14,
+      "isCustom": false,
+      "category": "Disaster"
+    },
+    {
+      "id": "N04",
+      "headline": "Major Tax Deductions Boost Government Bond Market",
+      "description": "New tax exemptions declared for long-term government debt issues.",
+      "affectedSector": "Government Bond",
+      "sentiment": "Positive",
+      "impactPercent": 8,
+      "isCustom": false,
+      "category": "Policy"
+    },
+    {
+      "id": "N05",
+      "headline": "Healthcare Biotech Scandal Triggers Safety Audits",
+      "description": "Unapproved therapeutic trials lead to federal regulatory warnings.",
+      "affectedSector": "Healthcare",
+      "sentiment": "Negative",
+      "impactPercent": 18,
+      "isCustom": false,
+      "category": "Scandal"
+    },
+    {
+      "id": "NW006",
+      "headline": "Journalist Role Verification Test",
+      "description": "Verifying permissions",
+      "affectedSecurityIds": [],
+      "affectedSector": null,
+      "sentiment": "Neutral",
+      "impactPercent": 0,
+      "triggeredAt": 1782916666706,
+      "isCustom": true,
+      "category": "Policy"
+    }
+  ],
+  "corporateActions": [],
+  "marketState": {
+    "status": "Open",
+    "simulationStartTime": 1782916651426,
+    "simulationDurationMinutes": 60,
+    "marketIndex": -1.04,
+    "pauseTimeOffset": 0,
+    "pausedAt": null
+  },
+  "settings": {
+    "startingCapitalRetail": 100000,
+    "startingCapitalMutualFund": 300000,
+    "startingCapitalHedgeFund": 500000,
+    "defaultVolatility": 0.5,
+    "circuitBreakerThreshold": 30,
+    "circuitBreakerWindowMinutes": 5
+  }
+}

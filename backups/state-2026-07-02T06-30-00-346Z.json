@@ -1,0 +1,7469 @@
+{
+  "securities": [
+    {
+      "id": "S01",
+      "ticker": "APXT",
+      "name": "Apex Tech Solutions",
+      "sector": "Technology",
+      "type": "Stock",
+      "basePrice": 201,
+      "currentPrice": 204.48,
+      "totalUnits": 184,
+      "availableUnits": 184,
+      "volatility": 0.61,
+      "riskRating": "Medium",
+      "growthRating": 2,
+      "status": "Active",
+      "description": "Leading enterprise specializing in technology services, catering to regional and global market segments.",
+      "ceoName": "Pooja Nair",
+      "foundedYear": 2023,
+      "headquarters": "Pune",
+      "logoInitials": "AP",
+      "dividendYield": 4.96,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 201
+        },
+        {
+          "timestamp": 1782973740176,
+          "price": 201.47
+        },
+        {
+          "timestamp": 1782973743181,
+          "price": 201.65
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 201.77
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 202.62
+        },
+        {
+          "timestamp": 1782973752222,
+          "price": 202.03
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 202.96
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 203.61
+        },
+        {
+          "timestamp": 1782973761238,
+          "price": 202.65
+        },
+        {
+          "timestamp": 1782973764284,
+          "price": 203.37
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 203.58
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 204.05
+        },
+        {
+          "timestamp": 1782973773315,
+          "price": 204.35
+        },
+        {
+          "timestamp": 1782973776322,
+          "price": 205.03
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 204.86
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 204.91
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 204.53
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 204.54
+        },
+        {
+          "timestamp": 1782973791353,
+          "price": 203.84
+        },
+        {
+          "timestamp": 1782973794368,
+          "price": 204.84
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 204.48
+        }
+      ]
+    },
+    {
+      "id": "S02",
+      "ticker": "BPCL",
+      "name": "Bharat Petroleum Corp",
+      "sector": "Energy",
+      "type": "Stock",
+      "basePrice": 168,
+      "currentPrice": 179.74,
+      "totalUnits": 114,
+      "availableUnits": 101,
+      "volatility": 0.58,
+      "riskRating": "Medium",
+      "growthRating": 5,
+      "status": "Active",
+      "description": "Leading enterprise specializing in energy services, catering to regional and global market segments.",
+      "ceoName": "Sanjay Nair",
+      "foundedYear": 2013,
+      "headquarters": "Pune",
+      "logoInitials": "BP",
+      "dividendYield": 2.42,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 168
+        },
+        {
+          "timestamp": 1782973740176,
+          "price": 168.2
+        },
+        {
+          "timestamp": 1782973743181,
+          "price": 167.45
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 167.72
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 167.74
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 168.26
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 168.74
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 168.65
+        },
+        {
+          "timestamp": 1782973761238,
+          "price": 169.3
+        },
+        {
+          "timestamp": 1782973762588,
+          "price": 180.5
+        },
+        {
+          "timestamp": 1782973764284,
+          "price": 180.42
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 180.05
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 180.09
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 180.03
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 179.73
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 179.14
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 179.73
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 180.1
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 179.75
+        },
+        {
+          "timestamp": 1782973791353,
+          "price": 180.3
+        },
+        {
+          "timestamp": 1782973794368,
+          "price": 180.55
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 179.74
+        }
+      ]
+    },
+    {
+      "id": "S03",
+      "ticker": "CNBK",
+      "name": "Centrum Banking Group",
+      "sector": "Banking",
+      "type": "Stock",
+      "basePrice": 185,
+      "currentPrice": 185.94,
+      "totalUnits": 187,
+      "availableUnits": 187,
+      "volatility": 0.54,
+      "riskRating": "Medium",
+      "growthRating": 1,
+      "status": "Active",
+      "description": "Leading enterprise specializing in banking services, catering to regional and global market segments.",
+      "ceoName": "Priya Singh",
+      "foundedYear": 2000,
+      "headquarters": "Bengaluru",
+      "logoInitials": "CN",
+      "dividendYield": 1.55,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 185
+        },
+        {
+          "timestamp": 1782973740176,
+          "price": 185.58
+        },
+        {
+          "timestamp": 1782973743181,
+          "price": 185.71
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 184.93
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 185.68
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 185.17
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 184.66
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 184.54
+        },
+        {
+          "timestamp": 1782973761238,
+          "price": 184.79
+        },
+        {
+          "timestamp": 1782973764284,
+          "price": 185.1
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 184.58
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 184.16
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 184.28
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 184.88
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 185.45
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 186.24
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 185.53
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 185.2
+        },
+        {
+          "timestamp": 1782973791353,
+          "price": 186.01
+        },
+        {
+          "timestamp": 1782973794368,
+          "price": 186.17
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 185.94
+        }
+      ]
+    },
+    {
+      "id": "S04",
+      "ticker": "DTAI",
+      "name": "Delta AI Labs",
+      "sector": "AI",
+      "type": "Stock",
+      "basePrice": 382,
+      "currentPrice": 389.15,
+      "totalUnits": 107,
+      "availableUnits": 100,
+      "volatility": 0.53,
+      "riskRating": "Medium",
+      "growthRating": 2,
+      "status": "Active",
+      "description": "Leading enterprise specializing in ai services, catering to regional and global market segments.",
+      "ceoName": "Ananya Iyer",
+      "foundedYear": 1991,
+      "headquarters": "Chennai",
+      "logoInitials": "DT",
+      "dividendYield": 1.05,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 382
+        },
+        {
+          "timestamp": 1782973740176,
+          "price": 380.48
+        },
+        {
+          "timestamp": 1782973743181,
+          "price": 381.22
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 379.92
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 380.7
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 380.4
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 381.14
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 381.83
+        },
+        {
+          "timestamp": 1782973761238,
+          "price": 382.65
+        },
+        {
+          "timestamp": 1782973764284,
+          "price": 382.86
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 381.58
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 382.84
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 381.46
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 380.39
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 380.43
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 378.91
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 377.94
+        },
+        {
+          "timestamp": 1782973786707,
+          "price": 391.04
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 391.13
+        },
+        {
+          "timestamp": 1782973791353,
+          "price": 391.22
+        },
+        {
+          "timestamp": 1782973794368,
+          "price": 389.64
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 389.15
+        }
+      ]
+    },
+    {
+      "id": "S05",
+      "ticker": "ELXR",
+      "name": "Elixir Pharma India",
+      "sector": "Healthcare",
+      "type": "Stock",
+      "basePrice": 110,
+      "currentPrice": 110.1,
+      "totalUnits": 122,
+      "availableUnits": 122,
+      "volatility": 0.8,
+      "riskRating": "High",
+      "growthRating": 5,
+      "status": "Active",
+      "description": "Leading enterprise specializing in healthcare services, catering to regional and global market segments.",
+      "ceoName": "Aarav Sen",
+      "foundedYear": 2015,
+      "headquarters": "Pune",
+      "logoInitials": "EL",
+      "dividendYield": 4.44,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 110
+        },
+        {
+          "timestamp": 1782973740176,
+          "price": 110.02
+        },
+        {
+          "timestamp": 1782973743181,
+          "price": 110.67
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 111.08
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 111.54
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 111.64
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 111.21
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 110.92
+        },
+        {
+          "timestamp": 1782973761238,
+          "price": 111.09
+        },
+        {
+          "timestamp": 1782973764284,
+          "price": 110.67
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 111.16
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 110.66
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 110.67
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 110.77
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 111.33
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 111.77
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 111.14
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 110.63
+        },
+        {
+          "timestamp": 1782973791353,
+          "price": 110.33
+        },
+        {
+          "timestamp": 1782973794368,
+          "price": 109.86
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 110.1
+        }
+      ]
+    },
+    {
+      "id": "S06",
+      "ticker": "FTUR",
+      "name": "Future Retail India",
+      "sector": "Retail",
+      "type": "Stock",
+      "basePrice": 175,
+      "currentPrice": 173.03,
+      "totalUnits": 139,
+      "availableUnits": 139,
+      "volatility": 0.82,
+      "riskRating": "High",
+      "growthRating": 2,
+      "status": "Active",
+      "description": "Leading enterprise specializing in retail services, catering to regional and global market segments.",
+      "ceoName": "Vikram Sen",
+      "foundedYear": 2020,
+      "headquarters": "Noida",
+      "logoInitials": "FT",
+      "dividendYield": 3.69,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 175
+        },
+        {
+          "timestamp": 1782973740176,
+          "price": 175.42
+        },
+        {
+          "timestamp": 1782973743181,
+          "price": 175.67
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 176.55
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 176.93
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 177.1
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 176.83
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 176.21
+        },
+        {
+          "timestamp": 1782973761238,
+          "price": 176.28
+        },
+        {
+          "timestamp": 1782973764284,
+          "price": 175.36
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 176.29
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 175.52
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 174.76
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 175.09
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 174.43
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 174
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 173.12
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 172.51
+        },
+        {
+          "timestamp": 1782973791353,
+          "price": 171.92
+        },
+        {
+          "timestamp": 1782973794368,
+          "price": 172.29
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 173.03
+        }
+      ]
+    },
+    {
+      "id": "S07",
+      "ticker": "GIGN",
+      "name": "Giga Telecom Network",
+      "sector": "Telecom",
+      "type": "Stock",
+      "basePrice": 369,
+      "currentPrice": 366.73,
+      "totalUnits": 96,
+      "availableUnits": 96,
+      "volatility": 0.43,
+      "riskRating": "Medium",
+      "growthRating": 3,
+      "status": "Active",
+      "description": "Leading enterprise specializing in telecom services, catering to regional and global market segments.",
+      "ceoName": "Vikram Reddy",
+      "foundedYear": 2024,
+      "headquarters": "Noida",
+      "logoInitials": "GI",
+      "dividendYield": 2.13,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 369
+        },
+        {
+          "timestamp": 1782973740176,
+          "price": 369.9
+        },
+        {
+          "timestamp": 1782973743181,
+          "price": 369
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 370.16
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 369.13
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 368.43
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 367.44
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 366.43
+        },
+        {
+          "timestamp": 1782973761238,
+          "price": 367.35
+        },
+        {
+          "timestamp": 1782973764284,
+          "price": 367.4
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 368.29
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 368.97
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 370.17
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 369.13
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 369.07
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 368.29
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 367.69
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 367.31
+        },
+        {
+          "timestamp": 1782973791353,
+          "price": 367.83
+        },
+        {
+          "timestamp": 1782973794368,
+          "price": 366.76
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 366.73
+        }
+      ]
+    },
+    {
+      "id": "S08",
+      "ticker": "HLXR",
+      "name": "Helix Renewable Power",
+      "sector": "Renewable Energy",
+      "type": "Stock",
+      "basePrice": 185,
+      "currentPrice": 188.74,
+      "totalUnits": 134,
+      "availableUnits": 134,
+      "volatility": 0.54,
+      "riskRating": "Medium",
+      "growthRating": 3,
+      "status": "Active",
+      "description": "Leading enterprise specializing in renewable energy services, catering to regional and global market segments.",
+      "ceoName": "Ananya Sen",
+      "foundedYear": 1990,
+      "headquarters": "Pune",
+      "logoInitials": "HL",
+      "dividendYield": 4.34,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 185
+        },
+        {
+          "timestamp": 1782973740176,
+          "price": 185.31
+        },
+        {
+          "timestamp": 1782973743181,
+          "price": 185.65
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 185.79
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 185.03
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 185.17
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 185.03
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 185.11
+        },
+        {
+          "timestamp": 1782973761238,
+          "price": 185.84
+        },
+        {
+          "timestamp": 1782973764284,
+          "price": 186.55
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 187.37
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 187.07
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 187.55
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 187.37
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 187.97
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 188.54
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 189.22
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 188.57
+        },
+        {
+          "timestamp": 1782973791353,
+          "price": 188.31
+        },
+        {
+          "timestamp": 1782973794368,
+          "price": 188.46
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 188.74
+        }
+      ]
+    },
+    {
+      "id": "S09",
+      "ticker": "INDH",
+      "name": "Indus Industrial Heavy",
+      "sector": "Manufacturing",
+      "type": "Stock",
+      "basePrice": 340,
+      "currentPrice": 333.21,
+      "totalUnits": 119,
+      "availableUnits": 119,
+      "volatility": 0.68,
+      "riskRating": "Medium",
+      "growthRating": 1,
+      "status": "Active",
+      "description": "Leading enterprise specializing in manufacturing services, catering to regional and global market segments.",
+      "ceoName": "Ananya Mehta",
+      "foundedYear": 1990,
+      "headquarters": "New Delhi",
+      "logoInitials": "IN",
+      "dividendYield": 2.94,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 340
+        },
+        {
+          "timestamp": 1782973740176,
+          "price": 338.41
+        },
+        {
+          "timestamp": 1782973743181,
+          "price": 338.22
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 337.99
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 338.48
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 338.49
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 337.3
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 336.02
+        },
+        {
+          "timestamp": 1782973761238,
+          "price": 335.32
+        },
+        {
+          "timestamp": 1782973764284,
+          "price": 333.98
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 335.37
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 335.32
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 333.74
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 335.08
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 333.89
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 335.22
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 335.78
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 336.57
+        },
+        {
+          "timestamp": 1782973791353,
+          "price": 334.92
+        },
+        {
+          "timestamp": 1782973794368,
+          "price": 334.66
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 333.21
+        }
+      ]
+    },
+    {
+      "id": "S10",
+      "ticker": "JUPR",
+      "name": "Jupiter REIT Trust",
+      "sector": "REIT",
+      "type": "REIT",
+      "basePrice": 235,
+      "currentPrice": 231.21,
+      "totalUnits": 112,
+      "availableUnits": 112,
+      "volatility": 0.7,
+      "riskRating": "High",
+      "growthRating": 5,
+      "status": "Active",
+      "description": "Leading enterprise specializing in reit services, catering to regional and global market segments.",
+      "ceoName": "Sunil Rao",
+      "foundedYear": 2019,
+      "headquarters": "Chennai",
+      "logoInitials": "JU",
+      "dividendYield": 3.73,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 235
+        },
+        {
+          "timestamp": 1782973740176,
+          "price": 234.92
+        },
+        {
+          "timestamp": 1782973743181,
+          "price": 233.83
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 232.94
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 232.06
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 232.34
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 231.44
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 230.52
+        },
+        {
+          "timestamp": 1782973761238,
+          "price": 229.43
+        },
+        {
+          "timestamp": 1782973764284,
+          "price": 230.67
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 231.97
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 231.92
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 233.09
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 232.83
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 232.52
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 232.41
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 232.39
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 231.58
+        },
+        {
+          "timestamp": 1782973791353,
+          "price": 231.31
+        },
+        {
+          "timestamp": 1782973794368,
+          "price": 231.99
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 231.21
+        }
+      ]
+    },
+    {
+      "id": "S11",
+      "ticker": "KRPB",
+      "name": "Krypton Bond Fund",
+      "sector": "ETF",
+      "type": "ETF",
+      "basePrice": 264,
+      "currentPrice": 260.66,
+      "totalUnits": 138,
+      "availableUnits": 138,
+      "volatility": 0.8,
+      "riskRating": "High",
+      "growthRating": 5,
+      "status": "Active",
+      "description": "Leading enterprise specializing in etf services, catering to regional and global market segments.",
+      "ceoName": "Deepak Nair",
+      "foundedYear": 1993,
+      "headquarters": "Mumbai",
+      "logoInitials": "KR",
+      "dividendYield": 4.81,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 264
+        },
+        {
+          "timestamp": 1782973740176,
+          "price": 265.04
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 263.43
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 263.08
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 261.48
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 260.56
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 261.44
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 261.29
+        },
+        {
+          "timestamp": 1782973761238,
+          "price": 262.71
+        },
+        {
+          "timestamp": 1782973764284,
+          "price": 263.18
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 262.03
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 262.09
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 261.9
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 262.14
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 263.56
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 262.13
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 263.25
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 262.53
+        },
+        {
+          "timestamp": 1782973791353,
+          "price": 262.05
+        },
+        {
+          "timestamp": 1782973794368,
+          "price": 260.93
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 260.66
+        }
+      ]
+    },
+    {
+      "id": "S12",
+      "ticker": "NFTY",
+      "name": "Nifty Index Tracker",
+      "sector": "Mutual Fund",
+      "type": "MutualFund",
+      "basePrice": 361,
+      "currentPrice": 361.57,
+      "totalUnits": 167,
+      "availableUnits": 167,
+      "volatility": 0.86,
+      "riskRating": "High",
+      "growthRating": 4,
+      "status": "Active",
+      "description": "Leading enterprise specializing in mutual fund services, catering to regional and global market segments.",
+      "ceoName": "Sanjay Choudhury",
+      "foundedYear": 1992,
+      "headquarters": "Bengaluru",
+      "logoInitials": "NF",
+      "dividendYield": 1.26,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 361
+        },
+        {
+          "timestamp": 1782973740176,
+          "price": 360.11
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 361.14
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 361.96
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 362.18
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 362.4
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 363.07
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 363.03
+        },
+        {
+          "timestamp": 1782973761238,
+          "price": 363.36
+        },
+        {
+          "timestamp": 1782973764284,
+          "price": 362.52
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 361.93
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 361.25
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 362.44
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 361.75
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 359.35
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 357.94
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 360.38
+        },
+        {
+          "timestamp": 1782973791353,
+          "price": 359.71
+        },
+        {
+          "timestamp": 1782973794368,
+          "price": 360.42
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 361.57
+        }
+      ]
+    },
+    {
+      "id": "S13",
+      "ticker": "GOVT",
+      "name": "Secured Sovereign Bond",
+      "sector": "Government Bond",
+      "type": "Bond",
+      "basePrice": 473,
+      "currentPrice": 466.28,
+      "totalUnits": 109,
+      "availableUnits": 109,
+      "volatility": 0.63,
+      "riskRating": "Medium",
+      "growthRating": 5,
+      "status": "Active",
+      "description": "Leading enterprise specializing in government bond services, catering to regional and global market segments.",
+      "ceoName": "Rohan Sen",
+      "foundedYear": 1998,
+      "headquarters": "New Delhi",
+      "logoInitials": "GO",
+      "dividendYield": 3.47,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 473
+        },
+        {
+          "timestamp": 1782973740176,
+          "price": 474.34
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 473.46
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 472.45
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 471.33
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 470.52
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 469.76
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 469.69
+        },
+        {
+          "timestamp": 1782973761238,
+          "price": 469.53
+        },
+        {
+          "timestamp": 1782973764284,
+          "price": 470.21
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 471.1
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 470.6
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 472.25
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 474.05
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 473.58
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 471.93
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 470.24
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 468.7
+        },
+        {
+          "timestamp": 1782973791353,
+          "price": 467.91
+        },
+        {
+          "timestamp": 1782973794368,
+          "price": 467.24
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 466.28
+        }
+      ]
+    },
+    {
+      "id": "S14",
+      "ticker": "TCDB",
+      "name": "Tata Corp Debt Issue",
+      "sector": "Corporate Bond",
+      "type": "Bond",
+      "basePrice": 356,
+      "currentPrice": 346.38,
+      "totalUnits": 95,
+      "availableUnits": 95,
+      "volatility": 0.91,
+      "riskRating": "High",
+      "growthRating": 3,
+      "status": "Active",
+      "description": "Leading enterprise specializing in corporate bond services, catering to regional and global market segments.",
+      "ceoName": "Rahul Nair",
+      "foundedYear": 2000,
+      "headquarters": "Hyderabad",
+      "logoInitials": "TC",
+      "dividendYield": 1.68,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 356
+        },
+        {
+          "timestamp": 1782973740176,
+          "price": 355.98
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 357.3
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 355.91
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 354.54
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 355.37
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 354.69
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 353.96
+        },
+        {
+          "timestamp": 1782973761238,
+          "price": 355.43
+        },
+        {
+          "timestamp": 1782973764284,
+          "price": 353.51
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 353.09
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 350.66
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 349.29
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 350.89
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 352.93
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 351.31
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 349.23
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 348.4
+        },
+        {
+          "timestamp": 1782973791353,
+          "price": 348.31
+        },
+        {
+          "timestamp": 1782973794368,
+          "price": 346.64
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 346.38
+        }
+      ]
+    },
+    {
+      "id": "S15",
+      "ticker": "VGAI",
+      "name": "Vanguard AI Capital",
+      "sector": "AI",
+      "type": "Stock",
+      "basePrice": 334,
+      "currentPrice": 330.59,
+      "totalUnits": 71,
+      "availableUnits": 71,
+      "volatility": 0.73,
+      "riskRating": "High",
+      "growthRating": 4,
+      "status": "Active",
+      "description": "Leading enterprise specializing in ai services, catering to regional and global market segments.",
+      "ceoName": "Aarav Rao",
+      "foundedYear": 2011,
+      "headquarters": "Hyderabad",
+      "logoInitials": "VG",
+      "dividendYield": 3.05,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 334
+        },
+        {
+          "timestamp": 1782973740176,
+          "price": 332.78
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 333.74
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 335.59
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 334.81
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 334.7
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 336.42
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 335.95
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 335.48
+        },
+        {
+          "timestamp": 1782973764284,
+          "price": 333.63
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 332.78
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 334.24
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 335.8
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 334.16
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 332.44
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 330.75
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 329.26
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 330.45
+        },
+        {
+          "timestamp": 1782973791353,
+          "price": 329.29
+        },
+        {
+          "timestamp": 1782973794368,
+          "price": 329.21
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 330.59
+        }
+      ]
+    },
+    {
+      "id": "S16",
+      "ticker": "ZNBM",
+      "name": "Zenith BioMed Hub",
+      "sector": "Healthcare",
+      "type": "Stock",
+      "basePrice": 493,
+      "currentPrice": 497.41,
+      "totalUnits": 161,
+      "availableUnits": 161,
+      "volatility": 0.36,
+      "riskRating": "Low",
+      "growthRating": 4,
+      "status": "Active",
+      "description": "Leading enterprise specializing in healthcare services, catering to regional and global market segments.",
+      "ceoName": "Aarav Sharma",
+      "foundedYear": 2022,
+      "headquarters": "Chennai",
+      "logoInitials": "ZN",
+      "dividendYield": 2.05,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 493
+        },
+        {
+          "timestamp": 1782973740176,
+          "price": 491.9
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 492.74
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 493.27
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 492.99
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 491.78
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 492.93
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 494.3
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 494.08
+        },
+        {
+          "timestamp": 1782973764284,
+          "price": 495.15
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 495.5
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 495.68
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 494.9
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 495.6
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 494.33
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 495.55
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 495.42
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 496.15
+        },
+        {
+          "timestamp": 1782973791353,
+          "price": 496.51
+        },
+        {
+          "timestamp": 1782973794368,
+          "price": 496.54
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 497.41
+        }
+      ]
+    },
+    {
+      "id": "S17",
+      "ticker": "QCLD",
+      "name": "Quantum Cloud Tech",
+      "sector": "Technology",
+      "type": "Stock",
+      "basePrice": 351,
+      "currentPrice": 345.11,
+      "totalUnits": 104,
+      "availableUnits": 104,
+      "volatility": 0.57,
+      "riskRating": "Medium",
+      "growthRating": 3,
+      "status": "Active",
+      "description": "Leading enterprise specializing in technology services, catering to regional and global market segments.",
+      "ceoName": "Anil Singh",
+      "foundedYear": 1992,
+      "headquarters": "Noida",
+      "logoInitials": "QC",
+      "dividendYield": 3.73,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 351
+        },
+        {
+          "timestamp": 1782973740176,
+          "price": 350.79
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 351.52
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 351.02
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 351.27
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 350.87
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 349.92
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 348.85
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 349.2
+        },
+        {
+          "timestamp": 1782973764284,
+          "price": 348.44
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 347.65
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 348
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 348.01
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 346.85
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 345.85
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 346.47
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 345.84
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 344.95
+        },
+        {
+          "timestamp": 1782973791353,
+          "price": 346.32
+        },
+        {
+          "timestamp": 1782973794368,
+          "price": 346.02
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 345.11
+        }
+      ]
+    },
+    {
+      "id": "S18",
+      "ticker": "SUNR",
+      "name": "Sun Power Renewables",
+      "sector": "Renewable Energy",
+      "type": "Stock",
+      "basePrice": 175,
+      "currentPrice": 172.61,
+      "totalUnits": 119,
+      "availableUnits": 119,
+      "volatility": 0.83,
+      "riskRating": "High",
+      "growthRating": 1,
+      "status": "Active",
+      "description": "Leading enterprise specializing in renewable energy services, catering to regional and global market segments.",
+      "ceoName": "Sanjay Singh",
+      "foundedYear": 1994,
+      "headquarters": "Kolkata",
+      "logoInitials": "SU",
+      "dividendYield": 4.18,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 175
+        },
+        {
+          "timestamp": 1782973740176,
+          "price": 175.95
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 175.28
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 174.71
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 173.89
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 173.61
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 174.1
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 173.08
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 172.91
+        },
+        {
+          "timestamp": 1782973764284,
+          "price": 172.86
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 172.01
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 172.33
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 171.89
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 172.74
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 173.16
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 172.65
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 171.64
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 171.57
+        },
+        {
+          "timestamp": 1782973791353,
+          "price": 172.23
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 171.73
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 172.61
+        }
+      ]
+    },
+    {
+      "id": "S19",
+      "ticker": "OCBS",
+      "name": "Oceanic Blue Shipping",
+      "sector": "Manufacturing",
+      "type": "Stock",
+      "basePrice": 353,
+      "currentPrice": 387.4,
+      "totalUnits": 124,
+      "availableUnits": 112,
+      "volatility": 0.84,
+      "riskRating": "High",
+      "growthRating": 4,
+      "status": "Active",
+      "description": "Leading enterprise specializing in manufacturing services, catering to regional and global market segments.",
+      "ceoName": "Neha Joshi",
+      "foundedYear": 2023,
+      "headquarters": "Bengaluru",
+      "logoInitials": "OC",
+      "dividendYield": 2.95,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 353
+        },
+        {
+          "timestamp": 1782973740176,
+          "price": 350.78
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 350.99
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 353.33
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 354.1
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 354.46
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 353.14
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 352.24
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 351.04
+        },
+        {
+          "timestamp": 1782973764284,
+          "price": 350.64
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 350.78
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 352.19
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 352.56
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 352.72
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 351.3
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 353.31
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 354.94
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 352.92
+        },
+        {
+          "timestamp": 1782973791353,
+          "price": 355.19
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 356.39
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 358.28
+        },
+        {
+          "timestamp": 1782973800343,
+          "price": 387.4
+        }
+      ]
+    },
+    {
+      "id": "S20",
+      "ticker": "NIMF",
+      "name": "National Infra Mutual",
+      "sector": "Mutual Fund",
+      "type": "MutualFund",
+      "basePrice": 148,
+      "currentPrice": 152.04,
+      "totalUnits": 185,
+      "availableUnits": 185,
+      "volatility": 0.86,
+      "riskRating": "High",
+      "growthRating": 2,
+      "status": "Active",
+      "description": "Leading enterprise specializing in mutual fund services, catering to regional and global market segments.",
+      "ceoName": "Aarav Banerjee",
+      "foundedYear": 2023,
+      "headquarters": "Pune",
+      "logoInitials": "NI",
+      "dividendYield": 1.22,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 148
+        },
+        {
+          "timestamp": 1782973740176,
+          "price": 147.44
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 148.36
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 147.73
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 147.68
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 148.59
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 148.85
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 149.33
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 149.06
+        },
+        {
+          "timestamp": 1782973764284,
+          "price": 149.83
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 149.92
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 150.16
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 150.25
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 150.93
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 151.06
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 150.93
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 150.57
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 151.54
+        },
+        {
+          "timestamp": 1782973791353,
+          "price": 151.73
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 152.06
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 152.04
+        }
+      ]
+    },
+    {
+      "id": "S21",
+      "ticker": "HCRE",
+      "name": "HDFC Capital REIT",
+      "sector": "REIT",
+      "type": "REIT",
+      "basePrice": 498,
+      "currentPrice": 501.52,
+      "totalUnits": 78,
+      "availableUnits": 78,
+      "volatility": 0.43,
+      "riskRating": "Medium",
+      "growthRating": 1,
+      "status": "Active",
+      "description": "Leading enterprise specializing in reit services, catering to regional and global market segments.",
+      "ceoName": "Neha Gupta",
+      "foundedYear": 1994,
+      "headquarters": "Kolkata",
+      "logoInitials": "HC",
+      "dividendYield": 4.25,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 498
+        },
+        {
+          "timestamp": 1782973740176,
+          "price": 497.82
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 498.5
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 497.86
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 498.32
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 499.37
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 499.01
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 498.74
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 499.74
+        },
+        {
+          "timestamp": 1782973764284,
+          "price": 499.2
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 497.92
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 499.48
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 498.77
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 499.63
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 499.85
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 500.6
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 498.96
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 499.76
+        },
+        {
+          "timestamp": 1782973791353,
+          "price": 499.65
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 499.98
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 501.52
+        }
+      ]
+    },
+    {
+      "id": "S22",
+      "ticker": "REGR",
+      "name": "Reliance Energy Grid",
+      "sector": "Energy",
+      "type": "Stock",
+      "basePrice": 362,
+      "currentPrice": 353.92,
+      "totalUnits": 122,
+      "availableUnits": 122,
+      "volatility": 0.6,
+      "riskRating": "Medium",
+      "growthRating": 2,
+      "status": "Active",
+      "description": "Leading enterprise specializing in energy services, catering to regional and global market segments.",
+      "ceoName": "Sunil Iyer",
+      "foundedYear": 1992,
+      "headquarters": "Hyderabad",
+      "logoInitials": "RE",
+      "dividendYield": 2.16,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 362
+        },
+        {
+          "timestamp": 1782973740176,
+          "price": 362.81
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 361.42
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 359.73
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 358.91
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 357.61
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 358.45
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 358.76
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 358.68
+        },
+        {
+          "timestamp": 1782973764284,
+          "price": 357.28
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 355.66
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 354.25
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 353.98
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 352.99
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 354.06
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 353.21
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 353.94
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 354.84
+        },
+        {
+          "timestamp": 1782973791353,
+          "price": 353.65
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 353.42
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 353.92
+        }
+      ]
+    },
+    {
+      "id": "S23",
+      "ticker": "SBIS",
+      "name": "State Bank Sovereign",
+      "sector": "Banking",
+      "type": "Stock",
+      "basePrice": 307,
+      "currentPrice": 274.22,
+      "totalUnits": 105,
+      "availableUnits": 105,
+      "volatility": 0.64,
+      "riskRating": "Medium",
+      "growthRating": 3,
+      "status": "Active",
+      "description": "Leading enterprise specializing in banking services, catering to regional and global market segments.",
+      "ceoName": "Aarav Banerjee",
+      "foundedYear": 2003,
+      "headquarters": "Hyderabad",
+      "logoInitials": "SB",
+      "dividendYield": 1.46,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 307
+        },
+        {
+          "timestamp": 1782973739006,
+          "price": 270.16
+        },
+        {
+          "timestamp": 1782973740177,
+          "price": 271.31
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 272.37
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 271.87
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 272.08
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 271.72
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 272.67
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 271.75
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 272.06
+        },
+        {
+          "timestamp": 1782973764284,
+          "price": 273.25
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 273.57
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 274.99
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 276.33
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 277.31
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 276.1
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 274.84
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 274.06
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 273.04
+        },
+        {
+          "timestamp": 1782973791353,
+          "price": 274.01
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 275.31
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 274.22
+        }
+      ]
+    },
+    {
+      "id": "S24",
+      "ticker": "INTS",
+      "name": "Intellect Softworks",
+      "sector": "Technology",
+      "type": "Stock",
+      "basePrice": 203,
+      "currentPrice": 204.61,
+      "totalUnits": 108,
+      "availableUnits": 108,
+      "volatility": 0.96,
+      "riskRating": "High",
+      "growthRating": 4,
+      "status": "Active",
+      "description": "Leading enterprise specializing in technology services, catering to regional and global market segments.",
+      "ceoName": "Rajesh Patel",
+      "foundedYear": 2022,
+      "headquarters": "Chennai",
+      "logoInitials": "IN",
+      "dividendYield": 4.63,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 203
+        },
+        {
+          "timestamp": 1782973740177,
+          "price": 201.9
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 200.98
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 201.45
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 202.77
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 202.64
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 203.92
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 203.68
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 204.32
+        },
+        {
+          "timestamp": 1782973764284,
+          "price": 205
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 204.65
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 203.23
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 202.55
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 202.95
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 204.15
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 203.78
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 203.74
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 204.37
+        },
+        {
+          "timestamp": 1782973791353,
+          "price": 205.17
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 205.04
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 204.61
+        }
+      ]
+    },
+    {
+      "id": "S25",
+      "ticker": "SOV2",
+      "name": "Sovereign Treasury II",
+      "sector": "Government Bond",
+      "type": "Bond",
+      "basePrice": 245,
+      "currentPrice": 241.84,
+      "totalUnits": 192,
+      "availableUnits": 192,
+      "volatility": 0.42,
+      "riskRating": "Medium",
+      "growthRating": 2,
+      "status": "Active",
+      "description": "Leading enterprise specializing in government bond services, catering to regional and global market segments.",
+      "ceoName": "Pooja Verma",
+      "foundedYear": 1997,
+      "headquarters": "New Delhi",
+      "logoInitials": "SO",
+      "dividendYield": 1.78,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 245
+        },
+        {
+          "timestamp": 1782973740177,
+          "price": 245.47
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 244.91
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 244.8
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 244.23
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 243.74
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 243.32
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 244.04
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 243.98
+        },
+        {
+          "timestamp": 1782973764284,
+          "price": 244.7
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 244.23
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 244.16
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 243.72
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 243.46
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 243.15
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 243.18
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 242.51
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 242.28
+        },
+        {
+          "timestamp": 1782973791353,
+          "price": 241.54
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 241.93
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 241.84
+        }
+      ]
+    },
+    {
+      "id": "S26",
+      "ticker": "ACYB",
+      "name": "Aether Cyber Security",
+      "sector": "AI",
+      "type": "Stock",
+      "basePrice": 183,
+      "currentPrice": 184,
+      "totalUnits": 195,
+      "availableUnits": 195,
+      "volatility": 0.6,
+      "riskRating": "Medium",
+      "growthRating": 3,
+      "status": "Active",
+      "description": "Leading enterprise specializing in ai services, catering to regional and global market segments.",
+      "ceoName": "Sanjay Joshi",
+      "foundedYear": 2022,
+      "headquarters": "Mumbai",
+      "logoInitials": "AC",
+      "dividendYield": 3.3,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 183
+        },
+        {
+          "timestamp": 1782973740177,
+          "price": 182.72
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 183.33
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 182.63
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 182.36
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 182.79
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 182.74
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 181.98
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 181.18
+        },
+        {
+          "timestamp": 1782973764284,
+          "price": 181.88
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 181.43
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 182.12
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 182.79
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 183.1
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 182.72
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 183.58
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 184.27
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 184.5
+        },
+        {
+          "timestamp": 1782973791353,
+          "price": 183.64
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 184.49
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 184
+        }
+      ]
+    },
+    {
+      "id": "S27",
+      "ticker": "MDIX",
+      "name": "Matrix Diagnostic Inc",
+      "sector": "Healthcare",
+      "type": "Stock",
+      "basePrice": 220,
+      "currentPrice": 220.53,
+      "totalUnits": 103,
+      "availableUnits": 103,
+      "volatility": 0.35,
+      "riskRating": "Low",
+      "growthRating": 5,
+      "status": "Active",
+      "description": "Leading enterprise specializing in healthcare services, catering to regional and global market segments.",
+      "ceoName": "Anil Rao",
+      "foundedYear": 1994,
+      "headquarters": "Gurugram",
+      "logoInitials": "MD",
+      "dividendYield": 1.94,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 220
+        },
+        {
+          "timestamp": 1782973740177,
+          "price": 220.48
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 221
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 220.82
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 220.41
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 220.15
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 220.19
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 220.32
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 220.34
+        },
+        {
+          "timestamp": 1782973764284,
+          "price": 220.21
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 220.73
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 220.43
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 220.79
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 220.7
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 220.86
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 220.53
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 220.01
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 220.11
+        },
+        {
+          "timestamp": 1782973791353,
+          "price": 220.07
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 220.22
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 220.53
+        }
+      ]
+    },
+    {
+      "id": "S28",
+      "ticker": "NIBY",
+      "name": "Nippon Bond Yield",
+      "sector": "ETF",
+      "type": "ETF",
+      "basePrice": 478,
+      "currentPrice": 470.92,
+      "totalUnits": 162,
+      "availableUnits": 162,
+      "volatility": 0.81,
+      "riskRating": "High",
+      "growthRating": 3,
+      "status": "Active",
+      "description": "Leading enterprise specializing in etf services, catering to regional and global market segments.",
+      "ceoName": "Neha Singh",
+      "foundedYear": 2020,
+      "headquarters": "Bengaluru",
+      "logoInitials": "NI",
+      "dividendYield": 3.36,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 478
+        },
+        {
+          "timestamp": 1782973740177,
+          "price": 476.53
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 477.02
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 474.88
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 471.92
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 473.9
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 476.07
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 473.08
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 474.74
+        },
+        {
+          "timestamp": 1782973764284,
+          "price": 472.66
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 472.27
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 472.28
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 472.37
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 469.97
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 468.74
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 468.21
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 471.19
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 468.78
+        },
+        {
+          "timestamp": 1782973791353,
+          "price": 471.75
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 472.19
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 470.92
+        }
+      ]
+    },
+    {
+      "id": "S29",
+      "ticker": "BYRT",
+      "name": "Banyan Tree Retail",
+      "sector": "Retail",
+      "type": "Stock",
+      "basePrice": 203,
+      "currentPrice": 207.44,
+      "totalUnits": 76,
+      "availableUnits": 76,
+      "volatility": 0.48,
+      "riskRating": "Medium",
+      "growthRating": 5,
+      "status": "Active",
+      "description": "Leading enterprise specializing in retail services, catering to regional and global market segments.",
+      "ceoName": "Priya Nair",
+      "foundedYear": 2019,
+      "headquarters": "Hyderabad",
+      "logoInitials": "BY",
+      "dividendYield": 4.84,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 203
+        },
+        {
+          "timestamp": 1782973740177,
+          "price": 203.72
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 204.28
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 203.79
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 203.82
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 204.56
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 204.9
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 205.51
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 205.14
+        },
+        {
+          "timestamp": 1782973764284,
+          "price": 205.73
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 205.97
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 206.12
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 205.48
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 205.62
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 206.28
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 206.86
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 206.96
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 207.32
+        },
+        {
+          "timestamp": 1782973791353,
+          "price": 208
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 208.1
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 207.44
+        }
+      ]
+    },
+    {
+      "id": "S30",
+      "ticker": "FACA",
+      "name": "Falcon Aerospace Corp",
+      "sector": "Manufacturing",
+      "type": "Stock",
+      "basePrice": 463,
+      "currentPrice": 467.82,
+      "totalUnits": 58,
+      "availableUnits": 58,
+      "volatility": 0.47,
+      "riskRating": "Medium",
+      "growthRating": 4,
+      "status": "Active",
+      "description": "Leading enterprise specializing in manufacturing services, catering to regional and global market segments.",
+      "ceoName": "Sanjay Sen",
+      "foundedYear": 2015,
+      "headquarters": "Bengaluru",
+      "logoInitials": "FA",
+      "dividendYield": 3.83,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 463
+        },
+        {
+          "timestamp": 1782973740177,
+          "price": 464.54
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 464.59
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 463.39
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 464.8
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 466.57
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 466.09
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 466.39
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 467.86
+        },
+        {
+          "timestamp": 1782973764284,
+          "price": 469.2
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 468.31
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 467.64
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 466.57
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 467.95
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 469.15
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 467.47
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 468.18
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 468.36
+        },
+        {
+          "timestamp": 1782973791353,
+          "price": 469.58
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 469.22
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 467.82
+        }
+      ]
+    },
+    {
+      "id": "S31",
+      "ticker": "IGCO",
+      "name": "Indraprastha Gas Corp",
+      "sector": "Energy",
+      "type": "Stock",
+      "basePrice": 138,
+      "currentPrice": 140.72,
+      "totalUnits": 59,
+      "availableUnits": 59,
+      "volatility": 0.68,
+      "riskRating": "Medium",
+      "growthRating": 1,
+      "status": "Active",
+      "description": "Leading enterprise specializing in energy services, catering to regional and global market segments.",
+      "ceoName": "Amit Rao",
+      "foundedYear": 2007,
+      "headquarters": "Kolkata",
+      "logoInitials": "IG",
+      "dividendYield": 4.27,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 138
+        },
+        {
+          "timestamp": 1782973740177,
+          "price": 138.27
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 138.56
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 138.18
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 138.26
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 138.48
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 137.97
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 137.99
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 137.93
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 137.87
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 138.24
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 138.09
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 137.35
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 137.42
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 137.9
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 138.31
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 138.38
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 138.73
+        },
+        {
+          "timestamp": 1782973791353,
+          "price": 139.38
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 140.15
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 140.72
+        }
+      ]
+    },
+    {
+      "id": "S32",
+      "ticker": "KAGF",
+      "name": "Kotak Alpha Growth",
+      "sector": "Mutual Fund",
+      "type": "MutualFund",
+      "basePrice": 236,
+      "currentPrice": 237.79,
+      "totalUnits": 119,
+      "availableUnits": 119,
+      "volatility": 0.33,
+      "riskRating": "Low",
+      "growthRating": 1,
+      "status": "Active",
+      "description": "Leading enterprise specializing in mutual fund services, catering to regional and global market segments.",
+      "ceoName": "Pooja Singh",
+      "foundedYear": 2018,
+      "headquarters": "Bengaluru",
+      "logoInitials": "KA",
+      "dividendYield": 3.72,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 236
+        },
+        {
+          "timestamp": 1782973740177,
+          "price": 236.63
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 236.54
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 236.27
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 236.64
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 236.36
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 236.82
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 237.32
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 237.44
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 237.98
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 237.37
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 237.22
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 236.87
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 237.11
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 237.59
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 238.12
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 238.49
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 238.01
+        },
+        {
+          "timestamp": 1782973791353,
+          "price": 238.39
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 237.93
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 237.79
+        }
+      ]
+    },
+    {
+      "id": "S33",
+      "ticker": "ACYD",
+      "name": "Axis Corporate Yield",
+      "sector": "Corporate Bond",
+      "type": "Bond",
+      "basePrice": 249,
+      "currentPrice": 246.83,
+      "totalUnits": 109,
+      "availableUnits": 109,
+      "volatility": 0.59,
+      "riskRating": "Medium",
+      "growthRating": 5,
+      "status": "Active",
+      "description": "Leading enterprise specializing in corporate bond services, catering to regional and global market segments.",
+      "ceoName": "Rajesh Banerjee",
+      "foundedYear": 1997,
+      "headquarters": "Gurugram",
+      "logoInitials": "AC",
+      "dividendYield": 2.64,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 249
+        },
+        {
+          "timestamp": 1782973740177,
+          "price": 249.42
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 249.03
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 249.88
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 250.35
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 249.39
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 249.74
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 248.67
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 249.82
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 250.91
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 250.43
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 249.91
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 249.82
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 249.38
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 249.31
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 248.47
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 248.53
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 247.65
+        },
+        {
+          "timestamp": 1782973791353,
+          "price": 246.77
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 246.15
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 246.83
+        }
+      ]
+    },
+    {
+      "id": "S34",
+      "ticker": "NEUR",
+      "name": "Neural Robotics Ltd",
+      "sector": "AI",
+      "type": "Stock",
+      "basePrice": 475,
+      "currentPrice": 470.73,
+      "totalUnits": 70,
+      "availableUnits": 70,
+      "volatility": 0.43,
+      "riskRating": "Medium",
+      "growthRating": 5,
+      "status": "Active",
+      "description": "Leading enterprise specializing in ai services, catering to regional and global market segments.",
+      "ceoName": "Sanjay Banerjee",
+      "foundedYear": 1997,
+      "headquarters": "New Delhi",
+      "logoInitials": "NE",
+      "dividendYield": 3.35,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 475
+        },
+        {
+          "timestamp": 1782973740177,
+          "price": 474.61
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 473.48
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 475.09
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 474.33
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 473.15
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 471.86
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 471.42
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 471.99
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 471.7
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 471.31
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 470.78
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 469.39
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 469.54
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 469.61
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 469.23
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 469.18
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 470.15
+        },
+        {
+          "timestamp": 1782973791353,
+          "price": 470.23
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 469.57
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 470.73
+        }
+      ]
+    },
+    {
+      "id": "S35",
+      "ticker": "AROG",
+      "name": "Arogya Med Care",
+      "sector": "Healthcare",
+      "type": "Stock",
+      "basePrice": 473,
+      "currentPrice": 471.7,
+      "totalUnits": 141,
+      "availableUnits": 141,
+      "volatility": 0.44,
+      "riskRating": "Medium",
+      "growthRating": 1,
+      "status": "Active",
+      "description": "Leading enterprise specializing in healthcare services, catering to regional and global market segments.",
+      "ceoName": "Anil Iyer",
+      "foundedYear": 2001,
+      "headquarters": "New Delhi",
+      "logoInitials": "AR",
+      "dividendYield": 1.52,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 473
+        },
+        {
+          "timestamp": 1782973740177,
+          "price": 472.06
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 473.17
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 472.68
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 474.17
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 473.85
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 474.38
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 474.35
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 474.02
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 473.99
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 473.16
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 473.19
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 474.5
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 473.61
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 472.79
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 472.7
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 472.21
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 471.9
+        },
+        {
+          "timestamp": 1782973791354,
+          "price": 472.39
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 470.99
+        },
+        {
+          "timestamp": 1782973797379,
+          "price": 471.7
+        }
+      ]
+    },
+    {
+      "id": "S36",
+      "ticker": "WEIN",
+      "name": "Wind Energy India",
+      "sector": "Renewable Energy",
+      "type": "Stock",
+      "basePrice": 300,
+      "currentPrice": 312.62,
+      "totalUnits": 120,
+      "availableUnits": 112,
+      "volatility": 0.51,
+      "riskRating": "Medium",
+      "growthRating": 4,
+      "status": "Active",
+      "description": "Leading enterprise specializing in renewable energy services, catering to regional and global market segments.",
+      "ceoName": "Deepak Iyer",
+      "foundedYear": 2019,
+      "headquarters": "Bengaluru",
+      "logoInitials": "WE",
+      "dividendYield": 4.1,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 300
+        },
+        {
+          "timestamp": 1782973740177,
+          "price": 299.06
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 299.76
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 300.48
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 300.49
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 299.36
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 300.39
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 299.48
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 298.71
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 299.18
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 298.65
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 298.33
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 297.43
+        },
+        {
+          "timestamp": 1782973774335,
+          "price": 307.54
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 308.5
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 309.09
+        },
+        {
+          "timestamp": 1782973782342,
+          "price": 309.96
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 309.75
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 309.81
+        },
+        {
+          "timestamp": 1782973791354,
+          "price": 310.6
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 311.69
+        },
+        {
+          "timestamp": 1782973797380,
+          "price": 312.62
+        }
+      ]
+    },
+    {
+      "id": "S37",
+      "ticker": "MMWC",
+      "name": "Maha Metroworks Corp",
+      "sector": "Manufacturing",
+      "type": "Stock",
+      "basePrice": 139,
+      "currentPrice": 138.72,
+      "totalUnits": 77,
+      "availableUnits": 77,
+      "volatility": 0.43,
+      "riskRating": "Medium",
+      "growthRating": 4,
+      "status": "Active",
+      "description": "Leading enterprise specializing in manufacturing services, catering to regional and global market segments.",
+      "ceoName": "Ananya Verma",
+      "foundedYear": 2007,
+      "headquarters": "New Delhi",
+      "logoInitials": "MM",
+      "dividendYield": 3.35,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 139
+        },
+        {
+          "timestamp": 1782973740177,
+          "price": 138.88
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 138.86
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 138.65
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 138.28
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 138.5
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 138.24
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 138.14
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 138.34
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 138.14
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 138.47
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 138.4
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 138.23
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 138.66
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 138.75
+        },
+        {
+          "timestamp": 1782973782343,
+          "price": 139.12
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 139.13
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 139.09
+        },
+        {
+          "timestamp": 1782973791354,
+          "price": 139.13
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 139.18
+        },
+        {
+          "timestamp": 1782973797380,
+          "price": 138.72
+        }
+      ]
+    },
+    {
+      "id": "S38",
+      "ticker": "EITR",
+      "name": "Embassy IT REIT",
+      "sector": "REIT",
+      "type": "REIT",
+      "basePrice": 220,
+      "currentPrice": 219.57,
+      "totalUnits": 99,
+      "availableUnits": 99,
+      "volatility": 0.87,
+      "riskRating": "High",
+      "growthRating": 2,
+      "status": "Active",
+      "description": "Leading enterprise specializing in reit services, catering to regional and global market segments.",
+      "ceoName": "Rajesh Verma",
+      "foundedYear": 2002,
+      "headquarters": "Chennai",
+      "logoInitials": "EI",
+      "dividendYield": 1.37,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 220
+        },
+        {
+          "timestamp": 1782973740177,
+          "price": 221.47
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 221.16
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 220.8
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 221.62
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 220.83
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 221.86
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 221.07
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 221.77
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 221.66
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 220.29
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 220.09
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 219.93
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 220.37
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 220.42
+        },
+        {
+          "timestamp": 1782973782343,
+          "price": 219.13
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 220.6
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 220.66
+        },
+        {
+          "timestamp": 1782973791354,
+          "price": 220.16
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 220.76
+        },
+        {
+          "timestamp": 1782973797380,
+          "price": 219.57
+        }
+      ]
+    },
+    {
+      "id": "S39",
+      "ticker": "VIBD",
+      "name": "Voda-Idea Broad",
+      "sector": "Telecom",
+      "type": "Stock",
+      "basePrice": 481,
+      "currentPrice": 475.01,
+      "totalUnits": 104,
+      "availableUnits": 104,
+      "volatility": 0.54,
+      "riskRating": "Medium",
+      "growthRating": 5,
+      "status": "Active",
+      "description": "Leading enterprise specializing in telecom services, catering to regional and global market segments.",
+      "ceoName": "Deepak Singh",
+      "foundedYear": 1992,
+      "headquarters": "Ahmedabad",
+      "logoInitials": "VI",
+      "dividendYield": 2.81,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 481
+        },
+        {
+          "timestamp": 1782973740177,
+          "price": 479.65
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 480.91
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 479.4
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 478.57
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 476.97
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 475.72
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 474.62
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 476.7
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 478.71
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 476.73
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 477.26
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 478.68
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 477.77
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 479.22
+        },
+        {
+          "timestamp": 1782973782343,
+          "price": 477.6
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 476.27
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 474.83
+        },
+        {
+          "timestamp": 1782973791354,
+          "price": 475.82
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 475.21
+        },
+        {
+          "timestamp": 1782973797380,
+          "price": 475.01
+        }
+      ]
+    },
+    {
+      "id": "S40",
+      "ticker": "TMDB",
+      "name": "Tata Motors Debt",
+      "sector": "Corporate Bond",
+      "type": "Bond",
+      "basePrice": 163,
+      "currentPrice": 169.09,
+      "totalUnits": 130,
+      "availableUnits": 130,
+      "volatility": 0.87,
+      "riskRating": "High",
+      "growthRating": 5,
+      "status": "Active",
+      "description": "Leading enterprise specializing in corporate bond services, catering to regional and global market segments.",
+      "ceoName": "Sanjay Rao",
+      "foundedYear": 2013,
+      "headquarters": "Gurugram",
+      "logoInitials": "TM",
+      "dividendYield": 1.64,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 163
+        },
+        {
+          "timestamp": 1782973740177,
+          "price": 163.57
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 163.76
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 164.48
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 165.62
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 166.32
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 165.65
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 165.49
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 166.51
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 166.61
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 165.98
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 166.82
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 167.07
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 166.78
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 167.39
+        },
+        {
+          "timestamp": 1782973782343,
+          "price": 168.39
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 167.99
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 168.22
+        },
+        {
+          "timestamp": 1782973791354,
+          "price": 167.08
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 167.92
+        },
+        {
+          "timestamp": 1782973797380,
+          "price": 169.09
+        }
+      ]
+    },
+    {
+      "id": "S41",
+      "ticker": "DSPS",
+      "name": "DSP Small Cap ETF",
+      "sector": "ETF",
+      "type": "ETF",
+      "basePrice": 116,
+      "currentPrice": 115.58,
+      "totalUnits": 141,
+      "availableUnits": 141,
+      "volatility": 0.58,
+      "riskRating": "Medium",
+      "growthRating": 4,
+      "status": "Active",
+      "description": "Leading enterprise specializing in etf services, catering to regional and global market segments.",
+      "ceoName": "Deepak Singh",
+      "foundedYear": 2013,
+      "headquarters": "Mumbai",
+      "logoInitials": "DS",
+      "dividendYield": 4.96,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 116
+        },
+        {
+          "timestamp": 1782973740177,
+          "price": 115.83
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 115.41
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 115.86
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 115.37
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 114.86
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 115.07
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 114.98
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 115.5
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 115.09
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 115.1
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 115.52
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 115.47
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 115.03
+        },
+        {
+          "timestamp": 1782973782343,
+          "price": 115.41
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 115.02
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 114.59
+        },
+        {
+          "timestamp": 1782973791354,
+          "price": 114.68
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 115.19
+        },
+        {
+          "timestamp": 1782973797380,
+          "price": 115.58
+        }
+      ]
+    },
+    {
+      "id": "S42",
+      "ticker": "ADRT",
+      "name": "Aditya Retail Hub",
+      "sector": "Retail",
+      "type": "Stock",
+      "basePrice": 134,
+      "currentPrice": 132.52,
+      "totalUnits": 101,
+      "availableUnits": 101,
+      "volatility": 0.77,
+      "riskRating": "High",
+      "growthRating": 5,
+      "status": "Active",
+      "description": "Leading enterprise specializing in retail services, catering to regional and global market segments.",
+      "ceoName": "Neha Choudhury",
+      "foundedYear": 1991,
+      "headquarters": "Mumbai",
+      "logoInitials": "AD",
+      "dividendYield": 2.15,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 134
+        },
+        {
+          "timestamp": 1782973740177,
+          "price": 134.52
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 134.05
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 133.91
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 134.39
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 133.7
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 133.06
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 133.5
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 132.72
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 132.35
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 132.94
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 132.3
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 132.13
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 132.83
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 132.42
+        },
+        {
+          "timestamp": 1782973782343,
+          "price": 132.81
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 133.55
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 133.33
+        },
+        {
+          "timestamp": 1782973791354,
+          "price": 132.87
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 132.33
+        },
+        {
+          "timestamp": 1782973797380,
+          "price": 132.52
+        }
+      ]
+    },
+    {
+      "id": "S43",
+      "ticker": "SGB1",
+      "name": "Sovereign Gold Bond",
+      "sector": "Government Bond",
+      "type": "Bond",
+      "basePrice": 138,
+      "currentPrice": 140.67,
+      "totalUnits": 104,
+      "availableUnits": 104,
+      "volatility": 0.39,
+      "riskRating": "Low",
+      "growthRating": 4,
+      "status": "Active",
+      "description": "Leading enterprise specializing in government bond services, catering to regional and global market segments.",
+      "ceoName": "Rohan Gupta",
+      "foundedYear": 2002,
+      "headquarters": "Hyderabad",
+      "logoInitials": "SG",
+      "dividendYield": 4.83,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 138
+        },
+        {
+          "timestamp": 1782973740177,
+          "price": 138.13
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 138.34
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 138.3
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 138.65
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 138.77
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 139.01
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 139.17
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 139.53
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 139.54
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 139.91
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 139.69
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 139.91
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 140.09
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 139.76
+        },
+        {
+          "timestamp": 1782973782343,
+          "price": 140.04
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 140.47
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 140.43
+        },
+        {
+          "timestamp": 1782973791354,
+          "price": 140.7
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 140.39
+        },
+        {
+          "timestamp": 1782973797380,
+          "price": 140.67
+        }
+      ]
+    },
+    {
+      "id": "S44",
+      "ticker": "PARM",
+      "name": "Param AI Processing",
+      "sector": "AI",
+      "type": "Stock",
+      "basePrice": 126,
+      "currentPrice": 128.74,
+      "totalUnits": 198,
+      "availableUnits": 198,
+      "volatility": 0.94,
+      "riskRating": "High",
+      "growthRating": 1,
+      "status": "Active",
+      "description": "Leading enterprise specializing in ai services, catering to regional and global market segments.",
+      "ceoName": "Vikram Sharma",
+      "foundedYear": 2008,
+      "headquarters": "Bengaluru",
+      "logoInitials": "PA",
+      "dividendYield": 4.89,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 126
+        },
+        {
+          "timestamp": 1782973740177,
+          "price": 125.91
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 125.29
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 125.69
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 125.34
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 125.55
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 125.29
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 125.54
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 125.5
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 126.39
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 126.84
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 126.92
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 126.54
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 125.64
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 126.39
+        },
+        {
+          "timestamp": 1782973782343,
+          "price": 126.51
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 126.86
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 126.8
+        },
+        {
+          "timestamp": 1782973791354,
+          "price": 127.7
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 127.91
+        },
+        {
+          "timestamp": 1782973797380,
+          "price": 128.74
+        }
+      ]
+    },
+    {
+      "id": "S45",
+      "ticker": "INNT",
+      "name": "Innovate Tech Corp",
+      "sector": "Technology",
+      "type": "Stock",
+      "basePrice": 217,
+      "currentPrice": 215.86,
+      "totalUnits": 169,
+      "availableUnits": 169,
+      "volatility": 0.38,
+      "riskRating": "Low",
+      "growthRating": 4,
+      "status": "Active",
+      "description": "Leading enterprise specializing in technology services, catering to regional and global market segments.",
+      "ceoName": "Rahul Joshi",
+      "foundedYear": 2016,
+      "headquarters": "Ahmedabad",
+      "logoInitials": "IN",
+      "dividendYield": 3.56,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 217
+        },
+        {
+          "timestamp": 1782973740177,
+          "price": 217.12
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 216.67
+        },
+        {
+          "timestamp": 1782973746196,
+          "price": 216.46
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 216.05
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 216.51
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 215.99
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 215.86
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 216.47
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 216.97
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 216.66
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 216.57
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 216.4
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 215.79
+        },
+        {
+          "timestamp": 1782973779331,
+          "price": 216.43
+        },
+        {
+          "timestamp": 1782973782343,
+          "price": 215.82
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 215.61
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 215.78
+        },
+        {
+          "timestamp": 1782973791354,
+          "price": 215.87
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 215.53
+        },
+        {
+          "timestamp": 1782973797380,
+          "price": 215.86
+        }
+      ]
+    },
+    {
+      "id": "S46",
+      "ticker": "PIRW",
+      "name": "Piramal Wellness Group",
+      "sector": "Healthcare",
+      "type": "Stock",
+      "basePrice": 451,
+      "currentPrice": 520.83,
+      "totalUnits": 129,
+      "availableUnits": 96,
+      "volatility": 0.59,
+      "riskRating": "Medium",
+      "growthRating": 2,
+      "status": "Active",
+      "description": "Leading enterprise specializing in healthcare services, catering to regional and global market segments.",
+      "ceoName": "Neha Verma",
+      "foundedYear": 2007,
+      "headquarters": "New Delhi",
+      "logoInitials": "PI",
+      "dividendYield": 4.03,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 451
+        },
+        {
+          "timestamp": 1782973739000,
+          "price": 471.63
+        },
+        {
+          "timestamp": 1782973740177,
+          "price": 469.87
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 471.8
+        },
+        {
+          "timestamp": 1782973746197,
+          "price": 472
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 473.66
+        },
+        {
+          "timestamp": 1782973751922,
+          "price": 523.49
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 521.47
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 522.78
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 521.36
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 520.33
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 519.63
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 519.84
+        },
+        {
+          "timestamp": 1782973770306,
+          "price": 522.22
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 522.15
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 521.07
+        },
+        {
+          "timestamp": 1782973779332,
+          "price": 521.28
+        },
+        {
+          "timestamp": 1782973782343,
+          "price": 521.9
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 520.3
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 519.72
+        },
+        {
+          "timestamp": 1782973791354,
+          "price": 519.01
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 519.02
+        },
+        {
+          "timestamp": 1782973797380,
+          "price": 520.83
+        }
+      ]
+    },
+    {
+      "id": "S47",
+      "ticker": "SGFU",
+      "name": "Sterling Green Fuels",
+      "sector": "Renewable Energy",
+      "type": "Stock",
+      "basePrice": 397,
+      "currentPrice": 401.11,
+      "totalUnits": 153,
+      "availableUnits": 153,
+      "volatility": 0.9,
+      "riskRating": "High",
+      "growthRating": 2,
+      "status": "Active",
+      "description": "Leading enterprise specializing in renewable energy services, catering to regional and global market segments.",
+      "ceoName": "Anil Patel",
+      "foundedYear": 2011,
+      "headquarters": "New Delhi",
+      "logoInitials": "SG",
+      "dividendYield": 4.06,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 397
+        },
+        {
+          "timestamp": 1782973740177,
+          "price": 399.12
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 397.64
+        },
+        {
+          "timestamp": 1782973746197,
+          "price": 394.94
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 397.31
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 397.38
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 398.45
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 396.41
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 394.26
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 396
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 397.68
+        },
+        {
+          "timestamp": 1782973770307,
+          "price": 400.05
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 401.66
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 402.65
+        },
+        {
+          "timestamp": 1782973779332,
+          "price": 400.38
+        },
+        {
+          "timestamp": 1782973782343,
+          "price": 400.69
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 403
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 402.71
+        },
+        {
+          "timestamp": 1782973791354,
+          "price": 402.16
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 399.94
+        },
+        {
+          "timestamp": 1782973797380,
+          "price": 401.11
+        }
+      ]
+    },
+    {
+      "id": "S48",
+      "ticker": "LTHE",
+      "name": "L&T Heavy Engineering",
+      "sector": "Manufacturing",
+      "type": "Stock",
+      "basePrice": 224,
+      "currentPrice": 222.51,
+      "totalUnits": 86,
+      "availableUnits": 86,
+      "volatility": 0.4,
+      "riskRating": "Medium",
+      "growthRating": 3,
+      "status": "Active",
+      "description": "Leading enterprise specializing in manufacturing services, catering to regional and global market segments.",
+      "ceoName": "Rohan Reddy",
+      "foundedYear": 2003,
+      "headquarters": "Pune",
+      "logoInitials": "LT",
+      "dividendYield": 3.38,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 224
+        },
+        {
+          "timestamp": 1782973740177,
+          "price": 223.32
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 222.9
+        },
+        {
+          "timestamp": 1782973746197,
+          "price": 223.58
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 224.03
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 223.83
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 223.46
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 223.86
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 223.92
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 223.8
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 223.48
+        },
+        {
+          "timestamp": 1782973770307,
+          "price": 223.64
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 223.81
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 223.63
+        },
+        {
+          "timestamp": 1782973779332,
+          "price": 223.38
+        },
+        {
+          "timestamp": 1782973782343,
+          "price": 222.96
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 222.77
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 222.47
+        },
+        {
+          "timestamp": 1782973791354,
+          "price": 222.5
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 222.37
+        },
+        {
+          "timestamp": 1782973797380,
+          "price": 222.51
+        }
+      ]
+    },
+    {
+      "id": "S49",
+      "ticker": "IPRE",
+      "name": "ICICI Prudential REIT",
+      "sector": "REIT",
+      "type": "REIT",
+      "basePrice": 121,
+      "currentPrice": 123.09,
+      "totalUnits": 163,
+      "availableUnits": 163,
+      "volatility": 0.72,
+      "riskRating": "High",
+      "growthRating": 5,
+      "status": "Active",
+      "description": "Leading enterprise specializing in reit services, catering to regional and global market segments.",
+      "ceoName": "Rajesh Sen",
+      "foundedYear": 2023,
+      "headquarters": "Bengaluru",
+      "logoInitials": "IP",
+      "dividendYield": 2.42,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 121
+        },
+        {
+          "timestamp": 1782973740177,
+          "price": 120.77
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 120.27
+        },
+        {
+          "timestamp": 1782973746197,
+          "price": 120.93
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 121.43
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 121.52
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 120.87
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 120.37
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 120.2
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 120.37
+        },
+        {
+          "timestamp": 1782973767298,
+          "price": 120.9
+        },
+        {
+          "timestamp": 1782973770307,
+          "price": 121.22
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 121.72
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 122.23
+        },
+        {
+          "timestamp": 1782973779332,
+          "price": 122.24
+        },
+        {
+          "timestamp": 1782973782343,
+          "price": 122.18
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 122.32
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 122.38
+        },
+        {
+          "timestamp": 1782973791354,
+          "price": 123.02
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 123.11
+        },
+        {
+          "timestamp": 1782973797380,
+          "price": 123.09
+        }
+      ]
+    },
+    {
+      "id": "S50",
+      "ticker": "SBIE",
+      "name": "SBI Equity Index",
+      "sector": "Mutual Fund",
+      "type": "MutualFund",
+      "basePrice": 176,
+      "currentPrice": 176.68,
+      "totalUnits": 163,
+      "availableUnits": 163,
+      "volatility": 0.52,
+      "riskRating": "Medium",
+      "growthRating": 4,
+      "status": "Active",
+      "description": "Leading enterprise specializing in mutual fund services, catering to regional and global market segments.",
+      "ceoName": "Neha Singh",
+      "foundedYear": 1993,
+      "headquarters": "Kolkata",
+      "logoInitials": "SB",
+      "dividendYield": 2.08,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 176
+        },
+        {
+          "timestamp": 1782973740177,
+          "price": 175.77
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 175.95
+        },
+        {
+          "timestamp": 1782973746197,
+          "price": 175.26
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 175.69
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 176
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 176.3
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 176.81
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 177.41
+        },
+        {
+          "timestamp": 1782973767299,
+          "price": 177.17
+        },
+        {
+          "timestamp": 1782973770307,
+          "price": 176.84
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 176.62
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 177
+        },
+        {
+          "timestamp": 1782973779332,
+          "price": 176.54
+        },
+        {
+          "timestamp": 1782973782343,
+          "price": 176.43
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 176.94
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 176.45
+        },
+        {
+          "timestamp": 1782973791354,
+          "price": 176.86
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 176.15
+        },
+        {
+          "timestamp": 1782973797380,
+          "price": 176.68
+        }
+      ]
+    },
+    {
+      "id": "S51",
+      "ticker": "KPTL",
+      "name": "Kochi Port Logistics",
+      "sector": "Manufacturing",
+      "type": "Stock",
+      "basePrice": 332,
+      "currentPrice": 327.66,
+      "totalUnits": 119,
+      "availableUnits": 119,
+      "volatility": 0.87,
+      "riskRating": "High",
+      "growthRating": 5,
+      "status": "Active",
+      "description": "Leading enterprise specializing in manufacturing services, catering to regional and global market segments.",
+      "ceoName": "Ananya Sen",
+      "foundedYear": 2003,
+      "headquarters": "Hyderabad",
+      "logoInitials": "KP",
+      "dividendYield": 4.01,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 332
+        },
+        {
+          "timestamp": 1782973740177,
+          "price": 330.61
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 329.33
+        },
+        {
+          "timestamp": 1782973746197,
+          "price": 327.36
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 328.77
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 327.58
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 329.81
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 328.57
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 329.01
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 326.97
+        },
+        {
+          "timestamp": 1782973767299,
+          "price": 327.75
+        },
+        {
+          "timestamp": 1782973770307,
+          "price": 328.79
+        },
+        {
+          "timestamp": 1782973773316,
+          "price": 327.74
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 326.66
+        },
+        {
+          "timestamp": 1782973779332,
+          "price": 326.62
+        },
+        {
+          "timestamp": 1782973782343,
+          "price": 326.68
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 325.28
+        },
+        {
+          "timestamp": 1782973788351,
+          "price": 327.52
+        },
+        {
+          "timestamp": 1782973791354,
+          "price": 325.6
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 326.68
+        },
+        {
+          "timestamp": 1782973797380,
+          "price": 327.66
+        }
+      ]
+    },
+    {
+      "id": "S52",
+      "ticker": "DPTC",
+      "name": "Delhi Power Transmission",
+      "sector": "Energy",
+      "type": "Stock",
+      "basePrice": 340,
+      "currentPrice": 338.41,
+      "totalUnits": 156,
+      "availableUnits": 156,
+      "volatility": 0.3,
+      "riskRating": "Low",
+      "growthRating": 2,
+      "status": "Active",
+      "description": "Leading enterprise specializing in energy services, catering to regional and global market segments.",
+      "ceoName": "Vikram Verma",
+      "foundedYear": 2020,
+      "headquarters": "Kolkata",
+      "logoInitials": "DP",
+      "dividendYield": 3.85,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 340
+        },
+        {
+          "timestamp": 1782973740177,
+          "price": 339.39
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 340.09
+        },
+        {
+          "timestamp": 1782973746197,
+          "price": 339.64
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 340.37
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 340.58
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 341.13
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 341.05
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 340.25
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 339.65
+        },
+        {
+          "timestamp": 1782973767299,
+          "price": 339.67
+        },
+        {
+          "timestamp": 1782973770307,
+          "price": 338.91
+        },
+        {
+          "timestamp": 1782973773317,
+          "price": 338.69
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 338.34
+        },
+        {
+          "timestamp": 1782973779332,
+          "price": 338.65
+        },
+        {
+          "timestamp": 1782973782343,
+          "price": 339.39
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 339.91
+        },
+        {
+          "timestamp": 1782973788352,
+          "price": 340
+        },
+        {
+          "timestamp": 1782973791354,
+          "price": 339.58
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 339.07
+        },
+        {
+          "timestamp": 1782973797380,
+          "price": 338.41
+        }
+      ]
+    },
+    {
+      "id": "S53",
+      "ticker": "PAGF",
+      "name": "Punjab Agro Foods",
+      "sector": "Retail",
+      "type": "Stock",
+      "basePrice": 449,
+      "currentPrice": 455.16,
+      "totalUnits": 78,
+      "availableUnits": 78,
+      "volatility": 0.95,
+      "riskRating": "High",
+      "growthRating": 1,
+      "status": "Active",
+      "description": "Leading enterprise specializing in retail services, catering to regional and global market segments.",
+      "ceoName": "Priya Patel",
+      "foundedYear": 1998,
+      "headquarters": "Noida",
+      "logoInitials": "PA",
+      "dividendYield": 4.32,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 449
+        },
+        {
+          "timestamp": 1782973740177,
+          "price": 445.91
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 448.13
+        },
+        {
+          "timestamp": 1782973746197,
+          "price": 450.11
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 452.37
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 454.42
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 452.68
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 456.03
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 454.48
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 452.53
+        },
+        {
+          "timestamp": 1782973767299,
+          "price": 454.93
+        },
+        {
+          "timestamp": 1782973770307,
+          "price": 456.66
+        },
+        {
+          "timestamp": 1782973773317,
+          "price": 455.41
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 457.89
+        },
+        {
+          "timestamp": 1782973779332,
+          "price": 454.65
+        },
+        {
+          "timestamp": 1782973782343,
+          "price": 453.91
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 453.92
+        },
+        {
+          "timestamp": 1782973788352,
+          "price": 457.3
+        },
+        {
+          "timestamp": 1782973791354,
+          "price": 454.92
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 452.41
+        },
+        {
+          "timestamp": 1782973797380,
+          "price": 455.16
+        }
+      ]
+    },
+    {
+      "id": "S54",
+      "ticker": "ODMC",
+      "name": "Odisha Mining Corp",
+      "sector": "Manufacturing",
+      "type": "Stock",
+      "basePrice": 261,
+      "currentPrice": 258.06,
+      "totalUnits": 56,
+      "availableUnits": 56,
+      "volatility": 0.81,
+      "riskRating": "High",
+      "growthRating": 3,
+      "status": "Active",
+      "description": "Leading enterprise specializing in manufacturing services, catering to regional and global market segments.",
+      "ceoName": "Aarav Patel",
+      "foundedYear": 1991,
+      "headquarters": "Kolkata",
+      "logoInitials": "OD",
+      "dividendYield": 3.8,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 261
+        },
+        {
+          "timestamp": 1782973740177,
+          "price": 259.4
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 260.67
+        },
+        {
+          "timestamp": 1782973746197,
+          "price": 260.36
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 258.95
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 257.99
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 257.49
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 256.11
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 255.6
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 256.24
+        },
+        {
+          "timestamp": 1782973767299,
+          "price": 257.85
+        },
+        {
+          "timestamp": 1782973770307,
+          "price": 259.49
+        },
+        {
+          "timestamp": 1782973773317,
+          "price": 258.73
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 258.29
+        },
+        {
+          "timestamp": 1782973779332,
+          "price": 257.19
+        },
+        {
+          "timestamp": 1782973782343,
+          "price": 257.17
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 258.43
+        },
+        {
+          "timestamp": 1782973788352,
+          "price": 257.08
+        },
+        {
+          "timestamp": 1782973791354,
+          "price": 257.29
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 257.92
+        },
+        {
+          "timestamp": 1782973797380,
+          "price": 258.06
+        }
+      ]
+    },
+    {
+      "id": "S55",
+      "ticker": "HMSP",
+      "name": "Himalayan Mineral Springs",
+      "sector": "Healthcare",
+      "type": "Stock",
+      "basePrice": 470,
+      "currentPrice": 465.66,
+      "totalUnits": 159,
+      "availableUnits": 159,
+      "volatility": 0.37,
+      "riskRating": "Low",
+      "growthRating": 5,
+      "status": "Active",
+      "description": "Leading enterprise specializing in healthcare services, catering to regional and global market segments.",
+      "ceoName": "Priya Verma",
+      "foundedYear": 1994,
+      "headquarters": "Hyderabad",
+      "logoInitials": "HM",
+      "dividendYield": 1.39,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 470
+        },
+        {
+          "timestamp": 1782973740177,
+          "price": 469.17
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 468.54
+        },
+        {
+          "timestamp": 1782973746197,
+          "price": 467.72
+        },
+        {
+          "timestamp": 1782973749209,
+          "price": 467.89
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 466.56
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 467.59
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 467.47
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 468.85
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 467.73
+        },
+        {
+          "timestamp": 1782973767299,
+          "price": 467.43
+        },
+        {
+          "timestamp": 1782973770307,
+          "price": 467.04
+        },
+        {
+          "timestamp": 1782973773317,
+          "price": 466.08
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 465.49
+        },
+        {
+          "timestamp": 1782973779332,
+          "price": 466.28
+        },
+        {
+          "timestamp": 1782973782343,
+          "price": 467.37
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 466.36
+        },
+        {
+          "timestamp": 1782973788352,
+          "price": 465.21
+        },
+        {
+          "timestamp": 1782973791354,
+          "price": 465.39
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 464.92
+        },
+        {
+          "timestamp": 1782973797380,
+          "price": 465.66
+        }
+      ]
+    },
+    {
+      "id": "S56",
+      "ticker": "GNTL",
+      "name": "Ganges Tech Labs",
+      "sector": "Technology",
+      "type": "Stock",
+      "basePrice": 219,
+      "currentPrice": 218.47,
+      "totalUnits": 106,
+      "availableUnits": 106,
+      "volatility": 0.42,
+      "riskRating": "Medium",
+      "growthRating": 1,
+      "status": "Active",
+      "description": "Leading enterprise specializing in technology services, catering to regional and global market segments.",
+      "ceoName": "Pooja Nair",
+      "foundedYear": 2015,
+      "headquarters": "Noida",
+      "logoInitials": "GN",
+      "dividendYield": 2.27,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 219
+        },
+        {
+          "timestamp": 1782973740177,
+          "price": 219.53
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 218.95
+        },
+        {
+          "timestamp": 1782973746197,
+          "price": 218.32
+        },
+        {
+          "timestamp": 1782973749210,
+          "price": 218.43
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 218.51
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 219.1
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 218.9
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 218.76
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 218.67
+        },
+        {
+          "timestamp": 1782973767299,
+          "price": 218.8
+        },
+        {
+          "timestamp": 1782973770307,
+          "price": 218.74
+        },
+        {
+          "timestamp": 1782973773317,
+          "price": 218.96
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 218.73
+        },
+        {
+          "timestamp": 1782973779332,
+          "price": 218.09
+        },
+        {
+          "timestamp": 1782973782343,
+          "price": 217.79
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 218.35
+        },
+        {
+          "timestamp": 1782973788352,
+          "price": 218.89
+        },
+        {
+          "timestamp": 1782973791354,
+          "price": 218.78
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 218.46
+        },
+        {
+          "timestamp": 1782973797380,
+          "price": 218.47
+        }
+      ]
+    },
+    {
+      "id": "S57",
+      "ticker": "KSFC",
+      "name": "Kashmiri Saffron Co",
+      "sector": "Retail",
+      "type": "Stock",
+      "basePrice": 276,
+      "currentPrice": 289.28,
+      "totalUnits": 123,
+      "availableUnits": 123,
+      "volatility": 0.86,
+      "riskRating": "High",
+      "growthRating": 3,
+      "status": "Active",
+      "description": "Leading enterprise specializing in retail services, catering to regional and global market segments.",
+      "ceoName": "Amit Sen",
+      "foundedYear": 1995,
+      "headquarters": "Gurugram",
+      "logoInitials": "KS",
+      "dividendYield": 2.94,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 276
+        },
+        {
+          "timestamp": 1782973740178,
+          "price": 277.19
+        },
+        {
+          "timestamp": 1782973743182,
+          "price": 277.85
+        },
+        {
+          "timestamp": 1782973746197,
+          "price": 276.72
+        },
+        {
+          "timestamp": 1782973749210,
+          "price": 277.73
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 278.6
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 280.47
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 281.89
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 282.07
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 283.37
+        },
+        {
+          "timestamp": 1782973767299,
+          "price": 283.57
+        },
+        {
+          "timestamp": 1782973770307,
+          "price": 282.9
+        },
+        {
+          "timestamp": 1782973773317,
+          "price": 281.05
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 282.43
+        },
+        {
+          "timestamp": 1782973779332,
+          "price": 283.75
+        },
+        {
+          "timestamp": 1782973782343,
+          "price": 285.07
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 285.85
+        },
+        {
+          "timestamp": 1782973788352,
+          "price": 286.96
+        },
+        {
+          "timestamp": 1782973791354,
+          "price": 288.27
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 290.21
+        },
+        {
+          "timestamp": 1782973797380,
+          "price": 289.28
+        }
+      ]
+    },
+    {
+      "id": "S58",
+      "ticker": "GOHL",
+      "name": "Goa Hotels & Leisure",
+      "sector": "REIT",
+      "type": "REIT",
+      "basePrice": 396,
+      "currentPrice": 391.71,
+      "totalUnits": 146,
+      "availableUnits": 146,
+      "volatility": 0.79,
+      "riskRating": "High",
+      "growthRating": 5,
+      "status": "Active",
+      "description": "Leading enterprise specializing in reit services, catering to regional and global market segments.",
+      "ceoName": "Anil Banerjee",
+      "foundedYear": 2020,
+      "headquarters": "Noida",
+      "logoInitials": "GO",
+      "dividendYield": 4.44,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 396
+        },
+        {
+          "timestamp": 1782973740178,
+          "price": 394.4
+        },
+        {
+          "timestamp": 1782973743183,
+          "price": 396.64
+        },
+        {
+          "timestamp": 1782973746197,
+          "price": 394.65
+        },
+        {
+          "timestamp": 1782973749210,
+          "price": 394.23
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 392.5
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 392.74
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 393.51
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 391.82
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 394.34
+        },
+        {
+          "timestamp": 1782973767299,
+          "price": 396.23
+        },
+        {
+          "timestamp": 1782973770307,
+          "price": 396.36
+        },
+        {
+          "timestamp": 1782973773317,
+          "price": 394.9
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 394.79
+        },
+        {
+          "timestamp": 1782973779332,
+          "price": 395.36
+        },
+        {
+          "timestamp": 1782973782343,
+          "price": 396.25
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 394.09
+        },
+        {
+          "timestamp": 1782973788352,
+          "price": 393.19
+        },
+        {
+          "timestamp": 1782973791354,
+          "price": 392.49
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 391.52
+        },
+        {
+          "timestamp": 1782973797380,
+          "price": 391.71
+        }
+      ]
+    },
+    {
+      "id": "S59",
+      "ticker": "RSPF",
+      "name": "Rajasthan Solar Parks",
+      "sector": "Renewable Energy",
+      "type": "Stock",
+      "basePrice": 420,
+      "currentPrice": 417.84,
+      "totalUnits": 133,
+      "availableUnits": 133,
+      "volatility": 0.52,
+      "riskRating": "Medium",
+      "growthRating": 4,
+      "status": "Active",
+      "description": "Leading enterprise specializing in renewable energy services, catering to regional and global market segments.",
+      "ceoName": "Aarav Singh",
+      "foundedYear": 2024,
+      "headquarters": "Gurugram",
+      "logoInitials": "RS",
+      "dividendYield": 4.49,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 420
+        },
+        {
+          "timestamp": 1782973740178,
+          "price": 420.21
+        },
+        {
+          "timestamp": 1782973743183,
+          "price": 420.84
+        },
+        {
+          "timestamp": 1782973746197,
+          "price": 422.4
+        },
+        {
+          "timestamp": 1782973749210,
+          "price": 422.19
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 421.88
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 422.4
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 420.82
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 419.25
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 417.97
+        },
+        {
+          "timestamp": 1782973767299,
+          "price": 419.28
+        },
+        {
+          "timestamp": 1782973770307,
+          "price": 420.12
+        },
+        {
+          "timestamp": 1782973773317,
+          "price": 421.03
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 420.06
+        },
+        {
+          "timestamp": 1782973779332,
+          "price": 418.64
+        },
+        {
+          "timestamp": 1782973782343,
+          "price": 417.68
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 417.35
+        },
+        {
+          "timestamp": 1782973788352,
+          "price": 416.73
+        },
+        {
+          "timestamp": 1782973791354,
+          "price": 417.85
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 419.43
+        },
+        {
+          "timestamp": 1782973797380,
+          "price": 417.84
+        }
+      ]
+    },
+    {
+      "id": "S60",
+      "ticker": "SOV3",
+      "name": "Sovereign Treasury III",
+      "sector": "Government Bond",
+      "type": "Bond",
+      "basePrice": 366,
+      "currentPrice": 364.11,
+      "totalUnits": 72,
+      "availableUnits": 72,
+      "volatility": 0.38,
+      "riskRating": "Low",
+      "growthRating": 3,
+      "status": "Active",
+      "description": "Leading enterprise specializing in government bond services, catering to regional and global market segments.",
+      "ceoName": "Rajesh Reddy",
+      "foundedYear": 2006,
+      "headquarters": "Hyderabad",
+      "logoInitials": "SO",
+      "dividendYield": 4.15,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 366
+        },
+        {
+          "timestamp": 1782973740178,
+          "price": 367.01
+        },
+        {
+          "timestamp": 1782973743183,
+          "price": 368.13
+        },
+        {
+          "timestamp": 1782973746197,
+          "price": 367.26
+        },
+        {
+          "timestamp": 1782973749210,
+          "price": 367.8
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 367.12
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 367.63
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 366.6
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 366.33
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 366.66
+        },
+        {
+          "timestamp": 1782973767299,
+          "price": 367.69
+        },
+        {
+          "timestamp": 1782973770307,
+          "price": 368.57
+        },
+        {
+          "timestamp": 1782973773317,
+          "price": 367.77
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 367.32
+        },
+        {
+          "timestamp": 1782973779332,
+          "price": 367.13
+        },
+        {
+          "timestamp": 1782973782343,
+          "price": 367.11
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 366.04
+        },
+        {
+          "timestamp": 1782973788352,
+          "price": 365.19
+        },
+        {
+          "timestamp": 1782973791354,
+          "price": 364.52
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 364.45
+        },
+        {
+          "timestamp": 1782973797380,
+          "price": 364.11
+        }
+      ]
+    },
+    {
+      "id": "S61",
+      "ticker": "TSBY",
+      "name": "Tata Steel Bond Yield",
+      "sector": "Corporate Bond",
+      "type": "Bond",
+      "basePrice": 141,
+      "currentPrice": 136.72,
+      "totalUnits": 135,
+      "availableUnits": 135,
+      "volatility": 0.75,
+      "riskRating": "High",
+      "growthRating": 3,
+      "status": "Active",
+      "description": "Leading enterprise specializing in corporate bond services, catering to regional and global market segments.",
+      "ceoName": "Vikram Reddy",
+      "foundedYear": 1991,
+      "headquarters": "Gurugram",
+      "logoInitials": "TS",
+      "dividendYield": 4.74,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 141
+        },
+        {
+          "timestamp": 1782973740178,
+          "price": 141.3
+        },
+        {
+          "timestamp": 1782973743183,
+          "price": 140.8
+        },
+        {
+          "timestamp": 1782973746197,
+          "price": 140.12
+        },
+        {
+          "timestamp": 1782973749210,
+          "price": 139.49
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 139.14
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 139.02
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 139.09
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 138.3
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 139.01
+        },
+        {
+          "timestamp": 1782973767299,
+          "price": 139.43
+        },
+        {
+          "timestamp": 1782973770307,
+          "price": 139.03
+        },
+        {
+          "timestamp": 1782973773317,
+          "price": 138.6
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 138.16
+        },
+        {
+          "timestamp": 1782973779332,
+          "price": 137.92
+        },
+        {
+          "timestamp": 1782973782343,
+          "price": 137.99
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 137.69
+        },
+        {
+          "timestamp": 1782973788352,
+          "price": 137.49
+        },
+        {
+          "timestamp": 1782973791354,
+          "price": 136.91
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 136.92
+        },
+        {
+          "timestamp": 1782973797380,
+          "price": 136.72
+        }
+      ]
+    },
+    {
+      "id": "S62",
+      "ticker": "ITIF",
+      "name": "ICICI Tech Index Fund",
+      "sector": "ETF",
+      "type": "ETF",
+      "basePrice": 173,
+      "currentPrice": 180.07,
+      "totalUnits": 109,
+      "availableUnits": 109,
+      "volatility": 1,
+      "riskRating": "High",
+      "growthRating": 3,
+      "status": "Active",
+      "description": "Leading enterprise specializing in etf services, catering to regional and global market segments.",
+      "ceoName": "Vikram Sharma",
+      "foundedYear": 2014,
+      "headquarters": "Bengaluru",
+      "logoInitials": "IT",
+      "dividendYield": 2.25,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 173
+        },
+        {
+          "timestamp": 1782973740178,
+          "price": 173.54
+        },
+        {
+          "timestamp": 1782973743183,
+          "price": 172.2
+        },
+        {
+          "timestamp": 1782973746197,
+          "price": 171.62
+        },
+        {
+          "timestamp": 1782973749210,
+          "price": 172.24
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 172.93
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 171.99
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 171.76
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 172.3
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 172.68
+        },
+        {
+          "timestamp": 1782973767299,
+          "price": 173.99
+        },
+        {
+          "timestamp": 1782973770307,
+          "price": 175.06
+        },
+        {
+          "timestamp": 1782973773317,
+          "price": 176.3
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 176.99
+        },
+        {
+          "timestamp": 1782973779332,
+          "price": 177.83
+        },
+        {
+          "timestamp": 1782973782343,
+          "price": 178.46
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 179.03
+        },
+        {
+          "timestamp": 1782973788352,
+          "price": 179.47
+        },
+        {
+          "timestamp": 1782973791354,
+          "price": 179.57
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 179.45
+        },
+        {
+          "timestamp": 1782973797380,
+          "price": 180.07
+        }
+      ]
+    },
+    {
+      "id": "S63",
+      "ticker": "SHMF",
+      "name": "SBI Healthcare Mutual",
+      "sector": "Mutual Fund",
+      "type": "MutualFund",
+      "basePrice": 282,
+      "currentPrice": 283.24,
+      "totalUnits": 150,
+      "availableUnits": 150,
+      "volatility": 0.59,
+      "riskRating": "Medium",
+      "growthRating": 4,
+      "status": "Active",
+      "description": "Leading enterprise specializing in mutual fund services, catering to regional and global market segments.",
+      "ceoName": "Anil Nair",
+      "foundedYear": 2004,
+      "headquarters": "Bengaluru",
+      "logoInitials": "SH",
+      "dividendYield": 3.67,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 282
+        },
+        {
+          "timestamp": 1782973740178,
+          "price": 282.8
+        },
+        {
+          "timestamp": 1782973743183,
+          "price": 283.95
+        },
+        {
+          "timestamp": 1782973746197,
+          "price": 283.44
+        },
+        {
+          "timestamp": 1782973749210,
+          "price": 283.99
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 282.95
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 283.73
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 283.41
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 282.92
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 283.01
+        },
+        {
+          "timestamp": 1782973767299,
+          "price": 283.24
+        },
+        {
+          "timestamp": 1782973770307,
+          "price": 282.33
+        },
+        {
+          "timestamp": 1782973773317,
+          "price": 282.46
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 283.11
+        },
+        {
+          "timestamp": 1782973779332,
+          "price": 283.66
+        },
+        {
+          "timestamp": 1782973782343,
+          "price": 284.04
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 282.88
+        },
+        {
+          "timestamp": 1782973788352,
+          "price": 283.41
+        },
+        {
+          "timestamp": 1782973791354,
+          "price": 282.96
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 282.84
+        },
+        {
+          "timestamp": 1782973797380,
+          "price": 283.24
+        }
+      ]
+    },
+    {
+      "id": "S64",
+      "ticker": "GFIN",
+      "name": "Giga Fiber Infra",
+      "sector": "Telecom",
+      "type": "Stock",
+      "basePrice": 396,
+      "currentPrice": 394.83,
+      "totalUnits": 54,
+      "availableUnits": 54,
+      "volatility": 0.58,
+      "riskRating": "Medium",
+      "growthRating": 3,
+      "status": "Active",
+      "description": "Leading enterprise specializing in telecom services, catering to regional and global market segments.",
+      "ceoName": "Ananya Sen",
+      "foundedYear": 1999,
+      "headquarters": "Kolkata",
+      "logoInitials": "GF",
+      "dividendYield": 1.62,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 396
+        },
+        {
+          "timestamp": 1782973740178,
+          "price": 396.55
+        },
+        {
+          "timestamp": 1782973743183,
+          "price": 397.37
+        },
+        {
+          "timestamp": 1782973746197,
+          "price": 397.62
+        },
+        {
+          "timestamp": 1782973749210,
+          "price": 399.08
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 397.6
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 395.81
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 394.86
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 395.34
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 396.13
+        },
+        {
+          "timestamp": 1782973767299,
+          "price": 396.33
+        },
+        {
+          "timestamp": 1782973770307,
+          "price": 397.18
+        },
+        {
+          "timestamp": 1782973773317,
+          "price": 396.85
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 397.34
+        },
+        {
+          "timestamp": 1782973779332,
+          "price": 397.48
+        },
+        {
+          "timestamp": 1782973782343,
+          "price": 396.22
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 395.86
+        },
+        {
+          "timestamp": 1782973788352,
+          "price": 395.83
+        },
+        {
+          "timestamp": 1782973791354,
+          "price": 394.79
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 394.05
+        },
+        {
+          "timestamp": 1782973797380,
+          "price": 394.83
+        }
+      ]
+    },
+    {
+      "id": "S65",
+      "ticker": "AAIV",
+      "name": "Apex AI Ventures",
+      "sector": "AI",
+      "type": "Stock",
+      "basePrice": 135,
+      "currentPrice": 138.68,
+      "totalUnits": 177,
+      "availableUnits": 177,
+      "volatility": 0.79,
+      "riskRating": "High",
+      "growthRating": 5,
+      "status": "Active",
+      "description": "Leading enterprise specializing in ai services, catering to regional and global market segments.",
+      "ceoName": "Ananya Joshi",
+      "foundedYear": 2012,
+      "headquarters": "Mumbai",
+      "logoInitials": "AA",
+      "dividendYield": 4.59,
+      "priceHistory": [
+        {
+          "timestamp": 1782973738927,
+          "price": 135
+        },
+        {
+          "timestamp": 1782973740178,
+          "price": 135.56
+        },
+        {
+          "timestamp": 1782973743183,
+          "price": 135.51
+        },
+        {
+          "timestamp": 1782973746197,
+          "price": 135.72
+        },
+        {
+          "timestamp": 1782973749210,
+          "price": 135.33
+        },
+        {
+          "timestamp": 1782973752223,
+          "price": 135.36
+        },
+        {
+          "timestamp": 1782973755227,
+          "price": 136.11
+        },
+        {
+          "timestamp": 1782973758228,
+          "price": 136.47
+        },
+        {
+          "timestamp": 1782973761239,
+          "price": 136.15
+        },
+        {
+          "timestamp": 1782973764285,
+          "price": 136.91
+        },
+        {
+          "timestamp": 1782973767299,
+          "price": 136.16
+        },
+        {
+          "timestamp": 1782973770307,
+          "price": 136.01
+        },
+        {
+          "timestamp": 1782973773317,
+          "price": 136.71
+        },
+        {
+          "timestamp": 1782973776323,
+          "price": 137.39
+        },
+        {
+          "timestamp": 1782973779332,
+          "price": 137.29
+        },
+        {
+          "timestamp": 1782973782343,
+          "price": 137.31
+        },
+        {
+          "timestamp": 1782973785343,
+          "price": 137.7
+        },
+        {
+          "timestamp": 1782973788352,
+          "price": 137.52
+        },
+        {
+          "timestamp": 1782973791354,
+          "price": 138.27
+        },
+        {
+          "timestamp": 1782973794369,
+          "price": 138.78
+        },
+        {
+          "timestamp": 1782973797380,
+          "price": 138.68
+        }
+      ]
+    }
+  ],
+  "teams": [
+    {
+      "id": "T01",
+      "teamCode": "T01",
+      "teamName": "Trader Elite 1",
+      "teamType": "Retail",
+      "cashBalance": 1000000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782973738927
+    },
+    {
+      "id": "T02",
+      "teamCode": "T02",
+      "teamName": "Trader Elite 2",
+      "teamType": "Retail",
+      "cashBalance": 989105.82,
+      "holdings": {
+        "S46": 23
+      },
+      "isActive": true,
+      "createdAt": 1782973738927
+    },
+    {
+      "id": "T03",
+      "teamCode": "T03",
+      "teamName": "Trader Elite 3",
+      "teamType": "Retail",
+      "cashBalance": 1000000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782973738927
+    },
+    {
+      "id": "T04",
+      "teamCode": "T04",
+      "teamName": "Trader Elite 4",
+      "teamType": "Retail",
+      "cashBalance": 1000000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782973738928
+    },
+    {
+      "id": "T05",
+      "teamCode": "T05",
+      "teamName": "Aura Trust 5",
+      "teamType": "MutualFund",
+      "cashBalance": 1000000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782973738928
+    },
+    {
+      "id": "T06",
+      "teamCode": "T06",
+      "teamName": "Titan Alpha 6",
+      "teamType": "HedgeFund",
+      "cashBalance": 1000000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782973738928
+    },
+    {
+      "id": "T07",
+      "teamCode": "T07",
+      "teamName": "Trader Elite 7",
+      "teamType": "Retail",
+      "cashBalance": 1000000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782973738928
+    },
+    {
+      "id": "T08",
+      "teamCode": "T08",
+      "teamName": "Trader Elite 8",
+      "teamType": "Retail",
+      "cashBalance": 1000000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782973738928
+    },
+    {
+      "id": "T09",
+      "teamCode": "T09",
+      "teamName": "Trader Elite 9",
+      "teamType": "Retail",
+      "cashBalance": 1000000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782973738928
+    },
+    {
+      "id": "T10",
+      "teamCode": "T10",
+      "teamName": "Aura Trust 10",
+      "teamType": "MutualFund",
+      "cashBalance": 997799.1,
+      "holdings": {
+        "S02": 13
+      },
+      "isActive": true,
+      "createdAt": 1782973738928
+    },
+    {
+      "id": "T11",
+      "teamCode": "T11",
+      "teamName": "Trader Elite 11",
+      "teamType": "Retail",
+      "cashBalance": 1000000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782973738928
+    },
+    {
+      "id": "T12",
+      "teamCode": "T12",
+      "teamName": "Titan Alpha 12",
+      "teamType": "HedgeFund",
+      "cashBalance": 1000000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782973738928
+    },
+    {
+      "id": "T13",
+      "teamCode": "T13",
+      "teamName": "Trader Elite 13",
+      "teamType": "Retail",
+      "cashBalance": 991190.64,
+      "holdings": {
+        "S46": 10,
+        "S19": 12
+      },
+      "isActive": true,
+      "createdAt": 1782973738928
+    },
+    {
+      "id": "T14",
+      "teamCode": "T14",
+      "teamName": "Trader Elite 14",
+      "teamType": "Retail",
+      "cashBalance": 1000000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782973738928
+    },
+    {
+      "id": "T15",
+      "teamCode": "T15",
+      "teamName": "Aura Trust 15",
+      "teamType": "MutualFund",
+      "cashBalance": 1000000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782973738928
+    },
+    {
+      "id": "T16",
+      "teamCode": "T16",
+      "teamName": "Trader Elite 16",
+      "teamType": "Retail",
+      "cashBalance": 997354.42,
+      "holdings": {
+        "S04": 7
+      },
+      "isActive": true,
+      "createdAt": 1782973738928
+    },
+    {
+      "id": "T17",
+      "teamCode": "T17",
+      "teamName": "Trader Elite 17",
+      "teamType": "Retail",
+      "cashBalance": 1000000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782973738928
+    },
+    {
+      "id": "T18",
+      "teamCode": "T18",
+      "teamName": "Titan Alpha 18",
+      "teamType": "HedgeFund",
+      "cashBalance": 1000000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782973738928
+    },
+    {
+      "id": "T19",
+      "teamCode": "T19",
+      "teamName": "Trader Elite 19",
+      "teamType": "Retail",
+      "cashBalance": 1000000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782973738928
+    },
+    {
+      "id": "T20",
+      "teamCode": "T20",
+      "teamName": "Aura Trust 20",
+      "teamType": "MutualFund",
+      "cashBalance": 1000000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782973738928
+    },
+    {
+      "id": "T21",
+      "teamCode": "T01",
+      "teamName": "Apex Capital",
+      "teamType": "Retail",
+      "cashBalance": 997620.56,
+      "holdings": {
+        "S36": 8
+      },
+      "isActive": true,
+      "createdAt": 1782973738937
+    },
+    {
+      "id": "T22",
+      "teamCode": "T02",
+      "teamName": "Beacon Traders",
+      "teamType": "Retail",
+      "cashBalance": 1000000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782973738942
+    },
+    {
+      "id": "T23",
+      "teamCode": "T03",
+      "teamName": "Citadel Wealth",
+      "teamType": "Retail",
+      "cashBalance": 1000000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782973738947
+    },
+    {
+      "id": "T24",
+      "teamCode": "T04",
+      "teamName": "Vanguard Assets",
+      "teamType": "Retail",
+      "cashBalance": 1000000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782973738951
+    },
+    {
+      "id": "T25",
+      "teamCode": "T05",
+      "teamName": "Horizon Fund",
+      "teamType": "Retail",
+      "cashBalance": 1000000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782973738956
+    },
+    {
+      "id": "T26",
+      "teamCode": "T06",
+      "teamName": "Meridian Allocators",
+      "teamType": "Retail",
+      "cashBalance": 1000000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782973738961
+    },
+    {
+      "id": "T27",
+      "teamCode": "T07",
+      "teamName": "Summit Equities",
+      "teamType": "Retail",
+      "cashBalance": 1000000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782973738966
+    },
+    {
+      "id": "T28",
+      "teamCode": "T08",
+      "teamName": "Vantage Securities",
+      "teamType": "Retail",
+      "cashBalance": 1000000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782973738972
+    },
+    {
+      "id": "T29",
+      "teamCode": "T09",
+      "teamName": "Pinnacle Investments",
+      "teamType": "Retail",
+      "cashBalance": 1000000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782973738977
+    },
+    {
+      "id": "T30",
+      "teamCode": "T10",
+      "teamName": "Quantum Hedge",
+      "teamType": "Retail",
+      "cashBalance": 1000000,
+      "holdings": {},
+      "isActive": true,
+      "createdAt": 1782973738981
+    }
+  ],
+  "transactions": [
+    {
+      "id": "TX0001",
+      "timestamp": 1782973739000,
+      "teamId": "T13",
+      "teamCode": "T13",
+      "teamName": "Trader Elite 13",
+      "teamType": "Retail",
+      "securityId": "S46",
+      "ticker": "PIRW",
+      "action": "BUY",
+      "quantity": 10,
+      "priceAtExecution": 451,
+      "totalValue": 4510,
+      "enteredBy": "Broker Desk API",
+      "voided": false
+    },
+    {
+      "id": "TX0002",
+      "timestamp": 1782973751922,
+      "teamId": "T02",
+      "teamCode": "T02",
+      "teamName": "Trader Elite 2",
+      "teamType": "Retail",
+      "securityId": "S46",
+      "ticker": "PIRW",
+      "action": "BUY",
+      "quantity": 23,
+      "priceAtExecution": 473.66,
+      "totalValue": 10894.18,
+      "enteredBy": "Broker Desk API",
+      "voided": false
+    },
+    {
+      "id": "TX0003",
+      "timestamp": 1782973762588,
+      "teamId": "T10",
+      "teamCode": "T10",
+      "teamName": "Aura Trust 10",
+      "teamType": "MutualFund",
+      "securityId": "S02",
+      "ticker": "BPCL",
+      "action": "BUY",
+      "quantity": 13,
+      "priceAtExecution": 169.3,
+      "totalValue": 2200.9,
+      "enteredBy": "Broker Desk API",
+      "voided": false
+    },
+    {
+      "id": "TX0004",
+      "timestamp": 1782973774335,
+      "teamId": "T21",
+      "teamCode": "T01",
+      "teamName": "Apex Capital",
+      "teamType": "Retail",
+      "securityId": "S36",
+      "ticker": "WEIN",
+      "action": "BUY",
+      "quantity": 8,
+      "priceAtExecution": 297.43,
+      "totalValue": 2379.44,
+      "enteredBy": "Broker Desk API",
+      "voided": false
+    },
+    {
+      "id": "TX0005",
+      "timestamp": 1782973786707,
+      "teamId": "T16",
+      "teamCode": "T16",
+      "teamName": "Trader Elite 16",
+      "teamType": "Retail",
+      "securityId": "S04",
+      "ticker": "DTAI",
+      "action": "BUY",
+      "quantity": 7,
+      "priceAtExecution": 377.94,
+      "totalValue": 2645.58,
+      "enteredBy": "Broker Desk API",
+      "voided": false
+    },
+    {
+      "id": "TX0006",
+      "timestamp": 1782973800343,
+      "teamId": "T13",
+      "teamCode": "T13",
+      "teamName": "Trader Elite 13",
+      "teamType": "Retail",
+      "securityId": "S19",
+      "ticker": "OCBS",
+      "action": "BUY",
+      "quantity": 12,
+      "priceAtExecution": 358.28,
+      "totalValue": 4299.36,
+      "enteredBy": "Broker Desk API",
+      "voided": false
+    }
+  ],
+  "newsEvents": [
+    {
+      "id": "N01",
+      "headline": "SEBI Announces Structural Policy Reforms",
+      "description": "New guidelines bolster credit markets and ease manufacturing listings.",
+      "affectedSector": "Banking",
+      "sentiment": "Positive",
+      "impactPercent": 12,
+      "isCustom": false,
+      "category": "Policy"
+    },
+    {
+      "id": "N02",
+      "headline": "Flares of Crisis in Middle East Fuel Oil Surge",
+      "description": "Energy supply lines disrupted, driving crude prices higher.",
+      "affectedSector": "Energy",
+      "sentiment": "Positive",
+      "impactPercent": 15,
+      "isCustom": false,
+      "category": "Macro"
+    },
+    {
+      "id": "N03",
+      "headline": "AI Chip Shortages Halt Tech Output",
+      "description": "Key components delayed, raising production costs across tech hubs.",
+      "affectedSector": "Technology",
+      "sentiment": "Negative",
+      "impactPercent": 14,
+      "isCustom": false,
+      "category": "Disaster"
+    },
+    {
+      "id": "N04",
+      "headline": "Major Tax Deductions Boost Government Bond Market",
+      "description": "New tax exemptions declared for long-term government debt issues.",
+      "affectedSector": "Government Bond",
+      "sentiment": "Positive",
+      "impactPercent": 8,
+      "isCustom": false,
+      "category": "Policy"
+    },
+    {
+      "id": "N05",
+      "headline": "Healthcare Biotech Scandal Triggers Safety Audits",
+      "description": "Unapproved therapeutic trials lead to federal regulatory warnings.",
+      "affectedSector": "Healthcare",
+      "sentiment": "Negative",
+      "impactPercent": 18,
+      "isCustom": false,
+      "category": "Scandal"
+    },
+    {
+      "id": "NW006",
+      "headline": "Tech Volatility Rises",
+      "description": "Silicon Valley reports lower supply-chain yield forecasts. Impacting SBIS.",
+      "affectedSecurityIds": [
+        "S23"
+      ],
+      "affectedSector": null,
+      "sentiment": "Negative",
+      "impactPercent": 12,
+      "triggeredAt": 1782973739006,
+      "isCustom": true,
+      "category": "Macro"
+    }
+  ],
+  "corporateActions": [],
+  "marketState": {
+    "status": "Open",
+    "simulationStartTime": 1782973738987,
+    "simulationDurationMinutes": 15,
+    "marketIndex": 0.5,
+    "pauseTimeOffset": 0,
+    "pausedAt": null
+  },
+  "settings": {
+    "startingCapitalRetail": 1000000,
+    "startingCapitalMutualFund": 1000000,
+    "startingCapitalHedgeFund": 1000000,
+    "defaultVolatility": 0.5,
+    "circuitBreakerThreshold": 30,
+    "circuitBreakerWindowMinutes": 5
+  }
+}

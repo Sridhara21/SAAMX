@@ -1,0 +1,23 @@
+{
+  "securities": [],
+  "teams": [],
+  "transactions": [],
+  "newsEvents": [],
+  "corporateActions": [],
+  "marketState": {
+    "status": "NotStarted",
+    "simulationStartTime": null,
+    "simulationDurationMinutes": 60,
+    "marketIndex": 0,
+    "pauseTimeOffset": 0,
+    "pausedAt": null
+  },
+  "settings": {
+    "startingCapitalRetail": 100000,
+    "startingCapitalMutualFund": 300000,
+    "startingCapitalHedgeFund": 500000,
+    "defaultVolatility": 0.5,
+    "circuitBreakerThreshold": 30,
+    "circuitBreakerWindowMinutes": 5
+  }
+}
