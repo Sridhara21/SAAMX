@@ -53,6 +53,72 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
   const [startingMutual, setStartingMutual] = useState(state.settings.startingCapitalMutualFund);
   const [startingHedge, setStartingHedge] = useState(state.settings.startingCapitalHedgeFund);
   const [simDuration, setSimDuration] = useState(state.marketState.simulationDurationMinutes);
+  const [resetConfirmText, setResetConfirmText] = useState('');
+
+  // Client-driven velocity ticks (every 3 seconds)
+  useEffect(() => {
+    if (!state || !state.velocities) return;
+    const activeVelocities = Object.values(state.velocities).filter(v => v.active);
+    if (activeVelocities.length === 0) return;
+
+    const interval = setInterval(async () => {
+      for (const vel of activeVelocities) {
+        const elapsed = Date.now() - vel.startTime;
+        const progress = Math.min(1, elapsed / vel.durationMs);
+        const targetPrice = vel.targetPrice;
+        const startPrice = vel.startPrice;
+        const currentTargetPrice = parseFloat((startPrice + (targetPrice - startPrice) * progress).toFixed(2));
+
+        // Call price override to step currentPrice
+        await fetch('/api/price-override', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-fms-password': adminPassword },
+          body: JSON.stringify({
+            securityId: vel.ticker,
+            type: 'Instant',
+            price: currentTargetPrice
+          })
+        }).catch(() => {});
+
+        if (progress >= 1) {
+          // Deactivate/stop velocity configuration in Firebase
+          await fetch('/api/price-override', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-fms-password': adminPassword },
+            body: JSON.stringify({
+              securityId: vel.ticker,
+              type: 'StopVelocity'
+            })
+          }).catch(() => {});
+        }
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [state ? state.velocities : null, adminPassword]);
+
+  // Client-driven sentiment drift engine (every 60 seconds when market is open)
+  useEffect(() => {
+    if (!state || state.marketState?.status !== 'Open') return;
+
+    const interval = setInterval(async () => {
+      const activeSecurities = Object.values(state.securities || {}).filter(s => s.status === 'Active' && s.sentimentOverride);
+      for (const sec of activeSecurities) {
+        const drift = sec.sentimentOverride * 0.45; // drifts up to 0.9%
+        await fetch('/api/price-override', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-fms-password': adminPassword },
+          body: JSON.stringify({
+            securityId: sec.ticker,
+            type: 'Shift',
+            percentChange: drift
+          })
+        }).catch(() => {});
+      }
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [state ? state.marketState?.status : null, state ? state.securities : null, adminPassword]);
 
   // Security Form Modal
   const [showSecModal, setShowSecModal] = useState(false);
@@ -81,11 +147,11 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
     document.body.removeChild(link);
   };
 
-  const handleSeed = async () => {
-    if (window.confirm('Are you sure you want to seed mock assets? This will overwrite current database state.')) {
+  const handleSeedData = async () => {
+    if (window.confirm('This will purge the active securities and seed the default list. Proceed?')) {
       try {
         await fetch('/api/admin/seed', { method: 'POST', headers: { 'X-FMS-Password': adminPassword } });
-        alert('Starter dataset seeded successfully!');
+        alert('Starter data seeded successfully.');
       } catch (err) {
         alert('Seed failed: ' + err.message);
       }
@@ -93,13 +159,16 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
   };
 
   const handleReset = async () => {
-    if (window.confirm('Are you sure you want to clear the entire state database? This cannot be undone.')) {
-      try {
-        await fetch('/api/admin/reset', { method: 'POST', headers: { 'X-FMS-Password': adminPassword } });
-        alert('Simulation database reset complete.');
-      } catch (err) {
-        alert('Reset failed: ' + err.message);
-      }
+    if (resetConfirmText !== 'RESET') {
+      alert('Please type "RESET" in the settings confirmation field.');
+      return;
+    }
+    try {
+      await fetch('/api/admin/reset', { method: 'POST', headers: { 'X-FMS-Password': adminPassword } });
+      setResetConfirmText('');
+      alert('FULL SYSTEM RESET COMPLETE. All assets restored to base prices, cash balances reset, and logs purged.');
+    } catch (err) {
+      alert('Reset failed: ' + err.message);
     }
   };
 
@@ -725,17 +794,22 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
               {/* SCRIPTED ACTS BOARD */}
               <div style={{ borderTop: '1px dashed var(--color-border)', paddingTop: '14px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                 <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--color-ink)' }}>Project Phoenix Script Acts:</span>
-                <select className="input-field" style={{ width: '220px', padding: '6px 10px', fontSize: '0.85rem' }} value={selectedPhoenixAct} onChange={e => setSelectedPhoenixAct(e.target.value)}>
-                  <option value="1">Act 1: Quarterly Loss (-22%)</option>
-                  <option value="2">Act 2: Mystery buyer (Target 210)</option>
-                  <option value="3">Act 3: Leadership Upheaval (-8%)</option>
-                  <option value="4">Act 4: Pump phase (Goldman CEO)</option>
-                  <option value="5">Act 5: Rumour peak (Tata Premium)</option>
-                  <option value="6">Act 6: SEBI Probe Notice (-25%)</option>
-                  <option value="7">Act 7: Insider scandal (-30%)</option>
-                  <option value="8">Act 8: Trading suspension</option>
-                  <option value="9">Act 9: Insolvency / Bankruptcy</option>
-                  <option value="10">Act 10: Market recovery (+6%)</option>
+                <select className="input-field" style={{ width: '280px', padding: '6px 10px', fontSize: '0.85rem' }} value={selectedPhoenixAct} onChange={e => setSelectedPhoenixAct(e.target.value)}>
+                  <option value="1">T+08m - Act 1: DTAI Loss (-22%)</option>
+                  <option value="2">T+14m - Act 2: DTAI Mystery Buy (₹210)</option>
+                  <option value="3">T+16m - IPO 1: IndiaStack Fintech (ISFT)</option>
+                  <option value="4">T+19m - Act 3: DTAI CEO Resigns (-8%)</option>
+                  <option value="5">T+22m - Act 4: DTAI Goldman Pump (₹280)</option>
+                  <option value="6">T+23m - Act 5: Anthropic IPO 60s Warning</option>
+                  <option value="7">T+24m - IPO 2: Anthropic AI India (ANTH)</option>
+                  <option value="8">T+25m - Act 6: Anthropic IPO Day Pop (+12%)</option>
+                  <option value="9">T+30m - Act 7: SEBI DTAI Forensic Probe (₹220)</option>
+                  <option value="10">T+34m - Act 8: DTAI Insider Scandal (-30%)</option>
+                  <option value="11">T+35m - Act 9: ANTH Sector Rally (+10%)</option>
+                  <option value="12">T+36m - Act 10: SEBI Suspends DTAI Trading</option>
+                  <option value="13">T+38m - Act 11: DTAI Insolvency & Ruin (₹0)</option>
+                  <option value="14">T+40m - Act 12: Market Recovery Rally</option>
+                  <option value="15">T+45m - Act 13: ANTH Defense Contract (+8%)</option>
                 </select>
                 <button className="btn btn-primary" style={{ padding: '6px 16px', fontSize: '0.85rem' }} onClick={() => handlePhoenixAct(selectedPhoenixAct)}>
                   ⚡ FIRE ACT DISPATCH
@@ -797,18 +871,25 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
                       </tr>
                     </thead>
                     <tbody>
-                      {exposureList.slice(0, 10).map(e => (
-                        <tr key={e.ticker}>
-                          <td className="font-data" style={{ fontWeight: 700 }}>{e.ticker}</td>
-                          <td className="font-data" style={{ textAlign: 'right' }}>{e.unitsHeld.toLocaleString()}</td>
-                          <td className="font-data text-brass" style={{ textAlign: 'right', fontWeight: 700 }}>
-                            ₹{e.totalCapital.toLocaleString()}
-                          </td>
-                          <td className="font-data" style={{ textAlign: 'right' }}>
-                            <span className="badge badge-protected">{e.distinctTeams.size} Teams</span>
-                          </td>
-                        </tr>
-                      ))}
+                      {exposureList.map(e => {
+                        const isDtai = e.ticker === 'DTAI';
+                        return (
+                          <tr key={e.ticker} style={isDtai ? { backgroundColor: 'rgba(217, 83, 79, 0.15)', border: '2px solid var(--color-fall)' } : {}}>
+                            <td className="font-data" style={{ fontWeight: 700, color: isDtai ? 'var(--color-fall)' : 'inherit' }}>
+                              {e.ticker} {isDtai && '🔥'}
+                            </td>
+                            <td className="font-data" style={{ textAlign: 'right' }}>{e.unitsHeld.toLocaleString()}</td>
+                            <td className="font-data text-brass" style={{ textAlign: 'right', fontWeight: 700 }}>
+                              ₹{e.totalCapital.toLocaleString()}
+                            </td>
+                            <td className="font-data" style={{ textAlign: 'right' }}>
+                              <span className="badge" style={{ backgroundColor: isDtai ? 'var(--color-fall)' : 'var(--color-brass-light)', color: isDtai ? '#fff' : 'var(--color-brass)' }}>
+                                {e.distinctTeams.size} Teams
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -1202,20 +1283,50 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
             
             <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '500px' }}>
               <div className="form-group">
-                <label>Retail Starting Capital — ₹1,00,000 (One Lakh)</label>
+                <label>Retail Starting Capital — ₹10,00,000 (Ten Lakhs)</label>
                 <input type="number" className="input-field font-data" value={startingRetail} onChange={e => setStartingRetail(e.target.value)} />
               </div>
               <div className="form-group">
-                <label>Mutual Fund Starting Capital — ₹3,00,000 (Three Lakhs)</label>
+                <label>Mutual Fund Starting Capital</label>
                 <input type="number" className="input-field font-data" value={startingMutual} onChange={e => setStartingMutual(e.target.value)} />
               </div>
               <div className="form-group">
-                <label>Hedge Fund Starting Capital — ₹5,00,000 (Five Lakhs)</label>
+                <label>Hedge Fund Starting Capital</label>
                 <input type="number" className="input-field font-data" value={startingHedge} onChange={e => setStartingHedge(e.target.value)} />
               </div>
               
               <button type="submit" className="btn btn-primary">Save Settings Configuration</button>
             </form>
+
+            <div style={{ marginTop: '32px', borderTop: '2px solid var(--color-border)', paddingTop: '24px' }}>
+              <h4 style={{ color: 'var(--color-fall)', fontSize: '1.1rem', marginBottom: '8px', fontFamily: 'var(--font-display)' }}>Danger Zone</h4>
+              <p style={{ fontSize: '0.85rem', color: 'var(--color-ink-2)', marginBottom: '16px' }}>
+                Performing a full system reset will restore all initial securities to their base prices, clear all holdings, balances, transactions, and news events. This action is irreversible.
+              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <input
+                  type="text"
+                  className="input-field font-data"
+                  style={{ width: '180px', borderColor: 'var(--color-fall)' }}
+                  placeholder="Type RESET to confirm"
+                  value={resetConfirmText}
+                  onChange={e => setResetConfirmText(e.target.value)}
+                />
+                <button
+                  className="btn"
+                  style={{
+                    backgroundColor: resetConfirmText === 'RESET' ? 'var(--color-fall)' : 'var(--color-border)',
+                    color: '#fff',
+                    fontWeight: 'bold',
+                    cursor: resetConfirmText === 'RESET' ? 'pointer' : 'not-allowed'
+                  }}
+                  disabled={resetConfirmText !== 'RESET'}
+                  onClick={handleReset}
+                >
+                  ☢ FULL SYSTEM RESET
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

@@ -3,16 +3,16 @@ import fs from 'fs';
 import path from 'path';
 
 // Define the exact files saved by the subagent
-const screenshotDir = 'C:\\Users\\user\\.gemini\\antigravity-ide\\brain\\6f4605c7-d656-4336-a735-c60a46378def';
+const screenshotDir = 'C:\\Users\\user\\3D Objects\\New folder\\fms-platform';
 const files = [
-  'home_calibrated_1783243693166.png',
-  'projector_calibrated_1783243729858.png',
-  'exchange_calibrated_1783243763634.png',
-  'sebi_calibrated_1783243787483.png',
-  'portfolio_calibrated_1783243797182.png',
-  'admin_calibrated_1783243805912.png',
-  'results_calibrated_1783243827675.png',
-  'journalist_calibrated_1783243841147.png'
+  'screen_home.png',
+  'screen_projector.png',
+  'screen_exchange.png',
+  'screen_sebi.png',
+  'screen_portfolio.png',
+  'screen_admin.png',
+  'screen_results.png',
+  'screen_journalist.png'
 ];
 
 const outputFile = 'C:\\Users\\user\\3D Objects\\New folder\\fms-platform\\fms_platform_screenshots.pdf';

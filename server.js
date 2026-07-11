@@ -4,6 +4,7 @@ import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
 import http from 'http';
+import { INITIAL_SECURITIES_TEMPLATES } from './initial_securities.js';
 
 const PORT = process.env.PORT || 3000;
 const STATE_FILE = './state.json';
@@ -79,6 +80,12 @@ const loadState = () => {
       state.settings.startingCapitalRetail = 1000000;
       state.settings.startingCapitalMutualFund = 1000000;
       state.settings.startingCapitalHedgeFund = 1000000;
+
+      if (!state.securities || state.securities.length === 0) {
+        console.log('Securities list is empty. Auto-seeding starter data...');
+        seedStarterData();
+        saveState();
+      }
 
       console.log('Successfully loaded state from state.json');
       return;
@@ -202,133 +209,31 @@ const checkCircuitBreaker = (security, oldPrice, newPrice) => {
 
 const seedStarterData = () => {
   const indianCities = ['Mumbai', 'Bengaluru', 'Chennai', 'Noida', 'Hyderabad', 'Pune', 'Gurugram', 'Kolkata', 'Ahmedabad', 'New Delhi'];
-  const sectors = [
-    'Technology', 'AI', 'Healthcare', 'Energy', 'Banking', 
-    'Manufacturing', 'Renewable Energy', 'Telecom', 'Retail', 
-    'Government Bond', 'Corporate Bond', 'ETF', 'Mutual Fund', 'REIT'
-  ];
-
-  const companyNames = [
-    // SECTION 1 — INDIAN LARGE-CAP STOCKS
-    { ticker: 'RELI', name: 'Reliance Industries Ltd', sector: 'Energy / Conglomerate', basePrice: 2850, totalUnits: 150, risk: 'Medium', type: 'Stock', volMin: 0.35, volMax: 0.55 },
-    { ticker: 'TCS', name: 'Tata Consultancy Services', sector: 'Technology', basePrice: 3920, totalUnits: 120, risk: 'Low', type: 'Stock', volMin: 0.35, volMax: 0.55 },
-    { ticker: 'INFY', name: 'Infosys Ltd', sector: 'Technology', basePrice: 1780, totalUnits: 200, risk: 'Low', type: 'Stock', volMin: 0.35, volMax: 0.55 },
-    { ticker: 'HDFC', name: 'HDFC Bank Ltd', sector: 'Banking', basePrice: 1650, totalUnits: 250, risk: 'Low', type: 'Stock', volMin: 0.35, volMax: 0.55 },
-    { ticker: 'ICBK', name: 'ICICI Bank Ltd', sector: 'Banking', basePrice: 1180, totalUnits: 300, risk: 'Low', type: 'Stock', volMin: 0.35, volMax: 0.55 },
-    { ticker: 'WIPR', name: 'Wipro Ltd', sector: 'Technology', basePrice: 485, totalUnits: 400, risk: 'Medium', type: 'Stock', volMin: 0.35, volMax: 0.55 },
-    { ticker: 'HCLT', name: 'HCL Technologies', sector: 'Technology', basePrice: 1620, totalUnits: 220, risk: 'Low', type: 'Stock', volMin: 0.35, volMax: 0.55 },
-    { ticker: 'BJFN', name: 'Bajaj Finance Ltd', sector: 'Banking / NBFC', basePrice: 7200, totalUnits: 60, risk: 'Medium', type: 'Stock', volMin: 0.35, volMax: 0.55 },
-    { ticker: 'BRTI', name: 'Bharti Airtel Ltd', sector: 'Telecom', basePrice: 1420, totalUnits: 280, risk: 'Medium', type: 'Stock', volMin: 0.35, volMax: 0.55 },
-    { ticker: 'ITCL', name: 'ITC Ltd', sector: 'FMCG / Conglomerate', basePrice: 445, totalUnits: 500, risk: 'Low', type: 'Stock', volMin: 0.35, volMax: 0.55 },
-    { ticker: 'LT', name: 'Larsen & Toubro Ltd', sector: 'Infrastructure / Engineering', basePrice: 3650, totalUnits: 100, risk: 'Medium', type: 'Stock', volMin: 0.35, volMax: 0.55 },
-    { ticker: 'MRTI', name: 'Maruti Suzuki India Ltd', sector: 'Automobile', basePrice: 12500, totalUnits: 35, risk: 'Medium', type: 'Stock', volMin: 0.35, volMax: 0.55 },
-    { ticker: 'ASPN', name: 'Asian Paints Ltd', sector: 'FMCG / Consumer', basePrice: 2980, totalUnits: 120, risk: 'Low', type: 'Stock', volMin: 0.35, volMax: 0.55 },
-    { ticker: 'NEST', name: 'Nestle India Ltd', sector: 'FMCG', basePrice: 24500, totalUnits: 18, risk: 'Low', type: 'Stock', volMin: 0.35, volMax: 0.55 },
-    { ticker: 'TITN', name: 'Titan Company Ltd', sector: 'Consumer Goods', basePrice: 3450, totalUnits: 100, risk: 'Medium', type: 'Stock', volMin: 0.35, volMax: 0.55 },
-    { ticker: 'KOTK', name: 'Kotak Mahindra Bank', sector: 'Banking', basePrice: 1850, totalUnits: 200, risk: 'Low', type: 'Stock', volMin: 0.35, volMax: 0.55 },
-    { ticker: 'AXBK', name: 'Axis Bank Ltd', sector: 'Banking', basePrice: 1095, totalUnits: 350, risk: 'Medium', type: 'Stock', volMin: 0.35, volMax: 0.55 },
-    { ticker: 'SUNP', name: 'Sun Pharmaceutical', sector: 'Healthcare', basePrice: 1580, totalUnits: 220, risk: 'Medium', type: 'Stock', volMin: 0.35, volMax: 0.55 },
-    { ticker: 'HUL', name: 'Hindustan Unilever Ltd', sector: 'FMCG', basePrice: 2650, totalUnits: 140, risk: 'Low', type: 'Stock', volMin: 0.35, volMax: 0.55 },
-    { ticker: 'PWGR', name: 'Power Grid Corporation', sector: 'Energy / Utilities', basePrice: 285, totalUnits: 800, risk: 'Low', type: 'Stock', volMin: 0.35, volMax: 0.55 },
-    { ticker: 'COAL', name: 'Coal India Ltd', sector: 'Energy', basePrice: 465, totalUnits: 600, risk: 'Medium', type: 'Stock', volMin: 0.35, volMax: 0.55 },
-    { ticker: 'NTPC', name: 'NTPC Ltd', sector: 'Energy / Power', basePrice: 368, totalUnits: 700, risk: 'Low', type: 'Stock', volMin: 0.35, volMax: 0.55 },
-    { ticker: 'ONGC', name: 'Oil & Natural Gas Corp', sector: 'Energy', basePrice: 272, totalUnits: 800, risk: 'Medium', type: 'Stock', volMin: 0.35, volMax: 0.55 },
-    { ticker: 'SBIN', name: 'State Bank of India', sector: 'Banking (PSU)', basePrice: 820, totalUnits: 450, risk: 'Medium', type: 'Stock', volMin: 0.35, volMax: 0.55 },
-    { ticker: 'BPCL', name: 'Bharat Petroleum Corp', sector: 'Energy', basePrice: 525, totalUnits: 400, risk: 'Medium', type: 'Stock', volMin: 0.35, volMax: 0.55 },
-
-    // SECTION 2 — INDIAN MID-CAP STOCKS
-    { ticker: 'ZMAT', name: 'Zomato Ltd', sector: 'Technology / Food Delivery', basePrice: 185, totalUnits: 1000, risk: 'High', type: 'Stock', volMin: 0.50, volMax: 0.70 },
-    { ticker: 'PYTM', name: 'Paytm (One97 Communications)', sector: 'Fintech', basePrice: 425, totalUnits: 600, risk: 'High', type: 'Stock', volMin: 0.50, volMax: 0.70 },
-    { ticker: 'NYKA', name: 'Nykaa (FSN E-Commerce)', sector: 'Retail / E-Commerce', basePrice: 175, totalUnits: 900, risk: 'High', type: 'Stock', volMin: 0.50, volMax: 0.70 },
-    { ticker: 'DLVY', name: 'Delhivery Ltd', sector: 'Logistics', basePrice: 385, totalUnits: 600, risk: 'High', type: 'Stock', volMin: 0.50, volMax: 0.70 },
-    { ticker: 'IRCT', name: 'IRCTC Ltd', sector: 'Travel / Tourism', basePrice: 820, totalUnits: 350, risk: 'Medium', type: 'Stock', volMin: 0.50, volMax: 0.70 },
-    { ticker: 'INDB', name: 'IndusInd Bank', sector: 'Banking', basePrice: 1450, totalUnits: 250, risk: 'Medium', type: 'Stock', volMin: 0.50, volMax: 0.70 },
-    { ticker: 'VOLT', name: 'Voltas Ltd', sector: 'Manufacturing', basePrice: 1280, totalUnits: 280, risk: 'Medium', type: 'Stock', volMin: 0.50, volMax: 0.70 },
-    { ticker: 'PIDI', name: 'Pidilite Industries', sector: 'Chemicals', basePrice: 2850, totalUnits: 120, risk: 'Medium', type: 'Stock', volMin: 0.50, volMax: 0.70 },
-    { ticker: 'DIVI', name: 'Divi\'s Laboratories', sector: 'Healthcare / Pharma', basePrice: 4200, totalUnits: 80, risk: 'Medium', type: 'Stock', volMin: 0.50, volMax: 0.70 },
-    { ticker: 'ABML', name: 'ABB India Ltd', sector: 'Manufacturing / Electrical', basePrice: 6800, totalUnits: 50, risk: 'Medium', type: 'Stock', volMin: 0.50, volMax: 0.70 },
-    { ticker: 'TATA', name: 'Tata Motors Ltd', sector: 'Automobile', basePrice: 980, totalUnits: 380, risk: 'High', type: 'Stock', volMin: 0.50, volMax: 0.70 },
-    { ticker: 'JSWL', name: 'JSWL Steel Ltd', sector: 'Manufacturing / Steel', basePrice: 870, totalUnits: 400, risk: 'High', type: 'Stock', volMin: 0.50, volMax: 0.70 },
-    { ticker: 'ADNI', name: 'Adani Enterprises', sector: 'Conglomerate', basePrice: 2450, totalUnits: 140, risk: 'High', type: 'Stock', volMin: 0.50, volMax: 0.70 },
-    { ticker: 'CIPLA', name: 'Cipla Ltd', sector: 'Healthcare / Pharma', basePrice: 1540, totalUnits: 230, risk: 'Medium', type: 'Stock', volMin: 0.50, volMax: 0.70 },
-    { ticker: 'DRRD', name: 'Dr Reddy\'s Laboratories', sector: 'Healthcare / Pharma', basePrice: 6200, totalUnits: 55, risk: 'Medium', type: 'Stock', volMin: 0.50, volMax: 0.70 },
-
-    // SECTION 3 — INTERNATIONAL STOCKS (Global Equities)
-    { ticker: 'AAPL', name: 'Apple Inc', sector: 'Global Equity', basePrice: 15200, totalUnits: 30, risk: 'Low', type: 'GlobalEquity', volMin: 0.40, volMax: 0.65 },
-    { ticker: 'MSFT', name: 'Microsoft Corporation', sector: 'Global Equity', basePrice: 28500, totalUnits: 15, risk: 'Low', type: 'GlobalEquity', volMin: 0.40, volMax: 0.65 },
-    { ticker: 'GOOGL', name: 'Alphabet Inc (Google)', sector: 'Global Equity', basePrice: 13800, totalUnits: 30, risk: 'Low', type: 'GlobalEquity', volMin: 0.40, volMax: 0.65 },
-    { ticker: 'AMZN', name: 'Amazon.com Inc', sector: 'Global Equity', basePrice: 14200, totalUnits: 25, risk: 'Medium', type: 'GlobalEquity', volMin: 0.40, volMax: 0.65 },
-    { ticker: 'NVDA', name: 'NVIDIA Corporation', sector: 'Global Equity', basePrice: 96000, totalUnits: 5, risk: 'High', type: 'GlobalEquity', volMin: 0.40, volMax: 0.65 },
-    { ticker: 'META', name: 'Meta Platforms Inc', sector: 'Global Equity', basePrice: 42500, totalUnits: 10, risk: 'Medium', type: 'GlobalEquity', volMin: 0.40, volMax: 0.65 },
-    { ticker: 'TSLA', name: 'Tesla Inc', sector: 'Global Equity', basePrice: 18500, totalUnits: 20, risk: 'High', type: 'GlobalEquity', volMin: 0.40, volMax: 0.65 },
-    { ticker: 'BABA', name: 'Alibaba Group', sector: 'Global Equity', basePrice: 7200, totalUnits: 60, risk: 'High', type: 'GlobalEquity', volMin: 0.40, volMax: 0.65 },
-    { ticker: 'SAMS', name: 'Samsung Electronics', sector: 'Global Equity', basePrice: 5800, totalUnits: 80, risk: 'Medium', type: 'GlobalEquity', volMin: 0.40, volMax: 0.65 },
-
-    // SECTION 4 — ETFs
-    { ticker: 'NIFBEES', name: 'SBI Nifty 50 ETF', sector: 'ETF', basePrice: 218, totalUnits: 1000, risk: 'Low', type: 'ETF', volMin: 0.15, volMax: 0.30 },
-    { ticker: 'BANKBEES', name: 'Nippon India Bank BeES ETF', sector: 'ETF', basePrice: 485, totalUnits: 500, risk: 'Medium', type: 'ETF', volMin: 0.15, volMax: 0.30 },
-    { ticker: 'GOLDBEES', name: 'Nippon India Gold BeES ETF', sector: 'ETF', basePrice: 58, totalUnits: 2000, risk: 'Low', type: 'ETF', volMin: 0.15, volMax: 0.30 },
-    { ticker: 'ITBEES', name: 'Mirae Asset NYSE FANG+ ETF', sector: 'ETF', basePrice: 85, totalUnits: 1500, risk: 'Medium', type: 'ETF', volMin: 0.15, volMax: 0.30 },
-    { ticker: 'PSUBEES', name: 'Mirae Asset PSU Bank ETF', sector: 'ETF', basePrice: 42, totalUnits: 2500, risk: 'Medium', type: 'ETF', volMin: 0.15, volMax: 0.30 },
-    { ticker: 'LIQUIDBEES', name: 'Nippon India ETF Liquid BeES', sector: 'ETF', basePrice: 1000, totalUnits: 200, risk: 'Low', type: 'ETF', volMin: 0.15, volMax: 0.30 },
-
-    // SECTION 5 — REITs
-    { ticker: 'EMBOFFS', name: 'Embassy Office Parks REIT', sector: 'REIT', basePrice: 368, totalUnits: 600, risk: 'Low', type: 'REIT', volMin: 0.20, volMax: 0.35 },
-    { ticker: 'MINDSP', name: 'Mindspace Business Parks REIT', sector: 'REIT', basePrice: 325, totalUnits: 700, risk: 'Low', type: 'REIT', volMin: 0.20, volMax: 0.35 },
-    { ticker: 'NEXUS', name: 'Nexus Select Trust REIT', sector: 'REIT', basePrice: 132, totalUnits: 1200, risk: 'Medium', type: 'REIT', volMin: 0.20, volMax: 0.35 },
-    { ticker: 'BROOKF', name: 'Brookfield India REIT', sector: 'REIT', basePrice: 285, totalUnits: 800, risk: 'Low', type: 'REIT', volMin: 0.20, volMax: 0.35 },
-
-    // SECTION 6 — InvITs
-    { ticker: 'IRBINV', name: 'IRB InvIT Fund', sector: 'InvIT', basePrice: 85, totalUnits: 1500, risk: 'Medium', type: 'InvIT', volMin: 0.20, volMax: 0.35 },
-    { ticker: 'INDGRD', name: 'India Grid Trust InvIT', sector: 'InvIT', basePrice: 142, totalUnits: 1000, risk: 'Low', type: 'InvIT', volMin: 0.20, volMax: 0.35 },
-    { ticker: 'PWRGRD', name: 'PowerGrid Infrastructure InvIT', sector: 'InvIT', basePrice: 125, totalUnits: 1200, risk: 'Low', type: 'InvIT', volMin: 0.20, volMax: 0.35 },
-
-    // SECTION 7 — GOVERNMENT BONDS
-    { ticker: 'GSEC10', name: 'GoI 10-Year G-Sec 7.26%', sector: 'Government Bond', basePrice: 1050, totalUnits: 400, risk: 'Low', type: 'GovernmentBond', volMin: 0.05, volMax: 0.12 },
-    { ticker: 'GSEC5', name: 'GoI 5-Year G-Sec 7.10%', sector: 'Government Bond', basePrice: 1020, totalUnits: 400, risk: 'Low', type: 'GovernmentBond', volMin: 0.05, volMax: 0.12 },
-    { ticker: 'SGB', name: 'Sovereign Gold Bond 2026', sector: 'Government Bond', basePrice: 6250, totalUnits: 150, risk: 'Low', type: 'GovernmentBond', volMin: 0.05, volMax: 0.12 },
-    { ticker: 'INFLNK', name: 'RBI Floating Rate Savings Bond', sector: 'Government Bond', basePrice: 1000, totalUnits: 500, risk: 'Low', type: 'GovernmentBond', volMin: 0.05, volMax: 0.12 },
-
-    // SECTION 8 — CORPORATE BONDS
-    { ticker: 'RELIBND', name: 'Reliance Industries 8.5% Bond 2030', sector: 'Corporate Bond', basePrice: 1080, totalUnits: 300, risk: 'Low', type: 'CorporateBond', volMin: 0.12, volMax: 0.22 },
-    { ticker: 'HDFCBND', name: 'HDFC Bank 7.9% Bond 2028', sector: 'Corporate Bond', basePrice: 1045, totalUnits: 350, risk: 'Low', type: 'CorporateBond', volMin: 0.12, volMax: 0.22 },
-    { ticker: 'ADNBND', name: 'Adani Ports 8.9% Bond 2031', sector: 'Corporate Bond', basePrice: 985, totalUnits: 250, risk: 'Medium', type: 'CorporateBond', volMin: 0.12, volMax: 0.22 },
-    { ticker: 'TATBND', name: 'Tata Steel 9.1% NCD 2029', sector: 'Corporate Bond', basePrice: 960, totalUnits: 280, risk: 'Medium', type: 'CorporateBond', volMin: 0.12, volMax: 0.22 },
-
-    // SECTION 9 — MUTUAL FUNDS
-    { ticker: 'HDFCFLX', name: 'HDFC Flexicap Fund', sector: 'Mutual Fund', basePrice: 145, totalUnits: 1200, risk: 'Medium', type: 'MutualFund', volMin: 0.20, volMax: 0.40 },
-    { ticker: 'ICICIMID', name: 'ICICI Prudential Midcap Fund', sector: 'Mutual Fund', basePrice: 215, totalUnits: 900, risk: 'High', type: 'MutualFund', volMin: 0.20, volMax: 0.40 },
-    { ticker: 'SBISML', name: 'SBI Small Cap Fund', sector: 'Mutual Fund', basePrice: 128, totalUnits: 1100, risk: 'High', type: 'MutualFund', volMin: 0.20, volMax: 0.40 },
-    { ticker: 'AXISLTQ', name: 'Axis Long Term Equity Fund (ELSS)', sector: 'Mutual Fund', basePrice: 68, totalUnits: 2000, risk: 'Medium', type: 'MutualFund', volMin: 0.20, volMax: 0.40 },
-    { ticker: 'MIRLAG', name: 'Mirae Asset Large Cap Fund', sector: 'Mutual Fund', basePrice: 92, totalUnits: 1500, risk: 'Low', type: 'MutualFund', volMin: 0.20, volMax: 0.40 },
-    { ticker: 'PPFASG', name: 'Parag Parikh Flexi Cap Fund', sector: 'Mutual Fund', basePrice: 75, totalUnits: 1800, risk: 'Medium', type: 'MutualFund', volMin: 0.20, volMax: 0.40 },
-    { ticker: 'NIPPNF', name: 'Nippon India Nifty 50 BeES', sector: 'Mutual Fund', basePrice: 218, totalUnits: 1000, risk: 'Low', type: 'MutualFund', volMin: 0.20, volMax: 0.40 }
-  ];
 
   const firstNames = ['Amit', 'Rajesh', 'Vikram', 'Anil', 'Sanjay', 'Sunil', 'Vijay', 'Rahul', 'Deepak', 'Aarav', 'Neha', 'Pooja', 'Priya', 'Ananya', 'Rohan'];
   const lastNames = ['Sharma', 'Verma', 'Gupta', 'Mehta', 'Patel', 'Reddy', 'Nair', 'Joshi', 'Singh', 'Rao', 'Choudhury', 'Iyer', 'Sen', 'Banerjee'];
 
   // Seed Securities
-  state.securities = companyNames.map((c, index) => {
-    const ceo = `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`;
+  state.securities = INITIAL_SECURITIES_TEMPLATES.map((c, index) => {
+    const ceo = c.manager || `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`;
     const hq = indianCities[Math.floor(Math.random() * indianCities.length)];
     const founded = Math.floor(Math.random() * 35) + 1990;
 
-    const type = c.type;
-    const basePrice = c.basePrice;
-    const totalUnits = c.totalUnits;
-    const volatility = parseFloat((Math.random() * (c.volMax - c.volMin) + c.volMin).toFixed(2));
-    const riskRating = c.risk;
-    const growthRating = Math.floor(Math.random() * 5) + 1;
-
-    // Generate programmatic profileDetails
     let tagline = `Real-world market leader in ${c.sector}.`;
     let about = `Leading enterprise specializing in ${c.sector.toLowerCase()} services, catering to regional and global market segments.`;
     let facts = [];
     let holdings = null;
     let note = null;
 
-    if (type === 'Stock') {
+    if (c.ticker === 'DTAI') {
+      tagline = "Fictional educational simulation asset.";
+      about = "Delta AI Labs is a fictional company created for this educational simulation.";
+      facts = [
+        { label: 'CEO', value: 'Arjun Mehta' },
+        { label: 'Founded', value: '2023' },
+        { label: 'Type', value: 'Educational Mock Stock' }
+      ];
+    } else if (c.type === 'Stock') {
       tagline = `Pioneer in Indian ${c.sector} sector.`;
       about = `${c.name} is a major Indian enterprise driving commercial scale in ${c.sector.toLowerCase()} offerings.`;
       facts = [
@@ -337,7 +242,7 @@ const seedStarterData = () => {
         { label: 'Debt-to-Equity', value: (Math.random() * 0.8 + 0.1).toFixed(2) },
         { label: 'CEO', value: ceo }
       ];
-    } else if (type === 'GlobalEquity') {
+    } else if (c.type === 'GlobalEquity') {
       tagline = `Global technology and commerce giant listed internationally.`;
       about = `${c.name} is a global market leader listed on international markets, offering high-growth equity exposure.`;
       facts = [
@@ -347,135 +252,78 @@ const seedStarterData = () => {
         { label: 'Country', value: c.ticker === 'SAMS' ? 'South Korea' : c.ticker === 'BABA' ? 'China' : 'USA' }
       ];
       note = 'International stocks carry additional currency risk and geopolitical risk associated with foreign equity exposure.';
-    } else if (type === 'ETF') {
-      const tracksMap = {
-        'NIFBEES': 'SBI Nifty 50 ETF',
-        'BANKBEES': 'Nippon India Bank BeES ETF',
-        'GOLDBEES': 'Nippon India Gold BeES ETF',
-        'ITBEES': 'Mirae Asset NYSE FANG+ ETF',
-        'PSUBEES': 'Mirae Asset PSU Bank ETF',
-        'LIQUIDBEES': 'Nippon India ETF Liquid BeES'
-      };
-      const constituentsMap = {
-        'NIFBEES': 'RELI, TCS, HDFC, ICBK, INFY',
-        'BANKBEES': 'HDFC, ICBK, KOTK, AXBK, INDB',
-        'GOLDBEES': 'Physical Gold Bullion (99.5% Purity)',
-        'ITBEES': 'AAPL, MSFT, GOOGL, AMZN, NVDA',
-        'PSUBEES': 'SBIN, BANKBARODA, CANBK, PNB, UNIONBANK',
-        'LIQUIDBEES': 'Triparty Repo (TREPS), Call Money'
-      };
-      tagline = `Passively managed fund tracking the ${tracksMap[c.ticker] || 'index'}.`;
-      about = `Tracks the performance of the ${tracksMap[c.ticker] || 'index'} in equal proportion weights.`;
+    } else if (c.type === 'ETF') {
+      tagline = `Passively managed fund tracking the ${c.name}.`;
+      about = `Tracks the performance of the underlying index or asset in equal proportion weights.`;
       facts = [
-        { label: 'Index Tracked', value: tracksMap[c.ticker] || 'Equity Index' },
-        { label: 'Expense Ratio', value: '0.15%' },
         { label: 'AUM', value: '₹12,450 Cr' },
+        { label: 'Expense Ratio', value: '0.15%' },
         { label: 'Category', value: 'Exchange Traded Fund' }
       ];
-      holdings = [
-        { name: 'Primary Index Float', value: constituentsMap[c.ticker] || 'Market Constituents' }
-      ];
-    } else if (type === 'REIT') {
+    } else if (c.type === 'REIT') {
       tagline = `Income-yielding real estate investment trust.`;
-      about = `Owns and operates prime commercial IT parks and office spaces across major metro cities in India.`;
+      about = `Owns and operates prime commercial office spaces and IT parks across major metro cities.`;
       facts = [
-        { label: 'Properties Owned', value: 'IT Parks & Offices in Bengaluru, Mumbai, Pune' },
         { label: 'Dividend Yield', value: '7.5%' },
-        { label: 'Sponsor', value: c.ticker === 'BROOKF' ? 'Brookfield' : 'Embassy/Blackstone' },
-        { label: 'Listed Since', value: '2019' }
+        { label: 'Properties Owned', value: 'Commercial IT Parks' }
       ];
-    } else if (type === 'InvIT') {
+    } else if (c.type === 'InvIT') {
       tagline = `Infrastructure yield investment trust.`;
-      about = `Pools investor capital to operate national highway toll roads, power transmission grids, and telecom towers.`;
+      about = `Pools investor capital to operate highway toll roads, power grids, and national infrastructure.`;
       facts = [
-        { label: 'Infrastructure Assets', value: 'Highway Tolls, Telecom Towers & Grid Transmission Lines' },
-        { label: 'Revenue Model', value: 'Toll Collection & Transmission Tariffs' },
         { label: 'Sponsor', value: 'PowerGrid / IRB Infra' },
-        { label: 'Listed Since', value: '2020' }
+        { label: 'Revenue Model', value: 'Tolls & Tariffs' }
       ];
-    } else if (type === 'GovernmentBond') {
-      tagline = `Fixed income sovereign debt guaranteed by the Reserve Bank of India.`;
-      about = `Sovereign bonds issued by the Government of India, offering high safety and predictable yield rates.`;
+    } else if (c.type === 'GovernmentBond') {
+      tagline = `Fixed income sovereign debt guaranteed by the Government of India.`;
+      about = `Sovereign bonds issued by GoI, offering maximum safety and predictable yield rates.`;
       facts = [
-        { label: 'Issuer', value: 'Government of India / RBI' },
-        { label: 'Coupon Rate', value: c.ticker === 'SGB' ? '2.5% + Gold appreciation' : '7.26% paid semi-annually' },
-        { label: 'Credit Rating', value: 'AAA Sovereign' },
-        { label: 'Tenure', value: c.ticker === 'SGB' ? '8 Years' : '10 Years' }
+        { label: 'Issuer', value: 'Government of India' },
+        { label: 'Coupon Rate', value: c.coupon || '7.26%' }
       ];
-    } else if (type === 'CorporateBond') {
-      tagline = `Fixed income corporate debt debenture.`;
-      about = `Corporate bonds carrying credit risk associated with the issuer, offering higher yield than government debt.`;
-      facts = [
-        { label: 'Issuer', value: c.name.split(' ')[0] },
-        { label: 'Coupon Rate', value: '8.5% paid quarterly' },
-        { label: 'Credit Rating', value: 'AAA Stable' },
-        { label: 'Maturity', value: '2030' }
-      ];
-    } else if (type === 'MutualFund') {
-      const fundData = {
-        'HDFCFLX': {
-          manager: 'Roshi Jain',
-          aum: '₹52,000 Cr',
-          holdings: 'ICICI Bank (8.2%), HDFC Bank (7.8%), Infosys (6.1%), Reliance Industries (5.9%), Axis Bank (4.7%)',
-          alloc: 'Financials (32%), Tech (18%), FMCG (14%)',
-          about: 'Flexicap equity mutual fund shifting weights dynamically across market caps to maximize returns.'
-        },
-        'ICICIMID': {
-          manager: 'Anish Tawakley',
-          aum: '₹29,500 Cr',
-          holdings: 'TVS Motors (6.5%), Jindal Steel (5.8%), Federal Bank (5.1%), Tata Communications (4.8%), Bharat Electronics (4.5%)',
-          alloc: 'Auto (22%), Metals (18%), Financials (15%)',
-          about: 'Focuses on mid-sized growth companies with capital appreciation potential.'
-        },
-        'SBISML': {
-          manager: 'R. Srinivasan',
-          aum: '₹22,100 Cr',
-          holdings: 'Blue Star (7.2%), Carborundum (6.1%), Elgi Equipments (5.5%), Kalpataru (4.8%), KSB Ltd (4.2%)',
-          alloc: 'Capital Goods (28%), Consumer (20%), Chemicals (12%)',
-          about: 'Invests in small-cap companies offering high risk-return profiles.'
-        },
-        'AXISLTQ': {
-          manager: 'Jinesh Gopani',
-          aum: '₹34,000 Cr',
-          holdings: 'Bajaj Finance (9.1%), Avenue Supermarts (8.5%), TCS (7.2%), Kotak Bank (6.8%), ICICI Bank (6.1%)',
-          alloc: 'Financials (35%), Retail (22%), Technology (18%)',
-          about: 'ELSS tax saving fund focusing on long-term compounders with clean balance sheets.'
-        },
-        'MIRLAG': {
-          manager: 'Gaurav Misra',
-          aum: '₹37,500 Cr',
-          holdings: 'HDFC Bank (9.5%), ICICI Bank (8.8%), Reliance (8.1%), Infosys (7.5%), Larsen & Toubro (5.2%)',
-          alloc: 'Financials (38%), Energy (15%), Technology (12%)',
-          about: 'Core large-cap fund investing in top blue-chip conglomerates.'
-        },
-        'PPFASG': {
-          manager: 'Rajeev Thakkar',
-          aum: '₹62,000 Cr',
-          holdings: 'Alphabet Inc (8.5%), Microsoft (7.8%), Amazon (6.5%), ITC Ltd (5.2%), HDFC Bank (4.9%)',
-          alloc: 'Technology (28%), Global Equity (22%), Financials (20%)',
-          about: 'Flexicap fund with international diversification mandate to mitigate domestic risks.'
-        },
-        'NIPPNF': {
-          manager: 'Sailesh Raj Bhan',
-          aum: '₹18,400 Cr',
-          holdings: 'Reliance (9.2%), HDFC Bank (8.5%), ICICI Bank (7.8%), Infosys (6.9%), TCS (4.8%)',
-          alloc: 'Conglomerates (30%), Financials (25%), Tech (18%)',
-          about: 'Index tracking mutual fund mirroring Nifty 50 constituents.'
-        }
+    } else if (c.type === 'MutualFund') {
+      tagline = `Managed equity mutual fund portfolio by ${c.fundHouse}.`;
+      about = `${c.name} is a high-growth mutual fund diversified across key market sectors.`;
+      
+      const topHoldingsMap = {
+        'HDFCFLX': 'ICICI Bank (8.2%), HDFC Bank (7.8%), Infosys (6.1%), Reliance Industries (5.9%), Axis Bank (4.7%)',
+        'ICICIMID': 'TVS Motors (6.5%), Jindal Steel (5.8%), Federal Bank (5.1%), Tata Communications (4.8%), Bharat Electronics (4.5%)',
+        'SBISML': 'Blue Star (7.2%), Carborundum (6.1%), Elgi Equipments (5.5%), Kalpataru (4.8%), KSB Ltd (4.2%)',
+        'AXISLTQ': 'Bajaj Finance (9.1%), Avenue Supermarts (8.5%), TCS (7.2%), Kotak Bank (6.8%), ICICI Bank (6.1%)',
+        'MIRLAG': 'HDFC Bank (9.5%), ICICI Bank (8.8%), Reliance (8.1%), Infosys (7.5%), Larsen & Toubro (5.2%)',
+        'PPFASG': 'Alphabet Inc (8.5%), Microsoft (7.8%), Amazon (6.5%), ITC Ltd (5.2%), HDFC Bank (4.9%)',
+        'NIPSMCP': 'Nippon India Small Cap Top 5 Stocks',
+        'KOTKEMG': 'Kotak Emerging Equity Top Holdings',
+        'DSPMIDC': 'DSP Midcap Fund Top Holdings',
+        'QNTACT': 'Quant Active Fund Top Holdings'
       };
 
-      const info = fundData[c.ticker] || fundData['HDFCFLX'];
-      tagline = `Managed equity mutual fund portfolio.`;
-      about = info.about;
+      const sectorAllocMap = {
+        'HDFCFLX': 'Financials (32%), Tech (18%), FMCG (14%)',
+        'ICICIMID': 'Auto (22%), Metals (18%), Financials (15%)',
+        'SBISML': 'Capital Goods (28%), Consumer (20%), Chemicals (12%)',
+        'AXISLTQ': 'Financials (35%), Retail (22%), Technology (18%)',
+        'MIRLAG': 'Financials (38%), Energy (15%), Technology (12%)',
+        'PPFASG': 'Technology (28%), Global Equity (22%), Financials (20%)',
+        'NIPSMCP': 'Consumer Goods (25%), Finance (20%), Tech (15%)',
+        'KOTKEMG': 'Capital Goods (24%), Consumer Discretionary (18%)',
+        'DSPMIDC': 'Pharma (22%), Chemicals (18%), Engineering (15%)',
+        'QNTACT': 'Financials (28%), Tech (20%), Services (15%)'
+      };
+
       facts = [
-        { label: 'Fund Manager', value: info.manager },
-        { label: 'AUM', value: info.aum },
-        { label: 'Expense Ratio', value: '1.5%' },
-        { label: 'Category', value: 'Mutual Fund' }
+        { label: 'Fund House', value: c.fundHouse },
+        { label: 'Category', value: c.category },
+        { label: 'AUM', value: c.aum },
+        { label: 'Fund Manager', value: c.manager },
+        { label: 'Expense Ratio', value: c.expenseRatio },
+        { label: '5-Yr CAGR', value: c.cagr }
       ];
+
       holdings = [
-        { name: 'Top 5 Constituents', value: info.holdings },
-        { name: 'Sector Exposure', value: info.alloc }
+        { name: 'Top 5 Holdings', value: topHoldingsMap[c.ticker] || 'Underlying Equity Float' },
+        { name: 'Sector Allocation', value: sectorAllocMap[c.ticker] || 'Diversified' },
+        { name: 'Why Invest', value: `This fund is professionally managed by ${c.manager} at ${c.fundHouse}, holding a diversified portfolio of market-leading assets to capture consistent compound returns with active risk mitigation.` }
       ];
     }
 
@@ -484,22 +332,22 @@ const seedStarterData = () => {
       ticker: c.ticker,
       name: c.name,
       sector: c.sector,
-      type,
-      basePrice,
-      currentPrice: basePrice,
-      totalUnits,
-      availableUnits: totalUnits,
-      volatility,
-      riskRating,
-      growthRating,
+      type: c.type === 'GlobalEquity' ? 'Stock' : c.type,
+      basePrice: c.basePrice,
+      currentPrice: c.basePrice,
+      totalUnits: c.totalUnits,
+      availableUnits: c.totalUnits,
+      volatility: c.volatility,
+      riskRating: c.riskRating,
+      growthRating: 3,
       status: 'Active',
       description: tagline,
       ceoName: ceo,
       foundedYear: founded,
       headquarters: hq,
-      logoInitials: c.ticker.slice(0, 2),
+      logoInitials: c.ticker.slice(0, 2).toUpperCase(),
       dividendYield: parseFloat((Math.random() * 4 + 1).toFixed(2)),
-      priceHistory: [{ timestamp: Date.now(), price: basePrice }],
+      priceHistory: [{ timestamp: Date.now(), price: c.basePrice }],
       profileDetails: {
         tagline,
         about,
@@ -673,6 +521,7 @@ app.post('/api/admin/seed', (req, res) => {
 app.post('/api/admin/reset', (req, res) => {
   state = createInitialState();
   activeAlerts.clear();
+  seedStarterData();
   saveState(true);
   broadcastState('SYSTEM_RESET', { message: 'Database reset completed.' });
   res.json({ success: true, state });
@@ -1263,6 +1112,98 @@ app.post('/api/admin/global-control', (req, res) => {
 // ----------------------------------------------------
 const PHOENIX_TARGET = 'DTAI';
 
+const triggerIPO = (ipoDetails) => {
+  const id = `S${String(state.securities.length + 1).padStart(2, '0')}`;
+  const security = {
+    id,
+    ticker: ipoDetails.ticker,
+    name: ipoDetails.companyName,
+    sector: ipoDetails.sector,
+    type: 'Stock',
+    basePrice: ipoDetails.ipoPrice,
+    currentPrice: ipoDetails.ipoPrice,
+    totalUnits: ipoDetails.totalUnitsOffered,
+    availableUnits: ipoDetails.totalUnitsOffered,
+    volatility: ipoDetails.volatility || 0.75,
+    riskRating: ipoDetails.riskRating || 'High',
+    growthRating: 3,
+    status: 'IPO_PENDING',
+    sentimentOverride: 0,
+    description: ipoDetails.description || '',
+    ceoName: ipoDetails.ceoName || '',
+    foundedYear: ipoDetails.foundedYear || 2026,
+    headquarters: ipoDetails.headquarters || 'Bengaluru',
+    logoInitials: ipoDetails.ticker.slice(0, 2).toUpperCase(),
+    dividendYield: 0,
+    priceHistory: [{ timestamp: Date.now(), price: ipoDetails.ipoPrice }],
+    profileDetails: {
+      tagline: ipoDetails.description || '',
+      about: ipoDetails.description || '',
+      facts: [
+        { label: 'CEO', value: ipoDetails.ceoName || 'Unknown' },
+        { label: 'Founded', value: String(ipoDetails.foundedYear || 2026) },
+        { label: 'IPO Price', value: `₹${ipoDetails.ipoPrice}` }
+      ],
+      holdings: [],
+      note: 'Initial Public Offering.'
+    }
+  };
+
+  state.securities.push(security);
+  saveState(true);
+
+  // Broadcast IPO pending event for 8s takeover on Projector
+  broadcastState('IPO_PENDING', {
+    type: 'IPO_PENDING',
+    ticker: ipoDetails.ticker,
+    name: ipoDetails.companyName,
+    ipoPrice: ipoDetails.ipoPrice,
+    availableUnits: ipoDetails.totalUnitsOffered
+  });
+
+  // Set timeout to open trading after 60 seconds
+  setTimeout(() => {
+    const sec = state.securities.find(s => s.id === id);
+    if (sec) {
+      sec.status = 'Active';
+      sec.ipoTriggeredAt = Date.now();
+      saveState(true);
+      
+      const news = {
+        id: `NW_IPO_${sec.ticker}`,
+        headline: `🔔 IPO: ${sec.name} (${sec.ticker}) now trading on NIFTY FMS EXCHANGE at ₹${sec.basePrice} — ${sec.totalUnits} units available`,
+        description: sec.description,
+        affectedSecurityIds: [sec.id],
+        sentiment: 'Positive',
+        impactPercent: 0,
+        triggeredAt: Date.now(),
+        category: 'Corporate'
+      };
+      state.newsEvents.push(news);
+      broadcastState('NEWS_FLASH', { newsItem: news });
+
+      if (sec.ticker === 'ISFT') {
+        const oldPrice = sec.currentPrice;
+        sec.currentPrice = parseFloat((oldPrice * 1.18).toFixed(2));
+        sec.priceHistory.push({ timestamp: Date.now(), price: sec.currentPrice });
+        saveState(true);
+        broadcastState();
+      }
+      else if (sec.ticker === 'ANTH') {
+        sec.sentimentOverride = 2;
+        const target = 1180;
+        const dur = 180;
+        const priceDiff = target - sec.currentPrice;
+        activeVelocityTargets[sec.id] = {
+          targetPrice: target,
+          stepVal: priceDiff / dur,
+          stepsRemaining: dur
+        };
+      }
+    }
+  }, 60000);
+};
+
 const executePhoenixAct = (actNum) => {
   const security = state.securities.find(s => s.ticker === PHOENIX_TARGET);
   if (!security) return { error: 'DTAI security not found in database.' };
@@ -1270,7 +1211,7 @@ const executePhoenixAct = (actNum) => {
   const act = Number(actNum);
 
   if (act === 1) {
-    // Loss Announcement
+    // Loss Announcement (T+08:00)
     security.sentimentOverride = -1;
     const oldPrice = security.currentPrice;
     security.currentPrice = parseFloat((oldPrice * 0.78).toFixed(2)); // -22%
@@ -1290,9 +1231,8 @@ const executePhoenixAct = (actNum) => {
     broadcastState('NEWS_FLASH', { newsItem: news });
   } 
   else if (act === 2) {
-    // Mystery Buyer
+    // Mystery Buyer (T+14:00)
     security.sentimentOverride = 0;
-    // Set target price to 210 over 120 seconds
     const target = 210;
     const dur = 120;
     const priceDiff = target - security.currentPrice;
@@ -1304,7 +1244,7 @@ const executePhoenixAct = (actNum) => {
 
     const news = {
       id: `NW_PHX_2`,
-      headline: 'BREAKING: Singapore-Based Firm Acquires ₹100 Crore Strategic Stake in Delta AI Labs',
+      headline: 'Singapore-Based Firm Acquires ₹100 Crore Strategic Stake in Delta AI Labs',
       description: 'Regulatory filings reveal that a private equity consortium registered in Singapore has acquired a 12% stake in DTAI. Speculators eye proprietary patents.',
       sentiment: 'Positive',
       impactPercent: 12,
@@ -1316,7 +1256,34 @@ const executePhoenixAct = (actNum) => {
     broadcastState('NEWS_FLASH', { newsItem: news });
   } 
   else if (act === 3) {
-    // Leadership Upheaval
+    // IPO 1: IndiaStack Fintech Ltd (T+16:00)
+    triggerIPO({
+      ticker: 'ISFT',
+      companyName: 'IndiaStack Fintech Ltd',
+      sector: 'Fintech / Technology',
+      ipoPrice: 285,
+      totalUnitsOffered: 180,
+      volatility: 0.75,
+      riskRating: 'High',
+      ceoName: 'Ananya Krishnamurthy',
+      foundedYear: 2018,
+      description: "IndiaStack Fintech is a Bengaluru-based startup that built the UPI reconciliation infrastructure used by 14 major banks. After 6 years as a B2B platform, it is listing publicly to fund international expansion."
+    });
+
+    const news = {
+      id: 'NW_ISFT_IPO_WARN',
+      headline: "IndiaStack Fintech IPO Oversubscribed 14x — Strong Institutional Demand at Listing",
+      description: "India's UPI infrastructure pioneer makes its market debut after a massively oversubscribed IPO. Institutional investors have anchored 60% of the offering. Retail demand exceeded expectations by 14x.",
+      sentiment: 'Positive',
+      impactPercent: 18,
+      triggeredAt: Date.now(),
+      category: 'Corporate'
+    };
+    state.newsEvents.push(news);
+    broadcastState('NEWS_FLASH', { newsItem: news });
+  }
+  else if (act === 4) {
+    // Leadership Upheaval (T+19:00)
     security.sentimentOverride = -1;
     const oldPrice = security.currentPrice;
     security.currentPrice = parseFloat((oldPrice * 0.92).toFixed(2)); // -8%
@@ -1336,10 +1303,9 @@ const executePhoenixAct = (actNum) => {
     state.newsEvents.push(news);
     broadcastState('NEWS_FLASH', { newsItem: news });
   } 
-  else if (act === 4) {
-    // Pump Phase Part 1
+  else if (act === 5) {
+    // Pump Phase Part 1 (T+22:00)
     security.sentimentOverride = 2;
-    // Velocity to 280 over 60 seconds
     const target = 280;
     const dur = 60;
     const priceDiff = target - security.currentPrice;
@@ -1362,36 +1328,58 @@ const executePhoenixAct = (actNum) => {
     state.newsEvents.push(news);
     broadcastState('NEWS_FLASH', { newsItem: news });
   }
-  else if (act === 5) {
-    // Pump Phase Part 2 (Rumour Peak)
-    security.sentimentOverride = 2;
-    // Velocity to 430 over 60 seconds
-    const target = 430;
-    const dur = 60;
-    const priceDiff = target - security.currentPrice;
-    activeVelocityTargets[security.id] = {
-      targetPrice: target,
-      stepVal: priceDiff / dur,
-      stepsRemaining: dur
-    };
-
+  else if (act === 6) {
+    // Anthropic IPO Alert Warning (T+23:00)
     const news = {
-      id: `NW_PHX_5`,
-      headline: 'RUMOUR ⚠ UNVERIFIED: Tata Group in Advanced Talks to Acquire Delta AI Labs at ₹600 Premium',
-      description: 'Unverified market sources claim Tata Sons is conducting due diligence on a full acquisition of DTAI. Volumes surge 847% above average.',
+      id: 'NW_ANTH_WARN',
+      headline: "⚡ BREAKING: Anthropic AI India IPO in 60 Seconds — ₹850 Issue Price | 120 Units Only",
+      description: "The most anticipated AI listing of the year hits the NIFTY FMS Exchange in 60 seconds. Anthropic AI India, subsidiary of the global AI safety pioneer, opens at ₹850 with only 120 units available.",
       sentiment: 'Positive',
-      impactPercent: 15,
+      impactPercent: 0,
       triggeredAt: Date.now(),
-      category: 'Macro',
-      affectedSecurityIds: [security.id]
+      category: 'Corporate'
     };
     state.newsEvents.push(news);
     broadcastState('NEWS_FLASH', { newsItem: news });
   }
-  else if (act === 6) {
-    // SEBI Probe
+  else if (act === 7) {
+    // IPO 2: Anthropic AI India Ltd (T+24:00)
+    triggerIPO({
+      ticker: 'ANTH',
+      companyName: 'Anthropic AI India Ltd',
+      sector: 'AI / Technology',
+      ipoPrice: 850,
+      totalUnitsOffered: 120,
+      volatility: 0.90,
+      riskRating: 'High',
+      ceoName: 'Dr. Meghna Iyer',
+      foundedYear: 2023,
+      description: "Anthropic AI India Ltd, the Indian subsidiary of the global AI safety company behind the Claude AI model. The company has ARR of ₹2,200 crore from enterprise contracts with 8 PSU banks and the Ministry of Electronics & IT."
+    });
+  }
+  else if (act === 8) {
+    // Anthropic IPO Day Pop (T+25:00)
+    const anth = state.securities.find(s => s.ticker === 'ANTH');
+    if (anth) {
+      const oldPrice = anth.currentPrice;
+      anth.currentPrice = parseFloat((oldPrice * 1.12).toFixed(2));
+      anth.priceHistory.push({ timestamp: Date.now(), price: anth.currentPrice });
+    }
+    const news = {
+      id: 'NW_ANTH_POP',
+      headline: "Anthropic AI India Surges 38% Above Issue Price — Retail Window SOLD OUT in 4 Minutes",
+      description: "Anthropic AI India's market debut has exceeded all expectations with the stock already 38% above its ₹850 IPO price. All 120 units have been allocated.",
+      sentiment: 'Positive',
+      impactPercent: 12,
+      triggeredAt: Date.now(),
+      category: 'Corporate'
+    };
+    state.newsEvents.push(news);
+    broadcastState('NEWS_FLASH', { newsItem: news });
+  }
+  else if (act === 9) {
+    // SEBI Probe (T+30:00)
     security.sentimentOverride = -2;
-    // Crash 25% instantly, then velocity to 220 over 180 seconds
     security.currentPrice = parseFloat((security.currentPrice * 0.75).toFixed(2));
     security.priceHistory.push({ timestamp: Date.now(), price: security.currentPrice });
 
@@ -1417,8 +1405,8 @@ const executePhoenixAct = (actNum) => {
     state.newsEvents.push(notice);
     broadcastState('NEWS_FLASH', { newsItem: notice });
   }
-  else if (act === 7) {
-    // Scandal Breaks
+  else if (act === 10) {
+    // Scandal Breaks (T+34:00)
     security.sentimentOverride = -2;
     const oldPrice = security.currentPrice;
     security.currentPrice = parseFloat((oldPrice * 0.70).toFixed(2)); // -30%
@@ -1437,8 +1425,28 @@ const executePhoenixAct = (actNum) => {
     state.newsEvents.push(news);
     broadcastState('NEWS_FLASH', { newsItem: news });
   }
-  else if (act === 8) {
-    // Suspend Trading
+  else if (act === 11) {
+    // ANTH Sector Rally (T+35:00)
+    const anth = state.securities.find(s => s.ticker === 'ANTH');
+    if (anth) {
+      const oldPrice = anth.currentPrice;
+      anth.currentPrice = parseFloat((oldPrice * 1.10).toFixed(2));
+      anth.priceHistory.push({ timestamp: Date.now(), price: anth.currentPrice });
+    }
+    const news = {
+      id: 'NW_ANTH_RALLY',
+      headline: "AI SECTOR RALLY: Anthropic AI India benefits from Delta AI Labs collapse — enterprise clients migrate to trusted AI provider",
+      description: "Enterprise clients migrate to trusted AI provider following competitor governance failure. Anthropic registers massive client additions.",
+      sentiment: 'Positive',
+      impactPercent: 10,
+      triggeredAt: Date.now(),
+      category: 'Corporate'
+    };
+    state.newsEvents.push(news);
+    broadcastState('NEWS_FLASH', { newsItem: news });
+  }
+  else if (act === 12) {
+    // Suspend Trading DTAI (T+36:00)
     security.status = 'Halted';
 
     const notice = {
@@ -1454,8 +1462,8 @@ const executePhoenixAct = (actNum) => {
     state.newsEvents.push(notice);
     broadcastState('MARKET_HALT', { securityId: security.id, ticker: security.ticker, name: security.name });
   }
-  else if (act === 9) {
-    // Insolvency
+  else if (act === 13) {
+    // Insolvency DTAI (T+38:00)
     security.status = 'Bankrupt';
     security.currentPrice = 0;
     security.priceHistory.push({ timestamp: Date.now(), price: 0 });
@@ -1473,8 +1481,8 @@ const executePhoenixAct = (actNum) => {
     state.newsEvents.push(notice);
     broadcastState('BANKRUPTCY', { securityId: security.id, ticker: security.ticker, name: security.name });
   }
-  else if (act === 10) {
-    // Market Recovery
+  else if (act === 14) {
+    // Market Recovery (T+40:00)
     state.securities.forEach(s => {
       if (s.ticker !== PHOENIX_TARGET && s.status === 'Active') {
         s.sentimentOverride = 1; // Mild Bull
@@ -1493,13 +1501,32 @@ const executePhoenixAct = (actNum) => {
     state.newsEvents.push(news);
     broadcastState('NEWS_FLASH', { newsItem: news });
 
-    // Reset sentiment to neutral after 5 mins
     setTimeout(() => {
       state.securities.forEach(s => {
         if (s.ticker !== PHOENIX_TARGET) s.sentimentOverride = 0;
       });
       broadcastState();
     }, 5 * 60 * 1000);
+  }
+  else if (act === 15) {
+    // ANTH Defence Contract (T+45:00)
+    const anth = state.securities.find(s => s.ticker === 'ANTH');
+    if (anth) {
+      const oldPrice = anth.currentPrice;
+      anth.currentPrice = parseFloat((oldPrice * 1.08).toFixed(2));
+      anth.priceHistory.push({ timestamp: Date.now(), price: anth.currentPrice });
+    }
+    const news = {
+      id: 'NW_ANTH_CONTRACT',
+      headline: "Anthropic AI India Signs ₹800 Crore Multi-Year Contract with Ministry of Defence for AI-Assisted Intelligence Analysis",
+      description: "Ministry of Defence awards major national security project to Anthropic AI India. Deployment begins immediately.",
+      sentiment: 'Positive',
+      impactPercent: 8,
+      triggeredAt: Date.now(),
+      category: 'Corporate'
+    };
+    state.newsEvents.push(news);
+    broadcastState('NEWS_FLASH', { newsItem: news });
   }
 
   saveState(true);
@@ -1528,7 +1555,15 @@ app.post('/api/admin/ai-chat', async (req, res) => {
     let aiText = '';
 
     // Matchers
-    if (text.includes('phoenix act') || text.includes('fire act')) {
+    if (text.includes('anthropic') && text.includes('ipo')) {
+      cmds.push({ action: 'fireProjectPhoenixAct', params: { actNumber: 7 } });
+      aiText = "Triggering Anthropic AI India IPO launch sequence (Act 7). The projector will display the 8-second Initial Public Offering announcement takeover.";
+    }
+    else if ((text.includes('indiastack') || text.includes('india stack')) && text.includes('ipo')) {
+      cmds.push({ action: 'fireProjectPhoenixAct', params: { actNumber: 3 } });
+      aiText = "Triggering IndiaStack Fintech IPO launch sequence (Act 3). The projector will display the 8-second Initial Public Offering announcement takeover.";
+    }
+    else if (text.includes('phoenix act') || text.includes('fire act')) {
       const match = text.match(/(?:act|phase)\s*(\d+)/i);
       if (match) {
         const actNum = Number(match[1]);

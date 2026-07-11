@@ -13,10 +13,15 @@ export default function ResultsPage({ state }) {
 
   // Starting Capital helper by team type
   const getStartingCapital = (teamType) => {
+    const settings = state.settings || {
+      startingCapitalRetail: 1000000,
+      startingCapitalMutualFund: 1000000,
+      startingCapitalHedgeFund: 1000000
+    };
     switch (teamType) {
-      case 'HedgeFund': return state.settings.startingCapitalHedgeFund;
-      case 'MutualFund': return state.settings.startingCapitalMutualFund;
-      default: return state.settings.startingCapitalRetail;
+      case 'HedgeFund': return settings.startingCapitalHedgeFund || 1000000;
+      case 'MutualFund': return settings.startingCapitalMutualFund || 1000000;
+      default: return settings.startingCapitalRetail || 1000000;
     }
   };
 

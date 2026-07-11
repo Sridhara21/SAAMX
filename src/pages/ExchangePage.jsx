@@ -77,8 +77,8 @@ export default function ExchangePage({ state, onOpenProfile, adminPassword }) {
       return;
     }
 
-    if (currentSec.status === 'Halted' || currentSec.status === 'Suspended') {
-      setErrorMsg(`${currentSec.ticker} is currently HALTED — trading suspended`);
+    if (currentSec.status !== 'Active') {
+      setErrorMsg(`${currentSec.ticker} is currently ${currentSec.status} — trading suspended`);
       return;
     }
 
@@ -113,12 +113,28 @@ export default function ExchangePage({ state, onOpenProfile, adminPassword }) {
     }
 
     const tradeBody = {
-      teamId: selectedTeam.id,
-      securityId: selectedSec.id,
+      teamId: selectedTeam.teamCode,
+      securityId: selectedSec.ticker,
       action,
       quantity: qty,
       enteredBy: staffName
     };
+
+    // Trigger visual flash immediately
+    setFlashColor(action === 'BUY' ? 'var(--color-rise-light)' : 'var(--color-fall-light)');
+    setTimeout(() => setFlashColor(null), 850);
+
+    // Optimistically announce the execution toast
+    const optimisticMessage = `✓ [Optimistic] ${selectedTeam.teamCode} ${action === 'BUY' ? 'buying' : 'selling'} ${qty} ${currentSec.ticker} @ ₹${currentSec.currentPrice.toLocaleString('en-IN')}`;
+    addToast(optimisticMessage);
+
+    // Reset inputs immediately so operator is unblocked
+    setTeamQuery('');
+    setSecQuery('');
+    setQuantity('');
+    setSelectedTeam(null);
+    setSelectedSec(null);
+    setTimeout(() => teamInputRef.current?.focus(), 50);
 
     try {
       const res = await fetch('/api/trade', {
@@ -132,29 +148,13 @@ export default function ExchangePage({ state, onOpenProfile, adminPassword }) {
 
       if (res.ok) {
         const data = await res.json();
-        
-        // Trigger fullscreen peripheral visual flash
-        setFlashColor(action === 'BUY' ? 'var(--color-rise-light)' : 'var(--color-fall-light)');
-        setTimeout(() => setFlashColor(null), 850);
-
-        // Add toast
-        addToast(`✓ ${selectedTeam.teamCode} ${action === 'BUY' ? 'bought' : 'sold'} ${qty} ${currentSec.ticker} @ ₹${currentSec.currentPrice} — Total ₹${cost.toLocaleString()}`);
-
-        // Reset Inputs
-        setTeamQuery('');
-        setSecQuery('');
-        setQuantity('');
-        setSelectedTeam(null);
-        setSelectedSec(null);
-        
-        // Refocus back to Team Code field
-        setTimeout(() => teamInputRef.current?.focus(), 50);
+        addToast(`✓ Confirmed: ${tradeBody.teamId} ${action === 'BUY' ? 'bought' : 'sold'} ${qty} ${tradeBody.securityId} @ ₹${data.executionPrice.toLocaleString('en-IN')}`);
       } else {
         const data = await res.json();
-        setErrorMsg(data.error || 'Execution failed.');
+        addToast(`❌ Failed: ${tradeBody.teamId} order for ${qty} ${tradeBody.securityId} rejected: ${data.error}`);
       }
     } catch (err) {
-      setErrorMsg('Network error: ' + err.message);
+      addToast(`❌ Network error executing ${tradeBody.teamId} trade on ${tradeBody.securityId}.`);
     }
   };
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminPage from './pages/AdminPage.jsx';
 import ExchangePage from './pages/ExchangePage.jsx';
 import SebiPage from './pages/SebiPage.jsx';
@@ -8,29 +8,31 @@ import ResultsPage from './pages/ResultsPage.jsx';
 import HomePage from './pages/HomePage.jsx';
 import PortfolioPage from './pages/PortfolioPage.jsx';
 import CompanyProfileModal from './components/CompanyProfileModal.jsx';
+import { useFirebaseState } from './hooks/useFirebaseState.js';
+import { ConnectionIndicator } from './components/ConnectionIndicator.jsx';
+import { apiFetch } from './lib/api.js';
 
 const ADMIN_PASSWORD = 'fms-event-2026';
 const JOURNALIST_PASSWORD = 'journalist-event-2026';
 
 export default function App() {
   const [route, setRoute] = useState(window.location.hash || '#/');
-  const [state, setState] = useState(null);
-  const [activeAlerts, setActiveAlerts] = useState([]);
+  const { state, connected } = useFirebaseState();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
   const [authError, setAuthError] = useState('');
-  const [connected, setConnected] = useState(false);
-  const [reconnecting, setReconnecting] = useState(false);
-  
-  // Selected security for Company Profile Modal
   const [selectedSecurityId, setSelectedSecurityId] = useState(null);
+  const [apiBaseInput, setApiBaseInput] = useState(localStorage.getItem('fms_api_base') || '');
+  const [showTroubleshooting, setShowTroubleshooting] = useState(false);
+  const [customDbUrl, setCustomDbUrl] = useState(localStorage.getItem('fms_db_url') || '');
 
-  // Takeover animation state
-  const [takeoverEvent, setTakeoverEvent] = useState(null);
-
-  const wsRef = useRef(null);
-  const reconnectTimeoutRef = useRef(null);
-  const reconnectDelayRef = useRef(1000);
+  // Timeout to show troubleshoot config
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowTroubleshooting(true);
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Hash Router
   useEffect(() => {
@@ -40,84 +42,6 @@ export default function App() {
     };
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
-
-  // Fetch full state REST fallback & sync
-  const fetchCurrentState = async () => {
-    try {
-      const res = await fetch('/api/state');
-      if (res.ok) {
-        const data = await res.json();
-        setState(data.state);
-        setActiveAlerts(data.activeAlerts);
-      }
-    } catch (err) {
-      console.error('Error fetching state via REST:', err);
-    }
-  };
-
-  // WebSocket connection & management
-  const connectWebSocket = () => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
-    
-    console.log(`Connecting to WebSocket: ${wsUrl}`);
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
-
-    ws.onopen = () => {
-      console.log('WebSocket connected successfully');
-      setConnected(true);
-      setReconnecting(false);
-      reconnectDelayRef.current = 1000;
-      fetchCurrentState();
-    };
-
-    ws.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-      if (message.state) {
-        setState(message.state);
-      }
-      if (message.activeAlerts) {
-        setActiveAlerts(message.activeAlerts);
-      }
-
-      // Handle Takeover Animations
-      const animations = [
-        'OPENING_BELL', 'CLOSING_BELL', 'MARKET_HALT', 
-        'BANKRUPTCY', 'IPO_LAUNCH', 'DIVIDEND_ANNOUNCEMENT', 'STOCK_SPLIT'
-      ];
-      if (animations.includes(message.type)) {
-        setTakeoverEvent(message);
-        setTimeout(() => setTakeoverEvent(null), 6000); // 6 seconds duration
-      }
-    };
-
-    ws.onclose = () => {
-      console.warn('WebSocket connection closed.');
-      setConnected(false);
-      setReconnecting(true);
-      
-      const nextDelay = Math.min(reconnectDelayRef.current * 2, 10000);
-      reconnectDelayRef.current = nextDelay;
-      
-      reconnectTimeoutRef.current = setTimeout(() => {
-        connectWebSocket();
-      }, nextDelay);
-    };
-
-    ws.onerror = (err) => {
-      console.error('WebSocket error:', err);
-      ws.close();
-    };
-  };
-
-  useEffect(() => {
-    connectWebSocket();
-    return () => {
-      if (wsRef.current) wsRef.current.close();
-      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
-    };
   }, []);
 
   const handleAuth = (e) => {
@@ -154,17 +78,120 @@ export default function App() {
   const requiresAuth = ['#/admin', '#/exchange', '#/sebi', '#/journalist', '#/portfolio'].includes(route);
   const authorized = isAuthenticated;
 
-  // Helper to open company profile
   const openCompanyProfile = (id) => {
     setSelectedSecurityId(id);
   };
 
   if (!state) {
     return (
-      <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-paper)' }}>
-        <div style={{ textAlign: 'center' }}>
+      <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-paper)', padding: '24px' }}>
+        <div style={{ textAlign: 'center', maxWidth: '500px', width: '100%' }}>
           <h2 style={{ color: 'var(--color-brass)', marginBottom: '8px', fontFamily: 'var(--font-display)', fontSize: '2rem' }}>Loading FMS Terminal...</h2>
-          <div style={{ color: 'var(--color-ink-2)' }}>Syncing real-time market engine</div>
+          <div style={{ color: 'var(--color-ink-2)', marginBottom: '24px' }}>Syncing real-time market engine</div>
+          
+          {showTroubleshooting && (
+            <div className="glass card" style={{ padding: '24px', textAlign: 'left', borderTop: '4px solid var(--color-brass)', marginTop: '24px' }}>
+              <h3 style={{ fontSize: '1.1rem', marginBottom: '8px', color: 'var(--color-ink)' }}>Troubleshoot Database Connection</h3>
+              <p style={{ fontSize: '0.85rem', color: 'var(--color-ink-2)', marginBottom: '16px', lineHeight: '1.5' }}>
+                If this screen hangs, it means the app is unable to reach your Firebase Realtime Database. Please verify:
+                <br />1. You have clicked **Create Database** in your Firebase console under *Realtime Database*.
+                <br />2. If your database URL is different, paste the exact URL from your Firebase console below:
+              </p>
+              
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                <input
+                  type="text"
+                  placeholder="https://your-project-default-rtdb.firebaseio.com"
+                  style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid var(--color-border)', fontFamily: 'monospace', fontSize: '0.85rem', color: '#000' }}
+                  value={customDbUrl}
+                  onChange={(e) => setCustomDbUrl(e.target.value)}
+                />
+                <button
+                  onClick={() => {
+                    localStorage.setItem('fms_db_url', customDbUrl.trim());
+                    window.location.reload();
+                  }}
+                  className="btn btn-primary"
+                  style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                >
+                  Save & Retry
+                </button>
+              </div>
+              
+              {localStorage.getItem('fms_db_url') && (
+                <button
+                  onClick={() => {
+                    localStorage.removeItem('fms_db_url');
+                    window.location.reload();
+                  }}
+                  style={{ background: 'none', border: 'none', color: 'var(--color-fall)', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.75rem', padding: 0 }}
+                >
+                  Reset to default Singapore URL
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Render Firebase Connection Error Screen
+  if (state.isError) {
+    return (
+      <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-paper)', padding: '24px' }}>
+        <div className="glass card" style={{ maxWidth: '500px', width: '100%', padding: '32px', textAlign: 'center', borderTop: '6px solid var(--color-fall)' }}>
+          <h2 style={{ color: 'var(--color-fall)', fontFamily: 'var(--font-display)', marginBottom: '16px', fontSize: '2rem' }}>Connection Error</h2>
+          <p style={{ color: 'var(--color-ink-2)', marginBottom: '24px', lineHeight: '1.6' }}>
+            Failed to connect to Firebase Realtime Database.
+          </p>
+          <div style={{ textAlign: 'left', background: 'rgba(250, 224, 222, 0.5)', border: '1px solid #9B2B25', padding: '12px', borderRadius: '8px', fontSize: '0.85rem', color: '#9B2B25', fontFamily: 'monospace', marginBottom: '24px' }}>
+            Error: {state.errorMessage}
+          </div>
+          <p style={{ fontSize: '0.85rem', color: 'var(--color-ink-2)', marginBottom: '24px', textAlign: 'left' }}>
+            Please make sure:
+            <br />1. Your database is created in the Firebase console.
+            <br />2. The **Database URL** is correct in `src/lib/firebase.js`.
+            <br />3. The **Rules** are set to `.read: true` and `.write: true`.
+          </p>
+          <button onClick={() => window.location.reload()} className="btn btn-primary" style={{ width: '100%' }}>🔄 Retry Connection</button>
+        </div>
+      </div>
+    );
+  }
+
+  // Render empty database initialization screen
+  if (state.isEmpty) {
+    return (
+      <div style={{
+        display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center',
+        backgroundColor: 'var(--color-paper)', padding: '24px'
+      }}>
+        <div className="glass card" style={{ maxWidth: '500px', width: '100%', padding: '32px', textAlign: 'center', borderTop: '6px solid var(--color-brass)' }}>
+          <h2 style={{ color: 'var(--color-brass)', fontFamily: 'var(--font-display)', marginBottom: '16px', fontSize: '2rem' }}>Initialization Required</h2>
+          <p style={{ color: 'var(--color-ink-2)', marginBottom: '24px', lineHeight: '1.6' }}>
+            The Firebase Realtime Database for project <strong>fmos-a6573</strong> is currently empty. Initialize it now with the complete 112-security universe and retail teams.
+          </p>
+
+          <button
+            onClick={async () => {
+              try {
+                const res = await apiFetch('/api/admin/seed', { method: 'POST' });
+                if (res.ok) {
+                  alert('Database initialized and seeded successfully!');
+                  window.location.reload();
+                } else {
+                  alert('Initialization failed. Check API Base URL and credentials.');
+                }
+              } catch (e) {
+                alert('Connection error initializing database.');
+              }
+            }}
+            className="btn btn-primary"
+            style={{ width: '100%' }}
+          >
+            🚀 Initialize & Seed Database
+          </button>
         </div>
       </div>
     );
@@ -199,9 +226,7 @@ export default function App() {
   const currentPassword = sessionStorage.getItem('fms_password') || ADMIN_PASSWORD;
   const isJournalistSession = currentPassword === JOURNALIST_PASSWORD;
 
-  // Render Page Content
   const renderContent = () => {
-    // Role boundary checks for Journalist
     if (isJournalistSession && ['#/admin', '#/exchange', '#/sebi', '#/portfolio'].includes(route)) {
       return (
         <div className="glass card" style={{ maxWidth: '500px', margin: '80px auto', padding: '32px', textAlign: 'center', borderTop: '6px solid var(--color-fall)' }}>
@@ -212,27 +237,38 @@ export default function App() {
       );
     }
 
+    const normalizedState = {
+      ...state,
+      securities: Object.values(state.securities || {}),
+      teams: Object.values(state.teams || {}),
+      transactions: Object.values(state.transactions || {}),
+      newsEvents: Object.values(state.newsEvents || {}),
+      corporateActions: Object.values(state.corporateActions || {})
+    };
+
     switch (route) {
       case '#/admin':
-        return <AdminPage state={state} onOpenProfile={openCompanyProfile} adminPassword={currentPassword} activeAlerts={activeAlerts} />;
+        return <AdminPage state={normalizedState} onOpenProfile={openCompanyProfile} adminPassword={currentPassword} />;
       case '#/exchange':
-        return <ExchangePage state={state} onOpenProfile={openCompanyProfile} adminPassword={currentPassword} />;
+        return <ExchangePage state={normalizedState} onOpenProfile={openCompanyProfile} adminPassword={currentPassword} />;
       case '#/sebi':
-        return <SebiPage state={state} onOpenProfile={openCompanyProfile} activeAlerts={activeAlerts} adminPassword={currentPassword} />;
+        return <SebiPage state={normalizedState} onOpenProfile={openCompanyProfile} adminPassword={currentPassword} />;
       case '#/projector':
-        return <ProjectorPage state={state} takeoverEvent={takeoverEvent} onOpenProfile={openCompanyProfile} />;
+        return <ProjectorPage state={normalizedState} onOpenProfile={openCompanyProfile} />;
       case '#/journalist':
-        return <JournalistPage state={state} adminPassword={currentPassword} />;
+        return <JournalistPage state={normalizedState} adminPassword={currentPassword} />;
       case '#/portfolio':
-        return <PortfolioPage state={state} onOpenProfile={openCompanyProfile} />;
+        return <PortfolioPage state={normalizedState} onOpenProfile={openCompanyProfile} />;
       case '#/results':
-        return <ResultsPage state={state} />;
+        return <ResultsPage state={normalizedState} />;
       case '#/home':
       case '#/':
       default:
-        return <HomePage state={state} />;
+        return <HomePage state={normalizedState} />;
     }
   };
+
+  const showIndicator = ['#/projector', '#/exchange', '#/sebi', '#/admin', '#/journalist'].includes(route);
 
   return (
     <div className="app-container">
@@ -259,21 +295,17 @@ export default function App() {
         {renderContent()}
       </main>
 
-      {/* Global Company Profile Modal */}
-      {selectedSecurityId && (
+      {selectedSecurityId && state.securities && (
         <CompanyProfileModal
           securityId={selectedSecurityId}
-          securities={state.securities}
-          newsEvents={state.newsEvents}
+          securities={Object.values(state.securities)}
+          newsEvents={Object.values(state.newsEvents || {})}
           onClose={() => setSelectedSecurityId(null)}
         />
       )}
 
-      {/* Disconnect indicator */}
-      {reconnecting && (
-        <div className="reconnection-indicator">
-          <span>⚠️</span> Reconnecting to FMS Engine...
-        </div>
+      {showIndicator && (
+        <ConnectionIndicator connected={connected} />
       )}
     </div>
   );

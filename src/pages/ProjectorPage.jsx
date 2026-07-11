@@ -23,47 +23,102 @@ function ProjectorCell({ security, denseMode }) {
   const priceChangePct = (priceChange / security.basePrice) * 100;
   const isUp = priceChangePct >= 0;
 
+  const isNewIpo = security.ipoTriggeredAt && (Date.now() - security.ipoTriggeredAt < 5 * 60 * 1000);
+  const isSoldOut = security.availableUnits === 0 && security.status === 'Active';
+  const isPending = security.status === 'IPO_PENDING';
+
   return (
     <div
       className={`glass ${flashClass}`}
       style={{
-        padding: denseMode ? '4px 8px' : '8px 12px',
+        padding: '6px 8px',
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'space-between',
+        justifyContent: 'center',
         borderBottom: '1px solid var(--color-border)',
         backgroundColor: 'var(--color-surface)',
         transition: 'background-color 0.8s ease',
-        minHeight: '0px'
+        minHeight: '80px',
+        textAlign: 'center'
       }}
     >
-      <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <span style={{ fontWeight: 800, fontSize: denseMode ? '0.85rem' : '1rem', fontFamily: 'var(--font-mono)' }} className="font-data">
-            {security.ticker}
-          </span>
-          <span style={{ fontSize: '0.6rem', color: 'var(--color-ink-2)', textTransform: 'uppercase', fontWeight: 600 }}>
-            {security.sector.substring(0, 3)}
-          </span>
-        </div>
-        <span style={{ fontSize: '0.65rem', color: 'var(--color-ink-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: denseMode ? '75px' : '100px' }}>
-          {security.name}
+      {/* Line 1: Ticker & Badges */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center', marginBottom: '2px' }}>
+        <span style={{ fontWeight: 800, fontSize: '0.9rem', fontFamily: 'var(--font-mono)' }} className="font-data">
+          {security.ticker}
         </span>
+        {isNewIpo && (
+          <span className="badge-flashing-ipo" style={{
+            fontSize: '0.55rem',
+            backgroundColor: 'var(--color-brass)',
+            color: '#fff',
+            padding: '1px 3px',
+            borderRadius: '2px',
+            fontWeight: 'bold'
+          }}>🆕 IPO</span>
+        )}
+        {isSoldOut && (
+          <span style={{
+            fontSize: '0.55rem',
+            backgroundColor: 'var(--color-fall)',
+            color: '#fff',
+            padding: '1px 3px',
+            borderRadius: '2px',
+            fontWeight: 'bold'
+          }}>SOLD OUT</span>
+        )}
+        {isPending && (
+          <span style={{
+            fontSize: '0.55rem',
+            backgroundColor: '#f0ad4e',
+            color: '#fff',
+            padding: '1px 3px',
+            borderRadius: '2px',
+            fontWeight: 'bold'
+          }}>PENDING</span>
+        )}
       </div>
-      <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'end' }}>
+
+      {/* Line 2: Price */}
+      <div style={{ margin: '2px 0' }}>
         <SplitFlapText text={`₹${security.currentPrice}`} small={denseMode} />
-        <span className={`font-data ${isUp ? 'text-up' : 'text-down'}`} style={{ fontSize: denseMode ? '0.75rem' : '0.8rem', fontWeight: 700, marginTop: '2px' }}>
-          {isUp ? '▲' : '▼'}{Math.abs(priceChangePct).toFixed(1)}%
-        </span>
+      </div>
+
+      {/* Line 3: Price Change Metric */}
+      <div>
+        {isPending ? (
+          <span style={{ fontSize: '0.65rem', color: '#f0ad4e', fontWeight: 700 }}>
+            PENDING
+          </span>
+        ) : (
+          <span className={`font-data ${isUp ? 'text-up' : 'text-down'}`} style={{ fontSize: '0.75rem', fontWeight: 700 }}>
+            {isUp ? '▲' : '▼'}{Math.abs(priceChangePct).toFixed(1)}%
+          </span>
+        )}
       </div>
     </div>
   );
 }
 
-export default function ProjectorPage({ state, takeoverEvent }) {
+export default function ProjectorPage({ state, onOpenProfile }) {
   const [timeLeft, setTimeLeft] = useState('60:00');
   const [latestNews, setLatestNews] = useState(null);
   const [showNewsBanner, setShowNewsBanner] = useState(false);
+  const [takeover, setTakeover] = useState(null);
+  const [prevMarketState, setPrevMarketState] = useState(null);
+  const [prevCorporateActionsLength, setPrevCorporateActionsLength] = useState(0);
+  const [shownPendingIpoTickers, setShownPendingIpoTickers] = useState(new Set());
+
+  // Enter full-screen on load & Request Wake Lock
+  useEffect(() => {
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+    if ('wakeLock' in navigator) {
+      navigator.wakeLock.request('screen').catch(() => {});
+    }
+  }, []);
 
   // Clock countdown timer logic
   useEffect(() => {
@@ -90,6 +145,65 @@ export default function ProjectorPage({ state, takeoverEvent }) {
 
     return () => clearInterval(interval);
   }, [state.marketState.status, state.marketState.simulationStartTime, state.marketState.simulationDurationMinutes, state.marketState.pauseTimeOffset]);
+
+  // Automated takeover animation triggers from state changes
+  useEffect(() => {
+    if (!state) return;
+
+    if (!prevMarketState) {
+      setPrevMarketState(state.marketState);
+      setPrevCorporateActionsLength(state.corporateActions ? state.corporateActions.length : 0);
+      return;
+    }
+
+    // Opening Bell
+    if (prevMarketState.status !== 'Open' && state.marketState.status === 'Open') {
+      setTakeover({ type: 'OPENING_BELL' });
+      setTimeout(() => setTakeover(null), 6000);
+    }
+
+    // Closing Bell
+    if (prevMarketState.status !== 'Closed' && state.marketState.status === 'Closed') {
+      setTakeover({ type: 'CLOSING_BELL' });
+      setTimeout(() => setTakeover(null), 6000);
+    }
+
+    // Bankruptcy or halts detection
+    const currentActions = state.corporateActions || [];
+    if (currentActions.length > prevCorporateActionsLength) {
+      const latestAction = [...currentActions].sort((a, b) => b.triggeredAt - a.triggeredAt)[0];
+      if (latestAction) {
+        if (latestAction.actionType === 'Bankruptcy') {
+          setTakeover({ type: 'BANKRUPTCY', ticker: latestAction.securityId, name: latestAction.details || '' });
+          setTimeout(() => setTakeover(null), 10000);
+        } else if (latestAction.actionType === 'CircuitBreaker') {
+          setTakeover({ type: 'MARKET_HALT', ticker: latestAction.securityId, name: latestAction.details || '' });
+          setTimeout(() => setTakeover(null), 6000);
+        } else if (latestAction.actionType === 'IPO') {
+          setTakeover({ type: 'IPO_LAUNCH', ticker: latestAction.ticker, name: latestAction.details || '' });
+          setTimeout(() => setTakeover(null), 8000);
+        }
+      }
+    }
+
+    // IPO Pending takeover
+    if (state.securities) {
+      state.securities.forEach(s => {
+        if (s.status === 'IPO_PENDING' && !shownPendingIpoTickers.has(s.ticker)) {
+          setShownPendingIpoTickers(prev => {
+            const next = new Set(prev);
+            next.add(s.ticker);
+            return next;
+          });
+          setTakeover({ type: 'IPO_PENDING', ticker: s.ticker, name: s.name, ipoPrice: s.basePrice, availableUnits: s.totalUnits });
+          setTimeout(() => setTakeover(null), 8000);
+        }
+      });
+    }
+
+    setPrevMarketState(state.marketState);
+    setPrevCorporateActionsLength(currentActions.length);
+  }, [state, prevMarketState, prevCorporateActionsLength, shownPendingIpoTickers]);
 
   // Track triggered news events to trigger 12s slide-in banners
   useEffect(() => {
@@ -127,9 +241,10 @@ export default function ProjectorPage({ state, takeoverEvent }) {
 
   // Render takeover overlay
   const renderTakeoverOverlay = () => {
-    if (!takeoverEvent) return null;
+    const activeTakeover = takeover;
+    if (!activeTakeover) return null;
 
-    const { type, ticker, name } = takeoverEvent;
+    const { type, ticker, name, ipoPrice, availableUnits } = activeTakeover;
 
     switch (type) {
       case 'OPENING_BELL':
@@ -185,6 +300,37 @@ export default function ProjectorPage({ state, takeoverEvent }) {
               <p className="takeover-desc">
                 IPO Listing Launched: <strong>{ticker} ({name})</strong> is now trading.
               </p>
+            </div>
+          </div>
+        );
+      case 'IPO_PENDING':
+        return (
+          <div className="takeover-overlay" style={{ backgroundColor: 'var(--color-surface)' }}>
+            <div className="takeover-card" style={{ borderColor: 'var(--color-brass)', padding: '40px', maxWidth: '600px', width: '90%' }}>
+              <div style={{ fontSize: '1.25rem', fontWeight: 'bold', letterSpacing: '0.1em', color: 'var(--color-brass)', borderBottom: '2px solid var(--color-brass)', paddingBottom: '12px', marginBottom: '24px', textAlign: 'center' }}>
+                🔔 INITIAL PUBLIC OFFERING 🔔
+              </div>
+              <h2 className="takeover-title" style={{ color: 'var(--color-ink)', fontFamily: 'var(--font-display)', fontSize: '2.2rem', margin: '0 0 8px 0', textAlign: 'center' }}>
+                {name} ({ticker})
+              </h2>
+              <p style={{ fontSize: '1.1rem', color: 'var(--color-ink-2)', textAlign: 'center', margin: '0 0 24px 0', fontWeight: 'bold' }}>
+                NOW LISTED ON NIFTY FMS EXCHANGE
+              </p>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', background: '#fdfcf9', padding: '16px', borderRadius: '4px', border: '1px dashed var(--color-border)', marginBottom: '24px' }}>
+                <div style={{ textAlign: 'center' }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--color-ink-2)', display: 'block', textTransform: 'uppercase' }}>IPO PRICE</span>
+                  <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--color-brass)', fontFamily: 'var(--font-mono)' }}>₹{takeoverEvent.ipoPrice}</span>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--color-ink-2)', display: 'block', textTransform: 'uppercase' }}>UNITS AVAILABLE</span>
+                  <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--color-ink)', fontFamily: 'var(--font-mono)' }}>{takeoverEvent.availableUnits}</span>
+                </div>
+              </div>
+              
+              <div style={{ fontSize: '1rem', fontWeight: 'bold', color: 'var(--color-fall)', textAlign: 'center', borderTop: '2px solid var(--color-border)', paddingTop: '16px', letterSpacing: '0.05em' }}>
+                TRADING OPENS IN 60 SECONDS
+              </div>
             </div>
           </div>
         );
