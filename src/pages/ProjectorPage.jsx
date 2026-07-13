@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import SplitFlapText from '../components/SplitFlapText.jsx';
 
-// Component for single security board cell with flash animation on update
-function ProjectorCell({ security, denseMode }) {
+// Simplified component displaying only ticker and price with transition flash indicator
+function ProjectorCell({ security }) {
   const [prevPrice, setPrevPrice] = useState(security.currentPrice);
   const [flashClass, setFlashClass] = useState('');
 
@@ -19,44 +18,28 @@ function ProjectorCell({ security, denseMode }) {
     }
   }, [security.currentPrice, prevPrice]);
 
-  const priceChange = security.currentPrice - security.basePrice;
-  const priceChangePct = (priceChange / security.basePrice) * 100;
-  const isUp = priceChangePct >= 0;
-
   return (
     <div
       className={`glass ${flashClass}`}
       style={{
-        padding: denseMode ? '4px 6px' : '10px 14px',
+        padding: '6px 8px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        borderBottom: '1px solid var(--color-border)',
+        border: '1px solid var(--color-border)',
         backgroundColor: 'var(--color-surface)',
         transition: 'background-color 1s ease, border-color 0.3s ease',
         minHeight: '0px',
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        borderRadius: '4px'
       }}
     >
-      <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span style={{ fontWeight: 800, fontSize: denseMode ? '0.8rem' : '1.1rem', fontFamily: 'var(--font-mono)' }} className="font-data">
-            {security.ticker}
-          </span>
-          <span style={{ fontSize: '0.6rem', color: 'var(--color-ink-2)', textTransform: 'uppercase', fontWeight: 600 }}>
-            {security.sector.substring(0, 3)}
-          </span>
-        </div>
-        <span style={{ fontSize: '0.7rem', color: 'var(--color-ink-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
-          {security.name}
-        </span>
-      </div>
-      <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'end' }}>
-        <SplitFlapText text={`₹${security.currentPrice}`} small={denseMode} />
-        <span className={`font-data ${isUp ? 'text-up' : 'text-down'}`} style={{ fontSize: denseMode ? '0.7rem' : '0.85rem', fontWeight: 800, marginTop: '2px' }}>
-          {isUp ? '▲' : '▼'}{Math.abs(priceChangePct).toFixed(1)}%
-        </span>
-      </div>
+      <span style={{ fontWeight: 900, fontSize: '0.85rem', fontFamily: 'var(--font-mono)', color: 'var(--color-ink)' }}>
+        {security.ticker}
+      </span>
+      <span style={{ fontWeight: 800, fontSize: '0.85rem', fontFamily: 'var(--font-mono)', color: 'var(--color-brass)' }}>
+        ₹{security.currentPrice}
+      </span>
     </div>
   );
 }
@@ -74,15 +57,15 @@ function ScrollingTicker({ securities }) {
       boxSizing: 'border-box',
       display: 'flex',
       alignItems: 'center',
-      height: '36px',
+      height: '38px',
       position: 'relative'
     }}>
       <div style={{
         backgroundColor: 'var(--color-brass)',
         color: '#fff',
-        padding: '0 12px',
-        fontWeight: 'bold',
-        fontSize: '0.8rem',
+        padding: '0 14px',
+        fontWeight: '900',
+        fontSize: '0.85rem',
         zIndex: 10,
         height: '100%',
         display: 'flex',
@@ -96,9 +79,9 @@ function ScrollingTicker({ securities }) {
       <div className="ticker-scroll" style={{
         display: 'inline-flex',
         alignItems: 'center',
-        gap: '24px',
+        gap: '32px',
         paddingLeft: '20px',
-        animation: 'marquee 45s linear infinite'
+        animation: 'marquee 90s linear infinite'
       }}>
         {/* Render twice for seamless looping */}
         {[...securities, ...securities].map((sec, idx) => {
@@ -189,13 +172,8 @@ export default function ProjectorPage({ state, takeoverEvent }) {
     .slice(0, 12);
 
   // We want to fit exactly into a single page with NO scrolling.
-  // We determine the grid layout dynamically based on the total active securities.
-  const totalSecs = activeSecurities.length;
-  let gridColumnsCount = 4;
-  if (totalSecs > 48) gridColumnsCount = 6;
-  else if (totalSecs > 24) gridColumnsCount = 5;
-  
-  const denseMode = totalSecs > 24;
+  // 10 columns fits 100 securities exactly in a 10x10 grid matrix.
+  const gridColumnsCount = 10;
 
   // Render takeover overlay
   const renderTakeoverOverlay = () => {
@@ -249,11 +227,11 @@ export default function ProjectorPage({ state, takeoverEvent }) {
       }}>
         <div>
           <span style={{ fontSize: '0.65rem', color: 'var(--color-ink-2)', display: 'block', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>SESSION CLOCK</span>
-          <SplitFlapText text={timeLeft} small={true} />
+          <span style={{ fontSize: '1.4rem', fontWeight: 'bold', fontFamily: 'var(--font-mono)', color: 'var(--color-ink)' }}>{timeLeft}</span>
         </div>
         <div style={{ textAlign: 'center' }}>
           <span style={{ fontSize: '0.65rem', color: 'var(--color-ink-2)', display: 'block', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>EXCHANGE STATUS</span>
-          <SplitFlapText text={marketStatus} small={true} />
+          <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: state.marketState.status === 'Open' ? 'var(--color-rise)' : 'var(--color-fall)' }}>{marketStatus}</span>
         </div>
         <div style={{ textAlign: 'right' }}>
           <span style={{ fontSize: '0.65rem', color: 'var(--color-ink-2)', display: 'block', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>NIFTY FMS INDEX</span>
@@ -297,7 +275,7 @@ export default function ProjectorPage({ state, takeoverEvent }) {
         {/* Left Area: Security Grid (75% width) */}
         <div style={{
           width: '75%',
-          padding: '6px',
+          padding: '8px',
           overflow: 'hidden',
           borderRight: '1px solid var(--color-border)',
           display: 'flex',
@@ -307,13 +285,13 @@ export default function ProjectorPage({ state, takeoverEvent }) {
           <div style={{
             display: 'grid',
             gridTemplateColumns: `repeat(${gridColumnsCount}, 1fr)`,
+            gridAutoRows: '1fr',
             gap: '4px',
-            alignContent: 'start',
-            flex: 1,
-            overflowY: 'hidden'
+            height: '100%',
+            boxSizing: 'border-box'
           }}>
             {activeSecurities.map((s) => (
-              <ProjectorCell key={s.id} security={s} denseMode={denseMode} />
+              <ProjectorCell key={s.id} security={s} />
             ))}
           </div>
         </div>
