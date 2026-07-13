@@ -513,7 +513,7 @@ export async function apiFetch(path, options = {}) {
           security.status = 'Halted';
         } else if (actionType === 'UNHALT' && security) {
           security.status = 'Active';
-        } else if (actionType === 'StockSplit' && security) {
+        } else if ((actionType === 'StockSplit' || actionType === 'BonusIssue') && security) {
           security.totalUnits *= 2;
           security.availableUnits *= 2;
           security.currentPrice = parseFloat((security.currentPrice / 2).toFixed(2));
@@ -524,6 +524,19 @@ export async function apiFetch(path, options = {}) {
             const team = fms.teams[k];
             if (team.holdings && team.holdings[security.ticker]) {
               team.holdings[security.ticker] *= 2;
+            }
+          });
+        } else if (actionType === 'Dividend' && security) {
+          const dividendAmount = parseFloat(details) || 10;
+          security.currentPrice = Math.max(1, parseFloat((security.currentPrice - dividendAmount).toFixed(2)));
+          if (!security.priceHistory) security.priceHistory = [];
+          security.priceHistory.push({ timestamp: Date.now(), price: security.currentPrice });
+
+          Object.keys(fms.teams || {}).forEach(k => {
+            const team = fms.teams[k];
+            if (team.holdings && team.holdings[security.ticker]) {
+              const qty = team.holdings[security.ticker];
+              team.cashBalance = parseFloat((team.cashBalance + (qty * dividendAmount)).toFixed(2));
             }
           });
         } else if (actionType === 'Bankruptcy' && security) {

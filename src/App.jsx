@@ -26,6 +26,12 @@ export default function App() {
   const [showTroubleshooting, setShowTroubleshooting] = useState(false);
   const [customDbUrl, setCustomDbUrl] = useState(localStorage.getItem('fms_db_url') || '');
 
+  // Takeover Event state for Projector Page
+  const [takeoverEvent, setTakeoverEvent] = useState(null);
+  const [prevMarketState, setPrevMarketState] = useState(null);
+  const [prevCorporateActionsLength, setPrevCorporateActionsLength] = useState(0);
+  const [shownPendingIpoTickers, setShownPendingIpoTickers] = useState(new Set());
+
   // Timeout to show troubleshoot config
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -33,6 +39,68 @@ export default function App() {
     }, 4000);
     return () => clearTimeout(timer);
   }, []);
+
+  // Automated takeover animation triggers from state changes
+  useEffect(() => {
+    if (!state || !state.marketState) return;
+
+    if (!prevMarketState) {
+      setPrevMarketState(state.marketState);
+      const initialActions = state.corporateActions ? Object.keys(state.corporateActions).length : 0;
+      setPrevCorporateActionsLength(initialActions);
+      return;
+    }
+
+    // Opening Bell
+    if (prevMarketState.status !== 'Open' && state.marketState.status === 'Open') {
+      setTakeoverEvent({ type: 'OPENING_BELL' });
+      setTimeout(() => setTakeoverEvent(null), 6000);
+    }
+
+    // Closing Bell
+    if (prevMarketState.status !== 'Closed' && state.marketState.status === 'Closed') {
+      setTakeoverEvent({ type: 'CLOSING_BELL' });
+      setTimeout(() => setTakeoverEvent(null), 6000);
+    }
+
+    // Bankruptcy or halts detection
+    const currentActions = state.corporateActions ? Object.values(state.corporateActions) : [];
+    if (currentActions.length > prevCorporateActionsLength) {
+      const latestAction = [...currentActions].sort((a, b) => b.triggeredAt - a.triggeredAt)[0];
+      if (latestAction) {
+        if (latestAction.actionType === 'Bankruptcy') {
+          const sec = state.securities ? Object.values(state.securities).find(s => s.ticker === latestAction.securityId) : null;
+          setTakeoverEvent({ type: 'BANKRUPTCY', ticker: latestAction.securityId, name: sec ? sec.name : (latestAction.details || '') });
+          setTimeout(() => setTakeoverEvent(null), 10000);
+        } else if (latestAction.actionType === 'CircuitBreaker') {
+          const sec = state.securities ? Object.values(state.securities).find(s => s.ticker === latestAction.securityId) : null;
+          setTakeoverEvent({ type: 'MARKET_HALT', ticker: latestAction.securityId, name: sec ? sec.name : (latestAction.details || '') });
+          setTimeout(() => setTakeoverEvent(null), 6000);
+        } else if (latestAction.actionType === 'IPO') {
+          setTakeoverEvent({ type: 'IPO_LAUNCH', ticker: latestAction.ticker, name: latestAction.details || '' });
+          setTimeout(() => setTakeoverEvent(null), 8000);
+        }
+      }
+    }
+
+    // IPO Pending takeover
+    if (state.securities) {
+      Object.values(state.securities).forEach(s => {
+        if (s.status === 'IPO_PENDING' && !shownPendingIpoTickers.has(s.ticker)) {
+          setShownPendingIpoTickers(prev => {
+            const next = new Set(prev);
+            next.add(s.ticker);
+            return next;
+          });
+          setTakeoverEvent({ type: 'IPO_PENDING', ticker: s.ticker, name: s.name, ipoPrice: s.basePrice, availableUnits: s.totalUnits });
+          setTimeout(() => setTakeoverEvent(null), 8000);
+        }
+      });
+    }
+
+    setPrevMarketState(state.marketState);
+    setPrevCorporateActionsLength(currentActions.length);
+  }, [state, prevMarketState, prevCorporateActionsLength, shownPendingIpoTickers]);
 
   // Hash Router
   useEffect(() => {
@@ -254,7 +322,7 @@ export default function App() {
       case '#/sebi':
         return <SebiPage state={normalizedState} onOpenProfile={openCompanyProfile} adminPassword={currentPassword} />;
       case '#/projector':
-        return <ProjectorPage state={normalizedState} onOpenProfile={openCompanyProfile} />;
+        return <ProjectorPage state={normalizedState} takeoverEvent={takeoverEvent} onOpenProfile={openCompanyProfile} />;
       case '#/journalist':
         return <JournalistPage state={normalizedState} adminPassword={currentPassword} />;
       case '#/portfolio':

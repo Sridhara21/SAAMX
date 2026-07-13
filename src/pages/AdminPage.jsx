@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from '../lib/api.js';
 
 export default function AdminPage({ state, onOpenProfile, adminPassword, activeAlerts = [] }) {
   // Navigation tabs inside admin
@@ -49,11 +50,19 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
   const [selectedPhoenixAct, setSelectedPhoenixAct] = useState('1');
 
   // Settings
-  const [startingRetail, setStartingRetail] = useState(state.settings.startingCapitalRetail);
-  const [startingMutual, setStartingMutual] = useState(state.settings.startingCapitalMutualFund);
-  const [startingHedge, setStartingHedge] = useState(state.settings.startingCapitalHedgeFund);
-  const [simDuration, setSimDuration] = useState(state.marketState.simulationDurationMinutes);
+  const adminSettings = state.settings || {
+    startingCapitalRetail: 1000000,
+    startingCapitalMutualFund: 1000000,
+    startingCapitalHedgeFund: 1000000
+  };
+  const [startingRetail, setStartingRetail] = useState(adminSettings.startingCapitalRetail || 1000000);
+  const [startingMutual, setStartingMutual] = useState(adminSettings.startingCapitalMutualFund || 1000000);
+  const [startingHedge, setStartingHedge] = useState(adminSettings.startingCapitalHedgeFund || 1000000);
+  const [simDuration, setSimDuration] = useState(state.marketState?.simulationDurationMinutes || 60);
   const [resetConfirmText, setResetConfirmText] = useState('');
+  const [corpSecId, setCorpSecId] = useState('');
+  const [corpActionType, setCorpActionType] = useState('StockSplit');
+  const [corpDetails, setCorpDetails] = useState('');
 
   // Client-driven velocity ticks (every 3 seconds)
   useEffect(() => {
@@ -150,8 +159,9 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
   const handleSeedData = async () => {
     if (window.confirm('This will purge the active securities and seed the default list. Proceed?')) {
       try {
-        await fetch('/api/admin/seed', { method: 'POST', headers: { 'X-FMS-Password': adminPassword } });
+        await apiFetch('/api/admin/seed', { method: 'POST', headers: { 'X-FMS-Password': adminPassword } });
         alert('Starter data seeded successfully.');
+        window.location.reload();
       } catch (err) {
         alert('Seed failed: ' + err.message);
       }
@@ -164,9 +174,10 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
       return;
     }
     try {
-      await fetch('/api/admin/reset', { method: 'POST', headers: { 'X-FMS-Password': adminPassword } });
+      await apiFetch('/api/admin/reset', { method: 'POST', headers: { 'X-FMS-Password': adminPassword } });
       setResetConfirmText('');
       alert('FULL SYSTEM RESET COMPLETE. All assets restored to base prices, cash balances reset, and logs purged.');
+      window.location.reload();
     } catch (err) {
       alert('Reset failed: ' + err.message);
     }
@@ -639,7 +650,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
       exposureMap[s.id] = { ticker: s.ticker, name: s.name, unitsHeld: 0, distinctTeams: new Set(), totalCapital: 0 };
     });
     state.teams.forEach(t => {
-      Object.entries(t.holdings).forEach(([secId, qty]) => {
+      Object.entries(t.holdings || {}).forEach(([secId, qty]) => {
         const sec = state.securities.find(s => s.id === secId);
         if (sec && qty > 0) {
           exposureMap[secId].unitsHeld += qty;
@@ -656,12 +667,17 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
   // Standings calculation sorted by Portfolio Value
   const standingsList = [...state.teams].map(t => {
     let holdingsValue = 0;
-    Object.entries(t.holdings).forEach(([secId, qty]) => {
+    Object.entries(t.holdings || {}).forEach(([secId, qty]) => {
       const sec = state.securities.find(s => s.id === secId);
       if (sec) holdingsValue += qty * sec.currentPrice;
     });
     const totalPort = holdingsValue + t.cashBalance;
-    const initial = t.teamType === 'HedgeFund' ? state.settings.startingCapitalHedgeFund : t.teamType === 'MutualFund' ? state.settings.startingCapitalMutualFund : state.settings.startingCapitalRetail;
+    const settings = state.settings || {
+      startingCapitalRetail: 1000000,
+      startingCapitalMutualFund: 1000000,
+      startingCapitalHedgeFund: 1000000
+    };
+    const initial = t.teamType === 'HedgeFund' ? (settings.startingCapitalHedgeFund || 1000000) : t.teamType === 'MutualFund' ? (settings.startingCapitalMutualFund || 1000000) : (settings.startingCapitalRetail || 1000000);
     const roi = ((totalPort - initial) / initial) * 100;
     return { ...t, portfolioValue: totalPort, roi };
   }).sort((a, b) => b.portfolioValue - a.portfolioValue);
@@ -725,9 +741,12 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
         <button className="btn" style={{ justifyContent: 'flex-start', backgroundColor: activeTab === 'settings' ? 'var(--color-brass-light)' : 'transparent', color: activeTab === 'settings' ? 'var(--color-brass)' : 'var(--color-ink)' }} onClick={() => setActiveTab('settings')}>
           ⚙️ Platform Settings
         </button>
+        <button className="btn" style={{ justifyContent: 'flex-start', backgroundColor: activeTab === 'corporate' ? 'var(--color-brass-light)' : 'transparent', color: activeTab === 'corporate' ? 'var(--color-brass)' : 'var(--color-ink)' }} onClick={() => setActiveTab('corporate')}>
+          📢 Corporate Actions
+        </button>
 
         <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid var(--color-border)', paddingTop: '16px' }}>
-          <button className="btn btn-secondary" style={{ padding: '8px' }} onClick={handleSeed}>Quick Seed Assets</button>
+          <button className="btn btn-secondary" style={{ padding: '8px' }} onClick={handleSeedData}>Quick Seed Assets</button>
           <button className="btn btn-secondary" style={{ padding: '8px', backgroundColor: 'var(--color-brass-light)', color: 'var(--color-brass)' }} onClick={handlePrintDirectory}>Print Directory</button>
           <button className="btn" style={{ backgroundColor: 'var(--color-fall-light)', color: 'var(--color-fall)', padding: '8px' }} onClick={handleReset}>Reset Database</button>
         </div>
@@ -1326,6 +1345,96 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
                   ☢ FULL SYSTEM RESET
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'corporate' && (
+          <div className="glass card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-ink)', fontSize: '1.25rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '12px', marginBottom: '8px' }}>
+              📢 Corporate Action Dispatch Desk
+            </h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--color-ink-2)', marginTop: '-8px' }}>
+              Announce stock splits, bonus share issues, dividends, or execute circuit breakers on active securities. All changes will replicate instantly to the ledger, participant portfolios, and projector screens.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '500px' }}>
+              <div className="form-group">
+                <label style={{ fontWeight: '600' }}>Select Target Security</label>
+                <select 
+                  className="input-field font-data"
+                  value={corpSecId}
+                  onChange={e => setCorpSecId(e.target.value)}
+                >
+                  <option value="">-- Choose Security --</option>
+                  {(state.securities || []).map(sec => (
+                    <option key={sec.id} value={sec.ticker}>
+                      {sec.ticker} - {sec.name} (₹{sec.currentPrice})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label style={{ fontWeight: '600' }}>Action Type</label>
+                <select 
+                  className="input-field"
+                  value={corpActionType}
+                  onChange={e => setCorpActionType(e.target.value)}
+                >
+                  <option value="StockSplit">✂️ Stock Split (2-for-1)</option>
+                  <option value="BonusIssue">🎁 Bonus Issue (1-for-1)</option>
+                  <option value="Dividend">💰 Dividend Payout (₹ per Share)</option>
+                  <option value="CircuitBreaker">🛑 Circuit Breaker (Halt Trading)</option>
+                  <option value="UNHALT">▶️ Resume Trading (Unhalt)</option>
+                  <option value="Bankruptcy">💀 Insolvency / Bankruptcy (Crash to ₹0)</option>
+                  <option value="Delisting">❌ Delist Ticker</option>
+                </select>
+              </div>
+
+              {corpActionType === 'Dividend' && (
+                <div className="form-group">
+                  <label style={{ fontWeight: '600' }}>Dividend Amount (₹ per Share)</label>
+                  <input 
+                    type="number" 
+                    className="input-field font-data" 
+                    placeholder="e.g. 10" 
+                    value={corpDetails} 
+                    onChange={e => setCorpDetails(e.target.value)} 
+                  />
+                </div>
+              )}
+
+              <button 
+                type="button" 
+                className="btn btn-primary"
+                onClick={async () => {
+                  if (!corpSecId) {
+                    alert('Please select a target security first.');
+                    return;
+                  }
+                  try {
+                    const res = await apiFetch('/api/corporate-action', {
+                      method: 'POST',
+                      body: {
+                        securityId: corpSecId,
+                        actionType: corpActionType,
+                        details: corpActionType === 'Dividend' ? corpDetails : ''
+                      }
+                    });
+                    if (res && res.success) {
+                      alert(`Successfully executed ${corpActionType} for ${corpSecId}!`);
+                      setCorpDetails('');
+                    } else {
+                      alert('Failed to execute corporate action.');
+                    }
+                  } catch (err) {
+                    alert('Error executing action: ' + err.message);
+                  }
+                }}
+              >
+                🚀 Dispatch Corporate Action
+              </button>
             </div>
           </div>
         )}

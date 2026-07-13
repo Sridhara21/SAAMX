@@ -34,7 +34,7 @@ export default function ResultsPage({ state }) {
     const sectorsCount = new Set(state.securities.map(s => s.sector)).size || 1;
     const heldSectors = new Set();
 
-    Object.entries(team.holdings).forEach(([secId, qty]) => {
+    Object.entries(team.holdings || {}).forEach(([secId, qty]) => {
       const sec = state.securities.find(s => s.id === secId);
       if (sec && qty > 0) {
         const value = qty * sec.currentPrice;
@@ -70,7 +70,7 @@ export default function ResultsPage({ state }) {
   // Award calculations
   const highestROI = sortedByROI[0];
   const bestDiv = [...processedTeams].sort((a, b) => b.divScore - a.divScore)[0];
-  const lowestRisk = [...processedTeams].filter(t => Object.keys(t.holdings).length > 0).sort((a, b) => a.riskScore - b.riskScore)[0];
+  const lowestRisk = [...processedTeams].filter(t => Object.keys(t.holdings || {}).length > 0).sort((a, b) => a.riskScore - b.riskScore)[0];
   const mostActive = [...processedTeams].sort((a, b) => b.txCount - a.txCount)[0];
 
   // Specific selected team analysis details

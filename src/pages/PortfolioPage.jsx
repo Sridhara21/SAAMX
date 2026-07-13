@@ -36,7 +36,7 @@ export default function PortfolioPage({ state, onOpenProfile }) {
     const heldSectors = new Set();
     const holdingsList = [];
 
-    Object.entries(currentTeam.holdings).forEach(([secId, qty]) => {
+    Object.entries(currentTeam.holdings || {}).forEach(([secId, qty]) => {
       const sec = state.securities.find(s => s.id === secId);
       if (sec && qty > 0) {
         const value = qty * sec.currentPrice;

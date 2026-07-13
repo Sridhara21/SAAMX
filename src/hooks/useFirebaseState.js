@@ -19,8 +19,14 @@ export function useFirebaseState() {
     // Listen to full simulation state
     const stateUnsub = onValue(stateRef, (snapshot) => {
       if (snapshot.exists()) {
-        setState(snapshot.val());
-        setLastUpdated(Date.now());
+        const val = snapshot.val();
+        if (!val.securities || !val.teams) {
+          // Set sentinel value to indicate unseeded database
+          setState({ isEmpty: true });
+        } else {
+          setState(val);
+          setLastUpdated(Date.now());
+        }
       } else {
         // Set sentinel value to indicate unseeded database
         setState({ isEmpty: true });
