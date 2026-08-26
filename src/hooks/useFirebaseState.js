@@ -7,39 +7,77 @@ export function useFirebaseState() {
   const [lastUpdated, setLastUpdated] = useState(null);
 
   useEffect(() => {
-    // Listen to entire simulation state
-    const stateRef = ref(db, 'fms');
-    
     // Listen to Firebase connection status
     const connectedRef = ref(db, '.info/connected');
     const connectedUnsub = onValue(connectedRef, (snap) => {
       setConnected(snap.val() === true);
     });
 
-    // Listen to full simulation state
-    const stateUnsub = onValue(stateRef, (snapshot) => {
-      if (snapshot.exists()) {
+    const subKeys = [
+      'marketState',
+      'securities',
+      'teams',
+      'newsEvents',
+      'corporateActions',
+      'firedPhoenixActs',
+      'velocities',
+      'settings',
+      'transactions',
+      'lastResetReport'
+    ];
+
+    const unsubs = [];
+    let localState = {};
+    const loadedKeys = new Set();
+    let hasBeenSeeded = false;
+    let lastGoodSecurities = null;
+    let lastGoodTeams = null;
+
+    subKeys.forEach((key) => {
+      const keyRef = ref(db, `fms/${key}`);
+      const unsub = onValue(keyRef, (snapshot) => {
         const val = snapshot.val();
-        if (!val.securities || !val.teams) {
-          // Set sentinel value to indicate unseeded database
-          setState({ isEmpty: true });
-        } else {
-          setState(val);
-          setLastUpdated(Date.now());
+        localState = {
+          ...localState,
+          [key]: val
+        };
+
+        loadedKeys.add(key);
+
+        if (loadedKeys.size === subKeys.length) {
+          const hasSecurities = localState.securities && Object.keys(localState.securities).length > 0;
+          const hasTeams = localState.teams && Object.keys(localState.teams).length > 0;
+
+          if (hasSecurities && hasTeams) {
+            hasBeenSeeded = true;
+            lastGoodSecurities = localState.securities;
+            lastGoodTeams = localState.teams;
+          }
+
+          if (!hasBeenSeeded) {
+            setState({ isEmpty: true });
+          } else {
+            // Keep previous securities and teams if they are momentarily null during transactions
+            const safeState = {
+              ...localState,
+              securities: localState.securities || lastGoodSecurities || {},
+              teams: localState.teams || lastGoodTeams || {}
+            };
+            setState(safeState);
+            setLastUpdated(Date.now());
+          }
         }
-      } else {
-        // Set sentinel value to indicate unseeded database
-        setState({ isEmpty: true });
-      }
-    }, (error) => {
-      console.error('Firebase listener error:', error);
-      setState({ isError: true, errorMessage: error.message });
+      }, (error) => {
+        console.error(`Firebase listener error on ${key}:`, error);
+        setState({ isError: true, errorMessage: error.message });
+      });
+      unsubs.push({ ref: keyRef, unsub });
     });
 
     // Cleanup on component unmount
     return () => {
-      off(stateRef);
-      off(connectedRef);
+      connectedUnsub();
+      unsubs.forEach(({ ref: r }) => off(r));
     };
   }, []);
 

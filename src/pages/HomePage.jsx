@@ -1,7 +1,7 @@
 import React from 'react';
 import SplitFlapText from '../components/SplitFlapText.jsx';
 
-export default function HomePage({ state }) {
+export default function HomePage({ state, connected }) {
   const portals = [
     { title: 'Projector Display', path: '#/projector', desc: 'Public display board. Shows live security grids, countdown clock, index shifts, and fullscreen event takeovers.', isProtected: false },
     { title: 'Exchange Desk Terminal', path: '#/exchange', desc: 'Main transaction desk. Rapid search auto-complete lookups, live quotes, and order execution.', isProtected: true },
@@ -23,7 +23,7 @@ export default function HomePage({ state }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
           <div>
             <h1 style={{ fontSize: '3rem', fontWeight: 800, fontFamily: 'var(--font-display)', lineHeight: '1.1', color: 'var(--color-ink)' }}>
-              NIFTY FMS Simulation OS
+              SAAMX - Student Academic Asset Market eXchange
             </h1>
             <p style={{ color: 'var(--color-ink-2)', fontSize: '1.05rem', marginTop: '8px' }}>
               Central exchange engine and coordinate operator terminals.
@@ -59,53 +59,48 @@ export default function HomePage({ state }) {
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
-              borderLeft: '4px solid transparent',
-              transition: 'border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease'
+              minHeight: '140px',
+              transition: 'transform 0.2s, box-shadow 0.2s',
+              cursor: 'pointer'
             }}
-            onMouseEnter={e => {
-              e.currentTarget.style.borderLeftColor = 'var(--color-brass)';
+            onMouseOver={(e) => {
               e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 8px 24px var(--shadow-color)';
             }}
-            onMouseLeave={e => {
-              e.currentTarget.style.borderLeftColor = 'transparent';
+            onMouseOut={(e) => {
               e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = 'none';
             }}
           >
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 700, fontFamily: 'var(--font-display)', color: 'var(--color-ink)' }}>
-                  {portal.title}
-                </h3>
-                <span className={`badge ${portal.isProtected ? 'badge-protected' : 'badge-public'}`}>
-                  {portal.isProtected ? 'PROTECTED' : 'PUBLIC'}
-                </span>
-              </div>
-              <p style={{ color: 'var(--color-ink-2)', fontSize: '0.9rem', lineHeight: '1.6' }}>
-                {portal.desc}
-              </p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--color-ink)' }}>{portal.title}</h3>
+              {portal.isProtected && (
+                <span style={{ fontSize: '0.65rem', backgroundColor: '#FAE0DE', color: '#9B2B25', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold' }}>🔒 SECURE</span>
+              )}
             </div>
-            
-            <div style={{ marginTop: '24px', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600, fontSize: '0.85rem', color: 'var(--color-brass)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Enter Console →
+            <p style={{ fontSize: '0.85rem', color: 'var(--color-ink-2)', flexGrow: 1, lineHeight: '1.5' }}>{portal.desc}</p>
+            <div style={{ alignSelf: 'flex-end', fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-brass)', marginTop: '12px' }}>
+              OPEN DESK →
             </div>
           </a>
         ))}
       </div>
 
-      {/* Footer Network Desk Details */}
-      <div className="glass card" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '32px', fontSize: '0.85rem', borderLeft: '4px solid var(--color-brass)' }}>
-        <div>
-          <h4 style={{ fontSize: '1rem', marginBottom: '8px', fontFamily: 'var(--font-display)', color: 'var(--color-ink)' }}>Venue Host Coordinator</h4>
-          <p style={{ color: 'var(--color-ink-2)', lineHeight: '1.6' }}>
-            Ensure all secondary terminals connect to the same local area network subnet. Access endpoints by consulting the <a href="file:///c:/Users/user/3D%20Objects/New%20folder/fms-platform/SETUP.md" style={{ color: 'var(--color-brass)', textDecoration: 'underline' }}>SETUP.md</a> guidelines.
-          </p>
-        </div>
-        <div style={{ borderLeft: '1px solid var(--color-border)', paddingLeft: '32px' }}>
-          <h4 style={{ fontSize: '1rem', marginBottom: '8px', fontFamily: 'var(--font-display)', color: 'var(--color-ink)' }}>Administrative Authentication</h4>
-          <p style={{ color: 'var(--color-ink-2)', lineHeight: '1.6' }}>
-            DESK execution terminals, SEBI, and Newsroom editors are password-protected. Input the administrative code `fms-event-2026` once to gain full session clearance across all console screens.
-          </p>
-        </div>
+
+
+      {/* Connection Diagnostic Footer */}
+      <div style={{
+        fontSize: '0.75rem',
+        color: 'var(--color-ink-3)',
+        textAlign: 'center',
+        padding: '12px 8px',
+        borderTop: '1px solid var(--color-border)',
+        marginTop: '16px'
+      }}>
+        Firebase: <strong>{import.meta.env.VITE_FIREBASE_DATABASE_URL || 'NOT CONFIGURED'}</strong> 
+        {' '}| DB Status: <span style={{ color: connected ? 'var(--color-rise)' : 'var(--color-fall)', fontWeight: 700 }}>
+          {connected ? '● Connected' : '○ Disconnected'}
+        </span>
       </div>
 
     </div>

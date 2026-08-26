@@ -1,7 +1,7 @@
 import fs from 'fs';
 
-const STATE_PATH = 'c:\\Users\\user\\3D Objects\\New folder\\fms-platform\\state.json';
-const OUTPUT_PATH = 'C:\\Users\\user\\.gemini\\antigravity-ide\\brain\\6f4605c7-d656-4336-a735-c60a46378def\\simulation_report_1hr.md';
+const STATE_PATH = './state.json';
+const OUTPUT_PATH = './simulation_report_1hr.md';
 
 const compileReport = () => {
   if (!fs.existsSync(STATE_PATH)) {
@@ -35,8 +35,8 @@ const compileReport = () => {
     let holdingsValue = 0;
     const holdingsDetail = [];
 
-    Object.entries(team.holdings).forEach(([secId, qty]) => {
-      const sec = state.securities.find(s => s.id === secId);
+    Object.entries(team.holdings || {}).forEach(([secId, qty]) => {
+      const sec = state.securities.find(s => s.id === secId || s.ticker === secId);
       if (sec && qty > 0) {
         const val = qty * sec.currentPrice;
         holdingsValue += val;
@@ -89,7 +89,7 @@ ${newsLog.map(n => {
   let targetStr = 'Global / Sector';
   if (n.affectedSecurityIds && n.affectedSecurityIds.length > 0) {
     const tickers = n.affectedSecurityIds.map(id => {
-      const sec = state.securities.find(s => s.id === id);
+      const sec = state.securities.find(s => s.id === id || s.ticker === id);
       return sec ? sec.ticker : id;
     });
     targetStr = `Asset: ${tickers.join(', ')}`;

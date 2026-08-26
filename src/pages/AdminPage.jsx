@@ -1,9 +1,39 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { apiFetch } from '../lib/api.js';
+import { db, ref, onValue, update } from '../lib/firebase.js';
+import { runTransaction } from 'firebase/database';
+import { NEWS_PRESETS } from '../lib/newsPresets.js';
+
+const PROJECT_PHOENIX_ACTS = [
+  { id: 'ACT_1', triggerMinute: 8, label: 'Act 1: DTAI Loss Announcement (-22%)', actNumber: 1, type: 'news' },
+  { id: 'IPO_1', triggerMinute: 16, label: 'IPO 1: IndiaStack Fintech IPO (ISFT)', actNumber: 3, type: 'ipo' },
+  { id: 'ACT_2', triggerMinute: 20, label: 'Act 2: Mystery Buyer Recovery', actNumber: 2, type: 'news' },
+  { id: 'ACT_3', triggerMinute: 25, label: 'Act 3: Leadership Upheaval CEO Resigns (-8%)', actNumber: 4, type: 'news' },
+  { id: 'ACT_4', triggerMinute: 32, label: 'Act 4: PUMP PHASE — Velocity to ₹420 (Goldman Pump)', actNumber: 5, type: 'velocity' },
+  { id: 'IPO_2', triggerMinute: 30, label: 'IPO 2: Anthropic AI India IPO (ANTH)', actNumber: 7, type: 'ipo' },
+  { id: 'ACT_5', triggerMinute: 35, label: 'Act 5: Tata Acquisition Rumour (+8%)', actNumber: 8, type: 'news' },
+  { id: 'HINT', triggerMinute: 47, label: 'SEBI Hint: SEBI Monitoring DTAI', actNumber: 6, type: 'news' },
+  { id: 'ACT_6', triggerMinute: 50, label: 'Act 6: SEBI Opens Investigation (-25%)', actNumber: 9, type: 'sebi_notice' },
+  { id: 'ACT_7', triggerMinute: 52, label: 'Act 7: Insider Trading Scandal (-30%)', actNumber: 10, type: 'news' },
+  { id: 'ACT_8', triggerMinute: 54, label: 'Act 8: Trading Suspended (Halt)', actNumber: 12, type: 'halt' },
+  { id: 'ACT_9', triggerMinute: 56, label: 'Act 9: BANKRUPTCY DECLARED', actNumber: 13, type: 'bankruptcy' }
+];
 
 export default function AdminPage({ state, onOpenProfile, adminPassword, activeAlerts = [] }) {
+  const [serverTimeOffset, setServerTimeOffset] = useState(0);
+
+  // Sync server clock offset
+  useEffect(() => {
+    const offsetRef = ref(db, '.info/serverTimeOffset');
+    const unsub = onValue(offsetRef, (snap) => {
+      setServerTimeOffset(snap.val() || 0);
+    });
+    return () => unsub();
+  }, []);
+
   // Navigation tabs inside admin
-  const [activeTab, setActiveTab] = useState('surveillance'); // surveillance, securities, teams, ledger, settings
+  const [activeTab, setActiveTab] = useState('warroom'); // warroom, securities, teams, ledger, settings, corporate
+  const [surveillanceSubTab, setSurveillanceSubTab] = useState('metrics'); // metrics, warroom, sentiment
 
   // Search & Filter state
   const [secSearch, setSecSearch] = useState('');
@@ -44,7 +74,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
   const [showAIChat, setShowAIChat] = useState(true);
   const [aiMessage, setAiMessage] = useState('');
   const [aiHistory, setAiHistory] = useState([
-    { sender: 'AI', text: 'System initialized. I have full read-access to the securities ledger and order books. Describe any market intervention: "Make RELI go up 20% over 2 minutes", "Crash the banking sector", or "Fire Act 4 of Project Phoenix".' }
+    { sender: 'AI', text: 'System initialized. I have full read-access to the securities ledger and order books. Describe any market intervention: "Make RELI go up 20% over 2 minutes", "Crash the banking sector", or "Fire Act 4 of Staged Interventions".' }
   ]);
   const [aiLoading, setAiLoading] = useState(false);
   const [selectedPhoenixAct, setSelectedPhoenixAct] = useState('1');
@@ -60,6 +90,9 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
   const [startingHedge, setStartingHedge] = useState(adminSettings.startingCapitalHedgeFund || 1000000);
   const [simDuration, setSimDuration] = useState(state.marketState?.simulationDurationMinutes || 60);
   const [resetConfirmText, setResetConfirmText] = useState('');
+  const [resetMode, setResetMode] = useState('TEST'); // TEST or EVENT
+  const [activeTeamCount, setActiveTeamCount] = useState(10);
+  const [eventCheckboxConfirmed, setEventCheckboxConfirmed] = useState(false);
   const [corpSecId, setCorpSecId] = useState('');
   const [corpActionType, setCorpActionType] = useState('StockSplit');
   const [corpDetails, setCorpDetails] = useState('');
@@ -79,7 +112,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
         const currentTargetPrice = parseFloat((startPrice + (targetPrice - startPrice) * progress).toFixed(2));
 
         // Call price override to step currentPrice
-        await fetch('/api/price-override', {
+        await apiFetch('/api/price-override', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-fms-password': adminPassword },
           body: JSON.stringify({
@@ -91,7 +124,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
 
         if (progress >= 1) {
           // Deactivate/stop velocity configuration in Firebase
-          await fetch('/api/price-override', {
+          await apiFetch('/api/price-override', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-fms-password': adminPassword },
             body: JSON.stringify({
@@ -106,28 +139,186 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
     return () => clearInterval(interval);
   }, [state ? state.velocities : null, adminPassword]);
 
-  // Client-driven sentiment drift engine (every 60 seconds when market is open)
+  // Organic market noise drift heartbeat (every 8s for live projector dynamism)
   useEffect(() => {
-    if (!state || state.marketState?.status !== 'Open') return;
+    if (!state || !state.marketState || state.marketState.status !== 'Open') return;
 
-    const interval = setInterval(async () => {
-      const activeSecurities = Object.values(state.securities || {}).filter(s => s.status === 'Active' && s.sentimentOverride);
-      for (const sec of activeSecurities) {
-        const drift = sec.sentimentOverride * 0.45; // drifts up to 0.9%
-        await fetch('/api/price-override', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-fms-password': adminPassword },
-          body: JSON.stringify({
-            securityId: sec.ticker,
-            type: 'Shift',
-            percentChange: drift
-          })
-        }).catch(() => {});
+    const heartbeat = setInterval(async () => {
+      try {
+        await runTransaction(ref(db, 'fms/securities'), (securities) => {
+          if (!securities) return securities;
+          
+          Object.keys(securities).forEach(key => {
+            const security = securities[key];
+            if (security.status !== 'Active') return;
+
+            let drift = 0;
+            if (security.sentimentOverride !== undefined && security.sentimentOverride !== 0) {
+              const rates = { '-2': -0.04, '-1': -0.015, '0': 0, '1': 0.015, '2': 0.04 };
+              const baseRate = rates[String(security.sentimentOverride)] || 0;
+              const noise = (Math.random() - 0.5) * 0.005;
+              drift = baseRate + noise;
+            } else {
+              const magnitude = (security.volatility || 0.5) * 0.008;
+              drift = (Math.random() - 0.48) * magnitude; // slight upward bias
+            }
+
+            if (Math.abs(drift) < 0.001) return;
+
+            const oldPrice = security.currentPrice;
+            const newPrice = parseFloat(Math.max(1, oldPrice * (1 + drift)).toFixed(2));
+            
+            if (newPrice !== oldPrice) {
+              security.currentPrice = newPrice;
+              if (!security.priceHistory) security.priceHistory = [];
+              security.priceHistory.push({ timestamp: Date.now(), price: newPrice });
+              if (security.priceHistory.length > 100) security.priceHistory.shift();
+            }
+          });
+
+          return securities;
+        });
+      } catch (err) {
+        console.error('Error running price drift heartbeat:', err);
       }
-    }, 60000);
+    }, 8000);
 
-    return () => clearInterval(interval);
-  }, [state ? state.marketState?.status : null, state ? state.securities : null, adminPassword]);
+    return () => clearInterval(heartbeat);
+  }, [state?.marketState?.status]);
+
+
+
+  // Ambient news generator loop (every 2-3m)
+  useEffect(() => {
+    if (!state || !state.marketState || state.marketState.status !== 'Open') return;
+
+    let timerId = null;
+
+    const scheduleNextAutoNews = () => {
+      const delay = 120000 + Math.random() * 60000; // 2 to 3 minutes
+      
+      timerId = setTimeout(async () => {
+        const newsItems = Object.values(state.newsEvents || {});
+        const recentNews = newsItems.filter(n => Date.now() - n.triggeredAt < 120000);
+
+        if (recentNews.length === 0) {
+          await dispatchAutoNews();
+        }
+
+        scheduleNextAutoNews();
+      }, delay);
+    };
+
+    scheduleNextAutoNews();
+    return () => {
+      if (timerId) clearTimeout(timerId);
+    };
+  }, [state?.marketState?.status, state?.newsEvents]);
+
+  const dispatchAutoNews = async () => {
+    const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+    if (apiKey) {
+      try {
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'dangerouslyAllowBrowser': 'true'
+          },
+          body: JSON.stringify({
+            model: 'claude-3-5-sonnet-20241022',
+            max_tokens: 200,
+            system: "You are a financial news wire service for a stock market simulation. Generate ONE realistic short market news item that would move stock prices. Respond ONLY with valid JSON containing keys: headline, description, sentiment ('Positive'/'Negative'/'Neutral'), impactPercent (number between 5 and 15), affectedSector (null or string), affectedSecurityIds (array of strings, e.g. ['RELI']), category ('Corporate'/'Macro'/'Scandal').",
+            messages: [{ role: 'user', content: 'Generate the next ambient market news event.' }]
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const newsData = JSON.parse(data.content[0].text.trim());
+          await apiFetch('/api/news', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
+            body: JSON.stringify({ ...newsData, isAutoGenerated: true })
+          });
+          return;
+        }
+      } catch (e) {
+        console.error('Claude news generation failed, falling back...', e);
+      }
+    }
+
+    const fallbackNews = generateFallbackNews();
+    if (fallbackNews) {
+      await apiFetch('/api/news', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
+        body: JSON.stringify({ ...fallbackNews, isAutoGenerated: true })
+      });
+    }
+  };
+
+  const generateFallbackNews = () => {
+    if (!state.securities || state.securities.length === 0) return null;
+    const activeSecurities = state.securities.filter(s => s.status === 'Active');
+    if (activeSecurities.length === 0) return null;
+    const sec = activeSecurities[Math.floor(Math.random() * activeSecurities.length)];
+
+    const templates = [
+      {
+        sentiment: 'Positive',
+        category: 'Corporate',
+        headline: `${sec.name} Secures Multi-Million Dollar Order`,
+        description: `${sec.name} has bagged a major long-term procurement contract, driving bullish forecasts.`,
+        impactPercent: Math.floor(Math.random() * 8) + 4
+      },
+      {
+        sentiment: 'Positive',
+        category: 'Macro',
+        headline: `Strong Institutional Buy-In Lifts ${sec.ticker}`,
+        description: `Mutual Fund houses increased allocations to ${sec.name} following optimistic growth estimates.`,
+        impactPercent: Math.floor(Math.random() * 5) + 3
+      },
+      {
+        sentiment: 'Negative',
+        category: 'Disaster',
+        headline: `${sec.ticker} Production Briefly Disrupted`,
+        description: `Operational delays at the primary facility temporarily affect product rollout times.`,
+        impactPercent: Math.floor(Math.random() * 7) + 5
+      },
+      {
+        sentiment: 'Negative',
+        category: 'Scandal',
+        headline: `Speculative Shorting Wave Hits ${sec.ticker}`,
+        description: `Brief consolidation trading dials see active short positions stack up on ${sec.name}.`,
+        impactPercent: Math.floor(Math.random() * 6) + 4
+      },
+      {
+        sentiment: 'Neutral',
+        category: 'Policy',
+        headline: `Sector Policy Review Details Anticipated`,
+        description: `Regulators prepare outline changes to licensing terms; ${sec.name} management monitors.`,
+        impactPercent: 0
+      }
+    ];
+
+    const tpl = templates[Math.floor(Math.random() * templates.length)];
+    return {
+      headline: tpl.headline,
+      description: tpl.description,
+      sentiment: tpl.sentiment,
+      impactPercent: tpl.impactPercent,
+      affectedSector: null,
+      affectedSecurityIds: [sec.ticker],
+      category: tpl.category
+    };
+  };
+
+
+
+
 
   // Security Form Modal
   const [showSecModal, setShowSecModal] = useState(false);
@@ -169,15 +360,45 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
   };
 
   const handleReset = async () => {
-    if (resetConfirmText !== 'RESET') {
-      alert('Please type "RESET" in the settings confirmation field.');
+    const expectedConfirm = `RESET ${resetMode}`;
+    if (resetConfirmText !== expectedConfirm) {
+      alert(`Please type "${expectedConfirm}" to confirm the reset.`);
       return;
     }
+
+    if (resetMode === 'EVENT' && !eventCheckboxConfirmed) {
+      alert('Please check the confirmation box to proceed with the EVENT reset.');
+      return;
+    }
+
+    if (state.marketState?.status === 'Open') {
+      alert('MARKET IS CURRENTLY OPEN. CLOSE THE MARKET BEFORE MASTER RESET.');
+      return;
+    }
+
     try {
-      await apiFetch('/api/admin/reset', { method: 'POST', headers: { 'X-FMS-Password': adminPassword } });
-      setResetConfirmText('');
-      alert('FULL SYSTEM RESET COMPLETE. All assets restored to base prices, cash balances reset, and logs purged.');
-      window.location.reload();
+      const res = await apiFetch('/api/admin/reset', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-FMS-Password': adminPassword 
+        },
+        body: JSON.stringify({
+          mode: resetMode,
+          confirmText: resetConfirmText,
+          activeTeamCount: Number(activeTeamCount)
+        })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setResetConfirmText('');
+        setEventCheckboxConfirmed(false);
+        alert(`Master Reset Successful!\nSession ID: ${data.report.sessionId}\nReady for ${resetMode === 'TEST' ? 'test run' : 'event'}.`);
+      } else {
+        alert('Reset failed: ' + (data.error || 'Unknown error'));
+      }
     } catch (err) {
       alert('Reset failed: ' + err.message);
     }
@@ -190,7 +411,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
     let html = `
       <html>
         <head>
-          <title>FMS Securities Directory</title>
+          <title>SAAMX Securities Directory</title>
           <style>
             body {
               font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -247,7 +468,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
         <body>
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
-              <h1>FMS Securities Directory</h1>
+              <h1>SAAMX Securities Directory</h1>
               <div class="subtitle">Official Research Note & Security Universe Reference</div>
             </div>
             <button onclick="window.print()" style="padding: 10px 20px; background: #a47c32; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Print Sheet</button>
@@ -315,14 +536,12 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
   const handleSaveSettings = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch('/api/admin/settings', {
+      const res = await apiFetch('/api/admin/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
         body: JSON.stringify({
           settings: {
-            startingCapitalRetail: Number(startingRetail),
-            startingCapitalMutualFund: Number(startingMutual),
-            startingCapitalHedgeFund: Number(startingHedge)
+            startingCapitalRetail: Number(startingRetail)
           }
         })
       });
@@ -335,7 +554,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
   const handleCreateSecurity = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch('/api/securities', {
+      const res = await apiFetch('/api/securities', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
         body: JSON.stringify(newSec)
@@ -355,7 +574,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
   const handleCreateTeam = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch('/api/teams', {
+      const res = await apiFetch('/api/teams', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
         body: JSON.stringify(newTeam)
@@ -375,7 +594,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
   const handleVoidTx = async (id) => {
     if (window.confirm('Void this transaction? (Reverses cash balances and available unit pools. Asset prices must be adjusted manually.)')) {
       try {
-        await fetch('/api/transactions/void', {
+        await apiFetch('/api/transactions/void', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
           body: JSON.stringify({ id })
@@ -403,7 +622,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
     }
 
     try {
-      const res = await fetch(`/api/securities/${overrideSecId}`, {
+      const res = await apiFetch(`/api/securities/${overrideSecId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
         body: JSON.stringify({ currentPrice: targetPrice })
@@ -424,7 +643,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
       return;
     }
     try {
-      const res = await fetch('/api/admin/velocity-control', {
+      const res = await apiFetch('/api/admin/velocity-control', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
         body: JSON.stringify({
@@ -444,7 +663,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
 
   const handleGlobalControl = async (action) => {
     try {
-      const res = await fetch('/api/admin/global-control', {
+      const res = await apiFetch('/api/admin/global-control', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
         body: JSON.stringify({ action })
@@ -459,13 +678,13 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
 
   const handlePhoenixAct = async (actNum) => {
     try {
-      const res = await fetch('/api/admin/phoenix-act', {
+      const res = await apiFetch('/api/admin/phoenix-act', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
         body: JSON.stringify({ actNumber: Number(actNum) })
       });
       if (res.ok) {
-        alert(`Project Phoenix Act ${actNum} fired successfully!`);
+        alert(`Scenario stage ${actNum} fired successfully!`);
       }
     } catch (err) {
       alert('Act activation failed: ' + err.message);
@@ -477,7 +696,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
     if (!sec) return;
     const targetPrice = parseFloat((sec.currentPrice * (1 + percentageChange / 100)).toFixed(2));
     try {
-      const res = await fetch(`/api/securities/${sec.id}`, {
+      const res = await apiFetch(`/api/securities/${sec.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
         body: JSON.stringify({ currentPrice: targetPrice })
@@ -494,7 +713,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
     const sec = state.securities.find(s => s.ticker === ticker);
     if (!sec) return;
     try {
-      const res = await fetch('/api/corporate-action', {
+      const res = await apiFetch('/api/corporate-action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
         body: JSON.stringify({
@@ -513,7 +732,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
 
   const handleApplyVoidOverridePrice = async (secId, overrideVal) => {
     try {
-      const res = await fetch(`/api/securities/${secId}`, {
+      const res = await apiFetch(`/api/securities/${secId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
         body: JSON.stringify({ currentPrice: Number(overrideVal) })
@@ -543,7 +762,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
       affectedSector: null,
       affectedSecurityIds: [sec.id]
     };
-    await fetch('/api/news', {
+    await apiFetch('/api/news', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
       body: JSON.stringify(payload)
@@ -557,7 +776,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
       actionType: 'HALT',
       details: 'SEBI suspended trading pending accounting investigation.'
     };
-    await fetch('/api/corporate-action', {
+    await apiFetch('/api/corporate-action', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
       body: JSON.stringify(payload)
@@ -575,7 +794,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
       actionType: 'Bankruptcy',
       details: `SEBI declared bankruptcy and liquidation on ${sec.name}`
     };
-    await fetch('/api/corporate-action', {
+    await apiFetch('/api/corporate-action', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
       body: JSON.stringify(payload)
@@ -597,7 +816,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
       affectedSector: null,
       affectedSecurityIds: previewTargetSecId ? [previewTargetSecId] : []
     };
-    await fetch('/api/news', {
+    await apiFetch('/api/news', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
       body: JSON.stringify(payload)
@@ -617,7 +836,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
     setAiLoading(true);
 
     try {
-      const res = await fetch('/api/admin/ai-chat', {
+      const res = await apiFetch('/api/admin/ai-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
         body: JSON.stringify({ message: userMsg })
@@ -651,11 +870,11 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
     });
     state.teams.forEach(t => {
       Object.entries(t.holdings || {}).forEach(([secId, qty]) => {
-        const sec = state.securities.find(s => s.id === secId);
+        const sec = state.securities.find(s => s.id === secId || s.ticker === secId);
         if (sec && qty > 0) {
-          exposureMap[secId].unitsHeld += qty;
-          exposureMap[secId].distinctTeams.add(t.id);
-          exposureMap[secId].totalCapital += qty * sec.currentPrice;
+          exposureMap[sec.id].unitsHeld += qty;
+          exposureMap[sec.id].distinctTeams.add(t.id);
+          exposureMap[sec.id].totalCapital += qty * sec.currentPrice;
         }
       });
     });
@@ -668,7 +887,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
   const standingsList = [...state.teams].map(t => {
     let holdingsValue = 0;
     Object.entries(t.holdings || {}).forEach(([secId, qty]) => {
-      const sec = state.securities.find(s => s.id === secId);
+      const sec = state.securities.find(s => s.id === secId || s.ticker === secId);
       if (sec) holdingsValue += qty * sec.currentPrice;
     });
     const totalPort = holdingsValue + t.cashBalance;
@@ -686,390 +905,341 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
 
   return (
     <div style={{
-      display: 'grid',
-      gridTemplateColumns: showAIChat ? '240px 1fr 340px' : '240px 1fr',
-      gap: '24px',
-      minHeight: 'calc(100vh - 120px)',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '16px',
+      height: 'calc(100vh - 100px)',
       padding: '12px',
-      position: 'relative',
-      transition: 'grid-template-columns 0.3s ease'
+      boxSizing: 'border-box',
+      overflow: 'hidden'
     }}>
+      
+      {/* Session ID & Active Teams Banner */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: '#0a0b0d',
+        color: '#fff',
+        padding: '8px 16px',
+        borderRadius: '6px',
+        fontSize: '0.85rem',
+        fontFamily: 'var(--font-mono)',
+        border: '1px solid #22252e',
+        marginBottom: '4px'
+      }}>
+        <span>SESSION: <strong style={{ color: '#d4af37' }}>{state.marketState?.sessionId || 'NOT INITIALIZED'}</strong></span>
+        <span>PARTICIPANTS: <strong style={{ color: '#d4af37' }}>{state.marketState?.activeTeamCount || 10} ACTIVE TEAMS</strong></span>
+        <span>MARKET STATUS: <strong style={{ color: state.marketState?.status === 'Open' ? '#22c55e' : '#ef4444' }}>{state.marketState?.status?.toUpperCase() || 'CLOSED'}</strong></span>
+      </div>
 
-      {/* Toggle chat assistant button */}
-      <button 
-        onClick={() => setShowAIChat(!showAIChat)}
-        style={{
-          position: 'fixed',
-          right: showAIChat ? '355px' : '20px',
-          bottom: '20px',
-          zIndex: 99,
-          width: '50px',
-          height: '50px',
-          borderRadius: '50%',
-          backgroundColor: 'var(--color-brass)',
-          color: '#fff',
-          border: 'none',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '1.25rem',
-          transition: 'all 0.3s ease'
-        }}
-      >
-        {showAIChat ? '💬' : '🤖'}
-      </button>
-
-      {/* Sidebar Tabs */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        <h4 style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', marginBottom: '16px', color: 'var(--color-brass)' }}>
-          Simulation Control
-        </h4>
-        <button className="btn" style={{ justifyContent: 'flex-start', backgroundColor: activeTab === 'surveillance' ? 'var(--color-brass-light)' : 'transparent', color: activeTab === 'surveillance' ? 'var(--color-brass)' : 'var(--color-ink)' }} onClick={() => setActiveTab('surveillance')}>
-          📊 Surveillance Desk
+      {/* Horizontal Six-Tab Navigation */}
+      <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--color-border)', paddingBottom: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+        <button className="btn" style={{ fontWeight: 'bold', backgroundColor: activeTab === 'warroom' ? 'var(--color-brass-light)' : 'transparent', color: activeTab === 'warroom' ? 'var(--color-brass)' : 'var(--color-ink)' }} onClick={() => setActiveTab('warroom')}>
+          🎯 WAR ROOM
         </button>
-        <button className="btn" style={{ justifyContent: 'flex-start', backgroundColor: activeTab === 'securities' ? 'var(--color-brass-light)' : 'transparent', color: activeTab === 'securities' ? 'var(--color-brass)' : 'var(--color-ink)' }} onClick={() => setActiveTab('securities')}>
-          💼 Securities CRUD
+        <button className="btn" style={{ fontWeight: 'bold', backgroundColor: activeTab === 'securities' ? 'var(--color-brass-light)' : 'transparent', color: activeTab === 'securities' ? 'var(--color-brass)' : 'var(--color-ink)' }} onClick={() => setActiveTab('securities')}>
+          📈 SECURITIES
         </button>
-        <button className="btn" style={{ justifyContent: 'flex-start', backgroundColor: activeTab === 'teams' ? 'var(--color-brass-light)' : 'transparent', color: activeTab === 'teams' ? 'var(--color-brass)' : 'var(--color-ink)' }} onClick={() => setActiveTab('teams')}>
-          👥 Teams CRUD
+        <button className="btn" style={{ fontWeight: 'bold', backgroundColor: activeTab === 'teams' ? 'var(--color-brass-light)' : 'transparent', color: activeTab === 'teams' ? 'var(--color-brass)' : 'var(--color-ink)' }} onClick={() => setActiveTab('teams')}>
+          👥 TEAMS
         </button>
-        <button className="btn" style={{ justifyContent: 'flex-start', backgroundColor: activeTab === 'ledger' ? 'var(--color-brass-light)' : 'transparent', color: activeTab === 'ledger' ? 'var(--color-brass)' : 'var(--color-ink)' }} onClick={() => setActiveTab('ledger')}>
-          📜 Transaction Ledger
+        <button className="btn" style={{ fontWeight: 'bold', backgroundColor: activeTab === 'ledger' ? 'var(--color-brass-light)' : 'transparent', color: activeTab === 'ledger' ? 'var(--color-brass)' : 'var(--color-ink)' }} onClick={() => setActiveTab('ledger')}>
+          📋 LEDGER
         </button>
-        <button className="btn" style={{ justifyContent: 'flex-start', backgroundColor: activeTab === 'settings' ? 'var(--color-brass-light)' : 'transparent', color: activeTab === 'settings' ? 'var(--color-brass)' : 'var(--color-ink)' }} onClick={() => setActiveTab('settings')}>
-          ⚙️ Platform Settings
+        <button className="btn" style={{ fontWeight: 'bold', backgroundColor: activeTab === 'settings' ? 'var(--color-brass-light)' : 'transparent', color: activeTab === 'settings' ? 'var(--color-brass)' : 'var(--color-ink)' }} onClick={() => setActiveTab('settings')}>
+          ⚙️ SETTINGS
         </button>
-        <button className="btn" style={{ justifyContent: 'flex-start', backgroundColor: activeTab === 'corporate' ? 'var(--color-brass-light)' : 'transparent', color: activeTab === 'corporate' ? 'var(--color-brass)' : 'var(--color-ink)' }} onClick={() => setActiveTab('corporate')}>
-          📢 Corporate Actions
+        <button className="btn" style={{ fontWeight: 'bold', backgroundColor: activeTab === 'corporate' ? 'var(--color-brass-light)' : 'transparent', color: activeTab === 'corporate' ? 'var(--color-brass)' : 'var(--color-ink)' }} onClick={() => setActiveTab('corporate')}>
+          🏛️ CORP ACTIONS
         </button>
 
-        <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid var(--color-border)', paddingTop: '16px' }}>
-          <button className="btn btn-secondary" style={{ padding: '8px' }} onClick={handleSeedData}>Quick Seed Assets</button>
-          <button className="btn btn-secondary" style={{ padding: '8px', backgroundColor: 'var(--color-brass-light)', color: 'var(--color-brass)' }} onClick={handlePrintDirectory}>Print Directory</button>
-          <button className="btn" style={{ backgroundColor: 'var(--color-fall-light)', color: 'var(--color-fall)', padding: '8px' }} onClick={handleReset}>Reset Database</button>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
+          <button className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '0.85rem' }} onClick={handleSeedData}>Quick Seed</button>
+          <button className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '0.85rem' }} onClick={handlePrintDirectory}>Print Directory</button>
+          <button className="btn" style={{ backgroundColor: 'var(--color-fall-light)', color: 'var(--color-fall)', padding: '4px 10px', fontSize: '0.85rem' }} onClick={handleReset}>Reset DB</button>
         </div>
       </div>
 
       {/* Main Tab Area */}
-      <div style={{ overflowY: 'auto', paddingRight: '4px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
         
-        {/* Tab 1: Surveillance Dashboard */}
-        {activeTab === 'surveillance' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        {/* Tab 1: War Room */}
+        {activeTab === 'warroom' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: '100%', minHeight: 0 }}>
             
-            {/* EMERGENCY MASTER CONTROLS */}
-            <div className="glass card" style={{ borderLeft: '4px solid var(--color-fall)' }}>
-              <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-ink)', fontSize: '1.1rem', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                🚨 EMERGENCY GLOBAL SYSTEM CONTROL
-              </h3>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-                <button className="btn" style={{ backgroundColor: 'var(--color-rise)', color: '#fff', fontWeight: 'bold' }} onClick={() => handleGlobalControl('BULL_RUN')}>
-                  📈 GLOBAL BULL RUN (+2 Sentiment)
-                </button>
-                <button className="btn" style={{ backgroundColor: 'var(--color-fall)', color: '#fff', fontWeight: 'bold' }} onClick={() => handleGlobalControl('CRASH')}>
-                  📉 SYSTEMIC MARKET CRASH (-2 Sentiment)
-                </button>
-                <button className="btn btn-secondary" onClick={() => handleGlobalControl('RESET_SENTIMENT')}>
-                  🔄 Reset Sentiment to Neutral
-                </button>
-                <button className="btn" style={{ backgroundColor: 'var(--color-brass)', color: '#fff' }} onClick={() => handleGlobalControl('FREEZE_ALL')}>
-                  ⏸ FREEZE ALL TRADING
-                </button>
-                <button className="btn btn-primary" onClick={() => handleGlobalControl('RESUME_ALL')}>
-                  ▶ RESUME ALL TRADING
-                </button>
-              </div>
-            </div>
-
-            {/* TARGET COMPANY CONTROL PANEL (PROJECT PHOENIX) */}
-            <div className="glass card" style={{ borderLeft: '4px solid var(--color-brass)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '12px' }}>
-                <div>
-                  <h3 style={{ margin: 0, fontFamily: 'var(--font-display)', color: 'var(--color-ink)', fontSize: '1.2rem' }}>
-                    🔥 Target Company Control Strip: DTAI (Delta AI Labs)
-                  </h3>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--color-ink-2)' }}>
-                    Current status: <strong style={{ color: dtaiSecurity.status === 'Active' ? 'var(--color-rise)' : 'var(--color-fall)' }}>{dtaiSecurity.status}</strong> | Last Traded: <strong>₹{dtaiSecurity.currentPrice}</strong>
-                  </span>
-                </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className="btn" style={{ backgroundColor: 'var(--color-rise-light)', color: 'var(--color-rise)', padding: '6px 12px', fontSize: '0.85rem' }} onClick={() => handleTargetInstantPrice('DTAI', 15)}>
-                    ▲ Pump (+15%)
-                  </button>
-                  <button className="btn" style={{ backgroundColor: 'var(--color-fall-light)', color: 'var(--color-fall)', padding: '6px 12px', fontSize: '0.85rem' }} onClick={() => handleTargetInstantPrice('DTAI', -15)}>
-                    ▼ Dump (-15%)
-                  </button>
-                  <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.85rem' }} onClick={() => handleTargetHalt('DTAI', dtaiSecurity.status === 'Halted' ? 'UNHALT' : 'CircuitBreaker')}>
-                    {dtaiSecurity.status === 'Halted' ? '▶ Unhalt' : '⏸ Halt'}
-                  </button>
-                  <button className="btn" style={{ backgroundColor: '#000', color: '#fff', padding: '6px 12px', fontSize: '0.85rem' }} onClick={() => handleTargetHalt('DTAI', 'Bankruptcy')}>
-                    💀 Insolvency
-                  </button>
-                </div>
-              </div>
-
-              {/* SCRIPTED ACTS BOARD */}
-              <div style={{ borderTop: '1px dashed var(--color-border)', paddingTop: '14px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--color-ink)' }}>Project Phoenix Script Acts:</span>
-                <select className="input-field" style={{ width: '280px', padding: '6px 10px', fontSize: '0.85rem' }} value={selectedPhoenixAct} onChange={e => setSelectedPhoenixAct(e.target.value)}>
-                  <option value="1">T+08m - Act 1: DTAI Loss (-22%)</option>
-                  <option value="2">T+14m - Act 2: DTAI Mystery Buy (₹210)</option>
-                  <option value="3">T+16m - IPO 1: IndiaStack Fintech (ISFT)</option>
-                  <option value="4">T+19m - Act 3: DTAI CEO Resigns (-8%)</option>
-                  <option value="5">T+22m - Act 4: DTAI Goldman Pump (₹280)</option>
-                  <option value="6">T+23m - Act 5: Anthropic IPO 60s Warning</option>
-                  <option value="7">T+24m - IPO 2: Anthropic AI India (ANTH)</option>
-                  <option value="8">T+25m - Act 6: Anthropic IPO Day Pop (+12%)</option>
-                  <option value="9">T+30m - Act 7: SEBI DTAI Forensic Probe (₹220)</option>
-                  <option value="10">T+34m - Act 8: DTAI Insider Scandal (-30%)</option>
-                  <option value="11">T+35m - Act 9: ANTH Sector Rally (+10%)</option>
-                  <option value="12">T+36m - Act 10: SEBI Suspends DTAI Trading</option>
-                  <option value="13">T+38m - Act 11: DTAI Insolvency & Ruin (₹0)</option>
-                  <option value="14">T+40m - Act 12: Market Recovery Rally</option>
-                  <option value="15">T+45m - Act 13: ANTH Defense Contract (+8%)</option>
-                </select>
-                <button className="btn btn-primary" style={{ padding: '6px 16px', fontSize: '0.85rem' }} onClick={() => handlePhoenixAct(selectedPhoenixAct)}>
-                  ⚡ FIRE ACT DISPATCH
-                </button>
-              </div>
-            </div>
-
-            {/* Live Standings & Exposure Map */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px' }}>
+            {/* Top Row: Three Panels */}
+            <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr 340px', gap: '16px', flex: 1, minHeight: 0 }}>
               
-              <div className="glass card">
-                <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-ink)', fontSize: '1.25rem', marginBottom: '16px' }}>
-                  Live Roster Standings
+              {/* Left Panel: EMERGENCY CONTROLS & VELOCITY */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', padding: '16px' }} className="glass card">
+                <h3 style={{ margin: 0, fontFamily: 'var(--font-display)', color: 'var(--color-ink)', fontSize: '1rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '6px' }}>
+                  🚨 EMERGENCY CONTROLS
                 </h3>
-                <div style={{ overflowX: 'auto', maxHeight: '350px' }}>
-                  <table className="fms-table" style={{ marginTop: 0 }}>
-                    <thead>
-                      <tr>
-                        <th>Code</th>
-                        <th>Team Name</th>
-                        <th>Type</th>
-                        <th style={{ textAlign: 'right' }}>ROI%</th>
-                        <th style={{ textAlign: 'right' }}>Capital Net</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {standingsList.map((t, idx) => (
-                        <tr key={t.id}>
-                          <td className="font-data" style={{ fontWeight: 700 }}>
-                            {idx === 0 ? '🏆 ' : idx === 1 ? '🥈 ' : idx === 2 ? '🥉 ' : ''}{t.teamCode}
-                          </td>
-                          <td>{t.teamName}</td>
-                          <td><span className="badge badge-public">{t.teamType}</span></td>
-                          <td className={`font-data ${t.roi >= 0 ? 'text-up' : 'text-down'}`} style={{ textAlign: 'right', fontWeight: 700 }}>
-                            {t.roi >= 0 ? '+' : ''}{t.roi.toFixed(1)}%
-                          </td>
-                          <td className="font-data text-brass" style={{ textAlign: 'right', fontWeight: 700 }}>
-                            ₹{t.portfolioValue.toLocaleString()}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              <div className="glass card">
-                <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-ink)', fontSize: '1.25rem', marginBottom: '16px' }}>
-                  Systemic Risk & Exposure Map
-                </h3>
-                <div style={{ overflowX: 'auto', maxHeight: '350px' }}>
-                  <table className="fms-table" style={{ marginTop: 0 }}>
-                    <thead>
-                      <tr>
-                        <th>Ticker</th>
-                        <th style={{ textAlign: 'right' }}>Units Held</th>
-                        <th style={{ textAlign: 'right' }}>Exposure (₹)</th>
-                        <th style={{ textAlign: 'right' }}>Teams</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {exposureList.map(e => {
-                        const isDtai = e.ticker === 'DTAI';
-                        return (
-                          <tr key={e.ticker} style={isDtai ? { backgroundColor: 'rgba(217, 83, 79, 0.15)', border: '2px solid var(--color-fall)' } : {}}>
-                            <td className="font-data" style={{ fontWeight: 700, color: isDtai ? 'var(--color-fall)' : 'inherit' }}>
-                              {e.ticker} {isDtai && '🔥'}
-                            </td>
-                            <td className="font-data" style={{ textAlign: 'right' }}>{e.unitsHeld.toLocaleString()}</td>
-                            <td className="font-data text-brass" style={{ textAlign: 'right', fontWeight: 700 }}>
-                              ₹{e.totalCapital.toLocaleString()}
-                            </td>
-                            <td className="font-data" style={{ textAlign: 'right' }}>
-                              <span className="badge" style={{ backgroundColor: isDtai ? 'var(--color-fall)' : 'var(--color-brass-light)', color: isDtai ? '#fff' : 'var(--color-brass)' }}>
-                                {e.distinctTeams.size} Teams
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-            </div>
-
-            {/* Stepper Bankruptcy and Overrides */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px' }}>
-              
-              {/* Bankruptcy Stepper */}
-              <div className="glass card">
-                <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-ink)', fontSize: '1.25rem', marginBottom: '16px' }}>
-                  Staged Bankruptcy Stepper
-                </h3>
-                
-                <div className="form-group" style={{ marginBottom: '16px' }}>
-                  <label>Select Target Security</label>
-                  <select className="input-field" value={stageSecId} onChange={e => { setStageSecId(e.target.value); setStageConfirmState(false); }}>
-                    <option value="">Choose Asset...</option>
-                    {state.securities
-                      .filter(s => s.status !== 'Bankrupt' && s.status !== 'Delisted')
-                      .map(s => <option key={s.id} value={s.id}>{s.ticker} - {s.name}</option>)
-                    }
-                  </select>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <button className="btn" style={{ backgroundColor: 'var(--color-rise)', color: '#fff', fontSize: '0.85rem', padding: '8px', fontWeight: 'bold' }} onClick={() => handleGlobalControl('BULL_RUN')}>
+                    📈 GLOBAL BULL RUN (+2)
+                  </button>
+                  <button className="btn" style={{ backgroundColor: 'var(--color-fall)', color: '#fff', fontSize: '0.85rem', padding: '8px', fontWeight: 'bold' }} onClick={() => handleGlobalControl('CRASH')}>
+                    📉 SYSTEMIC CRASH (-2)
+                  </button>
+                  <button className="btn btn-secondary" style={{ fontSize: '0.85rem', padding: '8px' }} onClick={() => handleGlobalControl('RESET_SENTIMENT')}>
+                    🔄 Reset Sentiment to Neutral
+                  </button>
+                  <button className="btn" style={{ backgroundColor: 'var(--color-brass)', color: '#fff', fontSize: '0.85rem', padding: '8px', fontWeight: 'bold' }} onClick={() => handleGlobalControl('FREEZE_ALL')}>
+                    ⏸ FREEZE ALL TRADING
+                  </button>
+                  <button className="btn btn-primary" style={{ fontSize: '0.85rem', padding: '8px', fontWeight: 'bold' }} onClick={() => handleGlobalControl('RESUME_ALL')}>
+                    ▶ RESUME ALL TRADING
+                  </button>
                 </div>
 
-                {stageSecId && (
-                  (() => {
-                    const sec = state.securities.find(s => s.id === stageSecId);
-                    if (!sec) return null;
-                    const step1Done = investigatingSecIds[sec.id] || sec.status === 'Halted';
-                    const step2Done = sec.status === 'Halted';
-
-                    return (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
-                        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                          <button className="btn btn-secondary" disabled={step1Done} onClick={() => handleStage1OpenInvestigation(sec)}>
-                            Step 1: Open Investigation
-                          </button>
-                          <span style={{ fontSize: '0.85rem', color: 'var(--color-ink-2)' }}>Broadcasts SEBI warning, triggers selloff</span>
-                        </div>
-                        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                          <button className="btn btn-secondary" disabled={!step1Done || step2Done} onClick={() => handleStage2SuspendTrading(sec)}>
-                            Step 2: Suspend Trading
-                          </button>
-                          <span style={{ fontSize: '0.85rem', color: 'var(--color-ink-2)' }}>Freezes trading, shows halt banner</span>
-                        </div>
-                        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                          <button className="btn" style={{ backgroundColor: 'var(--color-fall)', color: 'var(--color-surface)' }} disabled={!step2Done} onClick={() => handleStage3Liquidate(sec)}>
-                            {stageConfirmState ? '⚠️ CONFIRM LIQUIDATION' : 'Step 3: Liquidate Asset'}
-                          </button>
-                          <span style={{ fontSize: '0.85rem', color: 'var(--color-fall)', fontWeight: 600 }}>Sets asset to ₹0. Permanent halt.</span>
-                        </div>
-                      </div>
-                    );
-                  })()
-                )}
-              </div>
-
-              {/* Overrides & Velocity Control */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                {/* Instant Overrides */}
-                <div className="glass card">
-                  <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-ink)', fontSize: '1.1rem', marginBottom: '12px' }}>
-                    Instant Price Override
-                  </h3>
-                  <form onSubmit={handleManualPriceOverride} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <h3 style={{ margin: '12px 0 0 0', fontFamily: 'var(--font-display)', color: 'var(--color-ink)', fontSize: '1rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '6px' }}>
+                  ⚡ VELOCITY CONTROL
+                </h3>
+                <form onSubmit={handleVelocityControl} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div className="form-group">
+                    <label style={{ fontSize: '0.75rem' }}>Asset</label>
+                    <select className="input-field" style={{ padding: '6px' }} value={velocitySecId} onChange={e => setVelocitySecId(e.target.value)}>
+                      <option value="">Select Asset...</option>
+                      {state.securities.map(s => <option key={s.id} value={s.id}>{s.ticker}</option>)}
+                    </select>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                     <div className="form-group">
-                      <select className="input-field" style={{ padding: '6px' }} value={overrideSecId} onChange={e => setOverrideSecId(e.target.value)}>
-                        <option value="">Select Asset...</option>
-                        {state.securities.map(s => <option key={s.id} value={s.id}>{s.ticker} - {s.name}</option>)}
-                      </select>
+                      <label style={{ fontSize: '0.75rem' }}>Target (₹)</label>
+                      <input type="number" className="input-field font-data" style={{ padding: '6px' }} value={velocityTarget} onChange={e => setVelocityTarget(e.target.value)} />
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '10px' }}>
-                      <select className="input-field" style={{ padding: '6px' }} value={overrideType} onChange={e => setOverrideType(e.target.value)}>
-                        <option value="Absolute">Absolute Price</option>
-                        <option value="Percentage">Percentage Shift</option>
-                      </select>
-                      <input type="number" className="input-field font-data" style={{ padding: '6px' }} placeholder="Value" value={overrideVal} onChange={e => setOverrideVal(e.target.value)} />
-                    </div>
-                    <button type="submit" className="btn btn-primary" style={{ padding: '6px' }}>Apply Instant Override</button>
-                  </form>
-                </div>
-
-                {/* Velocity Control */}
-                <div className="glass card">
-                  <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-ink)', fontSize: '1.1rem', marginBottom: '12px' }}>
-                    Velocity Price Control (Organic Movement)
-                  </h3>
-                  <form onSubmit={handleVelocityControl} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     <div className="form-group">
-                      <select className="input-field" style={{ padding: '6px' }} value={velocitySecId} onChange={e => setVelocitySecId(e.target.value)}>
-                        <option value="">Select Asset...</option>
-                        {state.securities.map(s => <option key={s.id} value={s.id}>{s.ticker} - {s.name}</option>)}
-                      </select>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '10px' }}>
-                      <input type="number" className="input-field font-data" style={{ padding: '6px' }} placeholder="Target Price (₹)" value={velocityTarget} onChange={e => setVelocityTarget(e.target.value)} />
+                      <label style={{ fontSize: '0.75rem' }}>Duration</label>
                       <select className="input-field" style={{ padding: '6px' }} value={velocityDuration} onChange={e => setVelocityDuration(e.target.value)}>
                         <option value="30">FAST (30s)</option>
                         <option value="120">MED (2 min)</option>
                         <option value="300">SLOW (5 min)</option>
                       </select>
                     </div>
-                    <button type="submit" className="btn" style={{ backgroundColor: 'var(--color-brass)', color: '#fff', padding: '6px' }}>Set Velocity Target</button>
-                  </form>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button type="submit" className="btn" style={{ flex: 1, backgroundColor: 'var(--color-brass)', color: '#fff', padding: '6px', fontWeight: 'bold' }}>▶ Start</button>
+                    <button 
+                      type="button" 
+                      className="btn" 
+                      style={{ backgroundColor: 'var(--color-fall-light)', color: 'var(--color-fall)', padding: '6px', fontWeight: 'bold' }}
+                      onClick={async () => {
+                        if (!velocitySecId) {
+                          alert('Please select a security to stop velocity control.');
+                          return;
+                        }
+                        try {
+                          await apiFetch('/api/price-override', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'x-fms-password': adminPassword },
+                            body: JSON.stringify({ securityId: velocitySecId, type: 'StopVelocity' })
+                          });
+                          alert(`Velocity control halted for ${velocitySecId}`);
+                        } catch (e) { alert(e.message); }
+                      }}
+                    >
+                      Stop
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              {/* Middle Panel: DTAI SCENARIO STAGES & LIVE STANDINGS */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', padding: '16px' }} className="glass card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--color-border)', paddingBottom: '6px' }}>
+                  <h3 style={{ margin: 0, fontFamily: 'var(--font-display)', color: 'var(--color-ink)', fontSize: '1rem' }}>
+                    🎯 DTAI (Scenario Interventions)
+                  </h3>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: dtaiSecurity.status === 'Active' ? 'var(--color-rise)' : 'var(--color-fall)' }}>
+                    {dtaiSecurity.status} | ₹{Number(dtaiSecurity.currentPrice).toFixed(2)}
+                  </span>
                 </div>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                  <button className="btn" style={{ backgroundColor: 'var(--color-rise-light)', color: 'var(--color-rise)', padding: '6px', fontSize: '0.75rem', fontWeight: 'bold' }} onClick={() => handleTargetInstantPrice('DTAI', 15)}>
+                    ▲ Pump (+15%)
+                  </button>
+                  <button className="btn" style={{ backgroundColor: 'var(--color-fall-light)', color: 'var(--color-fall)', padding: '6px', fontSize: '0.75rem', fontWeight: 'bold' }} onClick={() => handleTargetInstantPrice('DTAI', -15)}>
+                    ▼ Dump (-15%)
+                  </button>
+                  <button className="btn btn-secondary" style={{ padding: '6px', fontSize: '0.75rem' }} onClick={() => handleTargetHalt('DTAI', dtaiSecurity.status === 'Halted' ? 'UNHALT' : 'CircuitBreaker')}>
+                    {dtaiSecurity.status === 'Halted' ? '▶ Unhalt' : '⏸ Halt'}
+                  </button>
+                  <button className="btn" style={{ backgroundColor: '#000', color: '#fff', padding: '6px', fontSize: '0.75rem', fontWeight: 'bold' }} onClick={() => handleTargetHalt('DTAI', 'Bankruptcy')}>
+                    💀 Insolvency
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 'bold' }}>Schedule Acts Board</label>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <select className="input-field" style={{ flex: 1, padding: '6px', fontSize: '0.8rem' }} value={selectedPhoenixAct} onChange={e => setSelectedPhoenixAct(e.target.value)}>
+                      {PROJECT_PHOENIX_ACTS.map((act) => {
+                        const fired = state.firedPhoenixActs && state.firedPhoenixActs[act.actNumber];
+                        return (
+                          <option key={act.id} value={act.actNumber} disabled={fired}>
+                            T+{String(act.triggerMinute).padStart(2, '0')}m — {act.label} {fired ? '✓' : ''}
+                          </option>
+                        );
+                      })}
+                    </select>
+                    <button className="btn btn-primary" style={{ padding: '6px 10px', fontSize: '0.8rem', fontWeight: 'bold' }} onClick={() => handlePhoenixAct(selectedPhoenixAct)}>
+                      ⚡ FIRE
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                  <h3 style={{ margin: '4px 0', fontFamily: 'var(--font-display)', color: 'var(--color-ink)', fontSize: '0.95rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '4px' }}>
+                    🏆 Live Standings
+                  </h3>
+                  <div style={{ flex: 1, overflowY: 'auto' }}>
+                    <table className="fms-table" style={{ marginTop: 0, fontSize: '0.75rem' }}>
+                      <thead>
+                        <tr>
+                          <th>Rank</th>
+                          <th>Code</th>
+                          <th>ROI%</th>
+                          <th style={{ textAlign: 'right' }}>Capital Net</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {standingsList.map((t, idx) => (
+                          <tr key={t.id}>
+                            <td>{idx + 1}</td>
+                            <td className="font-data" style={{ fontWeight: 700 }}>
+                              {t.teamCode}
+                            </td>
+                            <td className={`font-data ${t.roi >= 0 ? 'text-up' : 'text-down'}`} style={{ fontWeight: 700 }}>
+                              {t.roi >= 0 ? '+' : ''}{t.roi.toFixed(1)}%
+                            </td>
+                            <td className="font-data text-brass" style={{ textAlign: 'right', fontWeight: 700 }}>
+                              ₹{t.portfolioValue.toLocaleString()}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Panel: AI ASSISTANT CHAT */}
+              <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', padding: 0 }} className="glass card">
+                <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(232, 230, 223, 0.02)' }}>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#5cb85c' }}></div>
+                  <h3 style={{ margin: 0, fontFamily: 'var(--font-display)', fontSize: '0.95rem', color: 'var(--color-ink)' }}>
+                    🤖 AI War Assistant
+                  </h3>
+                </div>
+
+                <div style={{ flex: 1, overflowY: 'auto', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {aiHistory.map((h, i) => (
+                    <div 
+                      key={i} 
+                      style={{
+                        alignSelf: h.sender === 'Admin' ? 'flex-end' : 'flex-start',
+                        backgroundColor: h.sender === 'Admin' ? 'var(--color-brass-light)' : '#fdfcf9',
+                        color: 'var(--color-ink)',
+                        border: h.sender === 'Admin' ? '1px solid var(--color-brass-light)' : '1px solid var(--color-border)',
+                        padding: '6px 10px',
+                        borderRadius: '10px',
+                        maxWidth: '85%',
+                        fontSize: '0.75rem',
+                        lineHeight: '1.4'
+                      }}
+                    >
+                      <strong style={{ display: 'block', fontSize: '0.6rem', color: 'var(--color-ink-2)', marginBottom: '2px' }}>
+                        {h.sender.toUpperCase()}
+                      </strong>
+                      {h.text}
+                    </div>
+                  ))}
+                  {aiLoading && (
+                    <div style={{ alignSelf: 'flex-start', color: 'var(--color-ink-2)', fontSize: '0.75rem' }}>
+                      ⏳ Analyzing command...
+                    </div>
+                  )}
+                </div>
+
+                <form onSubmit={handleSendAIMessage} style={{ padding: '8px 12px', borderTop: '1px solid var(--color-border)', backgroundColor: '#faf9f6', display: 'flex', gap: '6px' }}>
+                  <input 
+                    type="text" 
+                    className="input-field" 
+                    style={{ flex: 1, padding: '6px 10px', fontSize: '0.8rem' }} 
+                    placeholder="e.g. Pump DTAI to 300"
+                    value={aiMessage}
+                    onChange={e => setAiMessage(e.target.value)}
+                    disabled={aiLoading}
+                  />
+                  <button type="submit" className="btn btn-primary" style={{ padding: '6px 10px', fontSize: '0.8rem' }} disabled={aiLoading}>
+                    Send
+                  </button>
+                </form>
               </div>
 
             </div>
 
-            {/* Narrative Bulletins dispatcher templates */}
-            <div className="glass card">
-              <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-ink)', fontSize: '1.25rem', marginBottom: '16px' }}>
-                Scripted Narrative Dispatch
-              </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '24px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '300px', overflowY: 'auto' }}>
-                  {narrativeTemplates.map(tpl => (
-                    <button
-                      key={tpl.name}
-                      className="btn btn-secondary"
-                      style={{ justifyContent: 'space-between', fontSize: '0.85rem' }}
-                      onClick={() => {
-                        setPreviewHeadline(tpl.headline);
-                        setPreviewDesc(tpl.description);
-                        setPreviewImpact(String(tpl.impactPercent));
-                        setPreviewSentiment(tpl.sentiment);
-                      }}
-                    >
-                      <span>{tpl.name}</span>
-                      <span className={tpl.sentiment === 'Positive' ? 'text-up' : 'text-down'}>{tpl.sentiment === 'Positive' ? '+' : '-'}{tpl.impactPercent}%</span>
-                    </button>
-                  ))}
-                </div>
+            {/* Bottom Row: Sector Overrides */}
+            <div style={{ padding: '12px 16px', flexShrink: 0 }} className="glass card">
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>Sector Commands:</span>
+                <select className="input-field" style={{ width: '160px', padding: '4px' }} id="sectorCommandSelector">
+                  <option value="Technology">Technology</option>
+                  <option value="Healthcare">Healthcare</option>
+                  <option value="Energy">Energy</option>
+                  <option value="Retail">Retail</option>
+                </select>
                 
-                <form onSubmit={handleFireNarrative} style={{ display: 'flex', flexDirection: 'column', gap: '12px', borderLeft: '1px solid var(--color-border)', paddingLeft: '24px' }}>
-                  <div className="form-group">
-                    <label>Headline Preview</label>
-                    <input type="text" className="input-field" value={previewHeadline} onChange={e => setPreviewHeadline(e.target.value)} />
-                  </div>
-                  <div className="form-group">
-                    <label>Description Preview</label>
-                    <textarea className="input-field" rows="2" style={{ resize: 'none' }} value={previewDesc} onChange={e => setPreviewDesc(e.target.value)} />
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                    <div className="form-group">
-                      <label>Target Security (Optional)</label>
-                      <select className="input-field" value={previewTargetSecId} onChange={e => setPreviewTargetSecId(e.target.value)}>
-                        <option value="">Global Impact</option>
-                        {state.securities.map(s => <option key={s.id} value={s.id}>{s.ticker}</option>)}
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label>Impact Value (%)</label>
-                      <input type="number" className="input-field font-data" value={previewImpact} onChange={e => setPreviewImpact(e.target.value)} />
-                    </div>
-                  </div>
-                  <button type="submit" className="btn btn-primary" style={{ alignSelf: 'flex-end' }}>Dispatch Bulletin</button>
-                </form>
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  <button className="btn" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: 'var(--color-fall)', color: '#fff' }} onClick={async () => {
+                    const secVal = document.getElementById('sectorCommandSelector').value;
+                    try {
+                      for (const s of state.securities.filter(s => s.sector === secVal)) {
+                        await apiFetch('/api/sentiment-override', { method: 'POST', body: { securityId: s.ticker, sentiment: -2 } });
+                      }
+                      alert(`Set ${secVal} sector to Crash`);
+                    } catch (e) { alert(e.message); }
+                  }}>🔴 Crash</button>
+                  <button className="btn" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: 'orange', color: '#fff' }} onClick={async () => {
+                    const secVal = document.getElementById('sectorCommandSelector').value;
+                    try {
+                      for (const s of state.securities.filter(s => s.sector === secVal)) {
+                        await apiFetch('/api/sentiment-override', { method: 'POST', body: { securityId: s.ticker, sentiment: -1 } });
+                      }
+                      alert(`Set ${secVal} sector to Bear`);
+                    } catch (e) { alert(e.message); }
+                  }}>🟠 Bear</button>
+                  <button className="btn" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: 'var(--color-brass-light)', color: 'var(--color-brass)' }} onClick={async () => {
+                    const secVal = document.getElementById('sectorCommandSelector').value;
+                    try {
+                      for (const s of state.securities.filter(s => s.ticker === secVal)) {
+                        await apiFetch('/api/sentiment-override', { method: 'POST', body: { securityId: s.ticker, sentiment: 0 } });
+                      }
+                      alert(`Reset ${secVal} sector to Neutral`);
+                    } catch (e) { alert(e.message); }
+                  }}>⚪ Neutral</button>
+                  <button className="btn" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: 'var(--color-rise)', color: '#fff' }} onClick={async () => {
+                    const secVal = document.getElementById('sectorCommandSelector').value;
+                    try {
+                      for (const s of state.securities.filter(s => s.sector === secVal)) {
+                        await apiFetch('/api/sentiment-override', { method: 'POST', body: { securityId: s.ticker, sentiment: 1 } });
+                      }
+                      alert(`Set ${secVal} sector to Bull`);
+                    } catch (e) { alert(e.message); }
+                  }}>🟢 Bull</button>
+                  <button className="btn" style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#5cb85c', color: '#fff' }} onClick={async () => {
+                    const secVal = document.getElementById('sectorCommandSelector').value;
+                    try {
+                      for (const s of state.securities.filter(s => s.sector === secVal)) {
+                        await apiFetch('/api/sentiment-override', { method: 'POST', body: { securityId: s.ticker, sentiment: 2 } });
+                      }
+                      alert(`Set ${secVal} sector to Rocket`);
+                    } catch (e) { alert(e.message); }
+                  }}>💚 Rocket</button>
+                </div>
               </div>
             </div>
 
@@ -1080,7 +1250,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
         {activeTab === 'securities' && (
           <div className="glass card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem' }}>Listing Directory Directory ({state.securities.length} Entries)</h3>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem' }}>Securities Listing Directory ({state.securities.length} Entries)</h3>
               <button className="btn btn-primary" onClick={() => setShowSecModal(true)}>Add New Security</button>
             </div>
 
@@ -1099,7 +1269,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
                     <th>Ticker</th>
                     <th>Name</th>
                     <th>Sector</th>
-                    <th style={{ textAlign: 'right' }}>Price (₹)</th>
+                    <th style={{ textAlign: 'right', minWidth: '120px' }}>BASE PRICE</th>
                     <th style={{ textAlign: 'right' }}>Total Float</th>
                     <th style={{ textAlign: 'right' }}>Units Available</th>
                     <th>Risk</th>
@@ -1115,11 +1285,11 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
                         <td className="font-data" style={{ fontWeight: 700 }}>{s.ticker}</td>
                         <td>{s.name}</td>
                         <td style={{ fontSize: '0.85rem' }}>{s.sector}</td>
-                        <td className="font-data" style={{ textAlign: 'right', fontWeight: 700 }}>
+                        <td className="font-data" style={{ textAlign: 'right', fontWeight: 700, minWidth: '120px' }}>
                           {editingSecId === s.id ? (
                             <input type="number" className="input-field font-data" style={{ width: '80px', padding: '2px 4px', fontSize: '0.85rem' }} value={editPrice} onChange={e => setEditPrice(e.target.value)} />
                           ) : (
-                            `₹${s.currentPrice}`
+                            `₹${Number(s.currentPrice).toLocaleString('en-IN')}`
                           )}
                         </td>
                         <td className="font-data" style={{ textAlign: 'right' }}>{s.totalUnits.toLocaleString()}</td>
@@ -1137,7 +1307,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
                               <>
                                 <button className="btn btn-primary" style={{ padding: '2px 8px', fontSize: '0.75rem' }} onClick={async () => {
                                   try {
-                                    await fetch(`/api/securities/${s.id}`, {
+                                    await apiFetch(`/api/securities/${s.id}`, {
                                       method: 'PUT',
                                       headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
                                       body: JSON.stringify({ currentPrice: Number(editPrice), availableUnits: Number(editUnits) })
@@ -1305,46 +1475,226 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
                 <label>Retail Starting Capital — ₹10,00,000 (Ten Lakhs)</label>
                 <input type="number" className="input-field font-data" value={startingRetail} onChange={e => setStartingRetail(e.target.value)} />
               </div>
-              <div className="form-group">
-                <label>Mutual Fund Starting Capital</label>
-                <input type="number" className="input-field font-data" value={startingMutual} onChange={e => setStartingMutual(e.target.value)} />
-              </div>
-              <div className="form-group">
-                <label>Hedge Fund Starting Capital</label>
-                <input type="number" className="input-field font-data" value={startingHedge} onChange={e => setStartingHedge(e.target.value)} />
-              </div>
               
               <button type="submit" className="btn btn-primary">Save Settings Configuration</button>
             </form>
 
-            <div style={{ marginTop: '32px', borderTop: '2px solid var(--color-border)', paddingTop: '24px' }}>
-              <h4 style={{ color: 'var(--color-fall)', fontSize: '1.1rem', marginBottom: '8px', fontFamily: 'var(--font-display)' }}>Danger Zone</h4>
-              <p style={{ fontSize: '0.85rem', color: 'var(--color-ink-2)', marginBottom: '16px' }}>
-                Performing a full system reset will restore all initial securities to their base prices, clear all holdings, balances, transactions, and news events. This action is irreversible.
-              </p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <input
-                  type="text"
-                  className="input-field font-data"
-                  style={{ width: '180px', borderColor: 'var(--color-fall)' }}
-                  placeholder="Type RESET to confirm"
-                  value={resetConfirmText}
-                  onChange={e => setResetConfirmText(e.target.value)}
+            <div style={{ marginTop: '24px', borderTop: '2px solid var(--color-border)', paddingTop: '20px', display: 'flex', flexDirection: 'column', gap: '12px', maxWidth: '500px' }}>
+              <h4 style={{ color: 'var(--color-brass)', fontSize: '1.1rem', marginBottom: '4px', fontFamily: 'var(--font-display)' }}>Automated Intervention Schedulers</h4>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: 'var(--color-surface-2)', padding: '12px', borderRadius: '6px', border: '1px solid var(--color-border)' }}>
+                <input 
+                  type="checkbox" 
+                  id="autoNewsEnabled" 
+                  style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                  checked={adminSettings.autoNewsEnabled || false} 
+                  onChange={async (e) => {
+                    await apiFetch('/api/admin/settings', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
+                      body: JSON.stringify({
+                        settings: {
+                          ...adminSettings,
+                          autoNewsEnabled: e.target.checked
+                        }
+                      })
+                    });
+                  }} 
                 />
-                <button
-                  className="btn"
-                  style={{
-                    backgroundColor: resetConfirmText === 'RESET' ? 'var(--color-fall)' : 'var(--color-border)',
-                    color: '#fff',
-                    fontWeight: 'bold',
-                    cursor: resetConfirmText === 'RESET' ? 'pointer' : 'not-allowed'
-                  }}
-                  disabled={resetConfirmText !== 'RESET'}
-                  onClick={handleReset}
-                >
-                  ☢ FULL SYSTEM RESET
-                </button>
+                <div>
+                  <label htmlFor="autoNewsEnabled" style={{ fontWeight: 'bold', cursor: 'pointer', fontSize: '0.9rem', display: 'block' }}>🤖 Auto-Release News Sequence</label>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--color-ink-2)' }}>Releases one preset scenario wire news item automatically every 40-50 seconds.</span>
+                </div>
               </div>
+            </div>
+
+            <div style={{ marginTop: '24px', borderTop: '2px solid var(--color-border)', paddingTop: '20px' }}>
+              <h4 style={{ color: 'var(--color-brass)', fontSize: '1.1rem', marginBottom: '8px', fontFamily: 'var(--font-display)' }}>Rehearsals & Drills</h4>
+              <p style={{ fontSize: '0.85rem', color: 'var(--color-ink-2)', marginBottom: '12px' }}>
+                Launch a speed training simulation drill for exchange desk operators.
+              </p>
+              <a href="#/training" className="btn btn-secondary" style={{ display: 'inline-block', textDecoration: 'none' }}>
+                🎯 Staff Training Drill &rarr;
+              </a>
+            </div>
+
+            <div style={{ marginTop: '32px', borderTop: '2px solid var(--color-border)', paddingTop: '24px' }}>
+              <h4 style={{ color: 'var(--color-fall)', fontSize: '1.25rem', marginBottom: '8px', fontFamily: 'var(--font-display)' }}>
+                ☢️ Master Reset & Event Initialization Desk
+              </h4>
+              <p style={{ fontSize: '0.85rem', color: 'var(--color-ink-2)', marginBottom: '16px', lineHeight: '1.5' }}>
+                Restore the entire SAAMX database to a clean, deterministic starting state. Purges all transaction logs, news flashes, velocities, corporate actions, and re-initializes assets and participant capital.
+              </p>
+
+              {state.marketState?.status === 'Open' ? (
+                <div style={{
+                  backgroundColor: '#FAE0DE',
+                  border: '1.5px solid #9B2B25',
+                  padding: '16px',
+                  borderRadius: '6px',
+                  color: '#9B2B25',
+                  fontWeight: 'bold',
+                  fontSize: '0.9rem',
+                  marginBottom: '20px'
+                }}>
+                  ⚠️ MARKET IS CURRENTLY OPEN. CLOSE THE MARKET FROM THE SEBI COMMAND PANEL BEFORE PERFORMING A MASTER RESET.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: 'var(--color-surface-2)', padding: '20px', borderRadius: '8px', border: '1px solid var(--color-border)', marginBottom: '24px' }}>
+                  
+                  {/* Mode Selector */}
+                  <div className="form-group">
+                    <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '6px' }}>RESET MODE</label>
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                      <button
+                        type="button"
+                        className="btn"
+                        style={{
+                          flex: 1,
+                          fontWeight: 'bold',
+                          backgroundColor: resetMode === 'TEST' ? 'var(--color-brass-light)' : 'var(--color-paper)',
+                          color: resetMode === 'TEST' ? 'var(--color-brass)' : 'var(--color-ink)',
+                          border: resetMode === 'TEST' ? '2.5px solid var(--color-brass)' : '1px solid var(--color-border)',
+                          padding: '10px'
+                        }}
+                        onClick={() => { setResetMode('TEST'); setResetConfirmText(''); }}
+                      >
+                        🔬 MODE A: TEST RESET
+                      </button>
+                      <button
+                        type="button"
+                        className="btn"
+                        style={{
+                          flex: 1,
+                          fontWeight: 'bold',
+                          backgroundColor: resetMode === 'EVENT' ? 'var(--color-fall-light)' : 'var(--color-paper)',
+                          color: resetMode === 'EVENT' ? 'var(--color-fall)' : 'var(--color-ink)',
+                          border: resetMode === 'EVENT' ? '2.5px solid var(--color-fall)' : '1px solid var(--color-border)',
+                          padding: '10px'
+                        }}
+                        onClick={() => { setResetMode('EVENT'); setResetConfirmText(''); }}
+                      >
+                        🏛️ MODE B: EVENT RESET
+                      </button>
+                    </div>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--color-ink-2)', display: 'block', marginTop: '6px' }}>
+                      {resetMode === 'TEST'
+                        ? 'Clears session data and sets a clean test session. Used repeatedly during rehearsal drills.'
+                        : 'Generates a clean session ID, backs up previous session data to fms_backups/, clears all history, and prepares for the real event.'}
+                    </span>
+                  </div>
+
+                  {/* Active Team Count Selector */}
+                  <div className="form-group" style={{ maxWidth: '300px' }}>
+                    <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>ACTIVE TEAMS: [ {activeTeamCount} ]</label>
+                    <input
+                      type="range"
+                      min="10"
+                      max="20"
+                      step="1"
+                      className="input-field"
+                      style={{ padding: 0, height: '10px', cursor: 'pointer' }}
+                      value={activeTeamCount}
+                      onChange={e => setActiveTeamCount(Number(e.target.value))}
+                    />
+                    <span style={{ fontSize: '0.75rem', color: 'var(--color-ink-2)', display: 'block', marginTop: '4px' }}>
+                      Select the number of teams participating in this simulation (10–20).
+                    </span>
+                  </div>
+
+                  {/* Confirmation Checkbox for Event Reset */}
+                  {resetMode === 'EVENT' && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', backgroundColor: 'rgba(239,83,80,0.1)', border: '1px solid var(--color-fall)', borderRadius: '4px' }}>
+                      <input
+                        type="checkbox"
+                        id="event-confirm-check"
+                        style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                        checked={eventCheckboxConfirmed}
+                        onChange={e => setEventCheckboxConfirmed(e.target.checked)}
+                      />
+                      <label htmlFor="event-confirm-check" style={{ fontSize: '0.8rem', color: 'var(--color-fall)', fontWeight: 'bold', cursor: 'pointer' }}>
+                        I confirm that this is the final event reset and all previous data must be backed up and wiped.
+                      </label>
+                    </div>
+                  )}
+
+                  {/* Text Confirmation & Action Button */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: '220px' }}>
+                      <input
+                        type="text"
+                        className="input-field font-data"
+                        style={{ borderColor: resetMode === 'EVENT' ? 'var(--color-fall)' : 'var(--color-brass)' }}
+                        placeholder={`Type "RESET ${resetMode}" to confirm`}
+                        value={resetConfirmText}
+                        onChange={e => setResetConfirmText(e.target.value)}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      className="btn"
+                      style={{
+                        backgroundColor: resetConfirmText === `RESET ${resetMode}` && (resetMode === 'TEST' || eventCheckboxConfirmed)
+                          ? (resetMode === 'EVENT' ? 'var(--color-fall)' : 'var(--color-brass)')
+                          : 'var(--color-border)',
+                        color: '#fff',
+                        fontWeight: 'bold',
+                        cursor: resetConfirmText === `RESET ${resetMode}` && (resetMode === 'TEST' || eventCheckboxConfirmed) ? 'pointer' : 'not-allowed',
+                        padding: '12px 24px'
+                      }}
+                      disabled={resetConfirmText !== `RESET ${resetMode}` || (resetMode === 'EVENT' && !eventCheckboxConfirmed)}
+                      onClick={handleReset}
+                    >
+                      ☢️ RUN {resetMode} RESET
+                    </button>
+                  </div>
+
+                </div>
+              )}
+
+              {/* Master Reset Report */}
+              {state.lastResetReport && (
+                <div className="glass" style={{
+                  padding: '20px',
+                  borderRadius: '8px',
+                  borderTop: '5px solid var(--color-rise)',
+                  backgroundColor: 'var(--color-paper)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '0.85rem'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', borderBottom: '1px solid var(--color-border)', paddingBottom: '8px' }}>
+                    <strong style={{ fontSize: '1rem', color: 'var(--color-rise)' }}>SAAMX MASTER RESET REPORT</strong>
+                    <span style={{ backgroundColor: 'var(--color-rise-light)', color: 'var(--color-rise)', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
+                      {state.lastResetReport.status}
+                    </span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px' }}>
+                    <div>SESSION ID: <strong style={{ color: 'var(--color-brass)' }}>{state.lastResetReport.sessionId}</strong></div>
+                    <div>ACTIVE TEAMS: <strong>{state.lastResetReport.activeTeamCount} / {state.lastResetReport.teamsCount}</strong></div>
+                    <div>SECURITIES UNIVERSE: <strong>{state.lastResetReport.securitiesCount}</strong></div>
+                    <div>TRANSACTIONS PURGED: <strong>{state.lastResetReport.transactionsCleared}</strong></div>
+                    <div>NEWS EVENTS CLEARED: <strong>{state.lastResetReport.newsCleared}</strong></div>
+                    <div>BANKRUPTCIES RESET: <strong>{state.lastResetReport.bankruptciesReset}</strong></div>
+                    <div>PRICE OVERRIDES CLEARED: <strong>{state.lastResetReport.overridesCleared}</strong></div>
+                    <div>STARTING CAPITAL: <strong>₹{state.lastResetReport.startingCapital?.toLocaleString('en-IN')}</strong></div>
+                    <div>MARKET STATUS: <strong>{state.lastResetReport.marketState}</strong></div>
+                    <div>TIMESTAMP: <strong>{new Date(state.lastResetReport.timestamp).toLocaleString()}</strong></div>
+                  </div>
+                  <div style={{
+                    marginTop: '16px',
+                    padding: '10px',
+                    backgroundColor: 'var(--color-rise-light)',
+                    color: 'var(--color-rise)',
+                    textAlign: 'center',
+                    fontWeight: 'bold',
+                    borderRadius: '4px',
+                    fontSize: '0.9rem'
+                  }}>
+                    ✓ READY FOR {state.lastResetReport.sessionId?.includes('EVENT') ? 'EVENT DAY' : 'TEST RUN'}
+                  </div>
+                </div>
+              )}
+
             </div>
           </div>
         )}
@@ -1441,120 +1791,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, activeA
 
       </div>
 
-      {/* RIGHT COLUMN: AI Market Operations Assistant (Collapsible) */}
-      {showAIChat && (
-        <div style={{
-          borderLeft: '1px solid var(--color-border)',
-          backgroundColor: 'var(--color-surface)',
-          display: 'flex',
-          flexDirection: 'column',
-          height: '100%',
-          overflow: 'hidden',
-          animation: 'slideInRight 0.3s ease-out'
-        }}>
-          {/* Header */}
-          <div style={{
-            padding: '16px 20px',
-            borderBottom: '1px solid var(--color-border)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            backgroundColor: 'rgba(232, 230, 223, 0.02)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                backgroundColor: '#5cb85c',
-                animation: 'pulse 1.5s infinite'
-              }}></div>
-              <h3 style={{ margin: 0, fontFamily: 'var(--font-display)', fontSize: '1.05rem', color: 'var(--color-ink)' }}>
-                AI War Assistant
-              </h3>
-            </div>
-            <button 
-              onClick={() => setShowAIChat(false)}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '1rem',
-                color: 'var(--color-ink-2)'
-              }}
-            >
-              ✕
-            </button>
-          </div>
-
-          {/* Chat History */}
-          <div style={{
-            flex: 1,
-            overflowY: 'auto',
-            padding: '16px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '12px'
-          }}>
-            {aiHistory.map((h, i) => (
-              <div 
-                key={i} 
-                style={{
-                  alignSelf: h.sender === 'Admin' ? 'flex-end' : 'flex-start',
-                  backgroundColor: h.sender === 'Admin' ? 'var(--color-brass-light)' : '#fdfcf9',
-                  color: 'var(--color-ink)',
-                  border: h.sender === 'Admin' ? '1px solid var(--color-brass-light)' : '1px solid var(--color-border)',
-                  padding: '8px 12px',
-                  borderRadius: '12px',
-                  maxWidth: '85%',
-                  fontSize: '0.8rem',
-                  lineHeight: '1.4'
-                }}
-              >
-                <strong style={{ display: 'block', fontSize: '0.65rem', color: 'var(--color-ink-2)', marginBottom: '3px' }}>
-                  {h.sender.toUpperCase()}
-                </strong>
-                {h.text}
-              </div>
-            ))}
-            {aiLoading && (
-              <div style={{ alignSelf: 'flex-start', color: 'var(--color-ink-2)', fontSize: '0.8rem', display: 'flex', gap: '6px' }}>
-                <span className="spinner" style={{ animation: 'rotate 1s linear infinite' }}>⏳</span> Parsing command intent...
-              </div>
-            )}
-          </div>
-
-          {/* Input Area */}
-          <form 
-            onSubmit={handleSendAIMessage}
-            style={{
-              padding: '12px 16px',
-              borderTop: '1px solid var(--color-border)',
-              backgroundColor: '#faf9f6',
-              display: 'flex',
-              gap: '8px'
-            }}
-          >
-            <input 
-              type="text" 
-              className="input-field" 
-              style={{ flex: 1, padding: '8px 12px', fontSize: '0.85rem' }} 
-              placeholder="e.g. Pump DTAI by 45% over 5m"
-              value={aiMessage}
-              onChange={e => setAiMessage(e.target.value)}
-              disabled={aiLoading}
-            />
-            <button 
-              type="submit" 
-              className="btn btn-primary" 
-              style={{ padding: '8px 14px', fontSize: '0.85rem' }}
-              disabled={aiLoading}
-            >
-              Send
-            </button>
-          </form>
-        </div>
-      )}
+      {/* Page-level Chat Assistant removed - now integrated directly inside War Room tab */}
 
       {/* Securities CRUD Add Modal */}
       {showSecModal && (

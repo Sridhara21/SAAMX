@@ -8,9 +8,10 @@ const firebaseConfig = {
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "fmos-a6573.firebaseapp.com",
   databaseURL: savedDbUrl || import.meta.env.VITE_FIREBASE_DATABASE_URL || "https://fmos-a6573-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "fmos-a6573",
-  storageBucket: "fmos-a6573.firebasestorage.app",
-  messagingSenderId: "351990440235",
-  appId: "1:351990440235:web:7fdc7e7c9113e67123256e"
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "fmos-a6573.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "351990440235",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:351990440235:web:7fdc7e7c9113e67123256e",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-E8KG4PP4N7"
 };
 
 const app = initializeApp(firebaseConfig);

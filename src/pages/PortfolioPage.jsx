@@ -6,10 +6,12 @@ export default function PortfolioPage({ state, onOpenProfile }) {
   const [txFilter, setTxFilter] = useState('ALL'); // ALL, BUY, SELL
   const [txSort, setTxSort] = useState('LATEST'); // LATEST, OLDEST, VALUE_DESC
 
-  const matchedTeams = teamQuery.trim() !== '' && !selectedTeam ? state.teams.filter(t => 
-    t.teamCode.toLowerCase().startsWith(teamQuery.toLowerCase()) ||
-    t.teamName.toLowerCase().includes(teamQuery.toLowerCase())
-  ).slice(0, 6) : [];
+  const matchedTeams = teamQuery.trim() !== '' && !selectedTeam ? state.teams
+    .filter(t => t.isActive)
+    .filter(t => 
+      t.teamCode.toLowerCase().startsWith(teamQuery.toLowerCase()) ||
+      t.teamName.toLowerCase().includes(teamQuery.toLowerCase())
+    ).slice(0, 6) : [];
 
   const handleTeamSelect = (team) => {
     setSelectedTeam(team);
@@ -17,14 +19,19 @@ export default function PortfolioPage({ state, onOpenProfile }) {
   };
 
   const getStartingCapital = (teamType) => {
+    const settings = state.settings || {
+      startingCapitalRetail: 1000000,
+      startingCapitalMutualFund: 1000000,
+      startingCapitalHedgeFund: 1000000
+    };
     switch (teamType) {
-      case 'HedgeFund': return state.settings.startingCapitalHedgeFund;
-      case 'MutualFund': return state.settings.startingCapitalMutualFund;
-      default: return state.settings.startingCapitalRetail;
+      case 'HedgeFund': return settings.startingCapitalHedgeFund || 1000000;
+      case 'MutualFund': return settings.startingCapitalMutualFund || 1000000;
+      default: return settings.startingCapitalRetail || 1000000;
     }
   };
 
-  const currentTeam = selectedTeam ? state.teams.find(t => t.id === selectedTeam.id) : null;
+  const currentTeam = selectedTeam ? state.teams.find(t => t.id === selectedTeam.id && t.isActive) : null;
 
   const getTeamStats = () => {
     if (!currentTeam) return null;
@@ -37,7 +44,7 @@ export default function PortfolioPage({ state, onOpenProfile }) {
     const holdingsList = [];
 
     Object.entries(currentTeam.holdings || {}).forEach(([secId, qty]) => {
-      const sec = state.securities.find(s => s.id === secId);
+      const sec = state.securities.find(s => s.id === secId || s.ticker === secId);
       if (sec && qty > 0) {
         const value = qty * sec.currentPrice;
         portfolioValue += value;

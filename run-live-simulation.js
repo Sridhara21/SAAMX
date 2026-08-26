@@ -3,7 +3,7 @@ import fs from 'fs';
 
 const ADMIN_PASSWORD = 'fms-event-2026';
 const SIMULATION_DURATION_MS = 60 * 60 * 1000; // 1 Hour
-const REPORT_PATH = 'C:\\Users\\user\\.gemini\\antigravity-ide\\brain\\6f4605c7-d656-4336-a735-c60a46378def\\simulation_report_1hr.md';
+const REPORT_PATH = './simulation_report_1hr.md';
 
 const apiRequest = (method, path, body = null) => {
   return new Promise((resolve, reject) => {
@@ -103,7 +103,7 @@ const startSimulation = async () => {
         let quantity = 3 + Math.floor(Math.random() * 22); 
 
         if (action === 'SELL') {
-          const held = team.holdings[security.id] || 0;
+          const held = team.holdings[security.ticker] || team.holdings[security.id] || 0;
           if (held === 0) {
             await apiRequest('POST', '/api/trade', {
               teamId: team.id,
@@ -201,7 +201,7 @@ const generateFinalReport = async (startTime, tradeCount, newsCount) => {
       const holdingsDetail = [];
 
       Object.entries(team.holdings).forEach(([secId, qty]) => {
-        const sec = stateData.state.securities.find(s => s.id === secId);
+        const sec = stateData.state.securities.find(s => s.id === secId || s.ticker === secId);
         if (sec && qty > 0) {
           const val = qty * sec.currentPrice;
           holdingsValue += val;
@@ -250,7 +250,7 @@ const generateFinalReport = async (startTime, tradeCount, newsCount) => {
 ${newsLog.map(n => {
   const timeStr = new Date(n.triggeredAt).toLocaleTimeString();
   const targetStr = n.affectedSecurityIds ? n.affectedSecurityIds.map(id => {
-    const sec = stateData.state.securities.find(s => s.id === id);
+    const sec = stateData.state.securities.find(s => s.id === id || s.ticker === id);
     return sec ? sec.ticker : id;
   }).join(', ') : 'Global';
   return `| ${timeStr} | **${n.headline}** | ${n.sentiment} | ${targetStr} | ${n.impactPercent}% | ${n.description} |`;

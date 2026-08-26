@@ -728,7 +728,7 @@ app.post('/api/trade', (req, res) => {
   if (!security) return res.status(404).json({ error: 'Security not found.' });
 
   if (security.status !== 'Active') {
-    return res.status(400).json({ error: `Trading halted: Company is ${security.status}.` });
+    return res.status(400).json({ error: `${security.ticker} is currently ${security.status} — trading not permitted.` });
   }
 
   const executionPrice = security.currentPrice;
@@ -736,12 +736,14 @@ app.post('/api/trade', (req, res) => {
   const impactFactor = Q / security.totalUnits;
   const priceChangePercent = impactFactor * security.volatility * 100;
 
+  const cashBalance = Number(team.cashBalance);
+
   if (action === 'BUY') {
     if (Q > security.availableUnits) {
       return res.status(400).json({ error: `Only ${security.availableUnits} units available.` });
     }
-    if (team.cashBalance < totalValue) {
-      return res.status(400).json({ error: `Insufficient cash. Team has ₹${team.cashBalance.toLocaleString()}, need ₹${totalValue.toLocaleString()}.` });
+    if (cashBalance < totalValue) {
+      return res.status(400).json({ error: `Insufficient cash. Team has ₹${cashBalance.toLocaleString()}, need ₹${totalValue.toLocaleString()}.` });
     }
 
     const oldPrice = security.currentPrice;
@@ -749,16 +751,17 @@ app.post('/api/trade', (req, res) => {
     security.priceHistory.push({ timestamp: Date.now(), price: security.currentPrice });
     security.availableUnits -= Q;
 
-    team.cashBalance = parseFloat((team.cashBalance - totalValue).toFixed(2));
-    team.holdings[security.id] = (team.holdings[security.id] || 0) + Q;
+    team.cashBalance = parseFloat((cashBalance - totalValue).toFixed(2));
+    if (!team.holdings) team.holdings = {};
+    team.holdings[security.ticker] = (team.holdings[security.ticker] || 0) + Q;
 
     const alert = checkCircuitBreaker(security, oldPrice, security.currentPrice);
     if (alert) activeAlerts.add(JSON.stringify(alert));
 
   } else if (action === 'SELL') {
-    const currentHolding = team.holdings[security.id] || 0;
+    const currentHolding = Number(team.holdings?.[security.ticker] || 0);
     if (Q > currentHolding) {
-      return res.status(400).json({ error: `Insufficient holdings. Team holds ${currentHolding} units.` });
+      return res.status(400).json({ error: `Insufficient holdings. Team holds ${currentHolding} units of ${security.ticker}.` });
     }
 
     const oldPrice = security.currentPrice;
@@ -766,10 +769,10 @@ app.post('/api/trade', (req, res) => {
     security.priceHistory.push({ timestamp: Date.now(), price: security.currentPrice });
     security.availableUnits += Q;
 
-    team.cashBalance = parseFloat((team.cashBalance + totalValue).toFixed(2));
-    team.holdings[security.id] -= Q;
-    if (team.holdings[security.id] === 0) {
-      delete team.holdings[security.id];
+    team.cashBalance = parseFloat((cashBalance + totalValue).toFixed(2));
+    team.holdings[security.ticker] -= Q;
+    if (team.holdings[security.ticker] === 0) {
+      delete team.holdings[security.ticker];
     }
 
     const alert = checkCircuitBreaker(security, oldPrice, security.currentPrice);
@@ -817,13 +820,13 @@ app.post('/api/transactions/void', (req, res) => {
   if (team) {
     if (tx.action === 'BUY') {
       team.cashBalance = parseFloat((team.cashBalance + tx.totalValue).toFixed(2));
-      if (team.holdings[tx.securityId]) {
-        team.holdings[tx.securityId] -= tx.quantity;
-        if (team.holdings[tx.securityId] <= 0) delete team.holdings[tx.securityId];
+      if (team.holdings[tx.ticker]) {
+        team.holdings[tx.ticker] -= tx.quantity;
+        if (team.holdings[tx.ticker] <= 0) delete team.holdings[tx.ticker];
       }
     } else if (tx.action === 'SELL') {
       team.cashBalance = parseFloat((team.cashBalance - tx.totalValue).toFixed(2));
-      team.holdings[tx.securityId] = (team.holdings[tx.securityId] || 0) + tx.quantity;
+      team.holdings[tx.ticker] = (team.holdings[tx.ticker] || 0) + tx.quantity;
     }
   }
 
@@ -938,8 +941,8 @@ app.post('/api/corporate-action', (req, res) => {
     security.priceHistory.push({ timestamp: Date.now(), price: security.currentPrice });
 
     state.teams.forEach(team => {
-      if (team.holdings[security.id]) {
-        team.holdings[security.id] *= 2;
+      if (team.holdings[security.ticker]) {
+        team.holdings[security.ticker] *= 2;
       }
     });
 
@@ -957,8 +960,8 @@ app.post('/api/corporate-action', (req, res) => {
     security.priceHistory.push({ timestamp: Date.now(), price: security.currentPrice });
 
     state.teams.forEach(team => {
-      if (team.holdings[security.id]) {
-        team.holdings[security.id] *= 2;
+      if (team.holdings[security.ticker]) {
+        team.holdings[security.ticker] *= 2;
       }
     });
 
@@ -971,7 +974,7 @@ app.post('/api/corporate-action', (req, res) => {
   if (actionType === 'Dividend') {
     const yieldPct = security.dividendYield;
     state.teams.forEach(team => {
-      const heldUnits = team.holdings[security.id] || 0;
+      const heldUnits = team.holdings[security.ticker] || 0;
       if (heldUnits > 0) {
         const payout = parseFloat((heldUnits * (yieldPct / 100) * security.currentPrice).toFixed(2));
         team.cashBalance = parseFloat((team.cashBalance + payout).toFixed(2));
@@ -1799,6 +1802,27 @@ app.get('*', (req, res) => {
 // Background Market Price Simulation Loop
 // Simulates continuous demand/supply trading fluctuations when the market is open
 setInterval(() => {
+  let ipoActivated = false;
+  if (state && state.securities) {
+    state.securities.forEach(security => {
+      if (security.status === 'IPO_PENDING') {
+        const firstHistory = security.priceHistory && security.priceHistory.length > 0 ? security.priceHistory[0] : null;
+        const announcedTime = firstHistory ? firstHistory.timestamp : null;
+        if (announcedTime && (Date.now() - announcedTime >= 30000)) {
+          security.status = 'Active';
+          ipoActivated = true;
+          console.log(`Auto-activating IPO security ${security.ticker} after 30 seconds`);
+        }
+      }
+    });
+  }
+
+  if (ipoActivated) {
+    updateMarketIndex();
+    saveState(false);
+    broadcastState();
+  }
+
   if (state && state.marketState && state.marketState.status === 'Open') {
     let priceChanged = false;
     

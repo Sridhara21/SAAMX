@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { apiFetch } from '../lib/api.js';
 
 export default function ExchangePage({ state, onOpenProfile, adminPassword }) {
   const [teamQuery, setTeamQuery] = useState('');
@@ -6,6 +7,24 @@ export default function ExchangePage({ state, onOpenProfile, adminPassword }) {
   const [action, setAction] = useState('BUY'); // BUY or SELL
   const [quantity, setQuantity] = useState('');
   const [staffName, setStaffName] = useState('Staff Desk 1');
+
+  // Initialize staffName based on logged-in user (Sandesh is 1, Akshay is 2, Aarush is 3, Sridhara is 4, Aksharaa is 5)
+  useEffect(() => {
+    const user = (sessionStorage.getItem('fms_username') || '').trim().toLowerCase();
+    if (user === 'sandesh') {
+      setStaffName('Staff Desk 1');
+    } else if (user === 'akshay') {
+      setStaffName('Staff Desk 2');
+    } else if (user === 'aarush') {
+      setStaffName('Staff Desk 3');
+    } else if (user === 'sridhara') {
+      setStaffName('Staff Desk 4');
+    } else if (user === 'aksharaa') {
+      setStaffName('Staff Desk 5');
+    } else {
+      setStaffName('Staff Desk 1');
+    }
+  }, []);
 
   // Selected entities
   const [selectedTeam, setSelectedTeam] = useState(null);
@@ -15,6 +34,7 @@ export default function ExchangePage({ state, onOpenProfile, adminPassword }) {
   const [errorMsg, setErrorMsg] = useState('');
   const [flashColor, setFlashColor] = useState(null); // 'var(--color-rise)' or 'var(--color-fall)'
   const [toasts, setToasts] = useState([]);
+  const [formFlash, setFormFlash] = useState(null); // 'error' or 'success'
 
   // Focus references for speed entry
   const teamInputRef = useRef(null);
@@ -22,10 +42,12 @@ export default function ExchangePage({ state, onOpenProfile, adminPassword }) {
   const qtyInputRef = useRef(null);
 
   // Filter queries matching on prefix or name substring (case-insensitive)
-  const matchedTeams = teamQuery.trim() !== '' && !selectedTeam ? state.teams.filter(t => 
-    t.teamCode.toLowerCase().startsWith(teamQuery.toLowerCase()) ||
-    t.teamName.toLowerCase().includes(teamQuery.toLowerCase())
-  ).slice(0, 6) : [];
+  const matchedTeams = teamQuery.trim() !== '' && !selectedTeam ? state.teams
+    .filter(t => t.isActive)
+    .filter(t => 
+      t.teamCode.toLowerCase().startsWith(teamQuery.toLowerCase()) ||
+      t.teamName.toLowerCase().includes(teamQuery.toLowerCase())
+    ).slice(0, 6) : [];
 
   const matchedSecurities = secQuery.trim() !== '' && !selectedSec ? state.securities.filter(s => 
     s.status !== 'Delisted' && (
@@ -82,35 +104,18 @@ export default function ExchangePage({ state, onOpenProfile, adminPassword }) {
       return;
     }
 
+    const liveTeam = state.teams.find(t => t.id === selectedTeam.id && t.isActive);
+    if (!liveTeam) {
+      setErrorMsg('Team not found in live simulation state.');
+      return;
+    }
+
     if (!quantity || Number(quantity) <= 0) {
       setErrorMsg('Please enter a valid positive quantity.');
       return;
     }
 
     const qty = Number(quantity);
-    const cost = qty * currentSec.currentPrice;
-
-    // Client-side validations
-    if (action === 'BUY') {
-      if (qty > currentSec.availableUnits) {
-        setErrorMsg(`Only ${currentSec.availableUnits} units available — you entered ${qty}`);
-        return;
-      }
-      if (cost > selectedTeam.cashBalance) {
-        setErrorMsg(`${selectedTeam.teamCode} has ₹${selectedTeam.cashBalance.toLocaleString()} — this order costs ₹${cost.toLocaleString()}`);
-        return;
-      }
-    } else {
-      const currentHolding = selectedTeam.holdings[currentSec.id] || 0;
-      if (currentHolding <= 0) {
-        setErrorMsg(`${selectedTeam.teamCode} holds 0 units of ${currentSec.ticker} — cannot sell`);
-        return;
-      }
-      if (qty > currentHolding) {
-        setErrorMsg(`Only ${currentHolding} units held by team — cannot sell ${qty}`);
-        return;
-      }
-    }
 
     const tradeBody = {
       teamId: selectedTeam.teamCode,
@@ -120,24 +125,8 @@ export default function ExchangePage({ state, onOpenProfile, adminPassword }) {
       enteredBy: staffName
     };
 
-    // Trigger visual flash immediately
-    setFlashColor(action === 'BUY' ? 'var(--color-rise-light)' : 'var(--color-fall-light)');
-    setTimeout(() => setFlashColor(null), 850);
-
-    // Optimistically announce the execution toast
-    const optimisticMessage = `✓ [Optimistic] ${selectedTeam.teamCode} ${action === 'BUY' ? 'buying' : 'selling'} ${qty} ${currentSec.ticker} @ ₹${currentSec.currentPrice.toLocaleString('en-IN')}`;
-    addToast(optimisticMessage);
-
-    // Reset inputs immediately so operator is unblocked
-    setTeamQuery('');
-    setSecQuery('');
-    setQuantity('');
-    setSelectedTeam(null);
-    setSelectedSec(null);
-    setTimeout(() => teamInputRef.current?.focus(), 50);
-
     try {
-      const res = await fetch('/api/trade', {
+      const res = await apiFetch('/api/trade', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -149,19 +138,41 @@ export default function ExchangePage({ state, onOpenProfile, adminPassword }) {
       if (res.ok) {
         const data = await res.json();
         addToast(`✓ Confirmed: ${tradeBody.teamId} ${action === 'BUY' ? 'bought' : 'sold'} ${qty} ${tradeBody.securityId} @ ₹${data.executionPrice.toLocaleString('en-IN')}`);
+        
+        // Trigger visual flash immediately on success
+        setFlashColor(action === 'BUY' ? 'var(--color-rise-light)' : 'var(--color-fall-light)');
+        setTimeout(() => setFlashColor(null), 850);
+
+        setFormFlash('success');
+        setTimeout(() => setFormFlash(null), 1000);
+
+        // Reset inputs on success so operator is unblocked
+        setTeamQuery('');
+        setSecQuery('');
+        setQuantity('');
+        setSelectedTeam(null);
+        setSelectedSec(null);
+        setErrorMsg('');
+        setTimeout(() => teamInputRef.current?.focus(), 50);
       } else {
         const data = await res.json();
         addToast(`❌ Failed: ${tradeBody.teamId} order for ${qty} ${tradeBody.securityId} rejected: ${data.error}`);
+        setErrorMsg(`ORDER REJECTED: ${data.error}`);
+        setFormFlash('error');
+        setTimeout(() => setFormFlash(null), 2000);
       }
     } catch (err) {
       addToast(`❌ Network error executing ${tradeBody.teamId} trade on ${tradeBody.securityId}.`);
+      setErrorMsg('Network error executing trade.');
+      setFormFlash('error');
+      setTimeout(() => setFormFlash(null), 2000);
     }
   };
 
   const getTeamHolding = (team, sec) => {
     if (!team || !sec) return 0;
     const liveTeam = state.teams.find(t => t.id === team.id);
-    return liveTeam?.holdings[sec.id] || 0;
+    return liveTeam?.holdings?.[sec.ticker] || 0;
   };
 
   const getLiveSecDetails = (sec) => {
@@ -186,7 +197,7 @@ export default function ExchangePage({ state, onOpenProfile, adminPassword }) {
     .slice(0, 8);
 
   return (
-    <div style={{ height: 'calc(100vh - 100px)', overflow: 'hidden', padding: '12px' }}>
+    <div style={{ height: 'calc(100vh - 100px)', overflow: 'hidden', padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
       
       {/* Fullscreen Peripheral Flash Overlay */}
       {flashColor && (
@@ -211,11 +222,39 @@ export default function ExchangePage({ state, onOpenProfile, adminPassword }) {
         }
       `}</style>
 
+      {/* Session ID & Active Teams Banner */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: '#0a0b0d',
+        color: '#fff',
+        padding: '8px 16px',
+        borderRadius: '6px',
+        fontSize: '0.85rem',
+        fontFamily: 'var(--font-mono)',
+        border: '1px solid #22252e'
+      }}>
+        <span>SESSION: <strong style={{ color: '#d4af37' }}>{state.marketState?.sessionId || 'NOT INITIALIZED'}</strong></span>
+        <span>PARTICIPANTS: <strong style={{ color: '#d4af37' }}>{state.marketState?.activeTeamCount || 10} ACTIVE TEAMS</strong></span>
+        <span>MARKET STATUS: <strong style={{ color: state.marketState?.status === 'Open' ? '#22c55e' : '#ef4444' }}>{state.marketState?.status?.toUpperCase() || 'CLOSED'}</strong></span>
+      </div>
+
       {/* Dual Column Execution Layout */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '24px', height: '100%' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '24px', flex: 1, minHeight: 0 }}>
         
         {/* Left Column: Trade Form */}
-        <div className="glass card" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto' }}>
+        <div 
+          className="glass card" 
+          style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            height: '100%', 
+            overflowY: 'auto',
+            transition: 'border 0.2s ease',
+            border: formFlash === 'error' ? '2px solid var(--color-fall)' : formFlash === 'success' ? '2px solid var(--color-rise)' : '1px solid var(--color-border)'
+          }}
+        >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-brass)', fontSize: '1.6rem' }}>
               Exchange Execution Terminal
@@ -233,6 +272,40 @@ export default function ExchangePage({ state, onOpenProfile, adminPassword }) {
           {state.marketState.status !== 'Open' && (
             <div style={{ padding: '12px', background: 'var(--color-fall-light)', borderRadius: '8px', color: 'var(--color-fall)', marginBottom: '16px', fontWeight: 700, textAlign: 'center' }}>
               ⚠️ EXCHANGE HALTED: Market session is currently {state.marketState.status}.
+            </div>
+          )}
+
+          {errorMsg && (
+            <div style={{ 
+              padding: '16px', 
+              background: 'var(--color-fall-light)', 
+              borderRadius: '8px', 
+              color: 'var(--color-fall)', 
+              marginBottom: '16px', 
+              fontWeight: 800, 
+              fontSize: '1.1rem',
+              textAlign: 'center',
+              border: '2px solid var(--color-fall)',
+              position: 'relative'
+            }}>
+              ⚠️ {errorMsg}
+              <button 
+                type="button" 
+                style={{ 
+                  position: 'absolute', 
+                  right: '12px', 
+                  top: '12px', 
+                  background: 'none', 
+                  border: 'none', 
+                  color: 'var(--color-fall)', 
+                  cursor: 'pointer', 
+                  fontWeight: 800,
+                  fontSize: '1.2rem'
+                }} 
+                onClick={() => setErrorMsg('')}
+              >
+                ✕
+              </button>
             </div>
           )}
 
@@ -409,12 +482,7 @@ export default function ExchangePage({ state, onOpenProfile, adminPassword }) {
               </div>
             )}
 
-            {/* Submission Alerts */}
-            {errorMsg && (
-              <div style={{ color: 'var(--color-fall)', fontWeight: 700, fontSize: '0.95rem' }}>
-                ⚠️ {errorMsg}
-              </div>
-            )}
+            {/* Submission Alerts removed - now at top banner */}
 
             <button
               type="submit"

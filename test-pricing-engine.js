@@ -60,7 +60,7 @@ const executeBuy = (state, teamId, securityId, Q) => {
   security.availableUnits -= Q;
 
   team.cashBalance = parseFloat((team.cashBalance - totalValue).toFixed(2));
-  team.holdings[security.id] = (team.holdings[security.id] || 0) + Q;
+  team.holdings[security.ticker] = (team.holdings[security.ticker] || 0) + Q;
 };
 
 const executeSell = (state, teamId, securityId, Q) => {
@@ -74,7 +74,7 @@ const executeSell = (state, teamId, securityId, Q) => {
   const impactFactor = Q / security.totalUnits;
   const priceChangePercent = impactFactor * security.volatility * 100;
 
-  const currentHolding = team.holdings[security.id] || 0;
+  const currentHolding = team.holdings[security.ticker] || 0;
   if (Q > currentHolding) {
     throw new Error('Insufficient holdings');
   }
@@ -85,9 +85,9 @@ const executeSell = (state, teamId, securityId, Q) => {
   security.availableUnits += Q;
 
   team.cashBalance = parseFloat((team.cashBalance + totalValue).toFixed(2));
-  team.holdings[security.id] -= Q;
-  if (team.holdings[security.id] === 0) {
-    delete team.holdings[security.id];
+  team.holdings[security.ticker] -= Q;
+  if (team.holdings[security.ticker] === 0) {
+    delete team.holdings[security.ticker];
   }
 };
 
@@ -100,8 +100,8 @@ const applyStockSplit = (state, securityId) => {
   security.currentPrice = parseFloat((security.currentPrice / 2).toFixed(2));
 
   state.teams.forEach(team => {
-    if (team.holdings[security.id]) {
-      team.holdings[security.id] *= 2;
+    if (team.holdings[security.ticker]) {
+      team.holdings[security.ticker] *= 2;
     }
   });
 };
@@ -112,7 +112,7 @@ const applyDividend = (state, securityId) => {
 
   const yieldPct = security.dividendYield;
   state.teams.forEach(team => {
-    const held = team.holdings[security.id] || 0;
+    const held = team.holdings[security.ticker] || 0;
     if (held > 0) {
       const payout = parseFloat((held * (yieldPct / 100) * security.currentPrice).toFixed(2));
       team.cashBalance = parseFloat((team.cashBalance + payout).toFixed(2));
@@ -133,7 +133,7 @@ const runTests = () => {
   // executionPrice = 100, currentPrice = 100 * 1.05 = 105
   assert.strictEqual(state.securities[0].currentPrice, 105);
   assert.strictEqual(state.teams[0].cashBalance, 90000); // 100000 - 100*100
-  assert.strictEqual(state.teams[0].holdings['S01'], 100);
+  assert.strictEqual(state.teams[0].holdings['TEST'], 100);
   console.log('✔ Test 1 passed: Standard Buy execution & pricing impact');
 
   // Test 2: Reject Buy on Insufficient Units
@@ -158,7 +158,7 @@ const runTests = () => {
   // newPrice = 110 * 0.95 = 104.5
   assert.strictEqual(state.securities[0].currentPrice, 104.5);
   assert.strictEqual(state.securities[0].availableUnits, 900); // 800 + 100
-  assert.strictEqual(state.teams[0].holdings['S01'], 100);
+  assert.strictEqual(state.teams[0].holdings['TEST'], 100);
   console.log('✔ Test 4 passed: Standard Sell execution & pricing impact');
 
   // Test 5: Stock Split
@@ -168,7 +168,7 @@ const runTests = () => {
   assert.strictEqual(state.securities[0].totalUnits, 2000);
   assert.strictEqual(state.securities[0].availableUnits, 1800);
   assert.strictEqual(state.securities[0].currentPrice, 52.5); // 105 / 2
-  assert.strictEqual(state.teams[0].holdings['S01'], 200);
+  assert.strictEqual(state.teams[0].holdings['TEST'], 200);
   console.log('✔ Test 5 passed: Stock Split doubles holdings and units, halves price');
 
   // Test 6: Dividend Payment

@@ -26,7 +26,9 @@ export default function ResultsPage({ state }) {
   };
 
   // Compile team performance details
-  const processedTeams = state.teams.map(team => {
+  const processedTeams = state.teams
+    .filter(t => t.isActive)
+    .map(team => {
     const startCapital = getStartingCapital(team.teamType);
     let portfolioValue = team.cashBalance;
     let riskPoints = 0;
@@ -35,7 +37,7 @@ export default function ResultsPage({ state }) {
     const heldSectors = new Set();
 
     Object.entries(team.holdings || {}).forEach(([secId, qty]) => {
-      const sec = state.securities.find(s => s.id === secId);
+      const sec = state.securities.find(s => s.id === secId || s.ticker === secId);
       if (sec && qty > 0) {
         const value = qty * sec.currentPrice;
         portfolioValue += value;
