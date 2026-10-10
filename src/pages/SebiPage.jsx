@@ -6,10 +6,10 @@ import { db, ref, onValue } from '../lib/firebase.js';
 
 const STAGED_INTERVENTION_PROTOCOLS = [
   { id: 'ACT_1', triggerMinute: 8, label: 'Stage 1: DTAI Loss Announcement (-22%)', actNumber: 1, type: 'news' },
-  { id: 'IPO_1', triggerMinute: 16, label: 'IPO 1: IndiaStack Fintech IPO (ISFT)', actNumber: 3, type: 'ipo' },
+  { id: 'IPO_1', triggerMinute: 16, label: 'IPO 1: OpenAI Hyperscale IPO (OAI)', actNumber: 3, type: 'ipo' },
   { id: 'ACT_2', triggerMinute: 20, label: 'Stage 2: Mystery Buyer Recovery', actNumber: 2, type: 'news' },
   { id: 'ACT_3', triggerMinute: 25, label: 'Stage 3: Leadership Upheaval CEO Resigns (-8%)', actNumber: 4, type: 'news' },
-  { id: 'IPO_2', triggerMinute: 30, label: 'IPO 2: Anthropic AI India IPO (ANTH)', actNumber: 7, type: 'ipo' },
+  { id: 'IPO_2', triggerMinute: 30, label: 'IPO 2: Stripe Global Infra IPO (STRP)', actNumber: 7, type: 'ipo' },
   { id: 'ACT_4', triggerMinute: 32, label: 'Stage 4: PUMP PHASE — Velocity to ₹420 (Goldman Pump)', actNumber: 5, type: 'velocity' },
   { id: 'ACT_5', triggerMinute: 35, label: 'Stage 5: Tata Acquisition Rumour (+8%)', actNumber: 8, type: 'news' },
   { id: 'HINT', triggerMinute: 47, label: 'SEBI Hint: SEBI Monitoring DTAI', actNumber: 6, type: 'news' },
@@ -20,9 +20,11 @@ const STAGED_INTERVENTION_PROTOCOLS = [
 ];
 
 
-export default function SebiPage({ state, onOpenProfile, adminPassword, connected }) {
+export default function SebiPage({ state, onOpenProfile, adminPassword, connected, coordinator, isCoordinatorOffline, mySessionUuid }) {
   const [timeLeft, setTimeLeft] = useState('60:00');
   const [serverTimeOffset, setServerTimeOffset] = useState(0);
+  const [selectedEmergencySector, setSelectedEmergencySector] = useState('');
+  const [selectedSessionState, setSelectedSessionState] = useState('PRE_OPEN');
 
   // Sync server clock offset
   useEffect(() => {
@@ -36,7 +38,7 @@ export default function SebiPage({ state, onOpenProfile, adminPassword, connecte
   const runPreOpenCheck = () => {
     if (!state) return { passed: false, checks: {} };
 
-    const startingCapital = state.settings?.startingCapitalRetail || 1000000;
+    const startingCapital = Number(state.settings?.startingCapitalRetail) || 10000000; // ₹1,00,00,000 (₹1 Crore)
     const securitiesCount = state.securities ? Object.keys(state.securities).length : 0;
 
     const configuredActiveCount = state.marketState?.activeTeamCount || 10;
@@ -229,6 +231,119 @@ export default function SebiPage({ state, onOpenProfile, adminPassword, connecte
       }
     } catch (err) {
       alert('Error: ' + err.message);
+    }
+  };
+
+  const handleSetMode = async (mode) => {
+    const confirm = window.confirm(`Switch simulation mode to ${mode}?`);
+    if (!confirm) return;
+    try {
+      const res = await apiFetch('/api/market/control', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
+        body: JSON.stringify({ action: 'SET_MODE', mode })
+      });
+      if (res.ok) {
+        alert(`Simulation mode set to ${mode}!`);
+      }
+    } catch (e) {
+      alert('Error: ' + e.message);
+    }
+  };
+
+  const handleTransitionSession = async (sessionState) => {
+    const confirm = window.confirm(`Force transition session state to ${sessionState}? This will override all timed schedules.`);
+    if (!confirm) return;
+    try {
+      const res = await apiFetch('/api/market/control', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
+        body: JSON.stringify({ action: 'TRANSITION_SESSION', sessionState })
+      });
+      if (res.ok) {
+        alert(`Session successfully transitioned to ${sessionState}!`);
+      }
+    } catch (e) {
+      alert('Error: ' + e.message);
+    }
+  };
+
+  const handleReconcileMarket = async () => {
+    const input = window.prompt('CRITICAL REGULATORY ACTION:\n\nType "RECONCILE MARKET" to lock all participant and broker trading, atomically compute final portfolio net worths, determine official standings, calculate all 9 achievement badges, and publish authoritative rankings to the Leaderboard:');
+    if (input !== 'RECONCILE MARKET') {
+      alert('Confirmation text mismatch. Market reconciliation cancelled.');
+      return;
+    }
+    try {
+      const res = await apiFetch('/api/admin/reconcile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword }
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert(`🏆 MARKET RECONCILED & RESULTS PUBLISHED!\n\nRank 1: Team ${data.leaderboard?.[0]?.teamId} (₹${data.leaderboard?.[0]?.portfolioValue?.toLocaleString()})\nRank 2: Team ${data.leaderboard?.[1]?.teamId} (₹${data.leaderboard?.[1]?.portfolioValue?.toLocaleString()})\nRank 3: Team ${data.leaderboard?.[2]?.teamId} (₹${data.leaderboard?.[2]?.portfolioValue?.toLocaleString()})\n\nSession state has been transitioned to 'RESULTS'. All trading remains securely frozen.`);
+      } else {
+        alert('Reconciliation failed: ' + (data.error || 'Unknown error occurred.'));
+      }
+    } catch (e) {
+      alert('Network / API error: ' + e.message);
+    }
+  };
+
+  const handleSectorHalt = async (action, sector) => {
+    if (!sector) {
+      alert('Please select a sector.');
+      return;
+    }
+    const confirm = window.confirm(`Are you sure you want to ${action === 'PAUSE_SECTOR' ? 'FREEZE' : 'UNFREEZE'} trading for all ${sector} listings?`);
+    if (!confirm) return;
+    try {
+      const res = await apiFetch('/api/market/control', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
+        body: JSON.stringify({ action, sector })
+      });
+      if (res.ok) {
+        alert(`Sector ${sector} successfully ${action === 'PAUSE_SECTOR' ? 'HALTED' : 'RESUMED'}!`);
+      }
+    } catch (e) {
+      alert('Error: ' + e.message);
+    }
+  };
+
+  const handleMarketWideAction = async (action) => {
+    const expected = action === 'HALT_ALL_TRADING' ? 'HALT ALL' : 'RESUME ALL';
+    const input = window.prompt(`CRITICAL ACTION: Type "${expected}" to confirm ${action === 'HALT_ALL_TRADING' ? 'halting all market trading' : 'resuming all market trading'}:`);
+    if (input !== expected) {
+      alert('Confirmation mismatch. Action aborted.');
+      return;
+    }
+    try {
+      const res = await apiFetch('/api/market/control', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
+        body: JSON.stringify({ action })
+      });
+      if (res.ok) {
+        alert(`Market-wide ${action === 'HALT_ALL_TRADING' ? 'HALT' : 'RESUME'} triggered successfully!`);
+      }
+    } catch (e) {
+      alert('Error: ' + e.message);
+    }
+  };
+
+  const handleClaimCoordinator = async () => {
+    try {
+      const { set, ref } = await import('../lib/firebase.js');
+      await set(ref(db, 'fms/coordinator'), {
+        owner: 'sebi',
+        lastActive: Date.now() + serverTimeOffset,
+        claimedAt: Date.now() + serverTimeOffset,
+        id: mySessionUuid
+      });
+      alert('Coordinator status claimed successfully!');
+    } catch (e) {
+      alert('Failed to claim coordinator: ' + e.message);
     }
   };
 
@@ -466,22 +581,89 @@ export default function SebiPage({ state, onOpenProfile, adminPassword, connecte
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '12px', boxSizing: 'border-box' }}>
-      {/* Session ID & Active Teams Banner */}
+      {/* Institutional SEBI Desk Header */}
+      <div className="card-primary" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', borderLeft: '6px solid var(--color-brass)', padding: '20px 24px' }}>
+        <div>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.74rem', color: '#6C4404', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
+            <span>🏛️ SECURITIES & EXCHANGE BOARD SURVEILLANCE</span>
+          </div>
+          <h1 style={{ fontSize: '2rem', fontWeight: 900, fontFamily: 'var(--font-brand)', margin: 0, color: 'var(--color-ink)' }}>
+            SEBI Regulatory Command Console
+          </h1>
+          <p style={{ margin: '4px 0 0 0', fontSize: '0.88rem', color: '#242C38', fontWeight: 500 }}>
+            Market oversight, circuit breaker intervention, regulatory announcements & audit reconciliation.
+          </p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <button
+            onClick={handleReconcileMarket}
+            className="btn btn-primary"
+            style={{ padding: '10px 18px', fontSize: '0.88rem', fontWeight: 800 }}
+          >
+            🏆 Reconcile & Publish Results
+          </button>
+        </div>
+      </div>
+
+      {/* Mode Control & Health Status Matrix */}
       <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        backgroundColor: '#0a0b0d',
-        color: '#fff',
-        padding: '8px 16px',
-        borderRadius: '6px',
-        fontSize: '0.85rem',
-        fontFamily: 'var(--font-mono)',
-        border: '1px solid #22252e'
+        display: 'grid',
+        gridTemplateColumns: '1fr 1.2fr',
+        gap: '16px'
       }}>
-        <span>SESSION: <strong style={{ color: '#d4af37' }}>{state.marketState?.sessionId || 'NOT INITIALIZED'}</strong></span>
-        <span>PARTICIPANTS: <strong style={{ color: '#d4af37' }}>{state.marketState?.activeTeamCount || 10} ACTIVE TEAMS</strong></span>
-        <span>MARKET STATUS: <strong style={{ color: state.marketState?.status === 'Open' ? '#22c55e' : '#ef4444' }}>{state.marketState?.status?.toUpperCase() || 'CLOSED'}</strong></span>
+        {/* Simulation Mode Toggle card */}
+        <div className="glass card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <strong style={{ fontSize: '0.75rem', color: 'var(--color-ink-2)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>SIMULATION MODE</strong>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span className="font-display" style={{ fontSize: '1.2rem', color: 'var(--color-brass)', fontWeight: 'bold' }}>
+              {state.marketState?.mode || 'DEMO'} MODE
+            </span>
+            <button
+              type="button"
+              className="btn"
+              style={{
+                padding: '6px 12px',
+                fontSize: '0.75rem',
+                backgroundColor: 'var(--color-surface-3)',
+                color: 'var(--color-ink)',
+                border: '1px solid var(--color-border)',
+                cursor: 'pointer',
+                fontWeight: 'bold'
+              }}
+              onClick={() => handleSetMode((state.marketState?.mode || 'DEMO') === 'DEMO' ? 'EVENT' : 'DEMO')}
+            >
+              🔄 Switch to {(state.marketState?.mode || 'DEMO') === 'DEMO' ? 'EVENT' : 'DEMO'}
+            </button>
+          </div>
+        </div>
+
+        {/* Health check panel */}
+        <div className="glass card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <strong style={{ fontSize: '0.75rem', color: 'var(--color-ink-2)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>CORE DESK HEALTH</strong>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', fontSize: '0.8rem', alignItems: 'center' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: connected ? '#22c55e' : '#ef4444', display: 'inline-block' }}></span>
+              {connected ? 'Firebase Online' : 'Firebase Offline'}
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: !isCoordinatorOffline ? '#22c55e' : '#ef4444', display: 'inline-block' }}></span>
+              {!isCoordinatorOffline ? 'Coordinator Heartbeat Active' : 'Coordinator Heartbeat Missing'}
+            </span>
+            {isCoordinatorOffline && (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                style={{ padding: '4px 8px', fontSize: '0.65rem', backgroundColor: 'var(--color-fall-light)', color: 'var(--color-fall)', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}
+                onClick={handleClaimCoordinator}
+              >
+                ⚠ Claim Coordinator
+              </button>
+            )}
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-ink-2)' }}>
+              📂 Backups: {Object.keys(state.backups || {}).length}
+            </span>
+          </div>
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px' }}>
@@ -618,12 +800,18 @@ export default function SebiPage({ state, onOpenProfile, adminPassword, connecte
           
           <div style={{ display: 'flex', justifyContent: 'space-between', backgroundColor: 'var(--color-surface-2)', padding: '16px', borderRadius: '10px' }}>
             <div>
-              <span style={{ fontSize: '0.7rem', color: 'var(--color-ink-2)', display: 'block', textTransform: 'uppercase', fontWeight: 600 }}>SESSION CLOCK</span>
-              <SplitFlapText text={state.marketState.status === 'NotStarted' ? '60:00 READY' : state.marketState.status === 'Closed' ? 'SESSION ENDED' : timeLeft} />
+              <span style={{ fontSize: '0.7rem', color: 'var(--color-ink-2)', display: 'block', textTransform: 'uppercase', fontWeight: 600 }}>SIMULATED CLOCK</span>
+              <SplitFlapText text={state.marketState.timeString || '09:00 AM'} />
+              <span style={{ fontSize: '0.7rem', color: 'var(--color-ink-3)', display: 'block', marginTop: '4px' }}>
+                REMAINING: {state.marketState.timeLeftString || '60:00'}
+              </span>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <span style={{ fontSize: '0.7rem', color: 'var(--color-ink-2)', display: 'block', textTransform: 'uppercase', fontWeight: 600 }}>EXCHANGE STATUS</span>
-              <SplitFlapText text={state.marketState.status === 'NotStarted' ? 'AWAITING OPEN' : state.marketState.status === 'Open' ? 'MARKET OPEN' : state.marketState.status === 'Paused' ? 'MARKET PAUSED' : 'MARKET CLOSED'} />
+              <span style={{ fontSize: '0.7rem', color: 'var(--color-ink-2)', display: 'block', textTransform: 'uppercase', fontWeight: 600 }}>SESSION PHASE</span>
+              <SplitFlapText text={state.marketState.sessionState || 'PRE_OPEN'} />
+              <span style={{ fontSize: '0.7rem', color: 'var(--color-ink-3)', display: 'block', marginTop: '4px' }}>
+                STATUS: {state.marketState.status || 'NotStarted'}
+              </span>
             </div>
           </div>
 
@@ -721,6 +909,102 @@ export default function SebiPage({ state, onOpenProfile, adminPassword, connecte
                 </button>
               </>
             )}
+          </div>
+
+          {/* Emergency Action Matrix */}
+          <div style={{
+            borderTop: '1px solid var(--color-border)',
+            paddingTop: '16px',
+            marginTop: '8px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px'
+          }}>
+            <h4 style={{ margin: 0, fontFamily: 'var(--font-display)', fontSize: '1rem', color: 'var(--color-fall)' }}>
+              🚨 Emergency Action Console
+            </h4>
+            
+            {/* Market-wide Halts */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <button
+                type="button"
+                className="btn"
+                style={{ backgroundColor: 'var(--color-fall)', color: '#fff', fontWeight: 'bold', fontSize: '0.8rem', padding: '8px' }}
+                onClick={() => handleMarketWideAction('HALT_ALL_TRADING')}
+              >
+                🛑 Halt All Trading
+              </button>
+              <button
+                type="button"
+                className="btn"
+                style={{ backgroundColor: 'var(--color-rise)', color: '#fff', fontWeight: 'bold', fontSize: '0.8rem', padding: '8px' }}
+                onClick={() => handleMarketWideAction('RESUME_ALL_TRADING')}
+              >
+                🟢 Resume All Trading
+              </button>
+            </div>
+
+            {/* Sector Halts */}
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <select
+                className="input-field"
+                style={{ flex: 1, padding: '6px', fontSize: '0.8rem' }}
+                value={selectedEmergencySector}
+                onChange={e => setSelectedEmergencySector(e.target.value)}
+              >
+                <option value="">Choose Sector to Halt...</option>
+                <option value="Technology">Technology</option>
+                <option value="Financials">Financials</option>
+                <option value="Energy">Energy</option>
+                <option value="Healthcare">Healthcare</option>
+                <option value="Industrials">Industrials</option>
+                <option value="Consumer Goods">Consumer Goods</option>
+                <option value="Telecommunications">Telecommunications</option>
+                <option value="Materials">Materials</option>
+                <option value="Utilities">Utilities</option>
+                <option value="Real Estate">Real Estate</option>
+              </select>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                style={{ padding: '6px 10px', fontSize: '0.8rem', backgroundColor: 'var(--color-fall-light)', color: 'var(--color-fall)', border: 'none', fontWeight: 'bold' }}
+                onClick={() => handleSectorHalt('PAUSE_SECTOR', selectedEmergencySector)}
+              >
+                Freeze
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                style={{ padding: '6px 10px', fontSize: '0.8rem', backgroundColor: 'var(--color-rise-light)', color: 'var(--color-rise)', border: 'none', fontWeight: 'bold' }}
+                onClick={() => handleSectorHalt('RESUME_SECTOR', selectedEmergencySector)}
+              >
+                Unfreeze
+              </button>
+            </div>
+
+            {/* Session State Transitions */}
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <select
+                className="input-field"
+                style={{ flex: 1, padding: '6px', fontSize: '0.8rem' }}
+                value={selectedSessionState}
+                onChange={e => setSelectedSessionState(e.target.value)}
+              >
+                <option value="PRE_OPEN">PRE_OPEN</option>
+                <option value="CONTINUOUS_TRADING">CONTINUOUS_TRADING</option>
+                <option value="CLOSING">CLOSING (Reconciliation)</option>
+                <option value="MARKET_CLOSED">MARKET_CLOSED</option>
+                <option value="RESULTS">RESULTS</option>
+              </select>
+              <button
+                type="button"
+                className="btn btn-primary"
+                style={{ padding: '6px 12px', fontSize: '0.8rem', backgroundColor: 'var(--color-brass)', color: '#000', border: 'none', fontWeight: 'bold' }}
+                onClick={() => handleTransitionSession(selectedSessionState)}
+              >
+                Transition Phase
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1004,14 +1288,32 @@ export default function SebiPage({ state, onOpenProfile, adminPassword, connecte
           </div>
         </div>
 
-        {/* Panel: Staged Scenario Interventions Board */}
+        {/* Panel: Staged Scenario Storyline Deck & Interventions */}
         <div className="glass card" style={{ display: 'flex', flexDirection: 'column', gap: '16px', border: '1.5px solid var(--color-fall)' }}>
-          <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-fall)', fontSize: '1.25rem', margin: 0 }}>
-            🛡️ Staged Scenario Interventions Board
-          </h3>
-          <p style={{ color: 'var(--color-ink-2)', fontSize: '0.8rem', margin: 0 }}>
-            Dispatch scheduled simulation scenario stages and intervention phases to manipulate market sentiment and trigger staged actions.
-          </p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-fall)', fontSize: '1.25rem', margin: 0 }}>
+              🛡️ Simulation Storyline & Staged Events Deck
+            </h3>
+            <span style={{ fontSize: '0.75rem', padding: '3px 8px', borderRadius: '4px', backgroundColor: 'var(--color-surface-3)', color: 'var(--color-brass)', fontWeight: 'bold' }}>
+              {Object.keys(state.firedPhoenixActs || {}).length} / {STAGED_INTERVENTION_PROTOCOLS.length} FIRED
+            </span>
+          </div>
+
+          {/* Storyline Status Strip */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', backgroundColor: 'var(--color-surface-2)', padding: '10px', borderRadius: '6px' }}>
+            <div>
+              <span style={{ fontSize: '0.7rem', color: 'var(--color-ink-2)', textTransform: 'uppercase' }}>Current Active Phase</span>
+              <div style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--color-rise)', marginTop: '2px' }}>
+                {[...STAGED_INTERVENTION_PROTOCOLS].reverse().find(a => state.firedPhoenixActs && state.firedPhoenixActs[a.actNumber])?.label || 'Pre-Market / Initial State'}
+              </div>
+            </div>
+            <div>
+              <span style={{ fontSize: '0.7rem', color: 'var(--color-ink-2)', textTransform: 'uppercase' }}>Next Scheduled Event</span>
+              <div style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--color-brass)', marginTop: '2px' }}>
+                {STAGED_INTERVENTION_PROTOCOLS.find(a => !state.firedPhoenixActs || !state.firedPhoenixActs[a.actNumber])?.label || 'All Storyline Events Completed'}
+              </div>
+            </div>
+          </div>
 
           <div style={{ display: 'flex', gap: '8px' }}>
             <select
@@ -1042,7 +1344,7 @@ export default function SebiPage({ state, onOpenProfile, adminPassword, connecte
             <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--color-ink-2)' }}>
               📋 SCENARIO STAGES DIRECTORY
             </span>
-            <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid var(--color-border)', borderRadius: '8px', backgroundColor: 'var(--color-surface-2)', padding: '6px' }}>
+            <div style={{ maxHeight: '180px', overflowY: 'auto', border: '1px solid var(--color-border)', borderRadius: '8px', backgroundColor: 'var(--color-surface-2)', padding: '6px' }}>
               {STAGED_INTERVENTION_PROTOCOLS.map((act) => {
                 const fired = state.firedPhoenixActs && state.firedPhoenixActs[act.actNumber];
                 return (
@@ -1084,6 +1386,62 @@ export default function SebiPage({ state, onOpenProfile, adminPassword, connecte
                 );
               })}
             </div>
+          </div>
+        </div>
+
+        {/* Panel: Final Market Reconciliation & Leaderboard Publication */}
+        <div className="glass card" style={{ display: 'flex', flexDirection: 'column', gap: '12px', border: '2px solid var(--color-brass)', backgroundColor: 'rgba(212, 175, 55, 0.03)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-brass)', fontSize: '1.25rem', margin: 0 }}>
+              🏆 Market Reconciliation & Results Publishing
+            </h3>
+            <span className="badge" style={{ backgroundColor: 'var(--color-brass)', color: '#000', fontWeight: 'bold', fontSize: '0.7rem' }}>
+              PHASE 5 RECONCILIATION
+            </span>
+          </div>
+          <p style={{ color: 'var(--color-ink-2)', fontSize: '0.8rem', margin: 0, lineHeight: 1.5 }}>
+            At session end (15:30), SEBI triggers atomic market reconciliation. This securely locks all orders, values holdings at final prices, determines official team ranks, computes all 9 special awards, and saves an immutable results ledger.
+          </p>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginTop: '4px' }}>
+            <button
+              type="button"
+              className="btn btn-primary"
+              style={{
+                flex: 1,
+                padding: '10px 16px',
+                fontSize: '0.9rem',
+                fontWeight: 800,
+                backgroundColor: 'var(--color-brass)',
+                color: '#000',
+                letterSpacing: '0.04em'
+              }}
+              onClick={handleReconcileMarket}
+            >
+              🏁 RECONCILE MARKET & PUBLISH FINAL LEADERBOARD
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline"
+              style={{
+                padding: '10px 14px',
+                fontSize: '0.8rem',
+                fontWeight: 600
+              }}
+              onClick={async () => {
+                try {
+                  const res = await apiFetch('/api/admin/backup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword }
+                  });
+                  const d = await res.json();
+                  if (res.ok) alert(`Backup Snapshot Created: ${d.backupId}`);
+                } catch (e) {
+                  alert('Backup failed: ' + e.message);
+                }
+              }}
+            >
+              💾 Save Snapshot
+            </button>
           </div>
         </div>
 

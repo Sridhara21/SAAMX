@@ -18,17 +18,8 @@ export default function PortfolioPage({ state, onOpenProfile }) {
     setTeamQuery(`${team.teamCode} - ${team.teamName}`);
   };
 
-  const getStartingCapital = (teamType) => {
-    const settings = state.settings || {
-      startingCapitalRetail: 1000000,
-      startingCapitalMutualFund: 1000000,
-      startingCapitalHedgeFund: 1000000
-    };
-    switch (teamType) {
-      case 'HedgeFund': return settings.startingCapitalHedgeFund || 1000000;
-      case 'MutualFund': return settings.startingCapitalMutualFund || 1000000;
-      default: return settings.startingCapitalRetail || 1000000;
-    }
+  const getStartingCapital = () => {
+    return state?.settings?.startingCapitalRetail || 10000000; // ₹1,00,00,000 (₹1 Crore)
   };
 
   const currentTeam = selectedTeam ? state.teams.find(t => t.id === selectedTeam.id && t.isActive) : null;

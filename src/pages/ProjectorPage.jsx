@@ -1,13 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import SplitFlapText from '../components/SplitFlapText.jsx';
+import React, { useState, useEffect, useMemo } from 'react';
 import { db, ref, onValue } from '../lib/firebase.js';
 
 // SVG Sparkline drawing from price history
-function Sparkline({ history, isUp, width = 45, height = 16 }) {
+function Sparkline({ history, isUp, width = 48, height = 18 }) {
   if (!history || history.length < 2) {
-    const mockPoints = isUp ? "0,14 15,10 30,12 45,3" : "0,3 15,6 30,4 45,14";
+    const mockPoints = isUp ? "0,15 16,11 32,13 48,3" : "0,3 16,7 32,5 48,15";
     return (
-      <svg width={width} height={height} style={{ stroke: isUp ? '#15694f' : '#9b2b25', strokeWidth: 1.5, fill: 'none' }}>
+      <svg width={width} height={height} style={{ stroke: isUp ? '#065F3E' : '#931913', strokeWidth: 1.8, fill: 'none' }}>
         <polyline points={mockPoints} />
       </svg>
     );
@@ -23,179 +22,36 @@ function Sparkline({ history, isUp, width = 45, height = 16 }) {
   }).join(' ');
 
   return (
-    <svg width={width} height={height} style={{ stroke: isUp ? '#15694f' : '#9b2b25', strokeWidth: 1.5, fill: 'none' }}>
+    <svg width={width} height={height} style={{ stroke: isUp ? '#065F3E' : '#931913', strokeWidth: 1.8, fill: 'none' }}>
       <polyline points={points} />
     </svg>
   );
 }
 
-// Sentiment Meter Semi-Circle SVG Gauge
-function SentimentGaugeDial({ advances, declines }) {
-  const total = advances + declines;
-  const pct = total > 0 ? (advances / total) * 100 : 68;
-  let label = 'GREED';
-  let color = '#15694f';
-  if (pct < 40) {
-    label = 'FEAR';
-    color = '#9b2b25';
-  } else if (pct >= 40 && pct < 60) {
-    label = 'NEUTRAL';
-    color = '#9b6f1e';
-  }
-
-  const angle = -135 + (pct / 100) * 180;
+// Market Pulse Semi-Circle Gauge Dial
+function MarketPulseGauge({ score, label, color }) {
+  const angle = -135 + (score / 100) * 180;
   const rad = (angle * Math.PI) / 180;
-  const needleX = 42 + 22 * Math.cos(rad);
-  const needleY = 36 + 22 * Math.sin(rad);
+  const needleX = 46 + 26 * Math.cos(rad);
+  const needleY = 40 + 26 * Math.sin(rad);
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-      <svg width="84" height="42" viewBox="0 0 84 42">
-        <path d="M 12 36 A 30 30 0 0 1 72 36" fill="none" stroke="#e2ddd4" strokeWidth="6" strokeLinecap="round" />
-        <path d="M 52 11 A 30 30 0 0 1 72 36" fill="none" stroke="#15694f" strokeWidth="6" strokeLinecap="round" />
-        <path d="M 12 36 A 30 30 0 0 1 32 11" fill="none" stroke="#9b2b25" strokeWidth="6" strokeLinecap="round" />
-        <line x1="42" y1="36" x2={needleX} y2={needleY} stroke="#17191c" strokeWidth="2.5" strokeLinecap="round" />
-        <circle cx="42" cy="36" r="3.5" fill="#17191c" />
+    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+      <svg width="92" height="48" viewBox="0 0 92 48">
+        <path d="M 12 40 A 34 34 0 0 1 80 40" fill="none" stroke="#E2DBD0" strokeWidth="7" strokeLinecap="round" />
+        <path d="M 58 12 A 34 34 0 0 1 80 40" fill="none" stroke="#065F3E" strokeWidth="7" strokeLinecap="round" />
+        <path d="M 12 40 A 34 34 0 0 1 34 12" fill="none" stroke="#931913" strokeWidth="7" strokeLinecap="round" />
+        <line x1="46" y1="40" x2={needleX} y2={needleY} stroke="#1E232B" strokeWidth="3" strokeLinecap="round" />
+        <circle cx="46" cy="40" r="4.5" fill="#845508" />
       </svg>
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <span style={{ fontSize: '0.85rem', fontWeight: '900', color, fontFamily: 'var(--font-mono)' }}>{label}</span>
-        <span style={{ fontSize: '0.65rem', color: '#6b6863', fontWeight: 'bold' }}>{Math.round(pct)}/100</span>
+      <div>
+        <div style={{ fontSize: '1.05rem', fontWeight: 900, color, fontFamily: 'monospace', letterSpacing: '0.5px' }}>
+          {label}
+        </div>
+        <div style={{ fontSize: '0.74rem', color: '#4A5568', fontWeight: 700 }}>
+          Breadth Index: {score}/100
+        </div>
       </div>
-    </div>
-  );
-}
-
-// Security Card Cell matching reference image design
-function ProjectorCell({ security, totalTransactions }) {
-  const [prevPrice, setPrevPrice] = useState(security ? security.currentPrice : 0);
-  const [flashClass, setFlashClass] = useState('');
-
-  useEffect(() => {
-    if (security && security.currentPrice !== prevPrice) {
-      if (security.currentPrice > prevPrice) {
-        setFlashClass('cell-flash-up');
-      } else {
-        setFlashClass('cell-flash-down');
-      }
-      setPrevPrice(security.currentPrice);
-      const timer = setTimeout(() => setFlashClass(''), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [security, prevPrice]);
-
-  if (!security) return null;
-
-  const priceChange = security.currentPrice - security.basePrice;
-  const priceChangePct = security.basePrice > 0 ? (priceChange / security.basePrice) * 100 : 0;
-  const isUp = priceChangePct >= 0;
-
-  const volume = (totalTransactions || [])
-    .filter(tx => tx.ticker === security.ticker && !tx.voided)
-    .reduce((sum, tx) => sum + tx.quantity, 0);
-
-  const volStr = volume >= 1000 ? `${(volume / 1000).toFixed(1)}K` : `${volume}`;
-
-  const isHalted = security.status === 'Halted';
-  const isPending = security.status === 'IPO_PENDING';
-
-  return (
-    <div
-      className={`projector-cell ${flashClass}`}
-      style={{
-        padding: '5px 8px',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        backgroundColor: isHalted ? '#FAE0DE' : isPending ? '#F5E6C8' : '#faf8f5',
-        border: isHalted ? '1.5px solid #9b2b25' : isPending ? '1.5px solid #9b6f1e' : '1px solid #e5e0d8',
-        borderRadius: '3px',
-        height: '62px',
-        boxSizing: 'border-box'
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontWeight: 900, fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: isPending ? '#9b6f1e' : '#17191c' }}>
-          {security.ticker}
-        </span>
-        <span style={{ fontWeight: 800, fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: isHalted ? '#9b2b25' : isPending ? '#9b6f1e' : isUp ? '#15694f' : '#9b2b25' }}>
-          {isHalted ? 'HALTED' : isPending ? 'STAGED' : `₹${security.currentPrice.toFixed(2)}`}
-        </span>
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: '0.65rem', fontWeight: 'bold', color: isHalted ? '#9b2b25' : isPending ? '#9b6f1e' : isUp ? '#15694f' : '#9b2b25' }}>
-          {isHalted ? '🛑 SUSPENDED' : isPending ? '⏳ IPO PENDING' : `${isUp ? '▲' : '▼'} ${Math.abs(priceChangePct).toFixed(2)}%`}
-        </span>
-        {!isHalted && !isPending && <Sparkline history={security.priceHistory} isUp={isUp} width={40} height={14} />}
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.55rem', color: '#6b6863' }}>
-        <span>Vol: {volStr}</span>
-        <span>Units: {security.availableUnits}</span>
-      </div>
-    </div>
-  );
-}
-
-// Scrolling Marquee Ticker Header
-function ScrollingTicker({ securities }) {
-  return (
-    <div style={{
-      width: '100%',
-      backgroundColor: '#0a0b0d',
-      color: '#fff',
-      borderBottom: '1px solid #22252e',
-      overflow: 'hidden',
-      whiteSpace: 'nowrap',
-      boxSizing: 'border-box',
-      display: 'flex',
-      alignItems: 'center',
-      height: '36px',
-      position: 'relative'
-    }}>
-      <div style={{
-        backgroundColor: '#9b6f1e',
-        color: '#ffffff',
-        padding: '0 16px',
-        fontWeight: 900,
-        fontSize: '0.8rem',
-        zIndex: 10,
-        height: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        fontFamily: 'var(--font-display)',
-        boxShadow: '4px 0 8px rgba(0,0,0,0.4)',
-        letterSpacing: '0.05em'
-      }}>
-        SAAMX LIVE
-      </div>
-      <div className="ticker-scroll" style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '32px',
-        paddingLeft: '20px',
-        animation: 'marquee 150s linear infinite'
-      }}>
-        {[...securities, ...securities].map((sec, idx) => {
-          const priceChange = sec.currentPrice - sec.basePrice;
-          const priceChangePct = sec.basePrice > 0 ? (priceChange / sec.basePrice) * 100 : 0;
-          const isUp = priceChangePct >= 0;
-
-          return (
-            <span key={`${sec.id}-${idx}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', fontWeight: 'bold' }}>
-              <span style={{ color: '#d4af37' }}>{sec.ticker}</span>
-              <span style={{ color: '#ffffff' }}>₹{sec.currentPrice.toFixed(2)}</span>
-              <span style={{ color: isUp ? '#22c55e' : '#ef4444' }}>
-                {isUp ? '▲' : '▼'}{Math.abs(priceChangePct).toFixed(2)}%
-              </span>
-            </span>
-          );
-        })}
-      </div>
-      <style>{`
-        @keyframes marquee {
-          0% { transform: translate3d(0, 0, 0); }
-          100% { transform: translate3d(-50%, 0, 0); }
-        }
-      `}</style>
     </div>
   );
 }
@@ -203,6 +59,36 @@ function ScrollingTicker({ securities }) {
 export default function ProjectorPage({ state, takeoverEvent }) {
   const [timeLeft, setTimeLeft] = useState('60:00');
   const [serverTimeOffset, setServerTimeOffset] = useState(0);
+  const [currentTimeStr, setCurrentTimeStr] = useState('');
+  const [activeModal, setActiveModal] = useState(null);
+  const [activeTakeover, setActiveTakeover] = useState(null);
+
+  // Auto-dismiss breaking overlays after 8 seconds so overlays never get stuck on projector
+  useEffect(() => {
+    if (takeoverEvent && (takeoverEvent.headline || takeoverEvent.name || takeoverEvent.type || takeoverEvent.title)) {
+      const normalized = {
+        ...takeoverEvent,
+        headline: takeoverEvent.headline || takeoverEvent.title || takeoverEvent.name,
+        type: takeoverEvent.type || 'NEWS_FLASH'
+      };
+      setActiveTakeover(normalized);
+      const timer = setTimeout(() => {
+        setActiveTakeover(null);
+      }, 8000);
+      return () => clearTimeout(timer);
+    } else {
+      setActiveTakeover(null);
+    }
+  }, [takeoverEvent]);
+
+  // Keyboard shortcut: ESC to dismiss takeover overlay
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setActiveTakeover(null);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Sync server clock offset
   useEffect(() => {
@@ -213,154 +99,24 @@ export default function ProjectorPage({ state, takeoverEvent }) {
     return () => unsub();
   }, []);
 
-  const [latestNews, setLatestNews] = useState(null);
-  const [niftyHistory, setNiftyHistory] = useState([24150, 24180, 24200, 24250.8]);
-
-  // Interactive controls state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSector, setSelectedSector] = useState('ALL');
-  const [activeModal, setActiveModal] = useState(null);
-  const [showAllGridOnly, setShowAllGridOnly] = useState(false);
-
-  // Render takeover overlay for Opening/Closing bell & alerts
-  const renderTakeoverOverlay = () => {
-    if (!takeoverEvent) return null;
-    const { type, ticker, name, ipoPrice, availableUnits } = takeoverEvent;
-    switch (type) {
-      case 'OPENING_BELL':
-        return (
-          <div className="takeover-overlay" style={{ backgroundColor: '#0a0b0d', color: '#ffffff', zIndex: 100000, border: '8px solid #26a69a' }}>
-            <div className="takeover-card bell" style={{ backgroundColor: '#131722', border: '1px solid #2a2e39', color: '#ffffff', boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }}>
-              <span style={{ fontSize: '5rem', display: 'inline-block', animation: 'shake 1.2s infinite' }}>🔔</span>
-              <h2 className="takeover-title text-up" style={{ color: '#26a69a', fontSize: '3rem', fontFamily: 'var(--font-display)', margin: '16px 0' }}>MARKET OPEN</h2>
-              <p className="takeover-desc" style={{ color: '#848e9c', fontSize: '1.2rem' }}>The central exchange trading floor is now open. Trading terminals are active.</p>
-            </div>
-            <style>{`
-              @keyframes shake {
-                0% { transform: rotate(0); }
-                15% { transform: rotate(15deg); }
-                30% { transform: rotate(-15deg); }
-                45% { transform: rotate(10deg); }
-                60% { transform: rotate(-10deg); }
-                75% { transform: rotate(4deg); }
-                100% { transform: rotate(0); }
-              }
-            `}</style>
-          </div>
-        );
-      case 'CLOSING_BELL':
-        return (
-          <div className="takeover-overlay" style={{ backgroundColor: '#0a0b0d', color: '#ffffff', zIndex: 100000, border: '8px solid #ef5350' }}>
-            <div className="takeover-card" style={{ backgroundColor: '#131722', border: '1px solid #2a2e39', color: '#ffffff', borderTop: '6px solid #ef5350', boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }}>
-              <span style={{ fontSize: '5rem' }}>🔕</span>
-              <h2 className="takeover-title text-down" style={{ color: '#ef5350', fontSize: '3rem', fontFamily: 'var(--font-display)', margin: '16px 0' }}>MARKET CLOSED</h2>
-              <p className="takeover-desc" style={{ color: '#848e9c', fontSize: '1.2rem' }}>Trading has concluded for the current session. Financial ledgers are frozen.</p>
-            </div>
-          </div>
-        );
-      case 'BANKRUPTCY':
-      case 'INSOLVENCY':
-        return (
-          <div className="takeover-overlay" style={{ backgroundColor: 'rgba(15, 11, 11, 0.96)', color: '#ffffff', zIndex: 100000, border: '8px solid #ef5350' }}>
-            <div className="takeover-card" style={{ backgroundColor: '#131722', border: '2px solid #ef5350', color: '#ffffff', boxShadow: '0 8px 32px rgba(239,83,80,0.3)' }}>
-              <span style={{ fontSize: '5rem' }}>⚖️</span>
-              <h2 className="takeover-title text-down" style={{ color: '#ef5350', fontSize: '2.5rem', fontFamily: 'var(--font-display)', margin: '16px 0' }}>ASSETS LIQUIDATED</h2>
-              <p className="takeover-desc" style={{ color: '#ffffff', fontSize: '1.4rem', fontWeight: 'bold' }}>
-                {ticker} &mdash; {name}
-              </p>
-              <p style={{ color: '#848e9c', marginTop: '12px' }}>This company has been declared bankrupt by the NCLT. Share value adjusted to ₹0.00.</p>
-            </div>
-          </div>
-        );
-      case 'MARKET_HALT':
-        return (
-          <div className="takeover-overlay" style={{ backgroundColor: 'rgba(20, 16, 8, 0.96)', color: '#ffffff', zIndex: 100000, border: '8px solid #f59e0b' }}>
-            <div className="takeover-card" style={{ backgroundColor: '#131722', border: '2px solid #f59e0b', color: '#ffffff', boxShadow: '0 8px 32px rgba(245,158,11,0.3)' }}>
-              <span style={{ fontSize: '5rem', display: 'inline-block', animation: 'pulse-slow 1.5s infinite' }}>⚠️</span>
-              <h2 className="takeover-title" style={{ color: '#f59e0b', fontSize: '2.5rem', fontFamily: 'var(--font-display)', margin: '16px 0' }}>TRADING HALTED</h2>
-              <p className="takeover-desc" style={{ color: '#ffffff', fontSize: '1.4rem', fontWeight: 'bold' }}>
-                Regulatory circuit breaker triggered on: {ticker}
-              </p>
-              <p style={{ color: '#848e9c', marginTop: '12px' }}>Order execution suspended temporarily by SEBI. Pending investigation.</p>
-            </div>
-            <style>{`
-              @keyframes pulse-slow {
-                0%, 100% { transform: scale(1); opacity: 1; }
-                50% { transform: scale(1.1); opacity: 0.8; }
-              }
-            `}</style>
-          </div>
-        );
-      case 'IPO_LAUNCH':
-        return (
-          <div className="takeover-overlay" style={{ backgroundColor: 'rgba(11, 20, 15, 0.96)', color: '#ffffff', zIndex: 100000, border: '8px solid #26a69a' }}>
-            <div className="takeover-card bell" style={{ backgroundColor: '#131722', border: '2px solid #26a69a', color: '#ffffff', boxShadow: '0 8px 32px rgba(38,166,154,0.3)' }}>
-              <span style={{ fontSize: '5rem', display: 'inline-block', animation: 'bounce-up 1.2s infinite' }}>🚀</span>
-              <h2 className="takeover-title text-up" style={{ color: '#26a69a', fontSize: '2.5rem', fontFamily: 'var(--font-display)', margin: '16px 0' }}>IPO LISTED & ACTIVE</h2>
-              <p className="takeover-desc" style={{ color: '#ffffff', fontSize: '1.4rem', fontWeight: 'bold' }}>
-                {ticker} &mdash; {name}
-              </p>
-              <p style={{ color: '#848e9c', marginTop: '12px' }}>Bidding subscription window closed. Listing is now live and trading on the exchange floor.</p>
-            </div>
-            <style>{`
-              @keyframes bounce-up {
-                0%, 100% { transform: translateY(0); }
-                50% { transform: translateY(-15px); }
-              }
-            `}</style>
-          </div>
-        );
-      case 'IPO_PENDING':
-        return (
-          <div className="takeover-overlay" style={{ backgroundColor: 'rgba(20, 18, 11, 0.96)', color: '#ffffff', zIndex: 100000, border: '8px solid #d4af37' }}>
-            <div className="takeover-card" style={{ backgroundColor: '#131722', border: '2px solid #d4af37', color: '#ffffff', boxShadow: '0 8px 32px rgba(212,175,55,0.3)' }}>
-              <span style={{ fontSize: '5rem' }}>⏳</span>
-              <h2 className="takeover-title" style={{ color: '#d4af37', fontSize: '2.5rem', fontFamily: 'var(--font-display)', margin: '16px 0' }}>IPO STAGING</h2>
-              <p className="takeover-desc" style={{ color: '#ffffff', fontSize: '1.4rem', fontWeight: 'bold' }}>
-                Upcoming Listing: {ticker} &mdash; {name}
-              </p>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', marginTop: '20px' }}>
-                <div>
-                  <span style={{ color: '#848e9c', fontSize: '0.75rem', display: 'block' }}>BASE ISSUE PRICE</span>
-                  <strong style={{ fontSize: '1.3rem', color: '#ffffff' }}>₹{ipoPrice || 285}</strong>
-                </div>
-                <div style={{ borderLeft: '1px solid #2a2e39', paddingLeft: '24px' }}>
-                  <span style={{ color: '#848e9c', fontSize: '0.75rem', display: 'block' }}>TOTAL OFFERING SIZE</span>
-                  <strong style={{ fontSize: '1.3rem', color: '#ffffff' }}>{availableUnits || 18000} Units</strong>
-                </div>
-              </div>
-              <p style={{ color: '#848e9c', marginTop: '20px' }}>Subscription channel staged. Listing goes active shortly.</p>
-            </div>
-          </div>
-        );
-      case 'NEWS_FLASH':
-        return (
-          <div className="takeover-overlay" style={{ backgroundColor: 'rgba(9, 10, 15, 0.97)', color: '#ffffff', zIndex: 100000, border: '8px solid #ef5350' }}>
-            <div className="takeover-card" style={{ backgroundColor: '#131722', border: '2px solid #ef5350', color: '#ffffff', boxShadow: '0 8px 32px rgba(239,83,80,0.3)', width: '80%', maxWidth: '900px', padding: '40px' }}>
-              <span className="flash-badge" style={{ backgroundColor: '#ef5350', color: '#ffffff', padding: '6px 16px', borderRadius: '4px', fontSize: '1rem', fontWeight: '900', letterSpacing: '2px', display: 'inline-block', marginBottom: '24px', animation: 'blink 1s infinite' }}>⚡ BREAKING NEWS</span>
-              <h1 className="takeover-title" style={{ fontSize: '2.5rem', fontFamily: 'var(--font-display)', margin: '0 0 20px 0', color: '#ffffff', lineHeight: '1.3' }}>{name}</h1>
-              <p className="takeover-desc" style={{ color: '#848e9c', fontSize: '1.2rem', lineHeight: '1.6', margin: 0 }}>{ticker}</p>
-            </div>
-            <style>{`
-              @keyframes blink {
-                0%, 100% { opacity: 1; }
-                50% { opacity: 0.4; }
-              }
-            `}</style>
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
+  // Update digital clock time string
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date(Date.now() + serverTimeOffset);
+      setCurrentTimeStr(now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }));
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, [serverTimeOffset]);
 
   // Session Clock countdown logic
   useEffect(() => {
-    const status = state.marketState.status;
-    const startTime = state.marketState.simulationStartTime;
-    const durationMins = state.marketState.simulationDurationMinutes;
-    const pauseOffset = state.marketState.pauseTimeOffset || 0;
-    const pausedAt = state.marketState.pausedAt;
+    const status = state?.marketState?.status || 'NotStarted';
+    const startTime = state?.marketState?.simulationStartTime;
+    const durationMins = state?.marketState?.simulationDurationMinutes || 60;
+    const pauseOffset = state?.marketState?.pauseTimeOffset || 0;
+    const pausedAt = state?.marketState?.pausedAt;
 
     if (status === 'NotStarted' || !startTime) {
       const minutesStr = String(durationMins).padStart(2, '0');
@@ -396,796 +152,1399 @@ export default function ProjectorPage({ state, takeoverEvent }) {
       const interval = setInterval(updateClock, 1000);
       return () => clearInterval(interval);
     }
-  }, [state.marketState.status, state.marketState.simulationStartTime, state.marketState.simulationDurationMinutes, state.marketState.pauseTimeOffset, state.marketState.pausedAt, serverTimeOffset]);
+  }, [state?.marketState, serverTimeOffset]);
 
-  // Track latest news
-  useEffect(() => {
-    const triggeredNews = [...state.newsEvents]
-      .filter(n => n.triggeredAt)
-      .sort((a, b) => b.triggeredAt - a.triggeredAt);
-    if (triggeredNews.length > 0) {
-      setLatestNews(triggeredNews[0]);
-    }
-  }, [state.newsEvents]);
+  // Normalization of securities and state entities
+  const securities = useMemo(() => {
+    return Object.values(state?.securities || {});
+  }, [state?.securities]);
 
-  // Filtered Securities list based on search and sector filter
-  const filteredSecurities = state.securities
-    .filter(s => s.status !== 'Bankrupt' && s.status !== 'Delisted')
-    .filter(s => {
-      const matchesSearch = searchQuery === '' || 
-        s.ticker.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        s.name.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesSector = selectedSector === 'ALL' || s.sector === selectedSector;
-      return matchesSearch && matchesSector;
-    })
-    .sort((a, b) => a.ticker.localeCompare(b.ticker));
+  const transactions = useMemo(() => {
+    return Object.values(state?.transactions || []).filter(t => !t.voided);
+  }, [state?.transactions]);
 
-  // Team leaderboard (Sorted by Portfolio Value)
-  const leaderboard = state.teams
-    .filter(t => t.isActive)
-    .sort((a, b) => (b.portfolioValue || 0) - (a.portfolioValue || 0));
+  const newsEvents = useMemo(() => {
+    return Object.values(state?.newsEvents || []).sort((a, b) => (b.triggeredAt || 0) - (a.triggeredAt || 0));
+  }, [state?.newsEvents]);
 
-  // Market overview stats
-  const totalSecs = state.securities.filter(s => s.status === 'Active');
-  const advances = totalSecs.filter(s => s.currentPrice > s.basePrice).length;
-  const declines = totalSecs.filter(s => s.currentPrice < s.basePrice).length;
-  const totalVolume = (state.transactions || [])
-    .filter(t => !t.voided)
-    .reduce((acc, t) => acc + t.quantity, 0);
-  const totalTrades = (state.transactions || []).filter(t => !t.voided).length;
-  const marketCap = Object.values(state.securities).reduce((acc, s) => acc + ((s.totalUnits || 0) * s.currentPrice), 0);
+  const latestNews = useMemo(() => {
+    const triggered = newsEvents.filter(n => n.triggeredAt);
+    return triggered.length > 0 ? triggered[0] : null;
+  }, [newsEvents]);
 
-  const totalAdvDec = advances + declines;
-  const advPct = totalAdvDec > 0 ? (advances / totalAdvDec) * 100 : 50;
-  const decPct = totalAdvDec > 0 ? (declines / totalAdvDec) * 100 : 50;
-
-  const sensexVal = 79850.20 * (1 + (state.marketState.marketIndex || 0) / 100);
-  const niftyVal = 24250.80 * (1 + (state.marketState.marketIndex || 0) / 100);
-
-  // Most active stocks
-  const activeSecsWithVol = state.securities
-    .filter(s => s.status !== 'Bankrupt' && s.status !== 'Delisted')
-    .map(s => {
-      const vol = (state.transactions || [])
-        .filter(tx => tx.ticker === s.ticker && !tx.voided)
-        .reduce((sum, tx) => sum + tx.quantity, 0);
-      return { ...s, tradedVolume: vol };
-    })
-    .sort((a, b) => b.tradedVolume - a.tradedVolume);
-
-  // Sector list for filter options
-  const sectorList = ['ALL', ...Array.from(new Set(state.securities.map(s => s.sector).filter(Boolean)))];
-
-  // Bottom Dashboard Logs
-  const bottomNewsLog = [...state.newsEvents]
-    .filter(n => n.triggeredAt)
-    .sort((a, b) => b.triggeredAt - a.triggeredAt);
-
-  const bottomOrderLog = (state.transactions || [])
-    .filter(t => !t.voided)
-    .sort((a, b) => b.timestamp - a.timestamp);
-
-  const bottomRegulatoryLog = [...state.corporateActions]
-    .sort((a, b) => b.triggeredAt - a.triggeredAt);
-
-  // Dynamic Sector Heatmap calculation based on securities in state
-  const sectorsListCalculated = ['Financials', 'Technology', 'Healthcare', 'Energy', 'Infrastructure', 'Consumer Goods'];
-  const sectorsMappingShort = {
-    'Financials': 'BANKING',
-    'Technology': 'IT',
-    'Healthcare': 'PHARMA',
-    'Energy': 'ENERGY',
-    'Infrastructure': 'INFRA',
-    'Consumer Goods': 'RETAIL'
-  };
-  const sectors = sectorsListCalculated.map(secName => {
-    const sectorSecs = state.securities.filter(s => s.sector === secName && s.status === 'Active');
-    let avgChange = 0;
-    if (sectorSecs.length > 0) {
-      const totalChange = sectorSecs.reduce((sum, s) => {
-        const pct = s.basePrice > 0 ? ((s.currentPrice - s.basePrice) / s.basePrice) * 100 : 0;
-        return sum + pct;
-      }, 0);
-      avgChange = totalChange / sectorSecs.length;
-    }
-    return {
-      name: sectorsMappingShort[secName] || secName.toUpperCase(),
-      change: parseFloat(avgChange.toFixed(2))
+  const fxRates = useMemo(() => {
+    return state?.fxRates || {
+      USDINR: { pair: 'USD/INR', midRate: 88.20, spreadPercent: 0.45 },
+      GBPINR: { pair: 'GBP/INR', midRate: 119.40, spreadPercent: 0.45 },
+      EURINR: { pair: 'EUR/INR', midRate: 103.50, spreadPercent: 0.45 }
     };
-  });
+  }, [state?.fxRates]);
 
-  const marketStatusText = state.marketState.status === 'Open' ? 'MARKET OPEN' : 'MARKET CLOSED';
+  const marketIndices = useMemo(() => {
+    return state?.marketIndices || {
+      GLOBAL100: { currentValue: 1000.0, openingValue: 1000.0, changePercent: 0.0 },
+      INDIA50: { currentValue: 5000.0, openingValue: 5000.0, changePercent: 0.0 },
+      US100: { currentValue: 8000.0, openingValue: 8000.0, changePercent: 0.0 },
+      UK100: { currentValue: 4000.0, openingValue: 4000.0, changePercent: 0.0 }
+    };
+  }, [state?.marketIndices]);
 
-  if (showAllGridOnly) {
-    return (
-      <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', backgroundColor: '#0a0b0d', color: '#e1e3e6', fontFamily: 'var(--font-sans)', padding: 0 }}>
-        {/* 1. Scrolling Marquee Header */}
-        <ScrollingTicker securities={state.securities} />
+  // Comprehensive Market Breadth (Active Universe of 1,800 assets)
+  const breadth = useMemo(() => {
+    const active = securities.filter(s => s.status !== 'UNLISTED');
+    let adv = 0;
+    let dec = 0;
+    let unc = 0;
 
-        {/* Session ID & Active Teams Banner */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          backgroundColor: '#0a0b0d',
-          color: '#fff',
-          padding: '6px 16px',
-          fontSize: '0.75rem',
-          fontFamily: 'var(--font-mono)',
-          borderBottom: '1px solid #22252e'
-        }}>
-          <span>SESSION: <strong style={{ color: '#d4af37' }}>{state.marketState?.sessionId || 'NOT INITIALIZED'}</strong></span>
-          <span>PARTICIPANTS: <strong style={{ color: '#d4af37' }}>{state.marketState?.activeTeamCount || 10} ACTIVE TEAMS</strong></span>
-          <span>MARKET STATUS: <strong style={{ color: state.marketState?.status === 'Open' ? '#22c55e' : '#ef4444' }}>{state.marketState?.status?.toUpperCase() || 'CLOSED'}</strong></span>
-        </div>
+    active.forEach(s => {
+      const cur = s.currentPrice || s.basePrice || 0;
+      const open = s.openingPrice || s.basePrice || cur;
+      if (cur > open) adv++;
+      else if (cur < open) dec++;
+      else unc++;
+    });
 
-        {/* 2. Expanded All Securities Grid View */}
-        <div style={{
-          flex: 1,
-          backgroundColor: '#ffffff',
-          border: '1px solid #e5e0d8',
-          margin: '12px',
-          borderRadius: '6px',
-          padding: '16px',
-          display: 'flex',
-          flexDirection: 'column',
-          boxSizing: 'border-box',
-          overflow: 'hidden'
-        }}>
-          {/* Header Controls Bar */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid #f0ede6', paddingBottom: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <span style={{ fontSize: '1.2rem', fontWeight: 900, color: '#9b6f1e', fontFamily: 'var(--font-display)', letterSpacing: '0.02em' }}>
-                SAAMX SECURITIES UNIVERSE
-              </span>
-              <span style={{ fontSize: '0.85rem', color: '#6b6863', fontWeight: 700 }}>
-                ({filteredSecurities.length} / {state.securities.length} COMPANIES)
-              </span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <input
-                type="text"
-                placeholder="Search Company / Symbol..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: '4px',
-                  border: '1px solid #e2ddd4',
-                  fontSize: '0.8rem',
-                  outline: 'none',
-                  width: '240px'
-                }}
-              />
-              <select
-                value={selectedSector}
-                onChange={e => setSelectedSector(e.target.value)}
-                style={{ padding: '6px 12px', borderRadius: '4px', border: '1px solid #e2ddd4', backgroundColor: '#faf8f5', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
-              >
-                {sectorList.map(sec => (
-                  <option key={sec} value={sec}>{sec === 'ALL' ? '⚙ ALL SECTORS' : sec}</option>
-                ))}
-              </select>
+    const ratio = dec > 0 ? (adv / dec).toFixed(2) : adv > 0 ? (adv / 1).toFixed(2) : '1.00';
+    const total = active.length || 1800;
+    const advPct = total > 0 ? (adv / total) * 100 : 50;
+    const decPct = total > 0 ? (dec / total) * 100 : 50;
+
+    return { adv, dec, unc, ratio, total, advPct, decPct };
+  }, [securities]);
+
+  // Deterministic Market Pulse / Sentiment Score (0 - 100)
+  const marketPulse = useMemo(() => {
+    const advRatio = breadth.total > 0 ? breadth.adv / breadth.total : 0.5;
+    const globalIdxChg = marketIndices.GLOBAL100?.changePercent || 0;
+    const indiaIdxChg = marketIndices.INDIA50?.changePercent || 0;
+    const avgIdxChg = (globalIdxChg + indiaIdxChg) / 2;
+
+    let score = Math.round(advRatio * 70 + Math.max(-15, Math.min(15, avgIdxChg * 5)) + 15);
+    score = Math.max(5, Math.min(95, score));
+
+    let label = 'NEUTRAL / MIXED';
+    let color = '#845508';
+
+    if (score >= 70) {
+      label = '🟢 BULLISH';
+      color = '#065F3E';
+    } else if (score >= 56) {
+      label = '🟢 MILDLY BULLISH';
+      color = '#0A7A50';
+    } else if (score <= 30) {
+      label = '🔴 STRONGLY BEARISH';
+      color = '#931913';
+    } else if (score <= 44) {
+      label = '🔴 BEARISH';
+      color = '#B91C1C';
+    } else {
+      label = '🟡 BALANCED';
+      color = '#845508';
+    }
+
+    return { score, label, color };
+  }, [breadth, marketIndices]);
+
+  // Top Gainers (across entire active 1,800 universe)
+  const topGainers = useMemo(() => {
+    return [...securities]
+      .filter(s => s.status !== 'UNLISTED' && s.status !== 'Bankrupt')
+      .map(s => {
+        const cur = s.currentPrice || s.basePrice || 0;
+        const open = s.openingPrice || s.basePrice || cur;
+        const chgVal = cur - open;
+        const chgPct = open > 0 ? (chgVal / open) * 100 : 0;
+        return { ...s, cur, open, chgVal, chgPct };
+      })
+      .sort((a, b) => b.chgPct - a.chgPct)
+      .slice(0, 6);
+  }, [securities]);
+
+  // Top Losers (across entire active 1,800 universe)
+  const topLosers = useMemo(() => {
+    return [...securities]
+      .filter(s => s.status !== 'UNLISTED' && s.status !== 'Bankrupt')
+      .map(s => {
+        const cur = s.currentPrice || s.basePrice || 0;
+        const open = s.openingPrice || s.basePrice || cur;
+        const chgVal = cur - open;
+        const chgPct = open > 0 ? (chgVal / open) * 100 : 0;
+        return { ...s, cur, open, chgVal, chgPct };
+      })
+      .sort((a, b) => a.chgPct - b.chgPct)
+      .slice(0, 6);
+  }, [securities]);
+
+  // Top Most Active by Volume (incorporates live trades + volume)
+  const mostActive = useMemo(() => {
+    const volMap = {};
+    transactions.forEach(tx => {
+      volMap[tx.ticker] = (volMap[tx.ticker] || 0) + (tx.quantity || 0);
+    });
+
+    return [...securities]
+      .filter(s => s.status !== 'UNLISTED' && s.status !== 'Bankrupt')
+      .map(s => {
+        const cur = s.currentPrice || s.basePrice || 0;
+        const open = s.openingPrice || s.basePrice || cur;
+        const chgVal = cur - open;
+        const chgPct = open > 0 ? (chgVal / open) * 100 : 0;
+        const tradedVolume = volMap[s.ticker] || Math.floor((s.currentPrice || 100) * 12);
+        return { ...s, cur, open, chgPct, tradedVolume };
+      })
+      .sort((a, b) => b.tradedVolume - a.tradedVolume)
+      .slice(0, 6);
+  }, [securities, transactions]);
+
+  // Sector Performance Aggregation
+  const sectorPerformance = useMemo(() => {
+    const map = {};
+    securities.forEach(s => {
+      if (!s.sector || s.status === 'UNLISTED') return;
+      if (!map[s.sector]) map[s.sector] = { name: s.sector, totalPct: 0, count: 0 };
+      const cur = s.currentPrice || s.basePrice || 0;
+      const open = s.openingPrice || s.basePrice || cur;
+      const pct = open > 0 ? ((cur - open) / open) * 100 : 0;
+      map[s.sector].totalPct += pct;
+      map[s.sector].count += 1;
+    });
+
+    return Object.values(map)
+      .map(sec => ({ ...sec, avgPct: sec.count > 0 ? sec.totalPct / sec.count : 0 }))
+      .sort((a, b) => b.avgPct - a.avgPct);
+  }, [securities]);
+
+  // Dynamic Market Narrative Statements
+  const marketNarrative = useMemo(() => {
+    const topSec = sectorPerformance[0];
+    const botSec = sectorPerformance[sectorPerformance.length - 1];
+    const lines = [];
+
+    if (topSec && topSec.avgPct > 0) {
+      lines.push(`${topSec.name} sector outperforming the floor with +${topSec.avgPct.toFixed(2)}% average gain across ${topSec.count} constituents.`);
+    }
+    if (breadth.adv > breadth.dec) {
+      lines.push(`Market breadth positive with ${breadth.adv} advancing securities against ${breadth.dec} decliners.`);
+    } else {
+      lines.push(`Defensive posture across floor desks: ${breadth.dec} decliners exerting downward pressure.`);
+    }
+    if (latestNews) {
+      lines.push(`Recent wire: "${latestNews.headline}" actively driving asset valuations.`);
+    } else {
+      lines.push(`Continuous order book matching active across all 20 institutional team desks.`);
+    }
+
+    return lines;
+  }, [sectorPerformance, breadth, latestNews]);
+
+  // Timeline of Today's Storyline Events
+  const storylineTimeline = useMemo(() => {
+    const defaultTimeline = [
+      { time: '09:15', title: 'Market Session Opens', status: 'PAST' },
+      { time: '09:35', title: 'Central Bank Policy Surprise', status: 'PAST' },
+      { time: '10:10', title: 'Technology AI Breakthrough', status: 'ACTIVE' },
+      { time: '10:45', title: 'Primary IPO Subscription Opens', status: 'UPCOMING' },
+      { time: '11:20', title: 'Global Energy Supply Shock', status: 'UPCOMING' },
+      { time: '11:50', title: 'Closing Session & Reconciliation', status: 'UPCOMING' }
+    ];
+
+    if (newsEvents.length > 0) {
+      return newsEvents.slice(0, 5).map((n, idx) => ({
+        time: new Date(n.triggeredAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        title: n.headline,
+        status: idx === 0 ? 'ACTIVE' : 'PAST'
+      }));
+    }
+
+    return defaultTimeline;
+  }, [newsEvents]);
+
+  // Currency helper
+  const currencySymbol = (sec) => {
+    const curr = sec?.currency || 'INR';
+    if (curr === 'USD') return '$';
+    if (curr === 'GBP') return '£';
+    if (curr === 'EUR') return '€';
+    return '₹';
+  };
+
+  const sessionState = state?.marketState?.sessionState || (state?.marketState?.status === 'Open' ? 'CONTINUOUS_TRADING' : 'PRE_OPEN');
+  const leaderboard = state?.leaderboard || [];
+
+  // =========================================================================
+  // HIGH-SEVERITY NEWS & TAKEOVER OVERLAYS
+  // =========================================================================
+  const renderTakeoverOverlay = () => {
+    if (!activeTakeover) return null;
+    const { type, name, ticker, headline, description, category, impactPercent, severity } = activeTakeover;
+
+    switch (type) {
+      case 'NEWS_FLASH':
+        return (
+          <div
+            className="takeover-overlay"
+            onClick={() => setActiveTakeover(null)}
+            style={{
+              position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: 'rgba(10, 13, 20, 0.88)',
+              backdropFilter: 'blur(6px)',
+              zIndex: 100000,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: '24px',
+              cursor: 'pointer'
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                backgroundColor: '#FFFFFF',
+                border: `4px solid ${severity === 'CRITICAL' ? '#931913' : '#845508'}`,
+                borderRadius: '16px',
+                maxWidth: '840px',
+                width: '100%',
+                padding: '36px 44px',
+                boxShadow: '0 25px 70px rgba(0, 0, 0, 0.5)',
+                position: 'relative',
+                animation: 'slideUpModal 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+                cursor: 'default'
+              }}
+            >
               <button
-                onClick={() => setShowAllGridOnly(false)}
+                onClick={() => setActiveTakeover(null)}
                 style={{
-                  backgroundColor: '#9b6f1e',
-                  color: '#ffffff',
-                  border: 'none',
-                  padding: '6px 16px',
-                  borderRadius: '4px',
-                  fontSize: '0.8rem',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  transition: 'background-color 0.2s'
+                  position: 'absolute', top: '16px', right: '20px',
+                  background: '#F1F5F9', border: '1px solid #CBD5E1',
+                  borderRadius: '6px', padding: '4px 10px',
+                  fontSize: '0.75rem', fontWeight: 800, color: '#475569',
+                  cursor: 'pointer'
                 }}
               >
-                ← BACK TO DASHBOARD
+                ✕ CLOSE [ESC]
               </button>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+                <span style={{
+                  backgroundColor: severity === 'CRITICAL' ? '#931913' : '#845508',
+                  color: '#FFFFFF',
+                  padding: '6px 16px',
+                  borderRadius: '6px',
+                  fontWeight: 900,
+                  fontSize: '0.92rem',
+                  letterSpacing: '1px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <span>⚡</span> {severity || 'BREAKING'} MARKET NEWS
+                </span>
+                <span style={{ color: '#845508', fontSize: '0.88rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px' }}>
+                  CATEGORY: {category || 'GLOBAL MACRO'}
+                </span>
+              </div>
+
+              <h1 style={{
+                fontSize: '2.4rem',
+                fontFamily: 'Cinzel, serif',
+                fontWeight: 900,
+                color: '#1E232B',
+                lineHeight: 1.25,
+                margin: '0 0 16px 0'
+              }}>
+                {headline || name}
+              </h1>
+
+              <p style={{
+                fontSize: '1.2rem',
+                color: '#4A5568',
+                lineHeight: 1.5,
+                margin: '0 0 24px 0'
+              }}>
+                {description || ticker}
+              </p>
+
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingTop: '16px',
+                borderTop: '1.5px solid #E2DBD0'
+              }}>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.85rem', color: '#6B6863', fontWeight: 800 }}>MARKET REACTION:</span>
+                  <span style={{
+                    color: (impactPercent || 0) >= 0 ? '#065F3E' : '#931913',
+                    fontWeight: 900,
+                    fontSize: '1.2rem',
+                    fontFamily: 'monospace'
+                  }}>
+                    {(impactPercent !== undefined && impactPercent !== 0) ? `${impactPercent > 0 ? '▲ +' : '▼ '}${Math.abs(impactPercent)}%` : 'HIGH VOLATILITY'}
+                  </span>
+                </div>
+                <span style={{ color: '#6B6863', fontSize: '0.8rem', fontWeight: 700 }}>
+                  SAAMX FINANCIAL NEWS WIRE &bull; DISPATCHED TO ALL TRADING FLOORS
+                </span>
+              </div>
             </div>
           </div>
+        );
 
-          {/* Watch Cards Grid */}
-          <div style={{
-            flex: 1,
-            display: 'grid',
-            gridTemplateColumns: 'repeat(11, 1fr)',
-            gridAutoRows: '62px',
-            gap: '6px',
-            overflowY: 'auto',
-            paddingRight: '4px',
-            boxSizing: 'border-box'
-          }}>
-            {filteredSecurities.map((s, idx) => (
-              <ProjectorCell key={s ? s.id : `empty-${idx}`} security={s} totalTransactions={state.transactions} />
-            ))}
+      case 'MARKET_HALT':
+        return (
+          <div
+            className="takeover-overlay"
+            onClick={() => setActiveTakeover(null)}
+            style={{
+              position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: 'rgba(8, 10, 14, 0.85)',
+              zIndex: 100000,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer'
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                backgroundColor: '#FFFFFF',
+                border: '3px solid #D97706',
+                borderRadius: '16px',
+                padding: '40px',
+                textAlign: 'center',
+                maxWidth: '700px',
+                width: '90%',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
+                position: 'relative',
+                cursor: 'default'
+              }}
+            >
+              <button
+                onClick={() => setActiveTakeover(null)}
+                style={{
+                  position: 'absolute', top: '16px', right: '20px',
+                  background: '#F1F5F9', border: '1px solid #CBD5E1',
+                  borderRadius: '6px', padding: '4px 10px',
+                  fontSize: '0.75rem', fontWeight: 800, color: '#475569',
+                  cursor: 'pointer'
+                }}
+              >
+                ✕ CLOSE [ESC]
+              </button>
+              <span style={{ fontSize: '4.5rem', display: 'inline-block', marginBottom: '14px' }}>⚠️</span>
+              <h1 style={{ color: '#D97706', fontSize: '2.3rem', fontFamily: 'Cinzel, serif', margin: '0 0 10px 0' }}>
+                TRADING HALTED &bull; REGULATORY BREAKER
+              </h1>
+              <p style={{ color: '#1E232B', fontSize: '1.3rem', fontWeight: 800, margin: '0 0 14px 0' }}>
+                Asset / Listing: {ticker} {name ? `(${name})` : ''}
+              </p>
+              <p style={{ color: '#4A5568', fontSize: '1rem', lineHeight: 1.5, margin: 0 }}>
+                Order execution temporarily suspended by SEBI Exchange Regulators. Floor desks are locked.
+              </p>
+            </div>
           </div>
+        );
+
+      case 'IPO_PENDING':
+      case 'IPO_STAGED':
+        return (
+          <div
+            className="takeover-overlay"
+            onClick={() => setActiveTakeover(null)}
+            style={{
+              position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: 'rgba(10, 15, 26, 0.88)',
+              backdropFilter: 'blur(6px)',
+              zIndex: 100000,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: '24px',
+              cursor: 'pointer'
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                backgroundColor: '#FFFFFF',
+                border: '4px solid #845508',
+                borderRadius: '16px',
+                maxWidth: '780px',
+                width: '90%',
+                padding: '36px 44px',
+                textAlign: 'center',
+                boxShadow: '0 25px 70px rgba(0, 0, 0, 0.5)',
+                position: 'relative',
+                cursor: 'default'
+              }}
+            >
+              <button
+                onClick={() => setActiveTakeover(null)}
+                style={{
+                  position: 'absolute', top: '16px', right: '20px',
+                  background: '#F1F5F9', border: '1px solid #CBD5E1',
+                  borderRadius: '6px', padding: '4px 10px',
+                  fontSize: '0.75rem', fontWeight: 800, color: '#475569',
+                  cursor: 'pointer'
+                }}
+              >
+                ✕ CLOSE [ESC]
+              </button>
+              <span style={{ fontSize: '4.5rem', display: 'inline-block', marginBottom: '12px' }}>🔔</span>
+              <span style={{ backgroundColor: '#845508', color: '#FFF', padding: '6px 16px', borderRadius: '6px', fontWeight: 900, fontSize: '0.88rem', letterSpacing: '1px' }}>
+                PRIMARY IPO SUBSCRIPTION OPEN
+              </span>
+              <h1 style={{ fontSize: '2.4rem', fontFamily: 'Cinzel, serif', color: '#1E232B', margin: '16px 0 8px 0' }}>
+                {name || headline || ticker}
+              </h1>
+              <p style={{ color: '#845508', fontSize: '1.3rem', fontWeight: 800, margin: '0 0 16px 0' }}>
+                Ticker: {ticker} &bull; Issue Price: ₹{activeTakeover.ipoPrice || activeTakeover.offerPrice || 100}
+              </p>
+              <p style={{ color: '#4A5568', fontSize: '1.05rem', lineHeight: 1.5, margin: 0 }}>
+                Primary bidding window is now active across institutional terminals. Order matching opens in 60 seconds.
+              </p>
+            </div>
+          </div>
+        );
+
+      case 'IPO_LAUNCH':
+        return (
+          <div
+            className="takeover-overlay"
+            onClick={() => setActiveTakeover(null)}
+            style={{
+              position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: 'rgba(6, 40, 26, 0.88)',
+              backdropFilter: 'blur(6px)',
+              zIndex: 100000,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: '24px',
+              cursor: 'pointer'
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                backgroundColor: '#FFFFFF',
+                border: '4px solid #065F3E',
+                borderRadius: '16px',
+                maxWidth: '780px',
+                width: '90%',
+                padding: '36px 44px',
+                textAlign: 'center',
+                boxShadow: '0 25px 70px rgba(0, 0, 0, 0.5)',
+                position: 'relative',
+                cursor: 'default'
+              }}
+            >
+              <button
+                onClick={() => setActiveTakeover(null)}
+                style={{
+                  position: 'absolute', top: '16px', right: '20px',
+                  background: '#F1F5F9', border: '1px solid #CBD5E1',
+                  borderRadius: '6px', padding: '4px 10px',
+                  fontSize: '0.75rem', fontWeight: 800, color: '#475569',
+                  cursor: 'pointer'
+                }}
+              >
+                ✕ CLOSE [ESC]
+              </button>
+              <span style={{ fontSize: '4.5rem', display: 'inline-block', marginBottom: '12px' }}>🚀</span>
+              <span style={{ backgroundColor: '#065F3E', color: '#FFF', padding: '6px 16px', borderRadius: '6px', fontWeight: 900, fontSize: '0.88rem', letterSpacing: '1px' }}>
+                IPO LISTED & ACTIVE TRADING LIVE
+              </span>
+              <h1 style={{ fontSize: '2.4rem', fontFamily: 'Cinzel, serif', color: '#1E232B', margin: '16px 0 8px 0' }}>
+                {name || ticker} ({ticker})
+              </h1>
+              <p style={{ color: '#065F3E', fontSize: '1.25rem', fontWeight: 800, margin: '0 0 16px 0' }}>
+                Listing Allotments Finalized &bull; Continuous Secondary Market Trading Live
+              </p>
+              <p style={{ color: '#4A5568', fontSize: '1.05rem', lineHeight: 1.5, margin: 0 }}>
+                Allotments credited to institutional participant portfolios. Secondary market orders active.
+              </p>
+            </div>
+          </div>
+        );
+
+      case 'BANKRUPTCY':
+      case 'INSOLVENCY':
+        return (
+          <div
+            className="takeover-overlay"
+            onClick={() => setActiveTakeover(null)}
+            style={{
+              position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: 'rgba(30, 8, 8, 0.90)',
+              backdropFilter: 'blur(6px)',
+              zIndex: 100000,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: '24px',
+              cursor: 'pointer'
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                backgroundColor: '#FFFFFF',
+                border: '4px solid #931913',
+                borderRadius: '16px',
+                maxWidth: '780px',
+                width: '90%',
+                padding: '36px 44px',
+                textAlign: 'center',
+                boxShadow: '0 25px 70px rgba(0, 0, 0, 0.5)',
+                position: 'relative',
+                cursor: 'default'
+              }}
+            >
+              <button
+                onClick={() => setActiveTakeover(null)}
+                style={{
+                  position: 'absolute', top: '16px', right: '20px',
+                  background: '#F1F5F9', border: '1px solid #CBD5E1',
+                  borderRadius: '6px', padding: '4px 10px',
+                  fontSize: '0.75rem', fontWeight: 800, color: '#475569',
+                  cursor: 'pointer'
+                }}
+              >
+                ✕ CLOSE [ESC]
+              </button>
+              <span style={{ fontSize: '4.5rem', display: 'inline-block', marginBottom: '12px' }}>⚖️</span>
+              <span style={{ backgroundColor: '#931913', color: '#FFF', padding: '6px 16px', borderRadius: '6px', fontWeight: 900, fontSize: '0.88rem', letterSpacing: '1px' }}>
+                NCLT INSOLVENCY DECREE &bull; LIQUIDATION
+              </span>
+              <h1 style={{ fontSize: '2.4rem', fontFamily: 'Cinzel, serif', color: '#931913', margin: '16px 0 8px 0' }}>
+                {ticker} &mdash; {name || 'Asset Insolvent'}
+              </h1>
+              <p style={{ color: '#1E232B', fontSize: '1.2rem', fontWeight: 800, margin: '0 0 16px 0' }}>
+                Share Value Declared Worthless (₹0.00) &bull; Floating Units Revoked
+              </p>
+              <p style={{ color: '#4A5568', fontSize: '1.05rem', lineHeight: 1.5, margin: 0 }}>
+                Regulatory tribunal has mandated winding up. Trading is permanently suspended and positions liquidated.
+              </p>
+            </div>
+          </div>
+        );
+
+      case 'OPENING_BELL':
+        return (
+          <div
+            className="takeover-overlay"
+            onClick={() => setActiveTakeover(null)}
+            style={{
+              position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: 'rgba(6, 40, 26, 0.90)',
+              backdropFilter: 'blur(6px)',
+              zIndex: 100000,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer'
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                backgroundColor: '#FFFFFF',
+                border: '4px solid #065F3E',
+                borderRadius: '16px',
+                padding: '40px',
+                textAlign: 'center',
+                maxWidth: '700px',
+                width: '90%',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+                position: 'relative',
+                cursor: 'default'
+              }}
+            >
+              <button
+                onClick={() => setActiveTakeover(null)}
+                style={{
+                  position: 'absolute', top: '16px', right: '20px',
+                  background: '#F1F5F9', border: '1px solid #CBD5E1',
+                  borderRadius: '6px', padding: '4px 10px',
+                  fontSize: '0.75rem', fontWeight: 800, color: '#475569',
+                  cursor: 'pointer'
+                }}
+              >
+                ✕ CLOSE [ESC]
+              </button>
+              <span style={{ fontSize: '5rem', display: 'inline-block', marginBottom: '14px' }}>🔔</span>
+              <h1 style={{ color: '#065F3E', fontSize: '2.6rem', fontFamily: 'Cinzel, serif', margin: '0 0 10px 0' }}>
+                SAAMX FLOOR OPEN
+              </h1>
+              <p style={{ color: '#1E232B', fontSize: '1.25rem', fontWeight: 800, margin: '0 0 14px 0' }}>
+                Continuous Institutional Trading Session is Active
+              </p>
+              <p style={{ color: '#4A5568', fontSize: '1rem', margin: 0 }}>
+                Order matching engines, currency exchange desks, and primary IPO portals are open.
+              </p>
+            </div>
+          </div>
+        );
+
+      case 'CLOSING_BELL':
+        return (
+          <div
+            className="takeover-overlay"
+            onClick={() => setActiveTakeover(null)}
+            style={{
+              position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: 'rgba(30, 8, 8, 0.90)',
+              backdropFilter: 'blur(6px)',
+              zIndex: 100000,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer'
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                backgroundColor: '#FFFFFF',
+                border: '4px solid #931913',
+                borderRadius: '16px',
+                padding: '40px',
+                textAlign: 'center',
+                maxWidth: '700px',
+                width: '90%',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+                position: 'relative',
+                cursor: 'default'
+              }}
+            >
+              <button
+                onClick={() => setActiveTakeover(null)}
+                style={{
+                  position: 'absolute', top: '16px', right: '20px',
+                  background: '#F1F5F9', border: '1px solid #CBD5E1',
+                  borderRadius: '6px', padding: '4px 10px',
+                  fontSize: '0.75rem', fontWeight: 800, color: '#475569',
+                  cursor: 'pointer'
+                }}
+              >
+                ✕ CLOSE [ESC]
+              </button>
+              <span style={{ fontSize: '5rem', display: 'inline-block', marginBottom: '14px' }}>🔕</span>
+              <h1 style={{ color: '#931913', fontSize: '2.6rem', fontFamily: 'Cinzel, serif', margin: '0 0 10px 0' }}>
+                TRADING CONCLUDED
+              </h1>
+              <p style={{ color: '#1E232B', fontSize: '1.25rem', fontWeight: 800, margin: '0 0 14px 0' }}>
+                Session Closed &bull; Portfolios Locked for Reconciliation
+              </p>
+              <p style={{ color: '#4A5568', fontSize: '1rem', margin: 0 }}>
+                Order execution is frozen. SEBI Reconciliation Desk is computing authoritative leaderboard standings.
+              </p>
+            </div>
+          </div>
+        );
+
+      case 'STOCK_SPLIT':
+        return (
+          <div className="takeover-overlay" style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(10, 15, 26, 0.88)',
+            zIndex: 100000,
+            display: 'flex', alignItems: 'center', justifyContent: 'center'
+          }}>
+            <div style={{
+              backgroundColor: '#FFFFFF',
+              border: '4px solid #0A7A50',
+              borderRadius: '16px',
+              padding: '36px 44px',
+              textAlign: 'center',
+              maxWidth: '700px',
+              width: '90%'
+            }}>
+              <span style={{ fontSize: '4.5rem', display: 'inline-block', marginBottom: '12px' }}>✂️</span>
+              <h1 style={{ color: '#0A7A50', fontSize: '2.2rem', fontFamily: 'Cinzel, serif', margin: '0 0 8px 0' }}>
+                2-FOR-1 STOCK SPLIT EXECUTED
+              </h1>
+              <p style={{ color: '#1E232B', fontSize: '1.2rem', fontWeight: 800, margin: '0 0 12px 0' }}>
+                Asset: {ticker} {name ? `(${name})` : ''}
+              </p>
+              <p style={{ color: '#4A5568', fontSize: '1rem', margin: 0 }}>
+                Share price has halved and all participant holdings have doubled.
+              </p>
+            </div>
+          </div>
+        );
+
+      default:
+        if (!headline && !name) return null;
+        return (
+          <div className="takeover-overlay" style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(10, 13, 20, 0.90)',
+            backdropFilter: 'blur(8px)',
+            zIndex: 100000,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '24px'
+          }}>
+            <div style={{
+              backgroundColor: '#FFFFFF',
+              border: `4px solid ${severity === 'CRITICAL' || category === 'CRISIS' ? '#DC2626' : '#845508'}`,
+              borderRadius: '16px',
+              maxWidth: '840px',
+              width: '100%',
+              padding: '36px 44px',
+              boxShadow: '0 25px 70px rgba(0, 0, 0, 0.6)',
+              position: 'relative',
+              textAlign: 'center',
+              animation: 'slideUpModal 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
+            }}>
+              <span style={{ fontSize: '4rem', display: 'inline-block', marginBottom: '10px' }}>
+                {type === 'DEBATE_SHOWDOWN' ? '⚔️' : category === 'CRISIS' ? '🚨' : category === 'IPO' ? '🚀' : '📢'}
+              </span>
+              <div style={{ marginBottom: '12px' }}>
+                <span style={{
+                  backgroundColor: severity === 'CRITICAL' || category === 'CRISIS' ? '#DC2626' : '#845508',
+                  color: '#FFFFFF',
+                  padding: '4px 14px',
+                  borderRadius: '6px',
+                  fontWeight: 900,
+                  fontSize: '0.85rem',
+                  letterSpacing: '1px'
+                }}>
+                  {type === 'DEBATE_SHOWDOWN' ? 'LIVE BULL VS BEAR SHOWDOWN' : `${category || 'MARKET'} BULLETIN`}
+                </span>
+              </div>
+              <h1 style={{
+                fontSize: '2.2rem',
+                fontFamily: 'Cinzel, serif',
+                fontWeight: 900,
+                color: '#1E232B',
+                lineHeight: 1.25,
+                margin: '0 0 14px 0'
+              }}>
+                {headline || name}
+              </h1>
+              <p style={{
+                fontSize: '1.15rem',
+                color: '#4A5568',
+                lineHeight: 1.5,
+                margin: '0 0 20px 0'
+              }}>
+                {description || ticker}
+              </p>
+              <div style={{
+                fontSize: '0.8rem',
+                fontWeight: 800,
+                color: '#845508',
+                letterSpacing: '0.5px'
+              }}>
+                SAAMX GLOBAL MARKET WIRE &bull; DISPATCHED TO ALL TRADING DESKS
+              </div>
+            </div>
+          </div>
+        );
+    }
+  };
+
+  // Check if session reached RESULTS stage
+  if (sessionState === 'RESULTS' || state?.marketState?.sessionState === 'RESULTS') {
+    const isOfficial = state?.resultsLifecycle === 'PUBLISHED';
+    return (
+      <div style={{
+        minHeight: '100vh',
+        backgroundColor: '#FAF8F3',
+        color: '#1E232B',
+        display: 'flex',
+        flexDirection: 'column',
+        padding: '24px 32px',
+        boxSizing: 'border-box'
+      }}>
+        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+          <div style={{ fontSize: '0.9rem', color: '#845508', fontWeight: 800, letterSpacing: '2px', textTransform: 'uppercase' }}>
+            SAAMX OFFICIAL CEREMONY &bull; "Experience the Market. Don’t Just Learn It."
+          </div>
+          <h1 style={{ fontSize: '2.8rem', fontFamily: 'Cinzel, serif', color: '#1E232B', margin: '4px 0 8px 0' }}>
+            {isOfficial ? '🟢 OFFICIAL FINAL COMPETITION RESULTS' : '🟡 PROVISIONAL LEADERBOARD (PENDING FINAL AUDIT & APPROVAL)'}
+          </h1>
+          <p style={{ color: '#4A5568', fontSize: '1rem', margin: 0 }}>
+            Comprehensive 1,000-Point Rubric &bull; Risk &bull; Returns &bull; Diversification &bull; Decision-Making &bull; Future Potential
+          </p>
         </div>
 
-        {/* 3. Footer Disclaimer */}
-        <div style={{
-          backgroundColor: '#0a0b0d',
-          borderTop: '1px solid #1e222d',
-          padding: '4px 16px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          fontSize: '0.55rem',
-          color: '#848e9c',
-          boxSizing: 'border-box',
-          height: '24px'
-        }}>
-          <span>Prices shown are for simulation purposes only and do not represent real market data.</span>
-          <span>Powered by SAAMX - Student Academic Asset Market eXchange</span>
-          <span style={{ color: '#22c55e', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <span style={{ width: '5px', height: '5px', backgroundColor: '#22c55e', borderRadius: '50%', display: 'inline-block', animation: 'blink 1.5s infinite' }} />
-            LIVE DATA
-          </span>
+        {/* Top 3 Podium Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '24px' }}>
+          {leaderboard.slice(0, 3).map((team, idx) => (
+            <div key={team.teamCode || idx} style={{
+              backgroundColor: '#FFFFFF',
+              border: `2px solid ${idx === 0 ? '#845508' : idx === 1 ? '#94a3b8' : '#cd7f32'}`,
+              borderRadius: '12px',
+              padding: '24px',
+              textAlign: 'center',
+              boxShadow: idx === 0 ? '0 8px 30px rgba(132, 85, 8, 0.2)' : '0 4px 16px rgba(0,0,0,0.05)'
+            }}>
+              <span style={{ fontSize: '2.8rem' }}>{idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}</span>
+              <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#845508', marginTop: '6px', textTransform: 'uppercase' }}>
+                RANK {idx + 1}
+              </div>
+              <h2 style={{ fontSize: '1.6rem', color: '#1E232B', margin: '6px 0' }}>
+                {team.teamCode} &bull; {team.teamName}
+              </h2>
+              <div style={{ fontSize: '1.8rem', fontWeight: 900, fontFamily: 'monospace', color: '#845508' }}>
+                ₹{Number(team.portfolioValue || 10000000).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </div>
+              <div style={{
+                fontSize: '1rem',
+                fontWeight: 800,
+                color: (team.roi || 0) >= 0 ? '#065F3E' : '#931913',
+                marginTop: '4px'
+              }}>
+                {(team.roi || 0) >= 0 ? '+' : ''}{(team.roi || 0).toFixed(2)}% ROI
+              </div>
+            </div>
+          ))}
         </div>
-
-        <style>{`
-          @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.35; }
-          }
-        `}</style>
       </div>
     );
   }
 
+  // =========================================================================
+  // STANDARD MARKET INTELLIGENCE COMMAND VIEW
+  // =========================================================================
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', backgroundColor: '#0a0b0d', color: '#e1e3e6', fontFamily: 'var(--font-sans)', padding: 0 }}>
-      
-      {/* 1. Scrolling Marquee Header */}
-      <ScrollingTicker securities={state.securities} />
+    <div style={{
+      width: '100vw',
+      height: '100vh',
+      backgroundColor: '#FAF8F3',
+      color: '#1E232B',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden',
+      fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+      boxSizing: 'border-box'
+    }}>
 
-      {/* Session ID & Active Teams Banner */}
-      <div style={{
+      {/* 1. TOP INSTITUTIONAL COMMAND HEADER */}
+      <header style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: '#0a0b0d',
-        color: '#fff',
-        padding: '6px 16px',
-        fontSize: '0.75rem',
-        fontFamily: 'var(--font-mono)',
-        borderBottom: '1px solid #22252e'
+        backgroundColor: '#FFFFFF',
+        padding: '8px 24px',
+        borderBottom: '2px solid #845508',
+        boxSizing: 'border-box',
+        height: '56px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
       }}>
-        <span>SESSION: <strong style={{ color: '#d4af37' }}>{state.marketState?.sessionId || 'NOT INITIALIZED'}</strong></span>
-        <span>PARTICIPANTS: <strong style={{ color: '#d4af37' }}>{state.marketState?.activeTeamCount || 10} ACTIVE TEAMS</strong></span>
-        <span>MARKET STATUS: <strong style={{ color: state.marketState?.status === 'Open' ? '#22c55e' : '#ef4444' }}>{state.marketState?.status?.toUpperCase() || 'CLOSED'}</strong></span>
-      </div>
-
-      {/* 2. Top Stats Header Row */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1.1fr 1.2fr 1.2fr 1.2fr 1.3fr',
-        gap: '10px',
-        padding: '8px 12px',
-        backgroundColor: '#0a0b0d',
-        boxSizing: 'border-box'
-      }}>
-        <div style={{ backgroundColor: '#ffffff', color: '#17191c', padding: '6px 12px', borderRadius: '4px', border: '1px solid #e5e0d8', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <span style={{ fontSize: '0.55rem', color: '#6b6863', display: 'block', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>SESSION CLOCK</span>
-            <div style={{ fontSize: '1.3rem', fontWeight: 900, fontFamily: 'var(--font-mono)', lineHeight: 1.1 }}>{timeLeft}</div>
-            <span style={{ fontSize: '0.55rem', color: '#8c8881', fontWeight: 600 }}>MARKET HOURS</span>
-          </div>
-          <span style={{ backgroundColor: '#d6f0e8', color: '#15694f', padding: '2px 6px', borderRadius: '10px', fontSize: '0.65rem', fontWeight: 900, display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <span style={{ width: '6px', height: '6px', backgroundColor: '#15694f', borderRadius: '50%', display: 'inline-block' }} />
-            LIVE
-          </span>
-        </div>
-
-        <div style={{ backgroundColor: '#ffffff', color: '#17191c', padding: '6px 12px', borderRadius: '4px', border: '1px solid #e5e0d8', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '1.8rem', color: '#9b6f1e' }}>🏛️</span>
-          <div>
-            <span style={{ fontSize: '0.55rem', color: '#6b6863', display: 'block', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>EXCHANGE STATUS</span>
-            <div style={{ fontSize: '1.05rem', fontWeight: 900, color: state.marketState.status === 'Open' ? '#15694f' : '#9b2b25', lineHeight: 1.1 }}>
-              {marketStatusText}
-            </div>
-          </div>
-        </div>
-
-        <div style={{ backgroundColor: '#ffffff', color: '#17191c', padding: '6px 12px', borderRadius: '4px', border: '1px solid #e5e0d8', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <span style={{ fontSize: '0.55rem', color: '#6b6863', display: 'block', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>INIFTY 50</span>
-            <div style={{ fontSize: '1.15rem', fontWeight: 900, fontFamily: 'var(--font-mono)', lineHeight: 1.1 }}>{niftyVal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
-            <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#15694f' }}>▲ 0.86%</span>
-          </div>
-          <Sparkline history={niftyHistory} isUp={true} width={50} height={20} />
-        </div>
-
-        <div style={{ backgroundColor: '#ffffff', color: '#17191c', padding: '6px 12px', borderRadius: '4px', border: '1px solid #e5e0d8', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <span style={{ fontSize: '0.55rem', color: '#6b6863', display: 'block', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>SENSEX</span>
-            <div style={{ fontSize: '1.15rem', fontWeight: 900, fontFamily: 'var(--font-mono)', lineHeight: 1.1 }}>{sensexVal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
-            <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#15694f' }}>▲ 0.72%</span>
-          </div>
-          <Sparkline history={niftyHistory} isUp={true} width={50} height={20} />
-        </div>
-
-        <div style={{ backgroundColor: '#ffffff', color: '#17191c', padding: '6px 12px', borderRadius: '4px', border: '1px solid #e5e0d8', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <SentimentGaugeDial advances={advances} declines={declines} />
-        </div>
-      </div>
-
-      {/* 3. Breaking News Banner */}
-      <div style={{
-        backgroundColor: '#4a0808',
-        borderTop: '1px solid #7f1d1d',
-        borderBottom: '1px solid #7f1d1d',
-        padding: '4px 16px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        boxSizing: 'border-box'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-          <span style={{ backgroundColor: '#dc2626', color: '#ffffff', padding: '2px 8px', borderRadius: '3px', fontWeight: 900, fontSize: '0.75rem', letterSpacing: '0.05em' }}>
-            ⚡ BREAKING NEWS
-          </span>
-          <span style={{ fontSize: '0.7rem', color: '#fca5a5', fontFamily: 'var(--font-mono)' }}>02:01:40 PM</span>
-          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#ffffff' }}>
-            {latestNews ? `${latestNews.headline} — ${latestNews.description}` : 'RBI RAISES REPO RATE BY 50 BASIS POINTS — Higher borrowing costs expected to impact banking and real estate sectors.'}
-          </span>
-        </div>
-        <button
-          onClick={() => setActiveModal('NEWS')}
-          style={{ backgroundColor: '#7f1d1d', color: '#ffffff', border: 'none', padding: '3px 8px', borderRadius: '3px', fontSize: '0.65rem', fontWeight: 800, cursor: 'pointer' }}
-        >
-          VIEW ALL NEWS
-        </button>
-      </div>
-
-      {/* 4. Main Middle Section: Sidebar + Market Watch */}
-      <div style={{ flex: 1, display: 'flex', gap: '10px', padding: '10px 12px', overflow: 'hidden', boxSizing: 'border-box' }}>
-        
-        {/* Left Sidebar (Dark Theme) */}
-        <div style={{ width: '22%', display: 'flex', flexDirection: 'column', gap: '10px', overflow: 'hidden' }}>
-          
-          {/* Team Leaderboard Card */}
-          <div style={{ backgroundColor: '#131722', border: '1px solid #2a2e39', borderRadius: '4px', padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #2a2e39', pb: '4px' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#d4af37', letterSpacing: '0.05em' }}>🏆 TEAM LEADERBOARD</span>
-              <span style={{ fontSize: '0.6rem', color: '#848e9c' }}>⚙</span>
-            </div>
-            <table style={{ width: '100%', fontSize: '0.62rem', borderCollapse: 'collapse', color: '#d1d4dc' }}>
-              <thead>
-                <tr style={{ color: '#848e9c', borderBottom: '1px solid #2a2e39' }}>
-                  <th align="left">RANK</th>
-                  <th align="left">TEAM</th>
-                  <th align="right">VALUE</th>
-                  <th align="right">P/L %</th>
-                </tr>
-              </thead>
-              <tbody>
-                {leaderboard.slice(0, 8).map((t, idx) => {
-                  const isUp = (t.plPercent || 0) >= 0;
-                  return (
-                    <tr key={t.id || idx} style={{ borderBottom: '1px dashed #22252e', height: '18px' }}>
-                      <td style={{ fontWeight: 'bold', color: '#848e9c' }}>{idx + 1}</td>
-                      <td style={{ fontWeight: 800, color: '#ffffff' }}>{t.name}</td>
-                      <td align="right" style={{ fontFamily: 'var(--font-mono)' }}>₹{Math.round(t.portfolioValue !== undefined ? t.portfolioValue : (state.settings?.startingCapitalRetail || 1000000)).toLocaleString()}</td>
-                      <td align="right" style={{ color: isUp ? '#22c55e' : '#ef4444', fontWeight: 900, fontFamily: 'var(--font-mono)' }}>
-                        {isUp ? '+' : ''}{(t.plPercent || 0).toFixed(2)}%
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            <button
-              onClick={() => setActiveModal('LEADERBOARD')}
-              style={{ backgroundColor: '#1e222d', color: '#d1d4dc', border: '1px solid #2a2e39', padding: '4px', borderRadius: '3px', fontSize: '0.6rem', fontWeight: 800, cursor: 'pointer', marginTop: '2px' }}
-            >
-              VIEW FULL LEADERBOARD
-            </button>
-          </div>
-
-          {/* Market Overview Card */}
-          <div style={{ backgroundColor: '#131722', border: '1px solid #2a2e39', borderRadius: '4px', padding: '8px 10px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-            <div>
-              <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#d4af37', display: 'block', marginBottom: '6px', letterSpacing: '0.05em' }}>📊 MARKET OVERVIEW</span>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', fontSize: '0.65rem' }}>
-                <div>
-                  <span style={{ color: '#848e9c', display: 'block' }}>Total Companies</span>
-                  <strong style={{ fontSize: '0.8rem', color: '#ffffff' }}>{state.securities.length || 120}</strong>
-                </div>
-                <div>
-                  <span style={{ color: '#848e9c', display: 'block' }}>Total Traded Volume</span>
-                  <strong style={{ fontSize: '0.8rem', color: '#ffffff' }}>{totalVolume.toLocaleString()}</strong>
-                </div>
-                <div>
-                  <span style={{ color: '#848e9c', display: 'block' }}>Total Trades</span>
-                  <strong style={{ fontSize: '0.8rem', color: '#ffffff' }}>{totalTrades}</strong>
-                </div>
-                <div>
-                  <span style={{ color: '#848e9c', display: 'block' }}>Market Capitalization</span>
-                  <strong style={{ fontSize: '0.8rem', color: '#ffffff' }}>₹{(marketCap / 10000000).toFixed(2)} Cr</strong>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.62rem', fontWeight: 800, marginBottom: '2px' }}>
-                <span style={{ color: '#22c55e' }}>Advances ▲ {advances}</span>
-                <span style={{ color: '#ef4444' }}>Declines ▼ {declines}</span>
-              </div>
-              <div style={{ display: 'flex', height: '6px', borderRadius: '2px', overflow: 'hidden' }}>
-                <div style={{ width: `${advPct}%`, backgroundColor: '#22c55e' }} />
-                <div style={{ width: `${decPct}%`, backgroundColor: '#ef4444' }} />
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        {/* Right Main Watch Area */}
-        <div style={{
-          width: '78%',
-          backgroundColor: '#ffffff',
-          border: '1px solid #e5e0d8',
-          borderRadius: '4px',
-          padding: '8px 10px',
-          display: 'flex',
-          flexDirection: 'column',
-          boxSizing: 'border-box',
-          overflow: 'hidden'
-        }}>
-          {/* Header Controls Bar */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', borderBottom: '1px solid #f0ede6', pb: '6px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '0.9rem', fontWeight: 900, color: '#9b6f1e', fontFamily: 'var(--font-display)', letterSpacing: '0.02em' }}>
-                LIVE MARKET WATCH
-              </span>
-              <span style={{ fontSize: '0.7rem', color: '#6b6863', fontWeight: 700 }}>({filteredSecurities.length} / {state.securities.length} COMPANIES)</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <input
-                type="text"
-                placeholder="Search Company / Symbol..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                style={{
-                  padding: '3px 8px',
-                  borderRadius: '3px',
-                  border: '1px solid #e2ddd4',
-                  fontSize: '0.65rem',
-                  outline: 'none',
-                  width: '160px'
-                }}
-              />
-              <select
-                value={selectedSector}
-                onChange={e => setSelectedSector(e.target.value)}
-                style={{ padding: '3px 6px', borderRadius: '3px', border: '1px solid #e2ddd4', backgroundColor: '#faf8f5', fontSize: '0.65rem', fontWeight: 700, cursor: 'pointer' }}
-              >
-                {sectorList.map(sec => (
-                  <option key={sec} value={sec}>{sec === 'ALL' ? '⚙ ALL SECTORS' : sec}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Watch Cards Grid */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div style={{
-            flex: 1,
-            display: 'grid',
-            gridTemplateColumns: 'repeat(9, 1fr)',
-            gridAutoRows: '62px',
-            gap: '6px',
-            overflowY: 'auto',
-            paddingRight: '4px',
-            boxSizing: 'border-box'
+            background: 'linear-gradient(135deg, #845508, #b27a1b)',
+            color: '#FFFFFF',
+            fontWeight: 900,
+            fontSize: '1.1rem',
+            padding: '4px 10px',
+            borderRadius: '6px',
+            fontFamily: 'Cinzel, serif',
+            letterSpacing: '1px',
+            boxShadow: '0 2px 6px rgba(132, 85, 8, 0.25)'
           }}>
-            {filteredSecurities.map((s, idx) => (
-              <ProjectorCell key={s ? s.id : `empty-${idx}`} security={s} totalTransactions={state.transactions} />
-            ))}
+            SAAMX
           </div>
-
-          {/* Footer View All Toggle */}
-          <div style={{ textAlign: 'center', paddingTop: '4px', borderTop: '1px solid #f0ede6', marginTop: '4px' }}>
-            <span
-              onClick={() => { setShowAllGridOnly(true); setSearchQuery(''); setSelectedSector('ALL'); }}
-              style={{ fontSize: '0.65rem', fontWeight: 800, color: '#9b6f1e', cursor: 'pointer' }}
-            >
-              SHOW ALL {state.securities.length} COMPANIES ∨
+          <div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
+              <h1 style={{
+                fontSize: '1.25rem',
+                fontWeight: 900,
+                fontFamily: 'Cinzel, serif',
+                color: '#1E232B',
+                margin: 0,
+                letterSpacing: '0.04em'
+              }}>
+                MARKET INTELLIGENCE CENTER
+              </h1>
+              <span style={{ fontSize: '0.74rem', color: '#845508', fontWeight: 800, letterSpacing: '0.04em' }}>
+                &bull; "Experience the Market. Don’t Just Learn It."
+              </span>
+            </div>
+            <span style={{ fontSize: '0.68rem', color: '#6B6863', letterSpacing: '0.04em', textTransform: 'uppercase', fontWeight: 600 }}>
+              LIVE MARKET SNAPSHOT &bull; 1,800 CONSTITUENTS &bull; GLOBAL MULTI-CURRENCY EXCHANGE
             </span>
           </div>
         </div>
 
-      </div>
+        {/* Center Live Session Badge */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: sessionState === 'CONTINUOUS_TRADING' || sessionState === 'OPEN' ? 'rgba(6, 95, 62, 0.08)' : 'rgba(147, 25, 19, 0.08)',
+            border: `1px solid ${sessionState === 'CONTINUOUS_TRADING' || sessionState === 'OPEN' ? 'rgba(6, 95, 62, 0.3)' : 'rgba(147, 25, 19, 0.3)'}`,
+            padding: '4px 14px',
+            borderRadius: '20px'
+          }}>
+            <span style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              backgroundColor: sessionState === 'CONTINUOUS_TRADING' || sessionState === 'OPEN' ? '#065F3E' : '#931913',
+              animation: 'pulseBlink 1.5s infinite'
+            }} />
+            <span style={{
+              fontSize: '0.78rem',
+              fontWeight: 800,
+              color: sessionState === 'CONTINUOUS_TRADING' || sessionState === 'OPEN' ? '#065F3E' : '#931913',
+              letterSpacing: '0.5px'
+            }}>
+              {sessionState.replace('_', ' ')}
+            </span>
+          </div>
+        </div>
 
-      {/* 5. Bottom Dashboard (5 Equal Dark Columns) */}
+        {/* Right Synchronized Digital Clocks */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', fontFamily: 'monospace' }}>
+          <div style={{ textAlign: 'right' }}>
+            <span style={{ fontSize: '0.65rem', color: '#6B6863', display: 'block', textTransform: 'uppercase', fontWeight: 700 }}>MARKET CLOCK (IST)</span>
+            <span style={{ fontSize: '0.95rem', fontWeight: 800, color: '#1E232B' }}>
+              {currentTimeStr || '11:42:18 AM'}
+            </span>
+          </div>
+          <div style={{ borderLeft: '1.5px solid #E2DBD0', paddingLeft: '16px', textAlign: 'right' }}>
+            <span style={{ fontSize: '0.65rem', color: '#6B6863', display: 'block', textTransform: 'uppercase', fontWeight: 700 }}>TIME REMAINING</span>
+            <span style={{ fontSize: '1.15rem', fontWeight: 900, color: '#845508' }}>
+              {timeLeft}
+            </span>
+          </div>
+        </div>
+      </header>
+
+      {/* 2. GLOBAL INDICES TELEMETRY BAR */}
       <div style={{
-        height: '165px',
-        backgroundColor: '#0a0b0d',
         display: 'grid',
-        gridTemplateColumns: 'repeat(5, 1fr)',
-        gap: '8px',
-        padding: '0 12px 8px 12px',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: '10px',
+        padding: '8px 24px',
+        backgroundColor: '#FAF8F3',
+        borderBottom: '1px solid #E2DBD0',
         boxSizing: 'border-box'
       }}>
-        {/* Col 1: LIVE MARKET NEWS */}
-        <div style={{ backgroundColor: '#131722', border: '1px solid #2a2e39', borderRadius: '4px', padding: '6px 8px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div>
-            <div style={{ fontSize: '0.68rem', fontWeight: 900, color: '#d4af37', marginBottom: '4px' }}>📰 LIVE MARKET NEWS</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-              {bottomNewsLog.slice(0, 4).map((n, i) => (
-                <div key={i} style={{ fontSize: '0.52rem', color: '#d1d4dc', borderBottom: '1px dashed #22252e', padding: '2px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '75%' }}>
-                    <span style={{ color: '#848e9c', fontFamily: 'var(--font-mono)' }}>
-                      {new Date(n.triggeredAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} —
-                    </span>{' '}
-                    <strong>{n.headline}</strong>
-                  </span>
-                  <span style={{
-                    backgroundColor: n.sentiment === 'Positive' ? '#143828' : n.sentiment === 'Negative' ? '#3d1616' : '#2a2e39',
-                    color: n.sentiment === 'Positive' ? '#4ade80' : n.sentiment === 'Negative' ? '#f87171' : '#d1d4dc',
-                    padding: '1px 4px',
-                    borderRadius: '2px',
-                    fontSize: '0.45rem',
-                    fontWeight: 'bold'
-                  }}>
-                    {n.sentiment?.toUpperCase() || 'NEUTRAL'}
-                  </span>
+        {[
+          { key: 'GLOBAL100', label: 'SAAMX GLOBAL 100', val: marketIndices.GLOBAL100?.currentValue || 1000, open: marketIndices.GLOBAL100?.openingValue || 1000, chg: marketIndices.GLOBAL100?.changePercent || 0 },
+          { key: 'INDIA50', label: 'SAAMX INDIA 50', val: marketIndices.INDIA50?.currentValue || 5000, open: marketIndices.INDIA50?.openingValue || 5000, chg: marketIndices.INDIA50?.changePercent || 0 },
+          { key: 'US100', label: 'SAAMX US 100', val: marketIndices.US100?.currentValue || 8000, open: marketIndices.US100?.openingValue || 8000, chg: marketIndices.US100?.changePercent || 0 },
+          { key: 'UK100', label: 'SAAMX UK 100', val: marketIndices.UK100?.currentValue || 4000, open: marketIndices.UK100?.openingValue || 4000, chg: marketIndices.UK100?.changePercent || 0 }
+        ].map(idx => {
+          const isUp = idx.chg > 0;
+          const isDown = idx.chg < 0;
+          const absDiff = (idx.val - idx.open).toFixed(2);
+          const color = isUp ? '#065F3E' : isDown ? '#931913' : '#6B6863';
+
+          return (
+            <div key={idx.key} style={{
+              backgroundColor: '#FFFFFF',
+              border: '1px solid #E2DBD0',
+              borderRadius: '8px',
+              padding: '8px 14px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
+            }}>
+              <div>
+                <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#6B6863', letterSpacing: '0.5px', display: 'block' }}>
+                  {idx.label}
+                </span>
+                <div style={{ fontSize: '1.25rem', fontWeight: 900, fontFamily: 'monospace', color: '#1E232B', lineHeight: 1.1 }}>
+                  {Number(idx.val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
-              ))}
+                <div style={{ fontSize: '0.74rem', fontWeight: 800, color, fontFamily: 'monospace', marginTop: '2px' }}>
+                  {isUp ? '▲ +' : isDown ? '▼ ' : '— '}{Math.abs(idx.chg).toFixed(2)}% ({isUp ? '+' : ''}{absDiff})
+                </div>
+              </div>
+              <Sparkline isUp={isUp} width={44} height={18} />
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 3. SPOT FX TELEMETRY STRIP */}
+      <div style={{
+        backgroundColor: 'rgba(132, 85, 8, 0.05)',
+        borderBottom: '1px solid #E2DBD0',
+        padding: '5px 24px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        fontSize: '0.75rem'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+          <span style={{ color: '#845508', fontWeight: 900, letterSpacing: '0.5px' }}>
+            💱 SPOT FX DESK:
+          </span>
+          <span style={{ color: '#1E232B', fontFamily: 'monospace' }}>
+            USD / INR: <strong style={{ color: '#065F3E' }}>₹{(fxRates.USDINR?.midRate || 88.20).toFixed(2)}</strong> (Spread: {fxRates.USDINR?.spreadPercent || 0.45}%)
+          </span>
+          <span style={{ color: '#1E232B', fontFamily: 'monospace' }}>
+            GBP / INR: <strong style={{ color: '#065F3E' }}>₹{(fxRates.GBPINR?.midRate || 119.40).toFixed(2)}</strong> (Spread: {fxRates.GBPINR?.spreadPercent || 0.45}%)
+          </span>
+          <span style={{ color: '#1E232B', fontFamily: 'monospace' }}>
+            EUR / INR: <strong style={{ color: '#065F3E' }}>₹{(fxRates.EURINR?.midRate || 103.50).toFixed(2)}</strong> (Spread: {fxRates.EURINR?.spreadPercent || 0.45}%)
+          </span>
+        </div>
+        <div style={{ color: '#845508', fontSize: '0.7rem', fontWeight: 700 }}>
+          ● MULTI-CURRENCY CONVERSIONS LIVE &bull; 0.45% SPREAD
+        </div>
+      </div>
+
+      {/* 4. MAIN COMMAND GRID (3-Column Layout) */}
+      <div style={{
+        flex: 1,
+        display: 'grid',
+        gridTemplateColumns: '1fr 1.35fr 1.05fr',
+        gap: '12px',
+        padding: '10px 24px',
+        overflow: 'hidden',
+        boxSizing: 'border-box'
+      }}>
+
+        {/* COLUMN 1: MARKET BREADTH, SENTIMENT PULSE & SECTORS */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minHeight: 0 }}>
+          
+          {/* Market Breadth Card */}
+          <div style={{
+            backgroundColor: '#FFFFFF',
+            border: '1px solid #E2DBD0',
+            borderRadius: '10px',
+            padding: '12px 16px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+            boxSizing: 'border-box'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <span style={{ fontSize: '0.76rem', fontWeight: 900, color: '#845508', letterSpacing: '0.5px' }}>
+                📊 MARKET BREADTH & SENTIMENT
+              </span>
+              <span style={{ fontSize: '0.68rem', color: '#6B6863', fontWeight: 700 }}>
+                {breadth.total} TOTAL SECURITIES
+              </span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', textAlign: 'center', marginBottom: '10px' }}>
+              <div style={{ background: '#FAF8F3', padding: '6px', borderRadius: '6px', border: '1px solid #E2DBD0' }}>
+                <span style={{ fontSize: '0.62rem', color: '#6B6863', textTransform: 'uppercase', display: 'block', fontWeight: 700 }}>ADVANCES</span>
+                <strong style={{ fontSize: '1.1rem', color: '#065F3E', fontFamily: 'monospace' }}>{breadth.adv}</strong>
+              </div>
+              <div style={{ background: '#FAF8F3', padding: '6px', borderRadius: '6px', border: '1px solid #E2DBD0' }}>
+                <span style={{ fontSize: '0.62rem', color: '#6B6863', textTransform: 'uppercase', display: 'block', fontWeight: 700 }}>DECLINES</span>
+                <strong style={{ fontSize: '1.1rem', color: '#931913', fontFamily: 'monospace' }}>{breadth.dec}</strong>
+              </div>
+              <div style={{ background: '#FAF8F3', padding: '6px', borderRadius: '6px', border: '1px solid #E2DBD0' }}>
+                <span style={{ fontSize: '0.62rem', color: '#6B6863', textTransform: 'uppercase', display: 'block', fontWeight: 700 }}>UNCHANGED</span>
+                <strong style={{ fontSize: '1.1rem', color: '#4A5568', fontFamily: 'monospace' }}>{breadth.unc}</strong>
+              </div>
+              <div style={{ background: '#FAF8F3', padding: '6px', borderRadius: '6px', border: '1px solid #E2DBD0' }}>
+                <span style={{ fontSize: '0.62rem', color: '#6B6863', textTransform: 'uppercase', display: 'block', fontWeight: 700 }}>A / D RATIO</span>
+                <strong style={{ fontSize: '1.1rem', color: '#845508', fontFamily: 'monospace' }}>{breadth.ratio}</strong>
+              </div>
+            </div>
+
+            <div style={{ height: '7px', borderRadius: '4px', overflow: 'hidden', display: 'flex', backgroundColor: '#E2DBD0', marginBottom: '12px' }}>
+              <div style={{ width: `${breadth.advPct}%`, backgroundColor: '#065F3E' }} />
+              <div style={{ width: `${breadth.decPct}%`, backgroundColor: '#931913' }} />
+            </div>
+
+            <div style={{ borderTop: '1px solid #E2DBD0', paddingTop: '10px' }}>
+              <MarketPulseGauge score={marketPulse.score} label={marketPulse.label} color={marketPulse.color} />
             </div>
           </div>
-          <span onClick={() => setActiveModal('NEWS')} style={{ fontSize: '0.58rem', fontWeight: 800, color: '#d4af37', cursor: 'pointer', textAlign: 'center', display: 'block', marginTop: '2px' }}>VIEW ALL NEWS</span>
-        </div>
 
-        {/* Col 2: LIVE ORDER BOOK */}
-        <div style={{ backgroundColor: '#131722', border: '1px solid #2a2e39', borderRadius: '4px', padding: '6px 8px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div>
-            <div style={{ fontSize: '0.68rem', fontWeight: 900, color: '#d4af37', marginBottom: '4px' }}>⚡ LIVE ORDER BOOK</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              {bottomOrderLog.slice(0, 4).map((t, i) => (
-                <div key={i} style={{ fontSize: '0.52rem', display: 'grid', gridTemplateColumns: '1.2fr 2fr 1fr 1fr 2.5fr', color: '#d1d4dc', borderBottom: '1px dashed #22252e', padding: '2px 0' }}>
-                  <span style={{ color: '#848e9c', fontFamily: 'var(--font-mono)' }}>{new Date(t.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
-                  <span style={{ fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.teamCode || 'Team'}</span>
-                  <span style={{ color: t.action === 'BUY' ? '#26a69a' : '#ef5350', fontWeight: 'bold' }}>{t.action}</span>
-                  <span style={{ fontWeight: 'bold', color: '#ffffff' }}>{t.ticker}</span>
-                  <span style={{ textAlign: 'right' }}>{t.quantity} @ ₹{t.priceAtExecution?.toFixed(0)}</span>
-                </div>
-              ))}
+          {/* Sector Performance Radar */}
+          <div style={{
+            backgroundColor: '#FFFFFF',
+            border: '1px solid #E2DBD0',
+            borderRadius: '10px',
+            padding: '12px 16px',
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+            boxSizing: 'border-box'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span style={{ fontSize: '0.76rem', fontWeight: 900, color: '#845508', letterSpacing: '0.5px' }}>
+                🗂 SECTOR PERFORMANCE HEATMAP
+              </span>
+              <span style={{ fontSize: '0.65rem', color: '#6B6863', fontWeight: 600 }}>AVERAGE MOVEMENT</span>
             </div>
-          </div>
-          <span onClick={() => setActiveModal('TRADES')} style={{ fontSize: '0.58rem', fontWeight: 800, color: '#d4af37', cursor: 'pointer', textAlign: 'center', display: 'block', marginTop: '2px' }}>VIEW ALL TRADES</span>
-        </div>
 
-        {/* Col 3: MOST ACTIVE STOCKS */}
-        <div style={{ backgroundColor: '#131722', border: '1px solid #2a2e39', borderRadius: '4px', padding: '6px 8px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div>
-            <div style={{ fontSize: '0.68rem', fontWeight: 900, color: '#d4af37', marginBottom: '4px' }}>🔥 MOST ACTIVE STOCKS</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              {activeSecsWithVol.slice(0, 4).map((s, idx) => {
-                const priceChange = s.currentPrice - s.basePrice;
-                const priceChangePct = s.basePrice > 0 ? (priceChange / s.basePrice) * 100 : 0;
-                const isUp = priceChangePct >= 0;
-                const volStr = s.tradedVolume >= 1000 ? `${(s.tradedVolume / 1000).toFixed(1)}K` : `${s.tradedVolume}`;
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {sectorPerformance.slice(0, 7).map(s => {
+                const isUp = s.avgPct > 0;
+                const isDown = s.avgPct < 0;
+                const color = isUp ? '#065F3E' : isDown ? '#931913' : '#4A5568';
                 return (
-                  <div key={idx} style={{ fontSize: '0.52rem', display: 'grid', gridTemplateColumns: '0.6fr 1.4fr 2.5fr 1.5fr', color: '#d1d4dc', borderBottom: '1px dashed #22252e', padding: '2px 0' }}>
-                    <span style={{ color: '#848e9c', fontWeight: 'bold' }}>{idx + 1}</span>
-                    <span style={{ fontWeight: 'bold', color: '#ffffff' }}>{s.ticker}</span>
-                    <span>Volume: {volStr}</span>
-                    <span style={{ color: isUp ? '#26a69a' : '#ef5350', fontWeight: 'bold', textAlign: 'right' }}>
-                      {isUp ? '▲' : '▼'}{Math.abs(priceChangePct).toFixed(1)}%
-                    </span>
+                  <div key={s.name} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '5px 8px',
+                    background: '#FAF8F3',
+                    border: '1px solid #E2DBD0',
+                    borderRadius: '5px',
+                    fontSize: '0.74rem'
+                  }}>
+                    <span style={{ fontWeight: 700, color: '#1E232B' }}>{s.name}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ color: '#6B6863', fontSize: '0.65rem' }}>{s.count} Assets</span>
+                      <strong style={{ color, fontFamily: 'monospace', minWidth: '54px', textAlign: 'right' }}>
+                        {isUp ? '+' : ''}{s.avgPct.toFixed(2)}%
+                      </strong>
+                    </div>
                   </div>
                 );
               })}
             </div>
           </div>
-          <span onClick={() => setActiveModal('ACTIVE')} style={{ fontSize: '0.58rem', fontWeight: 800, color: '#d4af37', cursor: 'pointer', textAlign: 'center', display: 'block', marginTop: '2px' }}>VIEW ALL</span>
+
         </div>
 
-        {/* Col 4: REGULATORY ACTIONS */}
-        <div style={{ backgroundColor: '#131722', border: '1px solid #2a2e39', borderRadius: '4px', padding: '6px 8px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div>
-            <div style={{ fontSize: '0.68rem', fontWeight: 900, color: '#d4af37', marginBottom: '4px' }}>⚖️ REGULATORY ACTIONS</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              {bottomRegulatoryLog.slice(0, 4).map((r, i) => (
-                <div key={i} style={{ fontSize: '0.52rem', color: '#d1d4dc', borderBottom: '1px dashed #22252e', padding: '2.5px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  <span style={{ color: '#848e9c', fontFamily: 'var(--font-mono)' }}>{new Date(r.triggeredAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} — </span>
-                  <span style={{ fontWeight: 'bold', color: r.actionType === 'CircuitBreaker' ? '#ef5350' : '#ffffff' }}>
-                    {r.actionType === 'CircuitBreaker' ? `Halted: ${r.securityId}` : r.details || r.description}
+        {/* COLUMN 2: CENTERPIECE — "WHAT'S MOVING THE MARKET?" & TOP LEADERS */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minHeight: 0 }}>
+          
+          {/* CENTERPIECE: WHAT'S MOVING THE MARKET? */}
+          <div style={{
+            background: 'linear-gradient(135deg, #FFFFFF 0%, #FFFDF9 100%)',
+            border: '2px solid #845508',
+            borderRadius: '10px',
+            padding: '12px 16px',
+            boxShadow: '0 4px 14px rgba(132, 85, 8, 0.08)',
+            boxSizing: 'border-box'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span style={{ fontSize: '0.84rem', fontWeight: 900, color: '#845508', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span>⚡</span> WHAT'S MOVING THE MARKET?
+              </span>
+              <span style={{ fontSize: '0.68rem', color: '#065F3E', fontWeight: 800, background: 'rgba(6, 95, 62, 0.08)', padding: '2px 8px', borderRadius: '12px' }}>
+                ● LIVE FORCES
+              </span>
+            </div>
+
+            {latestNews ? (
+              <div style={{ background: '#FAF8F3', borderLeft: '4px solid #845508', padding: '10px 12px', borderRadius: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '4px' }}>
+                  <strong style={{ fontSize: '0.92rem', color: '#1E232B' }}>{latestNews.headline}</strong>
+                  <span style={{ fontSize: '0.68rem', color: '#845508', fontWeight: 800, textTransform: 'uppercase' }}>
+                    {latestNews.category || 'MACRO'}
                   </span>
                 </div>
-              ))}
-            </div>
-          </div>
-          <span onClick={() => setActiveModal('ACTIONS')} style={{ fontSize: '0.58rem', fontWeight: 800, color: '#d4af37', cursor: 'pointer', textAlign: 'center', display: 'block', marginTop: '2px' }}>VIEW ALL ACTIONS</span>
-        </div>
-
-        {/* Col 5: MARKET HEATMAP */}
-        <div style={{ backgroundColor: '#131722', border: '1px solid #2a2e39', borderRadius: '4px', padding: '6px 8px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div>
-            <div style={{ fontSize: '0.68rem', fontWeight: 900, color: '#d4af37', marginBottom: '4px' }}>🗂 MARKET HEATMAP</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '3px' }}>
-              {sectors.map((sec, idx) => (
-                <div key={idx} style={{
-                  backgroundColor: sec.change >= 0 ? '#143828' : '#3d1616',
-                  color: sec.change >= 0 ? '#4ade80' : '#f87171',
-                  borderRadius: '2px',
-                  padding: '2px',
-                  textAlign: 'center',
-                  fontSize: '0.52rem',
-                  fontWeight: 900
-                }}>
-                  <div>{sec.name}</div>
-                  <div style={{ fontSize: '0.58rem', marginTop: '1px' }}>{sec.change >= 0 ? '+' : ''}{sec.change}%</div>
+                <p style={{ margin: '0 0 6px 0', fontSize: '0.78rem', color: '#4A5568', lineHeight: 1.35 }}>
+                  {latestNews.description}
+                </p>
+                <div style={{ display: 'flex', gap: '12px', fontSize: '0.7rem', color: '#6B6863' }}>
+                  <span>Impact: <strong style={{ color: (latestNews.impactPercent || 0) >= 0 ? '#065F3E' : '#931913' }}>{latestNews.impactPercent > 0 ? '+' : ''}{latestNews.impactPercent}%</strong></span>
+                  <span>Target: <strong style={{ color: '#1E232B' }}>{latestNews.affectedSector || 'Macro Universe'}</strong></span>
+                  <span>Time: <strong style={{ color: '#1E232B' }}>{new Date(latestNews.triggeredAt).toLocaleTimeString()}</strong></span>
                 </div>
-              ))}
-            </div>
+              </div>
+            ) : (
+              <div style={{ background: '#FAF8F3', borderLeft: '4px solid #065F3E', padding: '10px 12px', borderRadius: '6px', fontSize: '0.78rem' }}>
+                <strong style={{ color: '#1E232B' }}>Continuous Global Order Book Matching</strong>
+                <p style={{ margin: '4px 0 0 0', color: '#4A5568' }}>
+                  Cross-asset trading flows across 1,800 constituents driving intraday valuation discovery.
+                </p>
+              </div>
+            )}
           </div>
-          <span onClick={() => setActiveModal('HEATMAP')} style={{ fontSize: '0.58rem', fontWeight: 800, color: '#d4af37', cursor: 'pointer', textAlign: 'center', display: 'block', marginTop: '2px' }}>VIEW HEATMAP</span>
-        </div>
 
-      </div>
-
-      {/* 6. Footer Disclaimer & Credit Bar */}
-      <div style={{
-        backgroundColor: '#0a0b0d',
-        borderTop: '1px solid #1e222d',
-        padding: '4px 16px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        fontSize: '0.55rem',
-        color: '#848e9c',
-        boxSizing: 'border-box',
-        height: '24px'
-      }}>
-        <span>Prices shown are for simulation purposes only and do not represent real market data.</span>
-        <span>Powered by SAAMX - Student Academic Asset Market eXchange</span>
-        <span style={{ color: '#22c55e', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <span style={{ width: '5px', height: '5px', backgroundColor: '#22c55e', borderRadius: '50%', display: 'inline-block', animation: 'blink 1.5s infinite' }} />
-          LIVE DATA
-        </span>
-      </div>
-
-      {/* Modal Popup Overlay */}
-      {activeModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ backgroundColor: '#131722', border: '1px solid #2a2e39', borderRadius: '8px', padding: '20px', width: '600px', maxHeight: '80vh', overflowY: 'auto', color: '#ffffff' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #2a2e39', paddingBottom: '10px', marginBottom: '15px' }}>
-              <h3 style={{ margin: 0, color: '#d4af37' }}>
-                {activeModal === 'LEADERBOARD' && '🏆 FULL TEAM LEADERBOARD'}
-                {activeModal === 'NEWS' && '📰 ALL MARKET NEWS DISPATCHES'}
-                {activeModal === 'TRADES' && '⚡ LIVE ORDER BOOK LOGS'}
-                {activeModal === 'ACTIONS' && '⚖️ SEBI & REGULATORY ACTIONS'}
-                {activeModal === 'HEATMAP' && '🗂 DETAILED SECTOR HEATMAP'}
-                {activeModal === 'ACTIVE' && '🔥 MOST ACTIVE STOCKS'}
-              </h3>
-              <button onClick={() => setActiveModal(null)} style={{ backgroundColor: '#2a2e39', color: '#fff', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>✕ CLOSE</button>
-            </div>
-
-            {activeModal === 'LEADERBOARD' && (
-              <table style={{ width: '100%', fontSize: '0.8rem', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ color: '#848e9c', borderBottom: '1px solid #2a2e39' }}>
-                    <th align="left">RANK</th>
-                    <th align="left">TEAM CODE</th>
-                    <th align="left">TEAM NAME</th>
-                    <th align="right">PORTFOLIO VALUE</th>
-                    <th align="right">P/L %</th>
-                  </tr>
-                </thead>
+          {/* Top Gainers & Losers Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', flex: 1, minHeight: 0 }}>
+            
+            {/* Top Gainers */}
+            <div style={{
+              backgroundColor: '#FFFFFF',
+              border: '1px solid #E2DBD0',
+              borderRadius: '10px',
+              padding: '10px 12px',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+              boxSizing: 'border-box'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <span style={{ fontSize: '0.74rem', fontWeight: 900, color: '#065F3E', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span>🚀</span> TOP GAINERS
+                </span>
+                <span style={{ fontSize: '0.62rem', color: '#6B6863' }}>UNIVERSE</span>
+              </div>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.72rem' }}>
                 <tbody>
-                  {leaderboard.map((t, idx) => (
-                    <tr key={t.id} style={{ borderBottom: '1px dashed #2a2e39', height: '24px' }}>
-                      <td>{idx + 1}</td>
-                      <td>{t.teamCode}</td>
-                      <td style={{ fontWeight: 'bold' }}>{t.name}</td>
-                      <td align="right">₹{Math.round(t.portfolioValue || 1000000).toLocaleString()}</td>
-                      <td align="right" style={{ color: (t.plPercent || 0) >= 0 ? '#22c55e' : '#ef4444', fontWeight: 'bold' }}>
-                        {(t.plPercent || 0) >= 0 ? '+' : ''}{(t.plPercent || 0).toFixed(2)}%
+                  {topGainers.map(s => (
+                    <tr key={s.ticker} style={{ borderBottom: '1px solid #FAF8F3', height: '24px' }}>
+                      <td style={{ fontWeight: 900, color: '#845508', width: '50px' }}>{s.ticker}</td>
+                      <td style={{ color: '#1E232B', maxWidth: '90px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>{s.name}</td>
+                      <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 800, color: '#1E232B' }}>
+                        {currencySymbol(s)}{s.cur.toFixed(1)}
+                      </td>
+                      <td style={{ textAlign: 'right', fontWeight: 900, color: '#065F3E', fontFamily: 'monospace', width: '52px' }}>
+                        +{s.chgPct.toFixed(1)}%
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            )}
+            </div>
 
-            {activeModal === 'NEWS' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {bottomNewsLog.map((n, i) => (
-                  <div key={i} style={{ padding: '8px', borderBottom: '1px solid #2a2e39', backgroundColor: '#1e222d', borderRadius: '4px' }}>
-                    <div style={{ fontWeight: 'bold', color: '#d4af37' }}>{n.headline}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#848e9c', marginTop: '4px' }}>{n.description}</div>
-                  </div>
-                ))}
+            {/* Top Losers */}
+            <div style={{
+              backgroundColor: '#FFFFFF',
+              border: '1px solid #E2DBD0',
+              borderRadius: '10px',
+              padding: '10px 12px',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+              boxSizing: 'border-box'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <span style={{ fontSize: '0.74rem', fontWeight: 900, color: '#931913', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span>🔻</span> TOP LOSERS
+                </span>
+                <span style={{ fontSize: '0.62rem', color: '#6B6863' }}>UNIVERSE</span>
               </div>
-            )}
-
-            {activeModal === 'TRADES' && (
-              <table style={{ width: '100%', fontSize: '0.8rem', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ color: '#848e9c', borderBottom: '1px solid #2a2e39' }}>
-                    <th align="left">TIME</th>
-                    <th align="left">TEAM</th>
-                    <th align="left">ACTION</th>
-                    <th align="left">TICKER</th>
-                    <th align="right">QUANTITY</th>
-                    <th align="right">PRICE</th>
-                  </tr>
-                </thead>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.72rem' }}>
                 <tbody>
-                  {bottomOrderLog.map((t, i) => (
-                    <tr key={i} style={{ borderBottom: '1px dashed #2a2e39', height: '24px' }}>
-                      <td>{new Date(t.timestamp).toLocaleTimeString()}</td>
-                      <td>{t.teamCode || 'Team'}</td>
-                      <td style={{ color: t.action === 'BUY' ? '#22c55e' : '#ef4444', fontWeight: 'bold' }}>{t.action}</td>
-                      <td>{t.ticker}</td>
-                      <td align="right">{t.quantity}</td>
-                      <td align="right">₹{t.priceAtExecution?.toFixed(2)}</td>
+                  {topLosers.map(s => (
+                    <tr key={s.ticker} style={{ borderBottom: '1px solid #FAF8F3', height: '24px' }}>
+                      <td style={{ fontWeight: 900, color: '#845508', width: '50px' }}>{s.ticker}</td>
+                      <td style={{ color: '#1E232B', maxWidth: '90px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>{s.name}</td>
+                      <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 800, color: '#1E232B' }}>
+                        {currencySymbol(s)}{s.cur.toFixed(1)}
+                      </td>
+                      <td style={{ textAlign: 'right', fontWeight: 900, color: '#931913', fontFamily: 'monospace', width: '52px' }}>
+                        {s.chgPct.toFixed(1)}%
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            )}
+            </div>
 
-            {activeModal === 'ACTIONS' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {bottomRegulatoryLog.map((r, i) => (
-                  <div key={i} style={{ padding: '8px', borderBottom: '1px solid #2a2e39', backgroundColor: '#1e222d', borderRadius: '4px' }}>
-                    <div style={{ fontWeight: 'bold', color: '#ef4444' }}>{r.actionType || 'ALERT'}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#d1d4dc', marginTop: '2px' }}>{r.details || r.description}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {activeModal === 'HEATMAP' && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                {sectors.map((sec, idx) => (
-                  <div key={idx} style={{ padding: '16px', borderRadius: '6px', backgroundColor: sec.change >= 0 ? '#143828' : '#3d1616', color: sec.change >= 0 ? '#4ade80' : '#f87171', textAlign: 'center', fontWeight: 'bold' }}>
-                    <div style={{ fontSize: '1.1rem' }}>{sec.name}</div>
-                    <div style={{ fontSize: '1.4rem', marginTop: '6px' }}>{sec.change >= 0 ? '+' : ''}{sec.change}%</div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {activeModal === 'ACTIVE' && (
-              <table style={{ width: '100%', fontSize: '0.8rem', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ color: '#848e9c', borderBottom: '1px solid #2a2e39' }}>
-                    <th align="left">RANK</th>
-                    <th align="left">TICKER</th>
-                    <th align="left">NAME</th>
-                    <th align="right">TRADED VOLUME</th>
-                    <th align="right">PRICE</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {activeSecsWithVol.map((s, idx) => (
-                    <tr key={s.id} style={{ borderBottom: '1px dashed #2a2e39', height: '24px' }}>
-                      <td>{idx + 1}</td>
-                      <td style={{ fontWeight: 'bold', color: '#d4af37' }}>{s.ticker}</td>
-                      <td>{s.name}</td>
-                      <td align="right">{s.tradedVolume}</td>
-                      <td align="right">₹{s.currentPrice.toFixed(2)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
           </div>
-        </div>
-      )}
 
+          {/* Most Active Leaders */}
+          <div style={{
+            backgroundColor: '#FFFFFF',
+            border: '1px solid #E2DBD0',
+            borderRadius: '10px',
+            padding: '8px 12px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+            boxSizing: 'border-box'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+              <span style={{ fontSize: '0.72rem', fontWeight: 900, color: '#0284C7', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span>⚡</span> MOST ACTIVE VOLUME LEADERS
+              </span>
+              <span style={{ fontSize: '0.62rem', color: '#6B6863' }}>REAL-TIME TURNOVER</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+              {mostActive.slice(0, 3).map(s => (
+                <div key={s.ticker} style={{ background: '#FAF8F3', padding: '4px 8px', borderRadius: '4px', border: '1px solid #E2DBD0', fontSize: '0.7rem' }}>
+                  <strong style={{ color: '#845508' }}>{s.ticker}</strong>
+                  <span style={{ color: '#6B6863', display: 'block', fontSize: '0.62rem' }}>{s.tradedVolume.toLocaleString()} Vol</span>
+                  <span style={{ color: s.chgPct >= 0 ? '#065F3E' : '#931913', fontWeight: 800 }}>{s.chgPct >= 0 ? '+' : ''}{s.chgPct.toFixed(1)}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+
+        {/* COLUMN 3: LIVE MARKET NARRATIVE & STORYLINE TIMELINE */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minHeight: 0 }}>
+          
+          {/* Live Market Narrative (Market Pulse) */}
+          <div style={{
+            backgroundColor: '#FFFFFF',
+            border: '1px solid #E2DBD0',
+            borderRadius: '10px',
+            padding: '12px 14px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+            boxSizing: 'border-box'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span style={{ fontSize: '0.76rem', fontWeight: 900, color: '#845508', letterSpacing: '0.5px' }}>
+                🎙️ MARKET PULSE & NARRATIVE
+              </span>
+              <span style={{ fontSize: '0.62rem', color: '#065F3E', fontWeight: 800 }}>LIVE SYNTHESIS</span>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {marketNarrative.map((item, idx) => (
+                <div key={idx} style={{ display: 'flex', gap: '6px', alignItems: 'flex-start', fontSize: '0.74rem', color: '#1E232B', lineHeight: 1.35 }}>
+                  <span style={{ color: '#845508', fontWeight: 900 }}>•</span>
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Today's Market Story (Timeline) */}
+          <div style={{
+            backgroundColor: '#FFFFFF',
+            border: '1px solid #E2DBD0',
+            borderRadius: '10px',
+            padding: '12px 14px',
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+            boxSizing: 'border-box'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span style={{ fontSize: '0.76rem', fontWeight: 900, color: '#845508', letterSpacing: '0.5px' }}>
+                📖 TODAY'S MARKET STORY
+              </span>
+              <span style={{ fontSize: '0.62rem', color: '#6B6863' }}>SEQUENCE</span>
+            </div>
+
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {storylineTimeline.map((item, idx) => (
+                <div key={idx} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  padding: '6px 8px',
+                  borderRadius: '6px',
+                  background: item.status === 'ACTIVE' ? 'rgba(132, 85, 8, 0.08)' : '#FAF8F3',
+                  border: item.status === 'ACTIVE' ? '1px solid #845508' : '1px solid #E2DBD0',
+                  opacity: item.status === 'UPCOMING' ? 0.6 : 1
+                }}>
+                  <div style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: '0.72rem', color: item.status === 'ACTIVE' ? '#845508' : '#6B6863' }}>
+                    {item.time}
+                  </div>
+                  <div style={{ flex: 1, fontSize: '0.73rem', fontWeight: item.status === 'ACTIVE' ? 800 : 600, color: '#1E232B' }}>
+                    {item.title}
+                  </div>
+                  <span style={{
+                    fontSize: '0.58rem',
+                    fontWeight: 800,
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    backgroundColor: item.status === 'ACTIVE' ? '#845508' : item.status === 'PAST' ? '#E2DBD0' : 'transparent',
+                    color: item.status === 'ACTIVE' ? '#FFF' : '#6B6863'
+                  }}>
+                    {item.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* Render Universal Takeover Overlays */}
+      {renderTakeoverOverlay()}
+
+      {/* Global CSS animation */}
       <style>{`
-        @keyframes blink {
+        @keyframes pulseBlink {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.35; }
         }
+        @keyframes slideUpModal {
+          from { transform: translateY(30px) scale(0.96); opacity: 0; }
+          to { transform: translateY(0) scale(1); opacity: 1; }
+        }
       `}</style>
 
-      {renderTakeoverOverlay()}
     </div>
   );
 }

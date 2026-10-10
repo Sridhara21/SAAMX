@@ -1,563 +1,822 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { apiFetch } from '../lib/api.js';
 
-export default function ExchangePage({ state, onOpenProfile, adminPassword }) {
-  const [teamQuery, setTeamQuery] = useState('');
-  const [secQuery, setSecQuery] = useState('');
-  const [action, setAction] = useState('BUY'); // BUY or SELL
-  const [quantity, setQuantity] = useState('');
-  const [staffName, setStaffName] = useState('Staff Desk 1');
+export default function ExchangePage({ state, onOpenProfile, adminPassword, connected, isCoordinatorOffline }) {
+  const sessionState = state?.marketState?.sessionState || 'PRE_OPEN';
+  const isTradingDisabled = !connected || isCoordinatorOffline || sessionState !== 'CONTINUOUS_TRADING';
 
-  // Initialize staffName based on logged-in user (Sandesh is 1, Akshay is 2, Aarush is 3, Sridhara is 4, Aksharaa is 5)
+  const [activeDeskId, setActiveDeskId] = useState('DESK_1');
+  const [staffName, setStaffName] = useState('Sandesh');
+
+  const DESK_CONFIG = {
+    DESK_1: { id: 'DESK_1', name: 'Order Desk 1', operator: 'Sandesh', color: '#3B82F6' },
+    DESK_2: { id: 'DESK_2', name: 'Order Desk 2', operator: 'Akshay', color: '#F59E0B' },
+    DESK_3: { id: 'DESK_3', name: 'Order Desk 3', operator: 'Aarush', color: '#10B981' },
+    DESK_4: { id: 'DESK_4', name: 'Order Desk 4', operator: 'Sridhara', color: '#8B5CF6' },
+    DESK_5: { id: 'DESK_5', name: 'Order Desk 5', operator: 'Aksharaa', color: '#EC4899' }
+  };
+
+  // Initialize staffName & desk based on logged-in user
   useEffect(() => {
     const user = (sessionStorage.getItem('fms_username') || '').trim().toLowerCase();
-    if (user === 'sandesh') {
-      setStaffName('Staff Desk 1');
-    } else if (user === 'akshay') {
-      setStaffName('Staff Desk 2');
-    } else if (user === 'aarush') {
-      setStaffName('Staff Desk 3');
-    } else if (user === 'sridhara') {
-      setStaffName('Staff Desk 4');
-    } else if (user === 'aksharaa') {
-      setStaffName('Staff Desk 5');
-    } else {
-      setStaffName('Staff Desk 1');
-    }
+    if (user === 'sandesh') { setStaffName('Sandesh'); setActiveDeskId('DESK_1'); }
+    else if (user === 'akshay') { setStaffName('Akshay'); setActiveDeskId('DESK_2'); }
+    else if (user === 'aarush') { setStaffName('Aarush'); setActiveDeskId('DESK_3'); }
+    else if (user === 'sridhara') { setStaffName('Sridhara'); setActiveDeskId('DESK_4'); }
+    else if (user === 'aksharaa') { setStaffName('Aksharaa'); setActiveDeskId('DESK_5'); }
+    else { setStaffName('Sandesh'); setActiveDeskId('DESK_1'); }
   }, []);
 
-  // Selected entities
-  const [selectedTeam, setSelectedTeam] = useState(null);
+  // Form Fields
+  const [ticketNumber, setTicketNumber] = useState('');
+  const [teamCode, setTeamCode] = useState('');
+  const [tickerQuery, setTickerQuery] = useState('');
   const [selectedSec, setSelectedSec] = useState(null);
+  const [action, setAction] = useState('BUY');
+  const [quantity, setQuantity] = useState('');
+  const [orderType, setOrderType] = useState('MARKET');
+  const [limitPrice, setLimitPrice] = useState('');
+  const [brokerId, setBrokerId] = useState('B01');
+  const [notes, setNotes] = useState('');
 
-  // Status & Feedback alerts
+  // Queue filters
+  const [queueStatusFilter, setQueueStatusFilter] = useState('ALL');
+  const [deskFilter, setDeskFilter] = useState('ALL');
+  const [queueSearch, setQueueSearch] = useState('');
+
+  // Form errors & feedback
   const [errorMsg, setErrorMsg] = useState('');
-  const [flashColor, setFlashColor] = useState(null); // 'var(--color-rise)' or 'var(--color-fall)'
   const [toasts, setToasts] = useState([]);
-  const [formFlash, setFormFlash] = useState(null); // 'error' or 'success'
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Focus references for speed entry
-  const teamInputRef = useRef(null);
-  const secInputRef = useRef(null);
-  const qtyInputRef = useRef(null);
+  // References
+  const ticketRef = useRef(null);
+  const tickerRef = useRef(null);
+  const qtyRef = useRef(null);
 
-  // Filter queries matching on prefix or name substring (case-insensitive)
-  const matchedTeams = teamQuery.trim() !== '' && !selectedTeam ? state.teams
-    .filter(t => t.isActive)
-    .filter(t => 
-      t.teamCode.toLowerCase().startsWith(teamQuery.toLowerCase()) ||
-      t.teamName.toLowerCase().includes(teamQuery.toLowerCase())
-    ).slice(0, 6) : [];
-
-  const matchedSecurities = secQuery.trim() !== '' && !selectedSec ? state.securities.filter(s => 
-    s.status !== 'Delisted' && (
-      s.ticker.toLowerCase().startsWith(secQuery.toLowerCase()) ||
-      s.name.toLowerCase().includes(secQuery.toLowerCase())
-    )
-  ).slice(0, 6) : [];
-
-  const handleTeamSelect = (team) => {
-    setSelectedTeam(team);
-    setTeamQuery(`${team.teamCode} - ${team.teamName}`);
-    setErrorMsg('');
-    setTimeout(() => secInputRef.current?.focus(), 50);
-  };
+  // Security selector helper matching search queries
+  const matchedSecurities = useMemo(() => {
+    if (tickerQuery.trim() === '' || selectedSec) return [];
+    return (state.securities || []).filter(s =>
+      s.ticker?.toLowerCase().startsWith(tickerQuery.toLowerCase()) ||
+      s.name?.toLowerCase().includes(tickerQuery.toLowerCase())
+    ).slice(0, 6);
+  }, [tickerQuery, selectedSec, state.securities]);
 
   const handleSecSelect = (sec) => {
     setSelectedSec(sec);
-    setSecQuery(`${sec.ticker} - ${sec.name}`);
+    setTickerQuery(`${sec.ticker} — ${sec.name}`);
     setErrorMsg('');
-    setTimeout(() => qtyInputRef.current?.focus(), 50);
+    setTimeout(() => qtyRef.current?.focus(), 50);
   };
 
-  // Add toast notification helper
   const addToast = (message, type = 'success') => {
     const id = Date.now();
     setToasts(prev => [...prev, { id, message, type }]);
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
-    }, 3000);
+    }, 3500);
   };
 
-  const handleTradeSubmit = async (e) => {
-    if (e) e.preventDefault();
+  // Submit Paper Ticket Order
+  const handleOrderSubmit = async (e) => {
+    e.preventDefault();
     setErrorMsg('');
 
-    if (!selectedTeam) {
-      setErrorMsg('Please select a valid Team.');
+    if (!ticketNumber) {
+      setErrorMsg('Please enter physical ticket number.');
+      return;
+    }
+    if (!teamCode) {
+      setErrorMsg('Please select a team.');
       return;
     }
     if (!selectedSec) {
-      setErrorMsg('Please select a valid Security.');
+      setErrorMsg('Please select a valid listing ticker.');
       return;
     }
-    
-    // Live security check
-    const currentSec = state.securities.find(s => s.id === selectedSec.id);
-    if (!currentSec) {
-      setErrorMsg('Security not found.');
-      return;
-    }
-
-    if (currentSec.status !== 'Active') {
-      setErrorMsg(`${currentSec.ticker} is currently ${currentSec.status} — trading suspended`);
-      return;
-    }
-
-    const liveTeam = state.teams.find(t => t.id === selectedTeam.id && t.isActive);
-    if (!liveTeam) {
-      setErrorMsg('Team not found in live simulation state.');
-      return;
-    }
-
     if (!quantity || Number(quantity) <= 0) {
-      setErrorMsg('Please enter a valid positive quantity.');
+      setErrorMsg('Please enter a valid quantity.');
+      return;
+    }
+    if (orderType === 'LIMIT' && (!limitPrice || Number(limitPrice) <= 0)) {
+      setErrorMsg('Please enter a valid limit price.');
       return;
     }
 
-    const qty = Number(quantity);
-
-    const tradeBody = {
-      teamId: selectedTeam.teamCode,
-      securityId: selectedSec.ticker,
+    setIsSubmitting(true);
+    const orderBody = {
+      ticketNumber: ticketNumber.trim(),
+      teamCode: teamCode.trim().toUpperCase(),
+      ticker: selectedSec.ticker,
       action,
-      quantity: qty,
-      enteredBy: staffName
+      quantity: Number(quantity),
+      orderType,
+      limitPrice: orderType === 'LIMIT' ? Number(limitPrice) : null,
+      brokerId,
+      notes: notes.trim(),
+      enteredBy: staffName,
+      deskId: activeDeskId
     };
 
     try {
-      const res = await apiFetch('/api/trade', {
+      const res = await apiFetch('/api/orders/submit', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'X-FMS-Password': adminPassword
-        },
-        body: JSON.stringify(tradeBody)
+        body: JSON.stringify(orderBody)
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        addToast(`✓ Confirmed: ${tradeBody.teamId} ${action === 'BUY' ? 'bought' : 'sold'} ${qty} ${tradeBody.securityId} @ ₹${data.executionPrice.toLocaleString('en-IN')}`);
-        
-        // Trigger visual flash immediately on success
-        setFlashColor(action === 'BUY' ? 'var(--color-rise-light)' : 'var(--color-fall-light)');
-        setTimeout(() => setFlashColor(null), 850);
-
-        setFormFlash('success');
-        setTimeout(() => setFormFlash(null), 1000);
-
-        // Reset inputs on success so operator is unblocked
-        setTeamQuery('');
-        setSecQuery('');
-        setQuantity('');
-        setSelectedTeam(null);
-        setSelectedSec(null);
-        setErrorMsg('');
-        setTimeout(() => teamInputRef.current?.focus(), 50);
+      if (res.error) {
+        setErrorMsg(res.error);
       } else {
-        const data = await res.json();
-        addToast(`❌ Failed: ${tradeBody.teamId} order for ${qty} ${tradeBody.securityId} rejected: ${data.error}`);
-        setErrorMsg(`ORDER REJECTED: ${data.error}`);
-        setFormFlash('error');
-        setTimeout(() => setFormFlash(null), 2000);
+        addToast(`Physical Ticket #${res.order?.ticketNumber || ticketNumber} logged to ${activeDeskId}!`, 'success');
+        setTicketNumber('');
+        setQuantity('');
+        setLimitPrice('');
+        setNotes('');
+        setSelectedSec(null);
+        setTickerQuery('');
+        setTimeout(() => ticketRef.current?.focus(), 50);
       }
     } catch (err) {
-      addToast(`❌ Network error executing ${tradeBody.teamId} trade on ${tradeBody.securityId}.`);
-      setErrorMsg('Network error executing trade.');
-      setFormFlash('error');
-      setTimeout(() => setFormFlash(null), 2000);
+      console.error(err);
+      setErrorMsg('Server connection error. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const getTeamHolding = (team, sec) => {
-    if (!team || !sec) return 0;
-    const liveTeam = state.teams.find(t => t.id === team.id);
-    return liveTeam?.holdings?.[sec.ticker] || 0;
-  };
+  // 1. Claim Order for Verification at Active Desk (Atomic Lock)
+  const handleClaimOrder = async (orderId) => {
+    try {
+      const res = await apiFetch('/api/order/claim', {
+        method: 'POST',
+        body: JSON.stringify({
+          orderId,
+          deskId: activeDeskId,
+          operator: staffName
+        })
+      });
 
-  const getLiveSecDetails = (sec) => {
-    if (!sec) return null;
-    return state.securities.find(s => s.id === sec.id);
-  };
-
-  const liveSec = getLiveSecDetails(selectedSec);
-  const liveTeamDetails = selectedTeam ? state.teams.find(t => t.id === selectedTeam.id) : null;
-
-  // Handle enter keyboard shortcut when quantity focused
-  const handleQtyKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleTradeSubmit();
+      if (res.error) {
+        addToast(`Claim Failed: ${res.error}`, 'error');
+      } else {
+        addToast(`Order claimed by ${DESK_CONFIG[activeDeskId]?.name || activeDeskId}!`, 'success');
+      }
+    } catch (err) {
+      console.error(err);
+      addToast('Network error claiming order.', 'error');
     }
   };
 
-  // Recent 8 trades newest first
-  const recentTrades = [...state.transactions]
-    .sort((a, b) => b.timestamp - a.timestamp)
-    .slice(0, 8);
+  // 2. Validate Order against Risk Controls
+  const handleValidateOrder = async (orderId) => {
+    try {
+      const res = await apiFetch('/api/order/action', {
+        method: 'POST',
+        body: JSON.stringify({
+          orderId,
+          actionType: 'VALIDATE',
+          deskId: activeDeskId,
+          operator: staffName
+        })
+      });
+
+      if (res.error) {
+        addToast(`Validation Failed: ${res.error}`, 'error');
+      } else {
+        addToast(`Order validated! Ready for floor execution.`, 'success');
+      }
+    } catch (err) {
+      console.error(err);
+      addToast('Network error validating order.', 'error');
+    }
+  };
+
+  // 3. Execute Order from Queue (Atomic Execution)
+  const handleExecuteOrder = async (orderId) => {
+    try {
+      const res = await apiFetch('/api/order/action', {
+        method: 'POST',
+        body: JSON.stringify({
+          orderId,
+          actionType: 'EXECUTE',
+          deskId: activeDeskId,
+          operator: staffName
+        })
+      });
+
+      if (res.error) {
+        addToast(`Execution Failed: ${res.error}`, 'error');
+      } else {
+        addToast(`Order executed successfully! TX: ${res.transaction?.id || 'OK'}`, 'success');
+      }
+    } catch (err) {
+      console.error(err);
+      addToast('Network error executing order.', 'error');
+    }
+  };
+
+  // 4. Reject Order from Queue (Mandatory Reason)
+  const handleRejectOrder = async (orderId) => {
+    const reason = window.prompt('Enter mandatory rejection reason (e.g. Signature mismatch / Margin deficit / Price band breach):', 'Order slip rejected by desk');
+    if (reason === null || !reason.trim()) return;
+
+    try {
+      const res = await apiFetch('/api/order/action', {
+        method: 'POST',
+        body: JSON.stringify({
+          orderId,
+          actionType: 'REJECT',
+          rejectionReason: reason.trim(),
+          deskId: activeDeskId,
+          operator: staffName
+        })
+      });
+
+      if (res.error) {
+        addToast(`Rejection Failed: ${res.error}`, 'error');
+      } else {
+        addToast('Order marked as REJECTED', 'info');
+      }
+    } catch (err) {
+      console.error(err);
+      addToast('Network error rejecting order.', 'error');
+    }
+  };
+
+  // Filter queue orders
+  const filteredOrders = useMemo(() => {
+    return (state.orders || []).filter(o => {
+      const statusMatch = queueStatusFilter === 'ALL' || o.status === queueStatusFilter;
+      const deskMatch = deskFilter === 'ALL' ||
+        (deskFilter === 'UNASSIGNED' && !o.deskId) ||
+        (deskFilter === 'MY_DESK' && o.deskId === activeDeskId) ||
+        (o.deskId === deskFilter);
+      const searchMatch = !queueSearch ||
+        o.ticketNumber?.toLowerCase().includes(queueSearch.toLowerCase()) ||
+        o.teamCode?.toLowerCase().includes(queueSearch.toLowerCase()) ||
+        o.ticker?.toLowerCase().includes(queueSearch.toLowerCase());
+      return statusMatch && deskMatch && searchMatch;
+    }).reverse();
+  }, [state.orders, queueStatusFilter, deskFilter, queueSearch, activeDeskId]);
+
+  const pendingCount = (state.orders || []).filter(o => ['QUEUED', 'SUBMITTED', 'PENDING', 'VERIFYING', 'VALIDATED'].includes(o.status)).length;
+  const liveSecDetails = selectedSec ? (state.securities || []).find(s => s.ticker === selectedSec.ticker) : null;
+  const estimatedTotal = (liveSecDetails && quantity) ? (Number(quantity) * (orderType === 'LIMIT' ? (Number(limitPrice) || liveSecDetails.currentPrice) : liveSecDetails.currentPrice)) : 0;
 
   return (
-    <div style={{ height: 'calc(100vh - 100px)', overflow: 'hidden', padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+    <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px', padding: '16px 0' }}>
       
-      {/* Fullscreen Peripheral Flash Overlay */}
-      {flashColor && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          zIndex: 99999,
-          pointerEvents: 'none',
-          border: `16px solid ${flashColor}`,
-          animation: 'peripheral-flash 0.8s ease-out forwards'
-        }} />
-      )}
-
-      {/* Styles for peripheral flash */}
-      <style>{`
-        @keyframes peripheral-flash {
-          0% { opacity: 0.95; }
-          100% { opacity: 0; }
-        }
-      `}</style>
-
-      {/* Session ID & Active Teams Banner */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        backgroundColor: '#0a0b0d',
-        color: '#fff',
-        padding: '8px 16px',
-        borderRadius: '6px',
-        fontSize: '0.85rem',
-        fontFamily: 'var(--font-mono)',
-        border: '1px solid #22252e'
-      }}>
-        <span>SESSION: <strong style={{ color: '#d4af37' }}>{state.marketState?.sessionId || 'NOT INITIALIZED'}</strong></span>
-        <span>PARTICIPANTS: <strong style={{ color: '#d4af37' }}>{state.marketState?.activeTeamCount || 10} ACTIVE TEAMS</strong></span>
-        <span>MARKET STATUS: <strong style={{ color: state.marketState?.status === 'Open' ? '#22c55e' : '#ef4444' }}>{state.marketState?.status?.toUpperCase() || 'CLOSED'}</strong></span>
+      {/* Toast Notification Container */}
+      <div className="toast-container">
+        {toasts.map(t => (
+          <div key={t.id} className="toast" style={{ borderLeftColor: t.type === 'error' ? 'var(--color-fall)' : 'var(--color-brass)' }}>
+            {t.message}
+          </div>
+        ))}
       </div>
 
-      {/* Dual Column Execution Layout */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '24px', flex: 1, minHeight: 0 }}>
+      {/* Header Banner */}
+      <div className="card-primary" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', borderLeft: '6px solid var(--color-brass)' }}>
+        <div>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.74rem', color: '#6C4404', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
+            <span>💼 PHYSICAL TRADING FLOOR CLEARANCE</span>
+          </div>
+          <h1 style={{ fontSize: '2rem', fontWeight: 900, fontFamily: 'var(--font-brand)', margin: 0, color: 'var(--color-ink)' }}>
+            Exchange & Broker Execution Desks
+          </h1>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 14px', borderRadius: '8px', backgroundColor: 'var(--color-surface-2)', border: '1px solid var(--color-border)' }}>
+            <span style={{ fontSize: '0.8rem', color: '#242C38', fontWeight: 700 }}>ACTIVE DESK:</span>
+            <span style={{ fontSize: '0.85rem', color: DESK_CONFIG[activeDeskId]?.color || 'var(--color-ink)', fontWeight: 900 }}>
+              {DESK_CONFIG[activeDeskId]?.name} ({staffName})
+            </span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 14px', borderRadius: '8px', backgroundColor: pendingCount > 0 ? 'var(--color-fall-light)' : 'var(--color-surface-2)', border: '1px solid var(--color-border)' }}>
+            <span style={{ fontSize: '0.8rem', color: pendingCount > 0 ? 'var(--color-fall)' : '#242C38', fontWeight: 800 }}>QUEUED TICKETS:</span>
+            <span className="font-data" style={{ fontSize: '1rem', color: pendingCount > 0 ? 'var(--color-fall)' : 'var(--color-ink)', fontWeight: 900 }}>
+              {pendingCount}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* 5 Simultaneous Order Desks Switcher Bar */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px' }}>
+        {Object.values(DESK_CONFIG).map(d => {
+          const isSelected = activeDeskId === d.id;
+          const assignedOrders = (state.orders || []).filter(o => o.deskId === d.id && ['VERIFYING', 'VALIDATED'].includes(o.status));
+          return (
+            <button
+              key={d.id}
+              type="button"
+              onClick={() => { setActiveDeskId(d.id); setStaffName(d.operator); }}
+              style={{
+                padding: '12px 14px',
+                borderRadius: '8px',
+                border: isSelected ? `2px solid ${d.color}` : '1px solid var(--color-border)',
+                background: isSelected ? '#FFFFFF' : 'var(--color-surface-2)',
+                boxShadow: isSelected ? `0 2px 8px ${d.color}25` : 'none',
+                cursor: 'pointer',
+                textAlign: 'left'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.8rem', fontWeight: 800, color: d.color }}>{d.name.toUpperCase()}</span>
+                {assignedOrders.length > 0 && (
+                  <span style={{ background: d.color, color: '#FFF', fontSize: '0.7rem', fontWeight: 900, padding: '2px 7px', borderRadius: '10px' }}>
+                    {assignedOrders.length} IN-FLIGHT
+                  </span>
+                )}
+              </div>
+              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--color-ink)', marginTop: '4px' }}>
+                {d.operator} {isSelected ? '• CURRENT' : ''}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 3-Column Execution Desk Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1.1fr) minmax(360px, 1.5fr) minmax(280px, 0.9fr)', gap: '20px', alignItems: 'start' }}>
         
-        {/* Left Column: Trade Form */}
-        <div 
-          className="glass card" 
-          style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            height: '100%', 
-            overflowY: 'auto',
-            transition: 'border 0.2s ease',
-            border: formFlash === 'error' ? '2px solid var(--color-fall)' : formFlash === 'success' ? '2px solid var(--color-rise)' : '1px solid var(--color-border)'
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-brass)', fontSize: '1.6rem' }}>
-              Exchange Execution Terminal
+        {/* COLUMN 1: Order Entry Ticket */}
+        <div className="card-primary">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid var(--color-border)', paddingBottom: '10px' }}>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: 'var(--color-ink)', margin: 0 }}>
+              📝 Paper Ticket Entry
             </h3>
-            <input
-              type="text"
-              className="input-field"
-              style={{ width: '150px', margin: 0, padding: '6px 12px', fontSize: '0.85rem' }}
-              placeholder="Staff Desk Name"
-              value={staffName}
-              onChange={e => setStaffName(e.target.value)}
-            />
+            <span className="badge badge-public">Physical Slip</span>
           </div>
 
-          {state.marketState.status !== 'Open' && (
-            <div style={{ padding: '12px', background: 'var(--color-fall-light)', borderRadius: '8px', color: 'var(--color-fall)', marginBottom: '16px', fontWeight: 700, textAlign: 'center' }}>
-              ⚠️ EXCHANGE HALTED: Market session is currently {state.marketState.status}.
-            </div>
-          )}
+          <form onSubmit={handleOrderSubmit}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div className="form-group">
+                <label>Ticket Number #</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 1042"
+                  className="input-field font-data"
+                  value={ticketNumber}
+                  onChange={(e) => setTicketNumber(e.target.value)}
+                  ref={ticketRef}
+                  required
+                />
+              </div>
 
-          {errorMsg && (
-            <div style={{ 
-              padding: '16px', 
-              background: 'var(--color-fall-light)', 
-              borderRadius: '8px', 
-              color: 'var(--color-fall)', 
-              marginBottom: '16px', 
-              fontWeight: 800, 
-              fontSize: '1.1rem',
-              textAlign: 'center',
-              border: '2px solid var(--color-fall)',
-              position: 'relative'
-            }}>
-              ⚠️ {errorMsg}
-              <button 
-                type="button" 
-                style={{ 
-                  position: 'absolute', 
-                  right: '12px', 
-                  top: '12px', 
-                  background: 'none', 
-                  border: 'none', 
-                  color: 'var(--color-fall)', 
-                  cursor: 'pointer', 
-                  fontWeight: 800,
-                  fontSize: '1.2rem'
-                }} 
-                onClick={() => setErrorMsg('')}
-              >
-                ✕
-              </button>
-            </div>
-          )}
-
-          <form onSubmit={handleTradeSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            
-            {/* Team Selector */}
-            <div className="form-group" style={{ position: 'relative' }}>
-              <label>Team Selector (Type Code or Name)</label>
-              <input
-                type="text"
-                ref={teamInputRef}
-                className="input-field"
-                placeholder="Type code or team name (e.g. T01)"
-                value={teamQuery}
-                onChange={e => {
-                  setTeamQuery(e.target.value);
-                  if (selectedTeam) setSelectedTeam(null);
-                }}
-                autoComplete="off"
-                autoFocus
-              />
-              {matchedTeams.length > 0 && (
-                <div className="glass" style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100, display: 'flex', flexDirection: 'column', backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-l2)' }}>
-                  {matchedTeams.map(t => (
-                    <div
-                      key={t.id}
-                      style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                      onClick={() => handleTeamSelect(t)}
-                    >
-                      <span>
-                        <strong className="font-data" style={{ color: 'var(--color-brass)' }}>{t.teamCode}</strong> &mdash; {t.teamName}
-                      </span>
-                      <span className="badge badge-public" style={{ fontSize: '0.65rem' }}>
-                        ₹{t.cashBalance.toLocaleString()}
-                      </span>
-                    </div>
+              <div className="form-group">
+                <label>Team Code</label>
+                <select
+                  className="input-field"
+                  value={teamCode}
+                  onChange={(e) => setTeamCode(e.target.value)}
+                  required
+                >
+                  <option value="">-- Select Team --</option>
+                  {(state.teams || []).map(t => (
+                    <option key={t.teamCode} value={t.teamCode}>
+                      {t.teamCode} — {t.teamName}
+                    </option>
                   ))}
-                </div>
-              )}
+                </select>
+              </div>
             </div>
 
-            {/* Security Selector */}
+            {/* Asset Search */}
             <div className="form-group" style={{ position: 'relative' }}>
-              <label>Security Selector (Type Ticker or Name)</label>
+              <label>Search Security / Listing</label>
               <input
                 type="text"
-                ref={secInputRef}
+                placeholder="Type ticker (e.g. RELI, INFY, AAPL)..."
                 className="input-field"
-                placeholder="Type ticker prefix or name substring"
-                value={secQuery}
-                disabled={!selectedTeam}
-                onChange={e => {
-                  setSecQuery(e.target.value);
+                value={tickerQuery}
+                onChange={(e) => {
+                  setTickerQuery(e.target.value);
                   if (selectedSec) setSelectedSec(null);
                 }}
-                autoComplete="off"
+                ref={tickerRef}
+                required
               />
+
               {matchedSecurities.length > 0 && (
-                <div className="glass" style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100, display: 'flex', flexDirection: 'column', backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', boxShadow: 'var(--shadow-l2)' }}>
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  zIndex: 20,
+                  backgroundColor: '#FFFFFF',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: '8px',
+                  boxShadow: 'var(--shadow-card)',
+                  maxHeight: '180px',
+                  overflowY: 'auto'
+                }}>
                   {matchedSecurities.map(s => (
                     <div
-                      key={s.id}
-                      style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                      key={s.id || s.ticker}
+                      style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid var(--color-border-light)' }}
                       onClick={() => handleSecSelect(s)}
+                      className="glass-interactive"
                     >
-                      <div>
-                        <strong className="font-data">{s.ticker}</strong> &mdash; {s.name}
-                      </div>
-                      <span className="font-data" style={{ fontWeight: 700 }}>
-                        ₹{s.currentPrice} ({s.availableUnits} left)
-                      </span>
+                      <strong style={{ color: 'var(--color-brass)' }}>{s.ticker}</strong> — {s.name} ({s.exchange})
                     </div>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* High Contrast Selected Quote Panel */}
-            {selectedTeam && selectedSec && liveSec && liveTeamDetails && (
-              <div style={{
-                padding: '16px',
-                borderRadius: '10px',
-                backgroundColor: 'var(--color-surface-2)',
-                borderLeft: '4px solid var(--color-brass)',
-                display: 'grid',
-                gridTemplateColumns: '1.2fr 1fr',
-                gap: '16px'
-              }}>
-                <div>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--color-ink-2)', textTransform: 'uppercase', fontWeight: 600, display: 'block' }}>
-                    {liveSec.name} ({liveSec.ticker})
-                  </span>
-                  <div style={{ fontWeight: 800, fontSize: '1.5rem', marginTop: '4px' }} className="font-data text-brass">
-                    ₹{liveSec.currentPrice.toFixed(2)}
-                  </div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--color-ink-2)' }}>
-                    Available Units: <strong>{liveSec.availableUnits}</strong>
-                  </span>
-                </div>
-                <div style={{ borderLeft: '1px solid var(--color-border)', paddingLeft: '16px' }}>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--color-ink-2)', textTransform: 'uppercase', fontWeight: 600, display: 'block' }}>
-                    {liveTeamDetails.teamCode} Balances
-                  </span>
-                  <div style={{ fontWeight: 800, fontSize: '1.5rem', marginTop: '4px' }} className="font-data">
-                    ₹{liveTeamDetails.cashBalance.toLocaleString()}
-                  </div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--color-ink-2)' }}>
-                    Positions Held: <strong>{getTeamHolding(liveTeamDetails, liveSec)}</strong> Units
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* Transaction Action Toggles */}
+            {/* BUY / SELL Action Toggle */}
             <div className="form-group">
-              <label>Transaction Action</label>
-              <div style={{ display: 'flex', gap: '12px' }}>
+              <label>Order Action</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                 <button
                   type="button"
                   className="btn"
                   style={{
-                    flex: 1,
                     backgroundColor: action === 'BUY' ? 'var(--color-rise)' : 'var(--color-surface-2)',
-                    color: action === 'BUY' ? 'var(--color-surface)' : 'var(--color-ink-2)',
-                    opacity: action === 'BUY' ? 1 : 0.45,
-                    border: action === 'BUY' ? 'none' : '1px solid var(--color-border)'
+                    color: action === 'BUY' ? '#FFFFFF' : '#1E232B',
+                    border: '1px solid',
+                    borderColor: action === 'BUY' ? 'var(--color-rise)' : 'var(--color-border)',
+                    fontWeight: 900
                   }}
                   onClick={() => setAction('BUY')}
                 >
-                  BUY (Add Position)
+                  🟢 BUY
                 </button>
                 <button
                   type="button"
                   className="btn"
                   style={{
-                    flex: 1,
                     backgroundColor: action === 'SELL' ? 'var(--color-fall)' : 'var(--color-surface-2)',
-                    color: action === 'SELL' ? 'var(--color-surface)' : 'var(--color-ink-2)',
-                    opacity: action === 'SELL' ? 1 : 0.45,
-                    border: action === 'SELL' ? 'none' : '1px solid var(--color-border)'
+                    color: action === 'SELL' ? '#FFFFFF' : '#1E232B',
+                    border: '1px solid',
+                    borderColor: action === 'SELL' ? 'var(--color-fall)' : 'var(--color-border)',
+                    fontWeight: 900
                   }}
                   onClick={() => setAction('SELL')}
                 >
-                  SELL (Liquidate Position)
+                  🔴 SELL
                 </button>
               </div>
             </div>
 
-            {/* Quantity Input */}
-            <div className="form-group">
-              <label>Trade Quantity</label>
-              <input
-                type="number"
-                ref={qtyInputRef}
-                className="input-field font-data"
-                placeholder="Enter unit counts to trade"
-                value={quantity}
-                disabled={!selectedSec}
-                onChange={e => {
-                  setQuantity(e.target.value);
-                  setErrorMsg('');
-                }}
-                onKeyDown={handleQtyKeyDown}
-              />
+            {/* Quantity & Order Type */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div className="form-group">
+                <label>Quantity (Units)</label>
+                <input
+                  type="number"
+                  placeholder="e.g. 100"
+                  className="input-field font-data"
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                  ref={qtyRef}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Order Type</label>
+                <select
+                  className="input-field"
+                  value={orderType}
+                  onChange={(e) => setOrderType(e.target.value)}
+                >
+                  <option value="MARKET">MARKET</option>
+                  <option value="LIMIT">LIMIT</option>
+                </select>
+              </div>
             </div>
 
-            {/* Estimated Value Quote summary */}
-            {selectedSec && liveSec && quantity && Number(quantity) > 0 && liveTeamDetails && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--color-border)', marginBottom: '8px' }}>
-                <span style={{ color: 'var(--color-ink-2)', fontWeight: 500 }}>Estimated Value Cost</span>
-                <span className="font-data" style={{ fontWeight: 800, fontSize: '1.3rem', color: action === 'BUY' ? 'var(--color-rise)' : 'var(--color-fall)' }}>
-                  ₹{(Number(quantity) * liveSec.currentPrice).toLocaleString()}
-                </span>
+            {orderType === 'LIMIT' && (
+              <div className="form-group">
+                <label>Limit Price (₹)</label>
+                <input
+                  type="number"
+                  placeholder="Price per unit"
+                  className="input-field font-data"
+                  value={limitPrice}
+                  onChange={(e) => setLimitPrice(e.target.value)}
+                  required
+                />
               </div>
             )}
 
-            {/* Submission Alerts removed - now at top banner */}
+            {/* Estimated Value Widget */}
+            {estimatedTotal > 0 && (
+              <div style={{ padding: '10px 14px', backgroundColor: '#FAF8F3', borderRadius: '8px', border: '1px solid var(--color-border)', marginBottom: '14px' }}>
+                <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#242C38', textTransform: 'uppercase' }}>
+                  Estimated Order Consideration ({selectedSec?.currency || 'INR'})
+                </div>
+                <div className="font-data" style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--color-ink)' }}>
+                  {selectedSec?.currency === 'USD' ? '$' : selectedSec?.currency === 'GBP' ? '£' : selectedSec?.currency === 'EUR' ? '€' : '₹'}
+                  {estimatedTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+                {selectedSec?.currency && selectedSec.currency !== 'INR' && (
+                  <div style={{ fontSize: '0.74rem', color: 'var(--gold-royal)', fontWeight: 700, marginTop: '2px' }}>
+                    ≈ ₹{(estimatedTotal * (state.fxRates?.[`${selectedSec.currency}INR`]?.midRate || (selectedSec.currency === 'USD' ? 88.20 : 119.40))).toLocaleString(undefined, { maximumFractionDigits: 0 })} INR Equivalent
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="form-group">
+              <label>Desk Notes (Optional)</label>
+              <textarea
+                placeholder="Paper slip notes, special desk annotations..."
+                className="input-field"
+                style={{ height: '60px', resize: 'none' }}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+              />
+            </div>
+
+            {errorMsg && (
+              <div style={{ color: 'var(--color-fall)', fontSize: '0.84rem', fontWeight: 800, marginBottom: '14px', padding: '8px 12px', backgroundColor: 'var(--color-fall-light)', borderRadius: '6px', border: '1px solid rgba(147,25,19,0.3)' }}>
+                ⚠️ {errorMsg}
+              </div>
+            )}
 
             <button
               type="submit"
               className="btn btn-primary"
-              style={{ width: '100%', padding: '14px', fontSize: '1rem', background: action === 'BUY' ? 'var(--color-rise)' : 'var(--color-fall)', color: 'var(--color-surface)' }}
-              disabled={state.marketState.status !== 'Open'}
+              style={{ width: '100%', padding: '12px', fontSize: '0.95rem' }}
+              disabled={isSubmitting || isTradingDisabled}
             >
-              Execute Order
+              {isSubmitting ? 'Logging Ticket...' : 'Log & Clear Paper Order →'}
             </button>
           </form>
         </div>
 
-        {/* Right Column: Recent Activity Feed */}
-        <div className="glass card" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-          <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-ink)', fontSize: '1.25rem', marginBottom: '16px' }}>
-            Live Transaction Stream
-          </h3>
+        {/* COLUMN 2: Pending Order Queue & Clearance */}
+        <div className="card-primary">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px', borderBottom: '1px solid var(--color-border)', paddingBottom: '10px' }}>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: 'var(--color-ink)', margin: 0 }}>
+              ⚡ Clearance Queue ({filteredOrders.length})
+            </h3>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <select
+                className="input-field"
+                style={{ padding: '4px 8px', fontSize: '0.78rem', width: 'auto' }}
+                value={deskFilter}
+                onChange={(e) => setDeskFilter(e.target.value)}
+              >
+                <option value="ALL">All Desks</option>
+                <option value="MY_DESK">My Desk ({DESK_CONFIG[activeDeskId]?.name})</option>
+                <option value="UNASSIGNED">Unassigned Queue</option>
+                <option value="DESK_1">Desk 1 (Sandesh)</option>
+                <option value="DESK_2">Desk 2 (Akshay)</option>
+                <option value="DESK_3">Desk 3 (Aarush)</option>
+                <option value="DESK_4">Desk 4 (Sridhara)</option>
+                <option value="DESK_5">Desk 5 (Aksharaa)</option>
+              </select>
+              <select
+                className="input-field"
+                style={{ padding: '4px 8px', fontSize: '0.78rem', width: 'auto' }}
+                value={queueStatusFilter}
+                onChange={(e) => setQueueStatusFilter(e.target.value)}
+              >
+                <option value="ALL">All Statuses</option>
+                <option value="QUEUED">QUEUED</option>
+                <option value="VERIFYING">VERIFYING</option>
+                <option value="VALIDATED">VALIDATED</option>
+                <option value="EXECUTED">EXECUTED</option>
+                <option value="REJECTED">REJECTED</option>
+              </select>
+            </div>
+          </div>
 
-          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {recentTrades.length === 0 ? (
-              <div style={{ color: 'var(--color-ink-3)', textAlign: 'center', marginTop: '40px', fontSize: '0.9rem' }}>
-                No trades executed yet &mdash; market is opening.
+          <div style={{ maxHeight: '580px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {filteredOrders.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px 16px', color: '#242C38', backgroundColor: '#FAF8F3', borderRadius: '8px' }}>
+                <p style={{ margin: 0, fontWeight: 700 }}>No orders in this queue filter view.</p>
               </div>
             ) : (
-              recentTrades.map((tx) => (
-                <div
-                  key={tx.id}
-                  className="glass"
-                  style={{
-                    padding: '12px 16px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    borderLeft: `4px solid ${tx.action === 'BUY' ? 'var(--color-rise)' : 'var(--color-fall)'}`,
-                    backgroundColor: 'var(--color-surface)',
-                    boxShadow: 'var(--shadow-l1)'
-                  }}
-                >
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span className="badge badge-public" style={{ fontSize: '0.65rem', backgroundColor: 'var(--color-surface-2)', color: 'var(--color-ink)' }}>
-                        {tx.teamCode}
+              filteredOrders.map(o => {
+                const isClaimedByMe = o.deskId === activeDeskId;
+                const isLockedByOther = o.lockedByDesk && o.lockedByDesk !== activeDeskId;
+                const deskColor = o.deskId ? (DESK_CONFIG[o.deskId]?.color || '#3B82F6') : '#64748B';
+
+                return (
+                  <div
+                    key={o.id}
+                    className="card-data"
+                    style={{
+                      padding: '12px 16px',
+                      borderLeft: `4px solid ${o.action === 'BUY' ? 'var(--color-rise)' : 'var(--color-fall)'}`
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <strong style={{ fontSize: '1rem', color: 'var(--color-ink)' }}>#{o.ticketNumber}</strong>
+                        <span className="badge badge-public">Team {o.teamCode}</span>
+                        {o.deskId && (
+                          <span style={{ fontSize: '0.7rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', background: `${deskColor}20`, color: deskColor }}>
+                            {DESK_CONFIG[o.deskId]?.name || o.deskId}
+                          </span>
+                        )}
+                      </div>
+                      <span className={`badge ${
+                        o.status === 'EXECUTED' ? 'badge-rise' :
+                        o.status === 'REJECTED' ? 'badge-fall' :
+                        o.status === 'VALIDATED' ? 'badge-rise' :
+                        o.status === 'VERIFYING' ? 'badge-public' : 'badge-public'
+                      }`}>
+                        {o.status}
                       </span>
-                      <span className={tx.action === 'BUY' ? 'text-up' : 'text-down'} style={{ fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>
-                        {tx.action}
-                      </span>
-                      <strong className="font-data" style={{ fontSize: '0.9rem' }}>{tx.ticker}</strong>
                     </div>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--color-ink-2)', display: 'block', marginTop: '2px' }}>
-                      {tx.quantity} units @ ₹{tx.priceAtExecution} &bull; {tx.enteredBy}
-                    </span>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.88rem' }}>
+                      <div>
+                        <span style={{ fontWeight: 900, color: 'var(--color-brass)' }}>{o.ticker}</span>
+                        <span style={{ margin: '0 6px', color: '#8C929E' }}>•</span>
+                        <span style={{ fontWeight: 800, color: o.action === 'BUY' ? 'var(--color-rise)' : 'var(--color-fall)' }}>{o.action}</span>
+                        <span style={{ margin: '0 6px', color: '#8C929E' }}>•</span>
+                        <span className="font-data" style={{ fontWeight: 700 }}>{o.quantity?.toLocaleString()} units</span>
+                        {o.orderType === 'LIMIT' && o.limitPrice && (
+                          <span style={{ fontSize: '0.75rem', color: '#64748B', marginLeft: '6px' }}>(Limit ₹{o.limitPrice})</span>
+                        )}
+                      </div>
+                      <span style={{ fontSize: '0.78rem', color: '#242C38' }}>
+                        {new Date(o.timestamp).toLocaleTimeString()}
+                      </span>
+                    </div>
+
+                    {o.rejectionReason && (
+                      <div style={{ fontSize: '0.75rem', color: 'var(--color-fall)', background: 'var(--color-fall-light)', padding: '4px 8px', borderRadius: '4px', marginTop: '6px' }}>
+                        Rejection reason: {o.rejectionReason}
+                      </div>
+                    )}
+
+                    {/* Step-by-Step Desk Actions */}
+                    {['QUEUED', 'SUBMITTED', 'PENDING'].includes(o.status) && (
+                      <div style={{ display: 'flex', gap: '8px', marginTop: '10px', paddingTop: '8px', borderTop: '1px solid var(--color-border)' }}>
+                        <button
+                          className="btn btn-primary"
+                          style={{ flex: 1, padding: '6px 12px', fontSize: '0.8rem' }}
+                          onClick={() => handleClaimOrder(o.id)}
+                          disabled={isTradingDisabled}
+                        >
+                          ⚡ Claim Ticket ({DESK_CONFIG[activeDeskId]?.name})
+                        </button>
+                        <button
+                          className="btn btn-danger"
+                          style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                          onClick={() => handleRejectOrder(o.id)}
+                        >
+                          ✕ Reject
+                        </button>
+                      </div>
+                    )}
+
+                    {o.status === 'VERIFYING' && (
+                      <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid var(--color-border)' }}>
+                        {isClaimedByMe || !o.deskId ? (
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                              className="btn btn-success"
+                              style={{ flex: 1, padding: '6px 12px', fontSize: '0.8rem' }}
+                              onClick={() => handleValidateOrder(o.id)}
+                              disabled={isTradingDisabled}
+                            >
+                              ✓ Validate Ticket Details
+                            </button>
+                            <button
+                              className="btn btn-danger"
+                              style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                              onClick={() => handleRejectOrder(o.id)}
+                            >
+                              ✕ Reject
+                            </button>
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: '0.78rem', color: '#64748B', fontWeight: 600, padding: '4px 0' }}>
+                            🔒 Ticket verification locked by {o.deskId} ({o.operator})
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {o.status === 'VALIDATED' && (
+                      <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid var(--color-border)' }}>
+                        {!isLockedByOther ? (
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                              className="btn btn-success"
+                              style={{ flex: 1, padding: '8px 12px', fontSize: '0.82rem', fontWeight: 900 }}
+                              onClick={() => handleExecuteOrder(o.id)}
+                              disabled={isTradingDisabled}
+                            >
+                              🚀 Execute Trade ({o.action} {o.quantity} {o.ticker})
+                            </button>
+                            <button
+                              className="btn btn-danger"
+                              style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                              onClick={() => handleRejectOrder(o.id)}
+                            >
+                              ✕ Reject
+                            </button>
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: '0.78rem', color: '#64748B', fontWeight: 600, padding: '4px 0' }}>
+                            🔒 Order assigned to {o.deskId} for execution
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <span className="font-data" style={{ fontWeight: 700, fontSize: '0.95rem' }}>
-                      ₹{tx.totalValue.toLocaleString()}
-                    </span>
-                    <span style={{ fontSize: '0.65rem', color: 'var(--color-ink-3)', display: 'block' }}>
-                      {new Date(tx.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                    </span>
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
 
-      </div>
+        {/* COLUMN 3: Selected Security Live Quote & Market Depth */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          
+          <div className="card-primary">
+            <h4 style={{ fontSize: '0.95rem', fontWeight: 900, color: 'var(--color-ink)', textTransform: 'uppercase', marginBottom: '12px', borderBottom: '1px solid var(--color-border)', paddingBottom: '6px' }}>
+              📊 Security Live Quote
+            </h4>
 
-      {/* Render local toast alerts */}
-      <div className="toast-container">
-        {toasts.map(t => (
-          <div key={t.id} className="toast" style={{ borderLeftColor: t.type === 'error' ? 'var(--color-fall)' : 'var(--color-rise)' }}>
-            {t.message}
+            {liveSecDetails ? (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                  <div>
+                    <h3 style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--color-brass)', margin: 0 }}>
+                      {liveSecDetails.ticker}
+                    </h3>
+                    <div style={{ fontSize: '0.82rem', color: '#242C38', fontWeight: 600 }}>{liveSecDetails.name}</div>
+                  </div>
+                  <span className="badge badge-public">{liveSecDetails.exchange}</span>
+                </div>
+
+                <div className="font-data" style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--color-ink)', margin: '8px 0' }}>
+                  ₹{liveSecDetails.currentPrice?.toLocaleString()}
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '12px', paddingTop: '10px', borderTop: '1px solid var(--color-border)', fontSize: '0.8rem' }}>
+                  <div>
+                    <div style={{ color: '#242C38', fontWeight: 800 }}>OPEN PRICE</div>
+                    <div className="font-data" style={{ fontWeight: 800 }}>₹{liveSecDetails.openingPrice || liveSecDetails.basePrice}</div>
+                  </div>
+                  <div>
+                    <div style={{ color: '#242C38', fontWeight: 800 }}>AVAILABLE FLOAT</div>
+                    <div className="font-data" style={{ fontWeight: 800 }}>{liveSecDetails.availableUnits?.toLocaleString()}</div>
+                  </div>
+                  <div>
+                    <div style={{ color: '#242C38', fontWeight: 800 }}>DAY HIGH / LOW</div>
+                    <div className="font-data" style={{ fontWeight: 800 }}>₹{liveSecDetails.dayHigh || liveSecDetails.currentPrice} / ₹{liveSecDetails.dayLow || liveSecDetails.currentPrice}</div>
+                  </div>
+                  <div>
+                    <div style={{ color: '#242C38', fontWeight: 800 }}>VOLUME</div>
+                    <div className="font-data" style={{ fontWeight: 800 }}>{(liveSecDetails.tradingVolume || liveSecDetails.volume || 0).toLocaleString()}</div>
+                  </div>
+                </div>
+
+                <button
+                  className="btn btn-secondary"
+                  style={{ width: '100%', marginTop: '14px', padding: '8px' }}
+                  onClick={() => onOpenProfile(liveSecDetails.ticker)}
+                >
+                  Full Company Dossier →
+                </button>
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '24px 12px', color: '#242C38', backgroundColor: '#FAF8F3', borderRadius: '6px' }}>
+                <p style={{ margin: 0, fontSize: '0.86rem' }}>Select or search any security in the order ticket to inspect live quotes.</p>
+              </div>
+            )}
           </div>
-        ))}
+
+          {/* Recent Executed Trades Stream */}
+          <div className="card-primary">
+            <h4 style={{ fontSize: '0.95rem', fontWeight: 900, color: 'var(--color-ink)', textTransform: 'uppercase', marginBottom: '12px', borderBottom: '1px solid var(--color-border)', paddingBottom: '6px' }}>
+              📜 Recent Executed Trades
+            </h4>
+            <div style={{ maxHeight: '240px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {(state.transactions || []).slice(-6).reverse().map(tx => (
+                <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', padding: '6px 8px', backgroundColor: '#FAF8F3', borderRadius: '4px' }}>
+                  <div>
+                    <span style={{ fontWeight: 900, color: 'var(--color-brass)' }}>{tx.ticker}</span>
+                    <span style={{ margin: '0 4px', color: '#8C929E' }}>•</span>
+                    <span style={{ fontWeight: 800, color: tx.action === 'BUY' ? 'var(--color-rise)' : 'var(--color-fall)' }}>{tx.action}</span>
+                    <span style={{ margin: '0 4px', color: '#8C929E' }}>•</span>
+                    <span className="font-data">{tx.quantity}u</span>
+                  </div>
+                  <span className="font-data" style={{ fontWeight: 800, color: 'var(--color-ink)' }}>
+                    ₹{tx.priceAtExecution}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+
       </div>
 
     </div>

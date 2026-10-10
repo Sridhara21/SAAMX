@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import PublicLandingPage from './pages/PublicLandingPage.jsx';
+import LoginPage from './pages/LoginPage.jsx';
 import AdminPage from './pages/AdminPage.jsx';
 import ExchangePage from './pages/ExchangePage.jsx';
 import SebiPage from './pages/SebiPage.jsx';
@@ -7,21 +9,35 @@ import JournalistPage from './pages/JournalistPage.jsx';
 import ResultsPage from './pages/ResultsPage.jsx';
 import HomePage from './pages/HomePage.jsx';
 import PortfolioPage from './pages/PortfolioPage.jsx';
+import ParticipantTerminal from './pages/ParticipantTerminal.jsx';
 import TrainingPage from './pages/TrainingPage.jsx';
+import CurrencyExchangePage from './pages/CurrencyExchangePage.jsx';
+import BrokerAdvisoryTerminal from './pages/BrokerAdvisoryTerminal.jsx';
+import BullTerminal from './pages/BullTerminal.jsx';
+import BearTerminal from './pages/BearTerminal.jsx';
+import BullBearDebatePage from './pages/BullBearDebatePage.jsx';
+import NewsAnchorConsole from './pages/NewsAnchorConsole.jsx';
+import MarketIntelligencePage from './pages/MarketIntelligencePage.jsx';
+import MarketWatchPage from './pages/MarketWatchPage.jsx';
+import RegistrationPage from './pages/RegistrationPage.jsx';
+import FloorOperationsDashboard from './pages/FloorOperationsDashboard.jsx';
+import VerificationPage from './pages/VerificationPage.jsx';
 import CompanyProfileModal from './components/CompanyProfileModal.jsx';
 import { useFirebaseState } from './hooks/useFirebaseState.js';
 import { ConnectionIndicator } from './components/ConnectionIndicator.jsx';
-import { apiFetch } from './lib/api.js';
+import MarketStatusBar from './components/MarketStatusBar.jsx';
+import MarketTicker from './components/MarketTicker.jsx';
+import { apiFetch, calculateMarketClock } from './lib/api.js';
 import { db, ref, onValue, update } from './lib/firebase.js';
 import { NEWS_PRESETS } from './lib/newsPresets.js';
 
 const PROJECT_PHOENIX_ACTS = [
   { id: 'ACT_1', triggerMinute: 8, label: 'Act 1: DTAI Loss Announcement (-22%)', actNumber: 1, type: 'news' },
-  { id: 'IPO_1', triggerMinute: 16, label: 'IPO 1: IndiaStack Fintech IPO (ISFT)', actNumber: 3, type: 'ipo' },
+  { id: 'IPO_1', triggerMinute: 16, label: 'IPO 1: OpenAI Hyperscale IPO (OAI)', actNumber: 3, type: 'ipo' },
   { id: 'ACT_2', triggerMinute: 20, label: 'Act 2: Mystery Buyer Recovery', actNumber: 2, type: 'news' },
   { id: 'ACT_3', triggerMinute: 25, label: 'Act 3: Leadership Upheaval CEO Resigns (-8%)', actNumber: 4, type: 'news' },
   { id: 'ACT_4', triggerMinute: 32, label: 'Act 4: PUMP PHASE — Velocity to ₹420 (Goldman Pump)', actNumber: 5, type: 'velocity' },
-  { id: 'IPO_2', triggerMinute: 30, label: 'IPO 2: Anthropic AI India IPO (ANTH)', actNumber: 7, type: 'ipo' },
+  { id: 'IPO_2', triggerMinute: 30, label: 'IPO 2: Stripe Global Infra IPO (STRP)', actNumber: 7, type: 'ipo' },
   { id: 'ACT_5', triggerMinute: 35, label: 'Act 5: Tata Acquisition Rumour (+8%)', actNumber: 8, type: 'news' },
   { id: 'HINT', triggerMinute: 47, label: 'SEBI Hint: SEBI Monitoring DTAI', actNumber: 6, type: 'news' },
   { id: 'ACT_6', triggerMinute: 50, label: 'Act 6: SEBI Opens Investigation (-25%)', actNumber: 9, type: 'sebi_notice' },
@@ -30,36 +46,29 @@ const PROJECT_PHOENIX_ACTS = [
   { id: 'ACT_9', triggerMinute: 56, label: 'Act 9: BANKRUPTCY DECLARED', actNumber: 13, type: 'bankruptcy' }
 ];
 
-const ADMIN_HASH = 'd00bdb077d8d916aece9a019596e5982c433f5ed4505c3b0c45c772c36c73c5b'; // saamx-event-2026
-const JOURNALIST_HASH = '94fa84a6de0ca14745c881783df2f76fe363a72b2256f5c98837df99578a8f14'; // journalist-event-2026
-const SEBI_HASH = '70ffd6d7a8e810257d2956fe37271a4303605dcaa84f68b3c1a31324b1dcf237'; // sebi-event-2026
-const EXCHANGE_HASH = '49ddb1c95c0bd3cde6fc6c66a321508bc926a90f1697be0869058a2cfd14441f'; // exchange-event-2026
-const PORTFOLIO_HASH = '3776a910d46826ee1add169992b84e7912a5d646993beb6cd7a2a4d027ccbe6d'; // portfolio-event-2026
-
-const SRIDHARA_HASH = '432cb5d1a3cb8c6cff6dccb85d9711b99abd0db8492ca2ecb45f56befb538461'; // 21112009
-const AKSHAY_HASH = '9a61e9aa78ad7fc3a5bdafa30e18f9692dfa85cab45947fcb29032ea5c96e7a5'; // 19102009
-const AARUSH_HASH = 'baeb9189142e5d530ae443d473e04a11b073a77b7288cd19f4256207dac5ddbf'; // 20122009
-const SANDESH_HASH = 'c827c745f353aab0d2ba354ed86e382562dd4869cbe2b2f76e404658736843dd'; // 11062009
-const AKSHARAA_HASH = 'dbf42b85df3130095ffbe9ec8924eabdda957a5e1ffbf55c613d719e86fcd56c'; // 24022009
-
-async function sha256(message) {
-  const msgBuffer = new TextEncoder().encode(message);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
+const MY_SESSION_UUID = Math.random().toString(36).substring(2);
 
 export default function App() {
   const [route, setRoute] = useState(window.location.hash || '#/');
-  const { state, connected } = useFirebaseState();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [usernameInput, setUsernameInput] = useState('');
-  const [passwordInput, setPasswordInput] = useState('');
-  const [authError, setAuthError] = useState('');
+  const { state } = useFirebaseState();
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return Boolean(sessionStorage.getItem('saamx_token') || sessionStorage.getItem('fms_authenticated') === 'true');
+  });
+  const [userRole, setUserRole] = useState(() => {
+    return sessionStorage.getItem('saamx_role') || sessionStorage.getItem('fms_role') || '';
+  });
+  const [sessionUsername, setSessionUsername] = useState(() => {
+    return sessionStorage.getItem('saamx_username') || sessionStorage.getItem('fms_username') || '';
+  });
   const [selectedSecurityId, setSelectedSecurityId] = useState(null);
   const [apiBaseInput, setApiBaseInput] = useState(localStorage.getItem('fms_api_base') || '');
   const [showTroubleshooting, setShowTroubleshooting] = useState(false);
   const [customDbUrl, setCustomDbUrl] = useState(localStorage.getItem('fms_db_url') || '');
+
+  // Connection & Coordinator state variables
+  const [dbConnected, setDbConnected] = useState(true);
+  const [coordinator, setCoordinator] = useState(null);
+  const lastAutoBackupRef = useRef(0);
 
   // Timeout to show troubleshoot config
   const [missingEnvVars, setMissingEnvVars] = useState([]);
@@ -92,52 +101,117 @@ export default function App() {
     return () => unsub();
   }, []);
 
-  // Root Background Simulation Scheduler (Runs on any active client context when market is Open)
+  // Connection listener (.info/connected)
   useEffect(() => {
-    if (!state || !state.marketState || state.marketState.status !== 'Open' || !state.marketState.simulationStartTime) return;
+    const connectedRef = ref(db, '.info/connected');
+    const unsub = onValue(connectedRef, (snap) => {
+      setDbConnected(snap.val() === true);
+    });
+    return () => unsub();
+  }, []);
+
+  // Coordinator state listener
+  useEffect(() => {
+    const coordRef = ref(db, 'fms/coordinator');
+    const unsub = onValue(coordRef, (snap) => {
+      setCoordinator(snap.val());
+    });
+    return () => unsub();
+  }, []);
+
+  // Heartbeat loop for active Admin/SEBI role
+  useEffect(() => {
+    if (userRole !== 'admin' && userRole !== 'sebi') return;
+
+    const heartbeatInterval = setInterval(async () => {
+      await set(ref(db, 'fms/coordinator'), {
+        owner: userRole,
+        lastActive: Date.now() + serverTimeOffset,
+        claimedAt: coordinator?.claimedAt || (Date.now() + serverTimeOffset),
+        id: MY_SESSION_UUID
+      }).catch(e => console.error("Heartbeat error:", e));
+    }, 2000);
+
+    return () => clearInterval(heartbeatInterval);
+  }, [userRole, serverTimeOffset, coordinator?.claimedAt]);
+
+  const currentServerTime = Date.now() + serverTimeOffset;
+  const isCoordinatorOffline = state?.marketState?.status === 'Open' &&
+    (!coordinator || currentServerTime - (coordinator.lastActive || 0) > 8000);
+
+  // Root Background Simulation Scheduler (Runs ONLY on the active Coordinator context)
+  useEffect(() => {
+    if (!state || !state.marketState || !state.marketState.simulationStartTime) return;
+    
+    // Lock background tasks to active coordinator ID to prevent race conditions
+    if (!coordinator || coordinator.id !== MY_SESSION_UUID) return;
 
     const schedulerInterval = setInterval(async () => {
       const currentServerTime = Date.now() + serverTimeOffset;
-      const elapsedMs = currentServerTime - state.marketState.simulationStartTime - (state.marketState.pauseTimeOffset || 0);
-      const elapsedMinutes = elapsedMs / 60000;
 
-      const firedActs = state.firedPhoenixActs || {};
+      // 1. Calculate clock mappings and session state transition
+      const clock = calculateMarketClock(state.marketState, serverTimeOffset);
+      
+      // Update session clock mappings in database if they changed
+      if (
+        clock.sessionState !== state.marketState.sessionState ||
+        clock.timeString !== state.marketState.timeString ||
+        clock.timeLeftString !== state.marketState.timeLeftString
+      ) {
+        let updatedStatus = state.marketState.status;
+        if (clock.sessionState === 'CONTINUOUS_TRADING') {
+          updatedStatus = 'Open';
+        } else if (clock.sessionState === 'CLOSING' || clock.sessionState === 'MARKET_CLOSED' || clock.sessionState === 'RESULTS') {
+          updatedStatus = 'Closed';
+        }
 
-      // 1. Fire Project Phoenix acts based on elapsed minutes
-      for (const act of PROJECT_PHOENIX_ACTS) {
-        if (elapsedMinutes >= act.triggerMinute && !firedActs[act.actNumber]) {
-          console.log(`Scheduler auto-firing act: ${act.label}`);
-          await apiFetch('/api/admin/phoenix-act', {
+        await update(ref(db, 'fms/marketState'), {
+          status: updatedStatus,
+          sessionState: clock.sessionState,
+          timeString: clock.timeString,
+          timeLeftString: clock.timeLeftString
+        }).catch(e => console.error("Failed to sync sessionState clock:", e));
+      }
+
+      // If we are in CONTINUOUS TRADING, handle news and pending IPO transitions
+      if (state.marketState.status === 'Open') {
+        const elapsedMinutes = clock.elapsedMinutes;
+
+        // B. Auto-Release Scenario News Bulletins every 40-50 seconds
+        const currentSettings = state?.settings || {};
+        if (currentSettings.autoNewsEnabled) {
+          await apiFetch('/api/admin/tick-news', { method: 'POST' }).catch(() => {});
+        }
+
+        // C. Auto-activate pending IPOs after 90 seconds of staging
+        const securitiesList = state.securities ? Object.values(state.securities) : [];
+        const pendingIpos = securitiesList.filter(s => s.status === 'IPO_PENDING');
+        for (const sec of pendingIpos) {
+          const actionMatch = (state.corporateActions ? Object.values(state.corporateActions) : [])
+            .find(a => a.securityId === sec.ticker && a.actionType === 'IPO');
+          if (actionMatch && currentServerTime - actionMatch.triggeredAt >= 90000) {
+            await apiFetch(`/api/securities/${sec.ticker}`, {
+              method: 'PUT',
+              body: JSON.stringify({ status: 'Active' })
+            }).catch(() => {});
+          }
+        }
+
+        // D. Periodic Auto-Backup (every 5 min in EVENT mode, every 2 min in DEMO mode)
+        const isEventMode = state.marketState?.mode === 'EVENT';
+        const backupIntervalMs = isEventMode ? 5 * 60 * 1000 : 2 * 60 * 1000;
+        if (!lastAutoBackupRef.current || (currentServerTime - lastAutoBackupRef.current >= backupIntervalMs)) {
+          lastAutoBackupRef.current = currentServerTime;
+          await apiFetch('/api/admin/backup', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ actNumber: act.actNumber })
-          }).catch(() => {});
+            headers: { 'Content-Type': 'application/json' }
+          }).catch(e => console.error("Periodic auto-backup notice:", e));
         }
       }
-
-      // 1b. Auto-Release Scenario News Bulletins every 40-50 seconds (if autoNewsEnabled is true, transactional and safe)
-      const currentSettings = state?.settings || {};
-      if (currentSettings.autoNewsEnabled) {
-        await apiFetch('/api/admin/tick-news', { method: 'POST' }).catch(() => {});
-      }
-
-      // 2. Auto-activate pending IPOs after 90 seconds of staging
-      const securitiesList = state.securities ? Object.values(state.securities) : [];
-      const pendingIpos = securitiesList.filter(s => s.status === 'IPO_PENDING');
-      for (const sec of pendingIpos) {
-        const actionMatch = (state.corporateActions ? Object.values(state.corporateActions) : [])
-          .find(a => a.securityId === sec.ticker && a.actionType === 'IPO');
-        if (actionMatch && currentServerTime - actionMatch.triggeredAt >= 90000) {
-          await apiFetch(`/api/securities/${sec.ticker}`, {
-            method: 'PUT',
-            body: JSON.stringify({ status: 'Active' })
-          }).catch(() => {});
-        }
-      }
-    }, 5000);
+    }, 4000);
 
     return () => clearInterval(schedulerInterval);
-  }, [state?.marketState?.status, state?.marketState?.simulationStartTime, state?.marketState?.pauseTimeOffset, state?.firedPhoenixActs, state?.securities, state?.corporateActions, state?.settings?.autoNewsEnabled, state?.settings?.currentNewsStep, serverTimeOffset]);
+  }, [state?.marketState, coordinator, serverTimeOffset, state?.firedPhoenixActs, state?.securities, state?.corporateActions, state?.settings?.autoNewsEnabled]);
 
 
   // Hash Router
@@ -150,89 +224,85 @@ export default function App() {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  const handleAuth = async (e) => {
-    e.preventDefault();
-    try {
-      const hash = await sha256(passwordInput);
-      const userLower = usernameInput.trim().toLowerCase();
-
-      if ((userLower === 'admin' && hash === ADMIN_HASH) || (userLower === 'sridhara' && hash === SRIDHARA_HASH)) {
-        setIsAuthenticated(true);
-        sessionStorage.setItem('fms_authenticated', 'true');
-        sessionStorage.setItem('fms_role', 'admin');
-        sessionStorage.setItem('fms_username', usernameInput.trim());
-        sessionStorage.setItem('fms_password', passwordInput);
-        setUsernameInput('');
-        setPasswordInput('');
-        setAuthError('');
-      } else if (
-        ((userLower === 'mr_x' || userLower === 'mr. x' || userLower === 'mrx') && hash === EXCHANGE_HASH) ||
-        (userLower === 'akshay' && hash === AKSHAY_HASH) ||
-        (userLower === 'aarush' && hash === AARUSH_HASH) ||
-        (userLower === 'sandesh' && hash === SANDESH_HASH) ||
-        (userLower === 'aksharaa' && hash === AKSHARAA_HASH)
-      ) {
-        setIsAuthenticated(true);
-        sessionStorage.setItem('fms_authenticated', 'true');
-        sessionStorage.setItem('fms_role', 'operator_x');
-        sessionStorage.setItem('fms_username', usernameInput.trim());
-        sessionStorage.setItem('fms_password', passwordInput);
-        setUsernameInput('');
-        setPasswordInput('');
-        setAuthError('');
-      } else if (userLower === 'sebi' && hash === SEBI_HASH) {
-        setIsAuthenticated(true);
-        sessionStorage.setItem('fms_authenticated', 'true');
-        sessionStorage.setItem('fms_role', 'sebi');
-        sessionStorage.setItem('fms_username', usernameInput.trim());
-        sessionStorage.setItem('fms_password', passwordInput);
-        setUsernameInput('');
-        setPasswordInput('');
-        setAuthError('');
-      } else if (userLower === 'journalist' && hash === JOURNALIST_HASH) {
-        setIsAuthenticated(true);
-        sessionStorage.setItem('fms_authenticated', 'true');
-        sessionStorage.setItem('fms_role', 'journalist');
-        sessionStorage.setItem('fms_username', usernameInput.trim());
-        sessionStorage.setItem('fms_password', passwordInput);
-        setUsernameInput('');
-        setPasswordInput('');
-        setAuthError('');
-      } else if (userLower === 'portfolio' && hash === PORTFOLIO_HASH) {
-        setIsAuthenticated(true);
-        sessionStorage.setItem('fms_authenticated', 'true');
-        sessionStorage.setItem('fms_role', 'portfolio');
-        sessionStorage.setItem('fms_username', usernameInput.trim());
-        sessionStorage.setItem('fms_password', passwordInput);
-        setUsernameInput('');
-        setPasswordInput('');
-        setAuthError('');
-      } else {
-        setAuthError('Incorrect Console Access Username or Password');
-      }
-    } catch (err) {
-      console.error(err);
-      setAuthError('Authentication error. Try again.');
-    }
+  const handleLoginSuccess = (authData) => {
+    setIsAuthenticated(true);
+    setUserRole(authData.role);
+    setSessionUsername(authData.username || authData.teamCode || authData.role);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await apiFetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+    } catch (e) {}
+    sessionStorage.clear();
+    localStorage.removeItem('saamx_token');
     setIsAuthenticated(false);
-    sessionStorage.removeItem('fms_authenticated');
-    sessionStorage.removeItem('fms_role');
-    sessionStorage.removeItem('fms_username');
-    sessionStorage.removeItem('fms_password');
-    setUsernameInput('');
-    setPasswordInput('');
+    setUserRole('');
+    setSessionUsername('');
     window.location.hash = '#/';
   };
 
+  // Verify server-side session token on load / refresh
   useEffect(() => {
-    const cached = sessionStorage.getItem('fms_authenticated');
-    if (cached === 'true') {
-      setIsAuthenticated(true);
+    const token = sessionStorage.getItem('saamx_token');
+    if (token) {
+      apiFetch('/api/auth/me')
+        .then(res => res.ok ? res.json() : Promise.reject())
+        .then(data => {
+          if (data.authenticated) {
+            setIsAuthenticated(true);
+            setUserRole(data.role);
+            setSessionUsername(data.username || data.teamCode || data.role);
+            sessionStorage.setItem('saamx_role', data.role);
+            sessionStorage.setItem('fms_role', data.role);
+            sessionStorage.setItem('fms_authenticated', 'true');
+          }
+        })
+        .catch(() => {
+          sessionStorage.removeItem('saamx_token');
+          sessionStorage.removeItem('saamx_role');
+          sessionStorage.removeItem('saamx_username');
+          sessionStorage.removeItem('saamx_team_code');
+          sessionStorage.removeItem('fms_authenticated');
+          setIsAuthenticated(false);
+          setUserRole('');
+          setSessionUsername('');
+        });
     }
   }, []);
+
+  const getDefaultDeskForRole = (role) => {
+    switch (role) {
+      case 'team': return '#/team';
+      case 'admin': return '#/admin';
+      case 'verification': return '#/verification';
+      case 'operator_x': return '#/exchange';
+      case 'advisor': return '#/advisor';
+      case 'sebi': return '#/sebi';
+      case 'journalist': return '#/journalist';
+      case 'judge': return '#/results';
+      case 'portfolio': return '#/portfolio';
+      default: return '#/';
+    }
+  };
+
+  const isRouteAuthorized = (role, currentRoute) => {
+    if (role === 'admin') return true;
+
+    const roleDeskMap = {
+      team: ['#/team', '#/advisor', '#/broker', '#/market-watch', '#/market-intelligence', '#/results'],
+      verification: ['#/verification', '#/verification-desk', '#/market-watch', '#/results'],
+      operator_x: ['#/exchange', '#/fx', '#/floor-ops', '#/verification', '#/market-watch', '#/portfolio', '#/results'],
+      advisor: ['#/advisor', '#/broker', '#/market-watch', '#/results'],
+      sebi: ['#/sebi', '#/floor-ops', '#/market-watch', '#/portfolio', '#/results'],
+      journalist: ['#/journalist', '#/news', '#/newsroom', '#/news-room', '#/market-watch', '#/results'],
+      judge: ['#/results', '#/market-watch'],
+      portfolio: ['#/portfolio', '#/floor-ops', '#/market-watch', '#/results']
+    };
+
+    const allowedRoutes = roleDeskMap[role] || [];
+    return allowedRoutes.some(p => currentRoute === p || currentRoute.startsWith(p + '/') || currentRoute.startsWith(p + '?'));
+  };
 
   useEffect(() => {
     if (route === '#/projector') {
@@ -244,9 +314,6 @@ export default function App() {
       document.body.style.overflow = 'auto';
     };
   }, [route]);
-
-  const requiresAuth = ['#/admin', '#/exchange', '#/sebi', '#/journalist', '#/portfolio', '#/training'].includes(route);
-  const authorized = isAuthenticated;
 
   const openCompanyProfile = (id) => {
     setSelectedSecurityId(id);
@@ -367,161 +434,176 @@ export default function App() {
     );
   }
 
-  // Render Authentication Gate if needed
-  if (requiresAuth && !authorized) {
-    return (
-      <div className="password-gate-container" style={{ backgroundColor: 'var(--color-paper)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <form className="password-card glass" onSubmit={handleAuth} style={{ width: '100%', maxWidth: '400px', padding: '32px', borderTop: '6px solid var(--color-brass)' }}>
-          <h2 style={{ fontFamily: 'var(--font-display)', marginBottom: '8px', color: 'var(--color-ink)', fontSize: '2rem' }}>Console Authorization</h2>
-          <p style={{ color: 'var(--color-ink-2)', marginBottom: '24px', fontSize: '0.9rem' }}>
-            Please authenticate to enter the <strong>{route.replace('#/', '').toUpperCase()}</strong> console.
-          </p>
-          <div className="form-group" style={{ marginBottom: '16px' }}>
-            <input
-              type="text"
-              className="input-field"
-              placeholder="Console Username"
-              value={usernameInput}
-              onChange={(e) => setUsernameInput(e.target.value)}
-              autoFocus
-              required
-            />
-          </div>
-          <div className="form-group" style={{ marginBottom: '16px' }}>
-            <input
-              type="password"
-              className="input-field"
-              placeholder="Console Password"
-              value={passwordInput}
-              onChange={(e) => setPasswordInput(e.target.value)}
-              required
-            />
-          </div>
-          {authError && <div style={{ color: 'var(--color-fall)', marginBottom: '16px', fontSize: '0.9rem', fontWeight: 600 }}>⚠️ {authError}</div>}
-          <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>Enter Dashboard</button>
-        </form>
-      </div>
-    );
-  }
-
   const currentPassword = sessionStorage.getItem('fms_password') || 'saamx-event-2026';
-  const userRole = sessionStorage.getItem('fms_role') || '';
-  const isJournalistSession = userRole === 'journalist';
-  const isSebiSession = userRole === 'sebi';
-  const isAksharaaSession = (sessionStorage.getItem('fms_username') || '').trim().toLowerCase() === 'aksharaa';
-  const isOperatorXSession = userRole === 'operator_x' && !isAksharaaSession;
-  const isPortfolioSession = userRole === 'portfolio';
+
+  const isPublicRoute = route === '#/' || route === '' || route === '#/home';
+  const isLoginRoute = route === '#/login' || route.startsWith('#/login?') || route.startsWith('#/login/');
+  const isProjectorRoute = route === '#/projector' || route.startsWith('#/projector?') || route.startsWith('#/projector/');
+  const isPublicShell = isPublicRoute || isLoginRoute || isProjectorRoute;
+
+  const normalizedState = {
+    ...state,
+    securities: Object.values(state?.securities || {}),
+    teams: Object.values(state?.teams || {}),
+    orders: Object.values(state?.orders || {}),
+    transactions: Object.values(state?.transactions || {}),
+    newsEvents: Object.values(state?.newsEvents || {}),
+    corporateActions: Object.values(state?.corporateActions || {})
+  };
 
   const renderContent = () => {
-    if (isAksharaaSession && ['#/admin', '#/sebi', '#/exchange', '#/training'].includes(route)) {
+    // 1. Root / Public Landing Page
+    if (isPublicRoute) {
+      return <PublicLandingPage />;
+    }
+
+    // 2. Authentication Gateway Page
+    if (isLoginRoute) {
+      return <LoginPage onLoginSuccess={handleLoginSuccess} />;
+    }
+
+    // 3. Public Projector Broadcast
+    if (isProjectorRoute) {
       return (
-        <div className="glass card" style={{ maxWidth: '500px', margin: '80px auto', padding: '32px', textAlign: 'center', borderTop: '6px solid var(--color-fall)' }}>
-          <h2 style={{ color: 'var(--color-fall)', fontFamily: 'var(--font-display)', marginBottom: '12px', fontSize: '2rem' }}>Access Denied</h2>
-          <p style={{ color: 'var(--color-ink-2)', marginBottom: '24px' }}>Your session is authenticated under a role which does not have access to this desk console.</p>
-          <a href="#/" className="btn btn-primary">Return to Gateway</a>
+        <ProjectorPage
+          state={normalizedState}
+          takeoverEvent={normalizedState?.marketState?.takeoverEvent || null}
+          onOpenProfile={openCompanyProfile}
+        />
+      );
+    }
+
+    // 4. All Other Internal Routes Require Authentication
+    if (!isAuthenticated) {
+      return <LoginPage onLoginSuccess={handleLoginSuccess} />;
+    }
+
+    // 5. Role-Based Route Authorization Gate
+    if (!isRouteAuthorized(userRole, route)) {
+      return (
+        <div
+          className="glass card"
+          style={{
+            maxWidth: '540px',
+            margin: '80px auto',
+            padding: '40px 32px',
+            textAlign: 'center',
+            borderTop: '6px solid var(--color-fall)',
+            boxShadow: '0 12px 36px rgba(0,0,0,0.4)'
+          }}
+        >
+          <div style={{ fontSize: '2.8rem', marginBottom: '16px' }}>🔒</div>
+          <h2 style={{ color: 'var(--color-fall)', fontFamily: 'var(--font-display)', marginBottom: '12px', fontSize: '2.1rem' }}>
+            Access Restricted
+          </h2>
+          <p style={{ color: 'var(--color-ink-2)', marginBottom: '24px', lineHeight: 1.6, fontSize: '0.98rem' }}>
+            Your session is authenticated as <strong>{(userRole || 'ANONYMOUS').toUpperCase()}</strong>, which does not have permission to access the <strong>{route.replace('#/', '').toUpperCase()}</strong> desk console.
+          </p>
+          <div style={{ display: 'flex', gap: '14px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <a href={getDefaultDeskForRole(userRole)} className="btn btn-primary" style={{ padding: '10px 20px', fontWeight: 800 }}>
+              Return to {(userRole || 'Home').toUpperCase()} Desk →
+            </a>
+            <button onClick={handleLogout} className="btn btn-secondary" style={{ padding: '10px 20px', fontWeight: 700 }}>
+              Sign Out
+            </button>
+          </div>
         </div>
       );
     }
 
-    if (isJournalistSession && ['#/admin', '#/exchange', '#/sebi', '#/portfolio', '#/training'].includes(route)) {
-      return (
-        <div className="glass card" style={{ maxWidth: '500px', margin: '80px auto', padding: '32px', textAlign: 'center', borderTop: '6px solid var(--color-fall)' }}>
-          <h2 style={{ color: 'var(--color-fall)', fontFamily: 'var(--font-display)', marginBottom: '12px', fontSize: '2rem' }}>Access Denied</h2>
-          <p style={{ color: 'var(--color-ink-2)', marginBottom: '24px' }}>Your session is authenticated under the <strong>Journalist</strong> role, which does not have access to this desk console.</p>
-          <a href="#/" className="btn btn-primary">Return to Gateway</a>
-        </div>
-      );
-    }
-
-    if (isSebiSession && ['#/admin', '#/exchange', '#/journalist', '#/training'].includes(route)) {
-      return (
-        <div className="glass card" style={{ maxWidth: '500px', margin: '80px auto', padding: '32px', textAlign: 'center', borderTop: '6px solid var(--color-fall)' }}>
-          <h2 style={{ color: 'var(--color-fall)', fontFamily: 'var(--font-display)', marginBottom: '12px', fontSize: '2rem' }}>Access Denied</h2>
-          <p style={{ color: 'var(--color-ink-2)', marginBottom: '24px' }}>Your session is authenticated under the <strong>SEBI</strong> role, which does not have access to this desk console.</p>
-          <a href="#/" className="btn btn-primary">Return to Gateway</a>
-        </div>
-      );
-    }
-
-    if (isOperatorXSession && ['#/admin', '#/sebi', '#/journalist', '#/training'].includes(route)) {
-      return (
-        <div className="glass card" style={{ maxWidth: '500px', margin: '80px auto', padding: '32px', textAlign: 'center', borderTop: '6px solid var(--color-fall)' }}>
-          <h2 style={{ color: 'var(--color-fall)', fontFamily: 'var(--font-display)', marginBottom: '12px', fontSize: '2rem' }}>Access Denied</h2>
-          <p style={{ color: 'var(--color-ink-2)', marginBottom: '24px' }}>Your session is authenticated under the <strong>Mr. X (Exchange)</strong> role, which does not have access to this desk console.</p>
-          <a href="#/" className="btn btn-primary">Return to Gateway</a>
-        </div>
-      );
-    }
-
-    if (isPortfolioSession && ['#/admin', '#/sebi', '#/journalist', '#/exchange', '#/training'].includes(route)) {
-      return (
-        <div className="glass card" style={{ maxWidth: '500px', margin: '80px auto', padding: '32px', textAlign: 'center', borderTop: '6px solid var(--color-fall)' }}>
-          <h2 style={{ color: 'var(--color-fall)', fontFamily: 'var(--font-display)', marginBottom: '12px', fontSize: '2rem' }}>Access Denied</h2>
-          <p style={{ color: 'var(--color-ink-2)', marginBottom: '24px' }}>Your session is authenticated under the <strong>Portfolio</strong> role, which does not have access to this desk console.</p>
-          <a href="#/" className="btn btn-primary">Return to Gateway</a>
-        </div>
-      );
-    }
-
-    const normalizedState = {
-      ...state,
-      securities: Object.values(state.securities || {}),
-      teams: Object.values(state.teams || {}),
-      transactions: Object.values(state.transactions || {}),
-      newsEvents: Object.values(state.newsEvents || {}),
-      corporateActions: Object.values(state.corporateActions || {})
-    };
-
+    // 6. Authorized Desk Routing
     switch (route) {
       case '#/admin':
-        return <AdminPage state={normalizedState} onOpenProfile={openCompanyProfile} adminPassword={currentPassword} />;
+        return <AdminPage state={normalizedState} onOpenProfile={openCompanyProfile} adminPassword={currentPassword} connected={dbConnected} coordinator={coordinator} isCoordinatorOffline={isCoordinatorOffline} mySessionUuid={MY_SESSION_UUID} />;
       case '#/exchange':
-        return <ExchangePage state={normalizedState} onOpenProfile={openCompanyProfile} adminPassword={currentPassword} />;
+        return <ExchangePage state={normalizedState} onOpenProfile={openCompanyProfile} adminPassword={currentPassword} connected={dbConnected} isCoordinatorOffline={isCoordinatorOffline} />;
+      case '#/verification':
+      case '#/verification-desk':
+        return <VerificationPage state={normalizedState} connected={dbConnected} />;
       case '#/sebi':
-        return <SebiPage state={normalizedState} connected={connected} onOpenProfile={openCompanyProfile} adminPassword={currentPassword} />;
-      case '#/projector':
-        return <ProjectorPage state={normalizedState} takeoverEvent={normalizedState?.marketState?.takeoverEvent || null} onOpenProfile={openCompanyProfile} />;
+        return <SebiPage state={normalizedState} connected={dbConnected} onOpenProfile={openCompanyProfile} adminPassword={currentPassword} coordinator={coordinator} isCoordinatorOffline={isCoordinatorOffline} mySessionUuid={MY_SESSION_UUID} />;
       case '#/journalist':
         return <JournalistPage state={normalizedState} adminPassword={currentPassword} />;
       case '#/portfolio':
         return <PortfolioPage state={normalizedState} onOpenProfile={openCompanyProfile} />;
+      case '#/advisor':
+      case '#/broker-desk':
+      case '#/broker':
+        return <BrokerAdvisoryTerminal state={normalizedState} onOpenProfile={openCompanyProfile} />;
+      case '#/bull':
+        return <BullTerminal state={normalizedState} onOpenProfile={openCompanyProfile} />;
+      case '#/bear':
+        return <BearTerminal state={normalizedState} onOpenProfile={openCompanyProfile} />;
+      case '#/debate':
+      case '#/bull-bear':
+        return <BullBearDebatePage state={normalizedState} />;
+      case '#/news':
+      case '#/news-room':
+      case '#/newsroom':
+        return <NewsAnchorConsole state={normalizedState} />;
       case '#/training':
         return <TrainingPage state={normalizedState} />;
+      case '#/fx':
+        return <CurrencyExchangePage state={normalizedState} />;
+      case '#/market-watch':
+        return <MarketWatchPage state={normalizedState} onOpenProfile={openCompanyProfile} connected={dbConnected} />;
+      case '#/market-intelligence':
+        return <MarketIntelligencePage state={normalizedState} teamCode={sessionUsername || sessionStorage.getItem('fms_username') || 'T01'} onOpenProfile={openCompanyProfile} connected={dbConnected} />;
+      case '#/team':
+        return <ParticipantTerminal state={normalizedState} teamCode={sessionUsername || sessionStorage.getItem('fms_username')} onOpenProfile={openCompanyProfile} connected={dbConnected} isCoordinatorOffline={isCoordinatorOffline} />;
+      case '#/register':
+        return <RegistrationPage state={normalizedState} />;
+      case '#/floor-ops':
+        return <FloorOperationsDashboard state={normalizedState} />;
       case '#/results':
         return <ResultsPage state={normalizedState} />;
       case '#/home':
       case '#/':
       default:
-        return <HomePage state={normalizedState} connected={connected} />;
+        return <PublicLandingPage />;
     }
   };
 
   const renderNavTabs = () => {
+    if (!isAuthenticated) return null;
+
     const tabs = [
-      { name: 'Home', path: '#/', routes: ['#/', '#/home'] },
-      { name: 'Projector', path: '#/projector', routes: ['#/projector'] },
+      { name: 'Team Terminal', path: '#/team', routes: ['#/team'] },
+      { name: 'Verification Desk', path: '#/verification', routes: ['#/verification', '#/verification-desk'] },
+      { name: 'Exchange Desk', path: '#/exchange', routes: ['#/exchange'] },
+      { name: 'Broker Advisor', path: '#/advisor', routes: ['#/advisor', '#/broker'] },
+      { name: 'SEBI Surveillance', path: '#/sebi', routes: ['#/sebi'] },
+      { name: 'Journalist Press', path: '#/journalist', routes: ['#/journalist'] },
+      { name: 'Floor Director (Admin)', path: '#/admin', routes: ['#/admin'] },
+      { name: 'Currency Desk', path: '#/fx', routes: ['#/fx'] },
+      { name: 'Floor Operations', path: '#/floor-ops', routes: ['#/floor-ops'] },
       { name: 'Portfolios', path: '#/portfolio', routes: ['#/portfolio'] },
-      { name: 'Exchange', path: '#/exchange', routes: ['#/exchange'] },
-      { name: 'SEBI', path: '#/sebi', routes: ['#/sebi'] },
-      { name: 'Journalist', path: '#/journalist', routes: ['#/journalist'] },
-      { name: 'Admin', path: '#/admin', routes: ['#/admin'] },
-      { name: 'Results', path: '#/results', routes: ['#/results'] }
+      { name: 'Market Watch', path: '#/market-watch', routes: ['#/market-watch'] },
+      { name: 'Market Intelligence', path: '#/market-intelligence', routes: ['#/market-intelligence'] },
+      { name: 'Competition Results', path: '#/results', routes: ['#/results'] },
+      { name: 'Auditorium Projector', path: '#/projector', routes: ['#/projector'] }
     ];
 
     return tabs.map(tab => {
       let hasAccess = false;
       if (userRole === 'admin') {
         hasAccess = true;
-      } else if (isAksharaaSession && ['Home', 'Projector', 'Portfolios', 'Journalist', 'Results'].includes(tab.name)) {
-        hasAccess = true;
-      } else if (userRole === 'operator_x' && ['Home', 'Projector', 'Portfolios', 'Exchange', 'Results'].includes(tab.name)) {
-        hasAccess = true;
-      } else if (userRole === 'sebi' && ['Home', 'Projector', 'Portfolios', 'SEBI', 'Results'].includes(tab.name)) {
-        hasAccess = true;
-      } else if (userRole === 'journalist' && ['Home', 'Projector', 'Journalist', 'Results'].includes(tab.name)) {
-        hasAccess = true;
-      } else if (userRole === 'portfolio' && ['Home', 'Projector', 'Portfolios', 'Results'].includes(tab.name)) {
-        hasAccess = true;
+      } else if (userRole === 'team') {
+        hasAccess = ['Team Terminal', 'Market Watch', 'Market Intelligence', 'Broker Advisor', 'Competition Results', 'Auditorium Projector'].includes(tab.name);
+      } else if (userRole === 'verification') {
+        hasAccess = ['Verification Desk', 'Market Watch', 'Competition Results', 'Auditorium Projector'].includes(tab.name);
+      } else if (userRole === 'advisor') {
+        hasAccess = ['Broker Advisor', 'Market Watch', 'Competition Results', 'Auditorium Projector'].includes(tab.name);
+      } else if (userRole === 'operator_x') {
+        hasAccess = ['Exchange Desk', 'Currency Desk', 'Verification Desk', 'Floor Operations', 'Portfolios', 'Market Watch', 'Competition Results', 'Auditorium Projector'].includes(tab.name);
+      } else if (userRole === 'sebi') {
+        hasAccess = ['SEBI Surveillance', 'Floor Operations', 'Verification Desk', 'Portfolios', 'Market Watch', 'Competition Results', 'Auditorium Projector'].includes(tab.name);
+      } else if (userRole === 'journalist') {
+        hasAccess = ['Journalist Press', 'Market Watch', 'Market Intelligence', 'Competition Results', 'Auditorium Projector'].includes(tab.name);
+      } else if (userRole === 'judge') {
+        hasAccess = ['Competition Results', 'Market Watch', 'Auditorium Projector'].includes(tab.name);
+      } else if (userRole === 'portfolio') {
+        hasAccess = ['Portfolios', 'Floor Operations', 'Market Watch', 'Competition Results', 'Auditorium Projector'].includes(tab.name);
       }
 
       if (!hasAccess) return null;
@@ -535,10 +617,46 @@ export default function App() {
     });
   };
 
-  const showIndicator = ['#/projector', '#/exchange', '#/sebi', '#/admin', '#/journalist', '#/training'].includes(route);
+  const showIndicator = ['#/projector', '#/exchange', '#/sebi', '#/admin', '#/journalist', '#/training', '#/team'].includes(route);
 
   return (
-    <div className="app-container">
+    <div className="app-container" style={{ paddingTop: (!dbConnected || isCoordinatorOffline) ? '40px' : '0' }}>
+      {!dbConnected && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          backgroundColor: '#b91c1c',
+          color: '#ffffff',
+          textAlign: 'center',
+          padding: '8px',
+          fontWeight: 'bold',
+          zIndex: 99999,
+          boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+        }}>
+          ⚠ Connection Interrupted — Trading Controls Disabled
+        </div>
+      )}
+
+      {isCoordinatorOffline && dbConnected && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          backgroundColor: '#d97706',
+          color: '#ffffff',
+          textAlign: 'center',
+          padding: '8px',
+          fontWeight: 'bold',
+          zIndex: 99999,
+          boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+        }}>
+          ⚠ Coordinator Offline — Scheduled Tasks Suspended
+        </div>
+      )}
+
       {missingEnvVars.length > 0 && (
         <div style={{
           backgroundColor: 'var(--color-fall)',
@@ -553,44 +671,69 @@ export default function App() {
         </div>
       )}
 
-      {route !== '#/projector' && (
-        <header className="app-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-            <div className="logo-area">
-              <div className="logo-avatar">S</div>
-              <div className="logo-title">SAAMX Platform</div>
+      {!isPublicShell && (
+        <>
+          <MarketStatusBar
+            state={state}
+            serverTimeOffset={serverTimeOffset}
+            connected={dbConnected}
+            coordinator={coordinator}
+            isCoordinatorOffline={isCoordinatorOffline}
+          />
+          <header className="app-header">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+              <a href={userRole ? getDefaultDeskForRole(userRole) : '#/'} className="logo-area">
+                <div className="logo-avatar">🏛️</div>
+                <div>
+                  <div className="logo-title">SAAMX</div>
+                  <div style={{ fontSize: '0.68rem', color: 'var(--color-ink-3)', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                    Student Asset Exchange
+                  </div>
+                </div>
+              </a>
+
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '20px', backgroundColor: 'var(--color-surface-2)', border: '1px solid var(--color-border)', fontSize: '0.75rem', fontWeight: 700 }}>
+                <span className={`status-pulse-dot ${state?.marketState?.status === 'Open' ? '' : 'closed'}`} />
+                <span style={{ color: state?.marketState?.status === 'Open' ? 'var(--color-rise)' : 'var(--color-ink-2)' }}>
+                  {state?.marketState?.status === 'Open' ? 'MARKET OPEN' : (state?.marketState?.sessionState || 'PRE-OPEN')}
+                </span>
+              </div>
+
+              <nav className="nav-tabs">
+                {renderNavTabs()}
+              </nav>
             </div>
-            <nav className="nav-tabs">
-              {renderNavTabs()}
-            </nav>
-          </div>
-          {isAuthenticated && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingRight: '20px' }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--color-ink-2)' }}>
-                👤 <strong>{sessionStorage.getItem('fms_username') || userRole.toUpperCase()}</strong>
-              </span>
-              <button
-                onClick={handleLogout}
-                className="btn"
-                style={{
-                  padding: '4px 10px',
-                  fontSize: '0.75rem',
-                  backgroundColor: 'var(--color-fall-light)',
-                  color: 'var(--color-fall)',
-                  border: 'none',
-                  borderRadius: '4px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer'
-                }}
-              >
-                LOGOUT ↩
-              </button>
-            </div>
-          )}
-        </header>
+
+            {isAuthenticated && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 12px', borderRadius: '8px', backgroundColor: 'var(--color-surface-2)', border: '1px solid var(--color-border)' }}>
+                  <span style={{ fontSize: '0.82rem', color: 'var(--color-ink)' }}>
+                    👤 <strong>{sessionUsername || userRole.toUpperCase()}</strong>
+                  </span>
+                  <span className="badge badge-public" style={{ fontSize: '0.65rem', padding: '2px 6px' }}>
+                    {userRole.toUpperCase()}
+                  </span>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="btn btn-secondary"
+                  style={{
+                    padding: '6px 14px',
+                    fontSize: '0.78rem',
+                    fontWeight: 'bold',
+                    cursor: 'pointer'
+                  }}
+                >
+                  LOGOUT ↩
+                </button>
+              </div>
+            )}
+          </header>
+          <MarketTicker state={state} onOpenProfile={openCompanyProfile} />
+        </>
       )}
 
-      <main className="main-content" style={route === '#/projector' ? { padding: 0, maxWidth: '100%' } : {}}>
+      <main className="main-content" style={isPublicShell ? { padding: 0, maxWidth: '100%' } : {}}>
         {renderContent()}
       </main>
 
@@ -604,7 +747,7 @@ export default function App() {
       )}
 
       {showIndicator && (
-        <ConnectionIndicator connected={connected} />
+        <ConnectionIndicator connected={dbConnected} />
       )}
     </div>
   );

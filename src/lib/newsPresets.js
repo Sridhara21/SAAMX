@@ -11,12 +11,12 @@ export const NEWS_PRESETS = [
   },
   {
     step: 2,
-    headline: "🚀 IndiaStack Fintech (ISFT) IPO Allotment Finalized",
-    description: "Retail bidding window closes successfully. ISFT opening quotes show heavy buying demand at the base price of ₹285.",
+    headline: "🚀 OpenAI Global Hyperscale (OAI) Simulated IPO Allotment Finalized",
+    description: "Subscription bidding window closes with historic demand. OAI opening quotes show unprecedented institutional buy orders at $180 issue price.",
     sentiment: "Positive",
-    affectedSector: "Financials",
-    affectedSecurityIds: ["HDFC", "ICIC"],
-    impactPercent: 5,
+    affectedSector: "Technology",
+    affectedSecurityIds: ["OAI", "MSFT", "NVDA"],
+    impactPercent: 8,
     category: "Corporate"
   },
   {
@@ -551,21 +551,21 @@ export const NEWS_PRESETS = [
   },
   {
     step: 56,
-    headline: "📢 IndiaStack Fintech (ISFT) Files Staged Prospectus with SEBI",
-    description: "IPO Staging starts (PHOENIX ACT 3). Initial subscription base price set at ₹285. Desk terminal activation pending.",
+    headline: "📢 OpenAI Global Hyperscale (OAI) Files Staged Prospectus with SEC & SEBI",
+    description: "IPO Staging starts (SAAMX SIMULATED IPO). Initial subscription offer price set at $180 (Lot: 10). Primary allocation pending.",
     sentiment: "Positive",
-    affectedSector: "Financials",
-    affectedSecurityIds: ["ISFT"],
+    affectedSector: "Technology",
+    affectedSecurityIds: ["OAI"],
     impactPercent: 0,
     category: "Policy"
   },
   {
     step: 57,
-    headline: "📢 Anthropic AI India (ANTH) Files Staged Prospectus with SEBI",
-    description: "IPO Staging starts (PHOENIX ACT 7). Initial subscription price set at ₹440 per share. Desk terminal activation pending.",
+    headline: "📢 Stripe Global Infrastructure (STRP) Files Staged Prospectus",
+    description: "IPO Staging starts (SAAMX SIMULATED IPO). Initial subscription price set at $95 per share (Lot: 20). Institutional desk subscription open.",
     sentiment: "Positive",
-    affectedSector: "Technology",
-    affectedSecurityIds: ["ANTH"],
+    affectedSector: "Financials",
+    affectedSecurityIds: ["STRP"],
     impactPercent: 0,
     category: "Policy"
   },

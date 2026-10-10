@@ -9,7 +9,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "dev": "vite",
-    "start": "node server.js"
+    "start": "node server.js",
+    "test:full": "node test-full-audit.js"
   },
   "dependencies": {
     "@vercel/node": "^5.8.23",
