@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { calculateMarketClock } from '../lib/api.js';
+import { CURRENCY_DIRECTORY, CURRENCY_SYMBOLS, DEFAULT_FX_RATES } from '../lib/formatters.js';
 
 export default function MarketWatchPage({ state, onOpenProfile, connected }) {
   // Navigation Sub-tab inside Market Watch
@@ -121,7 +122,7 @@ export default function MarketWatchPage({ state, onOpenProfile, connected }) {
       else unchanged++;
 
       totalVolume += s.volume;
-      const rate = s.currency === 'USD' ? usdRate : s.currency === 'GBP' ? gbpRate : s.currency === 'EUR' ? eurRate : 1.0;
+      const rate = s.currency === 'INR' ? 1.0 : (state?.fxRates?.[`${s.currency}INR`]?.midRate || DEFAULT_FX_RATES[`${s.currency}INR`]?.midRate || 1.0);
       totalTurnoverInr += (s.volume * s.currentPrice) * rate;
     });
 
@@ -157,17 +158,20 @@ export default function MarketWatchPage({ state, onOpenProfile, connected }) {
     const exchanges = new Set();
     const sectors = new Set();
     const assetClasses = new Set();
+    const currencies = new Set();
 
     securitiesList.forEach(s => {
       if (s.exchange) exchanges.add(s.exchange);
       if (s.sector) sectors.add(s.sector);
       if (s.type) assetClasses.add(s.type);
+      if (s.currency) currencies.add(s.currency);
     });
 
     return {
       exchanges: Array.from(exchanges).sort(),
       sectors: Array.from(sectors).sort(),
-      assetClasses: Array.from(assetClasses).sort()
+      assetClasses: Array.from(assetClasses).sort(),
+      currencies: Array.from(currencies).sort()
     };
   }, [securitiesList]);
 
@@ -279,13 +283,14 @@ export default function MarketWatchPage({ state, onOpenProfile, connected }) {
     return [...securitiesList]
       .filter(s => s.status === 'Active')
       .map(s => {
-        const rate = s.currency === 'USD' ? usdRate : s.currency === 'GBP' ? gbpRate : s.currency === 'EUR' ? eurRate : 1.0;
+        const pairKey = `${s.currency}INR`;
+        const rate = s.currency === 'INR' ? 1.0 : (state?.fxRates?.[pairKey]?.midRate || DEFAULT_FX_RATES[pairKey]?.midRate || 1.0);
         const absMovementInr = Math.abs(s.priceDiff) * rate;
         return { ...s, absMovementInr };
       })
       .sort((a, b) => b.absMovementInr - a.absMovementInr)
       .slice(0, 10);
-  }, [securitiesList, usdRate, gbpRate, eurRate]);
+  }, [securitiesList, state?.fxRates]);
 
   // Sector Performance Aggregation
   const sectorPerformance = useMemo(() => {
@@ -700,11 +705,11 @@ export default function MarketWatchPage({ state, onOpenProfile, connected }) {
         paddingBottom: '2px'
       }}>
         {[
-          { id: 'ALL_SECURITIES', label: '📊 All Securities (2,061)', count: filteredSecurities.length },
+          { id: 'ALL_SECURITIES', label: `📊 All Securities (${securitiesList.length.toLocaleString()})`, count: filteredSecurities.length },
           { id: 'MOVERS', label: '🚀 Market Movers', count: 'Top 10' },
           { id: 'SECTORS', label: '🏢 Sector Watch', count: sectorPerformance.length },
-          { id: 'GLOBAL', label: '🌐 Global Markets', count: '4 Currencies' },
-          { id: 'FX_WATCH', label: '💱 FX Clearing Desk', count: 'USD / GBP / EUR' },
+          { id: 'GLOBAL', label: '🌐 Global Markets', count: '10 Currencies' },
+          { id: 'FX_WATCH', label: '💱 FX Clearing Desk', count: '10 Currencies' },
           { id: 'TAPE', label: '📡 Live Market Tape', count: liveTapeEvents.length },
           { id: 'IPO_RADAR', label: '🌟 IPO Radar', count: ipoOfferings.length }
         ].map(tab => (
@@ -845,10 +850,9 @@ export default function MarketWatchPage({ state, onOpenProfile, connected }) {
                 style={{ padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--color-border)', fontSize: '0.8rem', background: 'var(--color-surface)' }}
               >
                 <option value="ALL">💵 All Currencies</option>
-                <option value="INR">INR (₹)</option>
-                <option value="USD">USD ($)</option>
-                <option value="GBP">GBP (£)</option>
-                <option value="EUR">EUR (€)</option>
+                {filterOptions.currencies.map(cur => (
+                  <option key={cur} value={cur}>{cur} ({CURRENCY_SYMBOLS[cur] || cur})</option>
+                ))}
               </select>
 
               <select
@@ -982,7 +986,7 @@ export default function MarketWatchPage({ state, onOpenProfile, connected }) {
                 ) : (
                   paginatedSecurities.map((sec, idx) => {
                     const isUp = sec.percentChange >= 0;
-                    const curSym = sec.currency === 'USD' ? '$' : sec.currency === 'GBP' ? '£' : sec.currency === 'EUR' ? '€' : '₹';
+                    const curSym = CURRENCY_SYMBOLS[sec.currency] || (sec.currency === 'USD' ? '$' : '₹');
                     const isHalted = sec.status === 'Halted' || sec.status === 'Suspended';
                     const isIpo = sec.status === 'IPO_PENDING' || sec.status === 'IPO_STAGED' || sec.ipoStatus === 'SUBSCRIPTION_OPEN';
 

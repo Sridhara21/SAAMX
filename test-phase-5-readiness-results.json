@@ -1,0 +1,527 @@
+[
+  {
+    "id": "PERF-BUNDLE-SPLIT-01",
+    "name": "Production Bundle Splitting & Elimination of 4.26 MB Preload",
+    "endpoint": "GET /dist/index.html",
+    "role": "anonymous browser",
+    "scenario": "Inspect production index.html to confirm universe-data chunk is NOT in modulepreload",
+    "expected": "universe-data chunk absent from index.html head preloads",
+    "actual": "universe-data successfully removed from preloads",
+    "passed": true,
+    "evidence": {
+      "distHtmlSnippets": [
+        "<link rel=\"modulepreload\" crossorigin href=\"./assets/vendor-react-Ds7D3P6J.js\">",
+        "<link rel=\"modulepreload\" crossorigin href=\"./assets/vendor-firebase-C5Wozm1w.js\">"
+      ]
+    }
+  },
+  {
+    "id": "PERF-UNIVERSE-COUNT-02",
+    "name": "Authoritative 2,854 Universe Completeness via /api/state",
+    "endpoint": "GET /api/state",
+    "role": "anonymous / client",
+    "scenario": "Verify that all 2,849 master workbook securities + 5 simulated narrative IPOs are delivered",
+    "expected": "securities count >= 2849",
+    "actual": "securities count = 2854 (2,849 workbook + 5 simulated narrative IPOs)",
+    "passed": true,
+    "evidence": {
+      "secCount": 2854
+    }
+  },
+  {
+    "id": "PERF-WS-DELTA-03",
+    "name": "WebSocket High-Frequency PRICE_UPDATE Delta Bandwidth Reduction",
+    "endpoint": "WebSocket PRICE_UPDATE",
+    "role": "floor engine / all connected devices",
+    "scenario": "Verify delta broadcast payload achieves >90% bandwidth reduction compared to full state dump",
+    "expected": "Bandwidth reduction >= 90%",
+    "actual": "Reduction = 99.9% (Delta: 6.9 KB vs Full: 9200.8 KB)",
+    "passed": true,
+    "evidence": {
+      "deltaKB": "6.9",
+      "fullKB": "9200.8",
+      "bandwidthReductionPct": "99.9"
+    }
+  },
+  {
+    "id": "PERF-SEARCH-LATENCY-04",
+    "name": "Fast-Path Keystroke Search Performance on 2,854 Universe",
+    "endpoint": "Client-side search loop",
+    "role": "Exchange Desk Operator",
+    "scenario": "Keystroke search over 2,854 items executes in under 5.0 milliseconds",
+    "expected": "Search latency < 5.0 ms",
+    "actual": "Search latency = 1.311 ms (found 8 matches)",
+    "passed": true,
+    "evidence": {
+      "searchLatencyMs": 1.3106,
+      "matchTickers": [
+        "RWC",
+        "RELIANCE",
+        "RPOWER",
+        "RELIAN10Y",
+        "RELIAN2Y",
+        "RELIAN3Y",
+        "RELIAN5Y",
+        "RELIAN7Y"
+      ]
+    }
+  },
+  {
+    "id": "TRADING-LOT-SIZE-01",
+    "name": "Lot Size Multiple Enforcement on Order Entry",
+    "endpoint": "POST /api/order/create",
+    "role": "team order submission",
+    "scenario": "Reject order when quantity is not a valid multiple of security lot size",
+    "expected": "HTTP 400 with lot size error",
+    "actual": "Status: 400, Error: Order quantity 101 must be a valid multiple of lot size 100 for 600893.",
+    "passed": true,
+    "evidence": {
+      "lotRes": {
+        "error": "Order quantity 101 must be a valid multiple of lot size 100 for 600893."
+      }
+    }
+  },
+  {
+    "id": "TRADING-ALL-7-ASSETS-02",
+    "name": "Order-to-Execution Lifecycle Across All 7 Asset Classes",
+    "endpoint": "POST /api/order/create -> CLAIM -> VALIDATE -> EXECUTE",
+    "role": "exchange desk",
+    "scenario": "Successfully execute BUY orders for Equity, MF, Corp Bond, Govt Bond, ETF, REIT, InvIT",
+    "expected": "All 7 asset classes executed successfully",
+    "actual": "Executed 7/7 asset classes",
+    "passed": true,
+    "evidence": {
+      "executedAssets": {
+        "Equity": {
+          "ticker": "360ONE",
+          "status": "EXECUTED",
+          "txId": "TX0001"
+        },
+        "Mutual Fund": {
+          "ticker": "3OAHF",
+          "status": "EXECUTED",
+          "txId": "TX0002"
+        },
+        "Corporate Bond": {
+          "ticker": "ADANI10Y",
+          "status": "EXECUTED",
+          "txId": "TX0003"
+        },
+        "Government Bond": {
+          "ticker": "GOI6.1%2033",
+          "status": "EXECUTED",
+          "txId": "TX0004"
+        },
+        "ETF": {
+          "ticker": "BHARATBOND",
+          "status": "EXECUTED",
+          "txId": "TX0005"
+        },
+        "REIT": {
+          "ticker": "BIRET",
+          "status": "EXECUTED",
+          "txId": "TX0006"
+        },
+        "InvIT": {
+          "ticker": "ANZEN",
+          "status": "EXECUTED",
+          "txId": "TX0007"
+        }
+      }
+    }
+  },
+  {
+    "id": "TRADING-ZERO-DECIMAL-MATH-03",
+    "name": "Zero-Decimal Whole Integer Accounting for JPY and KRW",
+    "endpoint": "GET /api/portfolio",
+    "role": "team / exchange",
+    "scenario": "JPY and KRW balances must remain whole integers without fractional decimal cents",
+    "expected": "Number.isInteger(JPY) === true && Number.isInteger(KRW) === true",
+    "actual": "JPY: 4343000 (isInt: true), KRW: 19842300 (isInt: true)",
+    "passed": true,
+    "evidence": {
+      "JPY": 4343000,
+      "KRW": 19842300
+    }
+  },
+  {
+    "id": "BANK-TWO-PHASE-LIFECYCLE-04",
+    "name": "Two-Phase Bank Voucher Generation & Teller Settlement",
+    "endpoint": "POST /api/order/action (EXECUTE) -> POST /api/bank/settle",
+    "role": "bank teller",
+    "scenario": "Order enters EXECUTED_PENDING_SETTLEMENT with voucherRef, transitions to SETTLED upon bank confirmation",
+    "expected": "execStatus=EXECUTED_PENDING_SETTLEMENT, settleStatus=SETTLED",
+    "actual": "execStatus=EXECUTED_PENDING_SETTLEMENT, settleStatus=SETTLED",
+    "passed": true,
+    "evidence": {
+      "voucherRef": "BNK-PAY-TKT-BNK-SETTLE-1792483046240-MVGE4IBU",
+      "settleResStatus": 200,
+      "settleResBody": {
+        "success": true,
+        "settlement": {
+          "id": "SETTLE_1792483046346_GUI3",
+          "orderId": "ORD_1792483046243_qdbc",
+          "ticketNumber": "TKT-BNK-SETTLE-1792483046240",
+          "transactionId": "TX0010",
+          "teamId": "T01",
+          "teamCode": "T01",
+          "ticker": "ABEV",
+          "securityName": "Ambev SA",
+          "currency": "USD",
+          "quantity": 1,
+          "price": 62.58,
+          "totalAmount": 62.58,
+          "action": "BUY",
+          "type": "PAYMENT_COLLECTION",
+          "status": "SETTLED",
+          "voucherReference": "BNK-PAY-TKT-BNK-SETTLE-1792483046240-MVGE4IBU",
+          "executedAt": 1792483046346,
+          "settledAt": 1792483046407,
+          "settledBy": "bank",
+          "rejectedAt": null,
+          "rejectedBy": null,
+          "rejectionReason": null,
+          "notes": "Physical bank payment voucher verified and stamped",
+          "createdAt": 1792483046346
+        },
+        "order": {
+          "id": "ORD_1792483046243_qdbc",
+          "ticketNumber": "TKT-BNK-SETTLE-1792483046240",
+          "teamCode": "T01",
+          "eventId": "EVT_LIVE_MAIN",
+          "securityId": "STK_ABEV_280535",
+          "ticker": "ABEV",
+          "securityName": "Ambev SA",
+          "currency": "USD",
+          "lotSize": 1,
+          "minOrderQty": 1,
+          "tickSize": 0.01,
+          "action": "BUY",
+          "quantity": 1,
+          "orderType": "MARKET",
+          "limitPrice": null,
+          "requestedValue": 62.58,
+          "brokerId": "B01",
+          "notes": "",
+          "status": "SETTLED",
+          "workflowStage": "SETTLED",
+          "verificationStatus": "EXECUTED",
+          "exchangeStatus": "EXECUTED",
+          "finalStatus": "SETTLED",
+          "physicalSlipChecked": false,
+          "deskId": "DESK_1",
+          "operator": "exchange",
+          "verifiedBy": null,
+          "verifiedAt": null,
+          "returnedAt": null,
+          "returnReason": null,
+          "rejectionReason": null,
+          "executionQuantity": 1,
+          "executionPrice": 62.58,
+          "executionValue": 62.58,
+          "executedAt": 1792483046346,
+          "executedByDesk": "DESK_1",
+          "executedByOperator": "exchange",
+          "lockedByDesk": "DESK_1",
+          "submittedAt": 1792483046243,
+          "timestamp": 1792483046243,
+          "enteredBy": "Broker Terminal",
+          "statusHistory": [
+            {
+              "stage": "AWAITING_VERIFICATION",
+              "status": "PENDING",
+              "timestamp": 1792483046243,
+              "actor": "T01",
+              "note": "Physical order slip logged into verification queue"
+            },
+            {
+              "stage": "EXECUTED_PENDING_SETTLEMENT",
+              "status": "EXECUTED_PENDING_SETTLEMENT",
+              "timestamp": 1792483046346,
+              "actor": "exchange",
+              "note": "Executed on central exchange at ₹62.58. Awaiting physical bank desk settlement (Payment Collection)."
+            },
+            {
+              "stage": "SETTLED",
+              "status": "SETTLED",
+              "timestamp": 1792483046407,
+              "actor": "bank",
+              "note": "Physical bank desk settled PAYMENT_COLLECTION (USD 62.58)"
+            }
+          ],
+          "claimedAt": 1792483046290,
+          "priceAtExecution": 62.58,
+          "settlementStatus": "SETTLED",
+          "settlementId": "SETTLE_1792483046346_GUI3",
+          "settledAt": 1792483046407,
+          "settledBy": "bank"
+        },
+        "wallets": {
+          "INR": 9991662.08,
+          "USD": 99937.42,
+          "GBP": 100000,
+          "EUR": 100000,
+          "JPY": 4343000,
+          "AED": 100000,
+          "SGD": 100000,
+          "CNY": 100000,
+          "AUD": 100000,
+          "KRW": 19842300,
+          "CAD": 100000,
+          "CHF": 100000
+        },
+        "holdings": {
+          "5201": 100,
+          "196170": 1,
+          "360ONE": 1,
+          "3OAHF": 1,
+          "ADANI10Y": 10,
+          "GOI6.1%2033": 10,
+          "BHARATBOND": 1,
+          "BIRET": 1,
+          "ANZEN": 1,
+          "ABEV": 1
+        },
+        "cashBalance": 77061305.12
+      }
+    }
+  },
+  {
+    "id": "BANK-RECONCILIATION-HEALTH-05",
+    "name": "Multi-Currency Bank Ledger Reconciliation Integrity",
+    "endpoint": "GET /api/bank/reconciliation",
+    "role": "bank teller / sebi",
+    "scenario": "Reconciliation report returns HEALTHY with zero ledger discrepancies across all 10 currencies",
+    "expected": "status=HEALTHY and >=10 currencies tracked",
+    "actual": "status=HEALTHY, 10 currencies tracked: true",
+    "passed": true,
+    "evidence": {
+      "summary": {
+        "totalTradesExecuted": 10,
+        "totalVoidedTrades": 0,
+        "totalSettlements": 1,
+        "settledCount": 1,
+        "pendingCount": 0,
+        "rejectedCount": 0,
+        "voidedCount": 0,
+        "settledAmountsByCurrency": {
+          "INR": 0,
+          "USD": 62.58,
+          "GBP": 0,
+          "EUR": 0,
+          "JPY": 0,
+          "AED": 0,
+          "SGD": 0,
+          "CNY": 0,
+          "AUD": 0,
+          "KRW": 0,
+          "CAD": 0,
+          "CHF": 0
+        },
+        "pendingAmountsByCurrency": {
+          "INR": 0,
+          "USD": 0,
+          "GBP": 0,
+          "EUR": 0,
+          "JPY": 0,
+          "AED": 0,
+          "SGD": 0,
+          "CNY": 0,
+          "AUD": 0,
+          "KRW": 0,
+          "CAD": 0,
+          "CHF": 0
+        }
+      }
+    }
+  },
+  {
+    "id": "SECURITY-RBAC-DIRECT-TRADE-01",
+    "name": "Participant Direct Trade Execution Block (/api/trade)",
+    "endpoint": "POST /api/trade",
+    "role": "team (participant)",
+    "scenario": "Direct trade execution by participant team returns HTTP 403 Forbidden",
+    "expected": "HTTP 403 Forbidden",
+    "actual": "HTTP 403: Forbidden: Trading floor participants cannot execute trades directly. Orders must be submitted as slips via /api/order/create.",
+    "passed": true,
+    "evidence": {
+      "directTradeRes": {
+        "error": "Forbidden: Trading floor participants cannot execute trades directly. Orders must be submitted as slips via /api/order/create."
+      }
+    }
+  },
+  {
+    "id": "SECURITY-RBAC-ORDER-ACTION-02",
+    "name": "Participant Order Execution Block (/api/order/action)",
+    "endpoint": "POST /api/order/action",
+    "role": "team (participant)",
+    "scenario": "Execution action by participant team returns HTTP 403 Forbidden",
+    "expected": "HTTP 403 Forbidden",
+    "actual": "HTTP 403: Forbidden: Order execution requires exchange.execute permission.",
+    "passed": true,
+    "evidence": {
+      "actionTradeRes": {
+        "error": "Forbidden: Order execution requires exchange.execute permission."
+      }
+    }
+  },
+  {
+    "id": "SECURITY-RBAC-BANK-SETTLE-03",
+    "name": "Participant Bank Settlement Block (/api/bank/settle)",
+    "endpoint": "POST /api/bank/settle",
+    "role": "team (participant)",
+    "scenario": "Voucher settlement by participant returns HTTP 403 Forbidden",
+    "expected": "HTTP 403 Forbidden",
+    "actual": "HTTP 403: Forbidden: Processing bank settlements requires Bank Teller or Administrator privileges.",
+    "passed": true,
+    "evidence": {
+      "bankSettleRes": {
+        "error": "Forbidden: Processing bank settlements requires Bank Teller or Administrator privileges."
+      }
+    }
+  },
+  {
+    "id": "SECURITY-TEAM-ISOLATION-PORTFOLIO-04",
+    "name": "Cross-Team Data Isolation Enforcement (/api/portfolio)",
+    "endpoint": "GET /api/portfolio?teamCode=T02",
+    "role": "team T01",
+    "scenario": "Attempting to read another team portfolio returns HTTP 403 Forbidden",
+    "expected": "HTTP 403 Forbidden",
+    "actual": "HTTP 403: 403 Forbidden: You are not authorized to view another team's portfolio.",
+    "passed": true,
+    "evidence": {
+      "crossPortRes": {
+        "error": "403 Forbidden: You are not authorized to view another team's portfolio."
+      }
+    }
+  },
+  {
+    "id": "SECURITY-TEAM-ISOLATION-ORDER-CREATE-05",
+    "name": "Cross-Team Order Submission Spoofing Block (/api/order/create)",
+    "endpoint": "POST /api/order/create (teamCode: T02 by T01 session)",
+    "role": "team T01",
+    "scenario": "Attempting to submit an order slip for another team returns HTTP 403 Forbidden",
+    "expected": "HTTP 403 Forbidden",
+    "actual": "HTTP 403: Forbidden: Team T01 cannot submit orders on behalf of team T02.",
+    "passed": true,
+    "evidence": {
+      "crossOrderRes": {
+        "error": "Forbidden: Team T01 cannot submit orders on behalf of team T02."
+      }
+    }
+  },
+  {
+    "id": "SECURITY-DUPLICATE-TICKET-REPLAY-06",
+    "name": "Physical Order Ticket Number Replay & Duplicate Prevention",
+    "endpoint": "POST /api/order/create",
+    "role": "exchange desk",
+    "scenario": "Second order with identical physical ticket number is rejected with HTTP 400",
+    "expected": "HTTP 400 Duplicate Ticket Number",
+    "actual": "HTTP 400: Duplicate Ticket Number: Physical Ticket #TKT-DUP-1792483046636 has already been logged into the queue.",
+    "passed": true,
+    "evidence": {
+      "dupRes": {
+        "error": "Duplicate Ticket Number: Physical Ticket #TKT-DUP-1792483046636 has already been logged into the queue."
+      }
+    }
+  },
+  {
+    "id": "SECURITY-PROD-TEST-BYPASS-LOCKED-07",
+    "name": "Strict Lockdown of Test Password Bypass in Production Mode",
+    "endpoint": "isTestEnvironment() evaluation under NODE_ENV=production",
+    "role": "system security",
+    "scenario": "isTestEnvironment() returns strictly FALSE in production even if test auth flags are present",
+    "expected": "isTestEnvironment() === false",
+    "actual": "Result = bypass permanently locked",
+    "passed": true,
+    "evidence": {
+      "prodBypassCheck": true
+    }
+  },
+  {
+    "id": "UI-PROJECTOR-PUBLIC-SANITIZED-01",
+    "name": "Projector & Big-Screen Display Public Sanitization",
+    "endpoint": "GET /api/projector/snapshot",
+    "role": "anonymous / public display",
+    "scenario": "Returns HTTP 200 with sanitized market indices, ticker tape, and zero password/private credential leaks",
+    "expected": "HTTP 200 without sensitive leaks",
+    "actual": "HTTP 200, no leaks: true",
+    "passed": true,
+    "evidence": {
+      "hasIndices": true,
+      "hasSecurities": false
+    }
+  },
+  {
+    "id": "EVENT-DEFAULT-SETTLEMENT-MODE-02",
+    "name": "Preservation of Mandatory INSTANT Default Settlement Mode",
+    "endpoint": "GET /api/state",
+    "role": "system configuration",
+    "scenario": "Default settlement mode is verified as INSTANT",
+    "expected": "settlementMode === INSTANT",
+    "actual": "settlementMode = INSTANT",
+    "passed": true,
+    "evidence": {
+      "settlementMode": "INSTANT"
+    }
+  },
+  {
+    "id": "SEBI-TRANSACTION-VOIDING-03",
+    "name": "SEBI Regulatory Transaction Voiding Authority",
+    "endpoint": "POST /api/transactions/void",
+    "role": "sebi regulatory desk",
+    "scenario": "SEBI successfully voids executed trade and marks transaction voided with reason",
+    "expected": "HTTP 200 with voided: true",
+    "actual": "HTTP 200: voided=true",
+    "passed": true,
+    "evidence": {
+      "voidRes": {
+        "success": true,
+        "transaction": {
+          "id": "TX0001",
+          "timestamp": 1792483045127,
+          "eventId": "EVT_LIVE_MAIN",
+          "orderId": "ORD_1792483045036_aran",
+          "ticketNumber": "TKT-Equity-1792483045031-97",
+          "teamId": "T01",
+          "teamCode": "T01",
+          "teamName": "Trader Elite 1",
+          "teamType": "Retail",
+          "securityId": "STK_360ONE_9efdef",
+          "ticker": "360ONE",
+          "action": "BUY",
+          "quantity": 1,
+          "priceAtExecution": 436.85,
+          "totalValue": 436.85,
+          "localPrice": 436.85,
+          "localCurrency": "INR",
+          "grossValue": 436.85,
+          "fxRateAtExecution": 1,
+          "inrEquivalent": 436.85,
+          "enteredBy": "Desk 1",
+          "deskId": "DESK_1",
+          "operator": "exchange",
+          "voided": true,
+          "settlementMode": "INSTANT",
+          "settlementStatus": "SETTLED",
+          "voidedAt": 1792483048038,
+          "voidedBy": "sebi",
+          "voidReason": "SEBI surveillance demonstration of trade cancellation"
+        }
+      }
+    }
+  },
+  {
+    "id": "SAFETY-AUTHORITATIVE-HASH-FINAL",
+    "name": "Post-Audit Authoritative state.json Byte-for-Byte Preservation",
+    "endpoint": "Filesystem state.json SHA-256",
+    "role": "safety governor",
+    "scenario": "state.json SHA-256 must match pristine baseline 441077e432987ce85a8ec982b818564f68f9b3fa8a59128e5313d04ab30c754c",
+    "expected": "441077e432987ce85a8ec982b818564f68f9b3fa8a59128e5313d04ab30c754c",
+    "actual": "441077e432987ce85a8ec982b818564f68f9b3fa8a59128e5313d04ab30c754c",
+    "passed": true,
+    "evidence": {
+      "sha256": "441077e432987ce85a8ec982b818564f68f9b3fa8a59128e5313d04ab30c754c"
+    }
+  }
+]

@@ -1,0 +1,722 @@
+{
+  "totalScenarios": 48,
+  "passed": 48,
+  "failed": 0,
+  "timestamp": "2026-10-18T14:40:30.975Z",
+  "expectedStateHash": "441077e432987ce85a8ec982b818564f68f9b3fa8a59128e5313d04ab30c754c",
+  "finalStateHash": "441077e432987ce85a8ec982b818564f68f9b3fa8a59128e5313d04ab30c754c",
+  "results": [
+    {
+      "id": "SEC-7.5-01-A",
+      "category": "Order Privacy",
+      "title": "Anonymous /api/orders Rejection",
+      "scenario": "Unauthenticated caller requests GET /api/orders",
+      "expected": "HTTP 401 Unauthorized",
+      "actual": "HTTP 401",
+      "evidence": {
+        "error": "401 Unauthorized: Valid session authentication required."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-01-B",
+      "category": "Order Privacy",
+      "title": "Team T01 Scoped Orders Retrieval",
+      "scenario": "Authenticated team T01 requests GET /api/orders",
+      "expected": "HTTP 200 with strictly T01 orders (2 orders, zero cross-team slips)",
+      "actual": "HTTP 200, count=2",
+      "evidence": [
+        {
+          "id": "ORD_T01_001",
+          "teamCode": "T01"
+        },
+        {
+          "id": "ORD_T01_002",
+          "teamCode": "T01"
+        }
+      ],
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-01-C",
+      "category": "Order Privacy",
+      "title": "Team T01 Query Parameter Spoofing Prevention",
+      "scenario": "Team T01 passes ?teamCode=T02 in query string to access T02 orders",
+      "expected": "HTTP 200 with strictly T01 orders (query param ignored; zero T02 leakage)",
+      "actual": "HTTP 200, count=2",
+      "evidence": [
+        {
+          "id": "ORD_T01_001",
+          "teamCode": "T01"
+        },
+        {
+          "id": "ORD_T01_002",
+          "teamCode": "T01"
+        }
+      ],
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-01-D",
+      "category": "Order Privacy",
+      "title": "Team T02 Scoped Orders Retrieval",
+      "scenario": "Authenticated team T02 requests GET /api/orders",
+      "expected": "HTTP 200 with strictly T02 orders (1 order)",
+      "actual": "HTTP 200, count=1",
+      "evidence": [
+        {
+          "id": "ORD_T02_001",
+          "ticketNumber": "TKT-003",
+          "teamCode": "T02",
+          "ticker": "INFY",
+          "action": "BUY",
+          "quantity": 20,
+          "orderType": "MARKET",
+          "status": "AWAITING_VERIFICATION",
+          "submittedAt": 1792334428992
+        }
+      ],
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-01-E",
+      "category": "Order Privacy",
+      "title": "Unprivileged Roles Deny-By-Default for Orders",
+      "scenario": "Journalist, Judge, and Advisor attempt GET /api/orders",
+      "expected": "HTTP 403 Forbidden for all unprivileged roles",
+      "actual": "Journalist=403, Judge=403, Advisor=403",
+      "evidence": {
+        "journalist": {
+          "error": "Forbidden: Requires desk or audit authorization to view orders queue."
+        },
+        "judge": {
+          "error": "Forbidden: Requires desk or audit authorization to view orders queue."
+        },
+        "advisor": {
+          "error": "Forbidden: Requires desk or audit authorization to view orders queue."
+        }
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-01-F",
+      "category": "Order Privacy",
+      "title": "Authorized Exchange Desk Global Orders Access",
+      "scenario": "Exchange desk operator requests GET /api/orders",
+      "expected": "HTTP 200 with complete active orders collection (4 orders)",
+      "actual": "HTTP 200, count=4",
+      "evidence": {
+        "orderCount": 4
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-01-G",
+      "category": "Order Privacy",
+      "title": "Administrator Global Orders Access",
+      "scenario": "Administrator requests GET /api/orders",
+      "expected": "HTTP 200 with complete active orders collection (4 orders)",
+      "actual": "HTTP 200, count=4",
+      "evidence": {
+        "orderCount": 4
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-01-H",
+      "category": "Order Privacy",
+      "title": "Trailing Slash Route Normalization",
+      "scenario": "Team T01 requests GET /api/orders/ with trailing slash",
+      "expected": "HTTP 200 with strictly T01 orders",
+      "actual": "HTTP 200, count=2",
+      "evidence": {
+        "count": 2
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-01-I",
+      "category": "Desk Privacy",
+      "title": "Desk Metrics & Queue Endpoint Authorization",
+      "scenario": "Check /api/order-desks for anonymous, team, and desk staff access",
+      "expected": "Anonymous=401, Team=403, DeskStaff=200",
+      "actual": "Anon=401, Team=403, Staff=200",
+      "evidence": {
+        "anon": 401,
+        "team": 403,
+        "staff": 200
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-02-A",
+      "category": "FX Privacy",
+      "title": "Anonymous /api/fx/transactions Rejection",
+      "scenario": "Unauthenticated caller requests GET /api/fx/transactions",
+      "expected": "HTTP 401 Unauthorized",
+      "actual": "HTTP 401",
+      "evidence": {
+        "error": "401 Unauthorized: Valid session authentication required."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-02-B",
+      "category": "FX Privacy",
+      "title": "Team T01 Scoped FX Transactions Retrieval",
+      "scenario": "Team T01 requests GET /api/fx/transactions",
+      "expected": "HTTP 200 with strictly T01 FX transactions (1 transaction)",
+      "actual": "HTTP 200, count=1",
+      "evidence": [
+        {
+          "id": "FX_TX_T01_001",
+          "ticketNumber": "FX-001",
+          "teamCode": "T01",
+          "fromCurrency": "INR",
+          "toCurrency": "USD",
+          "fromAmount": 100000,
+          "toAmount": 1128.67,
+          "status": "SETTLED",
+          "timestamp": 1792334428992
+        }
+      ],
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-02-C",
+      "category": "FX Privacy",
+      "title": "Team T01 Query Parameter Spoofing Prevention in FX History",
+      "scenario": "Team T01 attempts to view T02 FX history by spoofing ?teamCode=T02&actorTeamCode=T02&role=admin",
+      "expected": "HTTP 200 with strictly T01 FX transactions (zero T02 leakage)",
+      "actual": "HTTP 200, count=1",
+      "evidence": [
+        {
+          "id": "FX_TX_T01_001",
+          "ticketNumber": "FX-001",
+          "teamCode": "T01",
+          "fromCurrency": "INR",
+          "toCurrency": "USD",
+          "fromAmount": 100000,
+          "toAmount": 1128.67,
+          "status": "SETTLED",
+          "timestamp": 1792334428992
+        }
+      ],
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-02-D",
+      "category": "FX Privacy",
+      "title": "Unprivileged Roles Deny-By-Default for FX History",
+      "scenario": "Journalist and Judge request GET /api/fx/transactions",
+      "expected": "HTTP 403 Forbidden for unprivileged roles",
+      "actual": "Journalist=403, Judge=403",
+      "evidence": {
+        "journalist": {
+          "error": "Forbidden: Requires FX desk or audit authorization."
+        },
+        "judge": {
+          "error": "Forbidden: Requires FX desk or audit authorization."
+        }
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-02-E",
+      "category": "FX Privacy",
+      "title": "Authorized Operator Global FX Transactions Retrieval",
+      "scenario": "Exchange desk operator requests GET /api/fx/transactions",
+      "expected": "HTTP 200 with complete FX transaction log (2 transactions)",
+      "actual": "HTTP 200, count=2",
+      "evidence": {
+        "count": 2
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-02-F",
+      "category": "FX Queue Privacy",
+      "title": "Anonymous /api/fx/queue Rejection",
+      "scenario": "Unauthenticated caller requests GET /api/fx/queue",
+      "expected": "HTTP 401 Unauthorized",
+      "actual": "HTTP 401",
+      "evidence": {
+        "error": "401 Unauthorized: Valid session authentication required."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-02-G",
+      "category": "FX Queue Privacy",
+      "title": "Team T01 Scoped FX Queue Retrieval",
+      "scenario": "Team T01 requests GET /api/fx/queue",
+      "expected": "HTTP 200 with strictly T01 pending conversion requests (1 item; zero T02 leakage)",
+      "actual": "HTTP 200, count=1",
+      "evidence": [
+        {
+          "id": "FX_Q_T01_001",
+          "teamCode": "T01",
+          "fromCurrency": "INR",
+          "toCurrency": "GBP",
+          "fromAmount": 50000,
+          "status": "PENDING",
+          "timestamp": 1792334428992
+        }
+      ],
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-02-H",
+      "category": "FX Queue Privacy",
+      "title": "Team T01 FX Queue Query Spoofing Prevention",
+      "scenario": "Team T01 requests GET /api/fx/queue?teamCode=T02",
+      "expected": "HTTP 200 with strictly T01 pending conversion requests",
+      "actual": "HTTP 200, count=1",
+      "evidence": [
+        {
+          "id": "FX_Q_T01_001",
+          "teamCode": "T01",
+          "fromCurrency": "INR",
+          "toCurrency": "GBP",
+          "fromAmount": 50000,
+          "status": "PENDING",
+          "timestamp": 1792334428992
+        }
+      ],
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-02-I",
+      "category": "FX Queue Privacy",
+      "title": "Unprivileged Roles Deny-By-Default for FX Queue",
+      "scenario": "Journalist requests GET /api/fx/queue",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403",
+      "evidence": {
+        "error": "Forbidden: Requires FX desk or audit authorization."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-02-J",
+      "category": "FX Queue Privacy",
+      "title": "Authorized Operator Global FX Queue Retrieval",
+      "scenario": "Exchange desk operator requests GET /api/fx/queue",
+      "expected": "HTTP 200 with complete active FX queue (2 items)",
+      "actual": "HTTP 200, count=2",
+      "evidence": {
+        "count": 2
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-03-A",
+      "category": "Judging RBAC",
+      "title": "Anonymous Scorecard Submission Rejection",
+      "scenario": "Unauthenticated caller attempts to save scorecard for T01",
+      "expected": "HTTP 401 Unauthorized",
+      "actual": "HTTP 401",
+      "evidence": {
+        "error": "401 Unauthorized: Valid session authentication required."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-03-B",
+      "category": "Judging RBAC",
+      "title": "Participant Team Self-Scoring Rejection",
+      "scenario": "Team T01 attempts to submit judge scorecard for themselves",
+      "expected": "HTTP 403 Forbidden (judging.score required)",
+      "actual": "HTTP 403",
+      "evidence": {
+        "error": "Forbidden: Requires judging.score permission."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-03-C",
+      "category": "Judging RBAC",
+      "title": "Unauthorized Staff Scorecard Submission Rejection",
+      "scenario": "Advisor attempts to submit judge scorecard",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403",
+      "evidence": {
+        "error": "Forbidden: Requires judging.score permission."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-03-D",
+      "category": "Judging RBAC",
+      "title": "Authorized Judge Scorecard Submission",
+      "scenario": "Authorized judge submits scorecard for team T01",
+      "expected": "HTTP 200 with saved scorecard bound to session judge identity",
+      "actual": "HTTP 200, judgeId=judge",
+      "evidence": {
+        "id": "CARD_1792334429919_xaut",
+        "judgeId": "judge",
+        "judgeName": "judge",
+        "teamCode": "T01",
+        "responseToEvents": 4,
+        "decisionTiming": 4,
+        "adaptability": 4,
+        "riskRecognition": 4,
+        "forwardPositioning": 4,
+        "resilience": 4,
+        "balance": 4,
+        "adaptCapacity": 4,
+        "notes": "Legitimate evaluation by official judge",
+        "isLocked": false,
+        "updatedAt": 1792334429919
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-03-E",
+      "category": "Judging RBAC",
+      "title": "Judge Identity Impersonation Prevention",
+      "scenario": "Judge attempts to submit body { judgeId: \"JUDGE_SPOOFED_ID\", judgeName: \"Spoofed Chief Justice\" }",
+      "expected": "HTTP 200 with judge identity bound strictly to session, ignoring caller body",
+      "actual": "HTTP 200, judgeId=judge",
+      "evidence": {
+        "judgeId": "judge",
+        "judgeName": "judge"
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-03-F",
+      "category": "Judging RBAC",
+      "title": "Malformed Rubric Score Rejection",
+      "scenario": "Judge attempts to submit score out of 0-5 range (responseToEvents: 100)",
+      "expected": "HTTP 400 Bad Request",
+      "actual": "HTTP 400",
+      "evidence": {
+        "error": "Invalid rubric score for responseToEvents: must be a number between 0 and 5."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-03-G",
+      "category": "Judging RBAC",
+      "title": "Non-Existent Team Scorecard Rejection",
+      "scenario": "Judge attempts to submit scorecard for TEAM_DOES_NOT_EXIST",
+      "expected": "HTTP 404 Not Found",
+      "actual": "HTTP 404",
+      "evidence": {
+        "error": "Team TEAM_DOES_NOT_EXIST not found in competition roster."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-03-H",
+      "category": "Judging Moderation",
+      "title": "Unauthorized Scorecard Moderation Rejection",
+      "scenario": "Anonymous, ordinary Judge, and Team attempt POST /api/judging/moderate",
+      "expected": "Anonymous=401, Judge=403, Team=403 (results.approve required)",
+      "actual": "Anon=401, Judge=403, Team=403",
+      "evidence": {
+        "anon": {
+          "error": "401 Unauthorized: Valid session authentication required."
+        },
+        "judge": {
+          "error": "Forbidden: Requires results.approve moderation permission."
+        },
+        "team": {
+          "error": "Forbidden: Requires results.approve moderation permission."
+        }
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-03-I",
+      "category": "Judging Moderation",
+      "title": "Authorized Administrator Scorecard Moderation",
+      "scenario": "Administrator submits official moderation scorecard for T01",
+      "expected": "HTTP 200 with moderated scorecard created",
+      "actual": "HTTP 200, isModerated=true",
+      "evidence": {
+        "id": "MOD_1792334430002_9bqh",
+        "judgeId": "MODERATOR",
+        "judgeName": "Moderator (admin)",
+        "teamCode": "T01",
+        "responseToEvents": 4,
+        "decisionTiming": 4,
+        "adaptability": 4,
+        "riskRecognition": 4,
+        "forwardPositioning": 4,
+        "resilience": 4,
+        "balance": 4,
+        "adaptCapacity": 4,
+        "isLocked": true,
+        "isModerated": true,
+        "moderationNotes": "Official discrepancy resolved by Chief Judge",
+        "updatedAt": 1792334430002
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-03-J",
+      "category": "Judging Deliberation Privacy",
+      "title": "Unpublished Deliberation Scorecards Viewing Privacy",
+      "scenario": "Check GET /api/judging/scorecards before official publication",
+      "expected": "Anon=401, Team=403, Judge=200",
+      "actual": "Anon=401, Team=403, Judge=200",
+      "evidence": {
+        "anon": 401,
+        "team": 403,
+        "judge": 200
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-04-A",
+      "category": "Report Authorization",
+      "title": "Anonymous Orders CSV Report Export Rejection",
+      "scenario": "Unauthenticated caller requests GET /api/reports/orders/csv",
+      "expected": "HTTP 401 Unauthorized",
+      "actual": "HTTP 401",
+      "evidence": {
+        "error": "401 Unauthorized: Valid session authentication required."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-04-B",
+      "category": "Report Authorization",
+      "title": "Participant Team Orders CSV Export Rejection",
+      "scenario": "Team T01 requests GET /api/reports/orders/csv",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403",
+      "evidence": {
+        "error": "Forbidden: Requires audit.view or desk supervision authorization to export orders CSV report."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-04-C",
+      "category": "Report Authorization",
+      "title": "Unprivileged Staff Orders CSV Export Rejection",
+      "scenario": "Journalist and Judge request GET /api/reports/orders/csv",
+      "expected": "HTTP 403 Forbidden for non-audit/non-desk roles",
+      "actual": "Journalist=403, Judge=403",
+      "evidence": {
+        "journalist": {
+          "error": "Forbidden: Requires audit.view or desk supervision authorization to export orders CSV report."
+        },
+        "judge": {
+          "error": "Forbidden: Requires audit.view or desk supervision authorization to export orders CSV report."
+        }
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-04-D",
+      "category": "Report Authorization",
+      "title": "Authorized Desk Operator Orders CSV Export",
+      "scenario": "Exchange desk operator requests GET /api/reports/orders/csv",
+      "expected": "HTTP 200 with valid CSV content header and rows",
+      "actual": "HTTP 200, isCsv=true",
+      "evidence": {
+        "status": 200,
+        "preview": "Order ID,Ticket Number,Team Code,Ticker,Security Name,Action,Quantity,Order Type,Limit Price,Request"
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-04-E",
+      "category": "Report Authorization",
+      "title": "SEBI / Audit Orders CSV Export",
+      "scenario": "SEBI auditor requests GET /api/reports/orders/csv",
+      "expected": "HTTP 200 with valid CSV content",
+      "actual": "HTTP 200, isCsv=true",
+      "evidence": {
+        "status": 200
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-04-F",
+      "category": "Report Authorization",
+      "title": "Anonymous Reconciliation CSV Export Rejection",
+      "scenario": "Unauthenticated caller requests GET /api/reports/reconciliation/csv",
+      "expected": "HTTP 401 Unauthorized",
+      "actual": "HTTP 401",
+      "evidence": {
+        "error": "401 Unauthorized: Valid session authentication required."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-04-G",
+      "category": "Report Authorization",
+      "title": "Participant Team Reconciliation CSV Export Rejection",
+      "scenario": "Team T01 requests GET /api/reports/reconciliation/csv",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403",
+      "evidence": {
+        "error": "Forbidden: Requires audit.view permission to export event reconciliation report."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-04-H",
+      "category": "Report Authorization",
+      "title": "Desk Operator (Non-Audit) Reconciliation CSV Export Rejection",
+      "scenario": "Exchange desk operator requests GET /api/reports/reconciliation/csv",
+      "expected": "HTTP 403 Forbidden (requires audit.view)",
+      "actual": "HTTP 403",
+      "evidence": {
+        "error": "Forbidden: Requires audit.view permission to export event reconciliation report."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-04-I",
+      "category": "Report Authorization",
+      "title": "SEBI / Audit Reconciliation CSV Export",
+      "scenario": "SEBI auditor requests GET /api/reports/reconciliation/csv",
+      "expected": "HTTP 200 with complete financial reconciliation report",
+      "actual": "HTTP 200, isCsv=true",
+      "evidence": {
+        "status": 200,
+        "preview": "Rank,Team Code,Team Name,School,Team Type,Starting Capital (INR),Cash Balance (INR),Holdings Valuati"
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-05-A",
+      "category": "Auditorium Controls",
+      "title": "Anonymous Auditorium Debate Takeover Rejection",
+      "scenario": "Unauthenticated caller attempts POST /api/bull-bear/debate",
+      "expected": "HTTP 401 Unauthorized",
+      "actual": "HTTP 401",
+      "evidence": {
+        "error": "401 Unauthorized: Valid session authentication required."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-05-B",
+      "category": "Auditorium Controls",
+      "title": "Participant Team Debate Takeover Rejection",
+      "scenario": "Team T01 attempts POST /api/bull-bear/debate to hijack projector display",
+      "expected": "HTTP 403 Forbidden (market.control required)",
+      "actual": "HTTP 403",
+      "evidence": {
+        "error": "Forbidden: Auditorium debate control requires market.control permission."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-05-C",
+      "category": "Auditorium Controls",
+      "title": "Unprivileged Staff Debate Takeover Rejection",
+      "scenario": "Journalist attempts POST /api/bull-bear/debate",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403",
+      "evidence": {
+        "error": "Forbidden: Auditorium debate control requires market.control permission."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-05-D",
+      "category": "Auditorium Controls",
+      "title": "Authorized Coordinator Debate Activation",
+      "scenario": "Coordinator activates debate showdown on projector stage",
+      "expected": "HTTP 200 with debateData initialized and takeoverEvent broadcast",
+      "actual": "HTTP 200, topic=AI Megacap Valuations vs Market Fundamentals",
+      "evidence": {
+        "success": true,
+        "debateData": {
+          "topic": "AI Megacap Valuations vs Market Fundamentals",
+          "round": 1,
+          "active": true,
+          "startedAt": 1792334430061
+        }
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-05-E",
+      "category": "Auditorium Controls",
+      "title": "Anonymous Debate Round Modification Rejection",
+      "scenario": "Unauthenticated caller attempts POST /api/bull-bear/round",
+      "expected": "HTTP 401 Unauthorized",
+      "actual": "HTTP 401",
+      "evidence": {
+        "error": "401 Unauthorized: Valid session authentication required."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-05-F",
+      "category": "Auditorium Controls",
+      "title": "Participant Team Debate Round Modification Rejection",
+      "scenario": "Team T01 attempts POST /api/bull-bear/round",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403",
+      "evidence": {
+        "error": "Forbidden: Auditorium debate control requires market.control permission."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-05-G",
+      "category": "Auditorium Controls",
+      "title": "Authorized Coordinator Debate Round Management",
+      "scenario": "Coordinator advances debate to round 2 with topic and timer",
+      "expected": "HTTP 200 with debate round updated",
+      "actual": "HTTP 200, round=2",
+      "evidence": {
+        "activeRound": 2,
+        "currentTopic": "Sovereign Debt & Inflationary Pressures",
+        "timerSeconds": 240,
+        "status": "ACTIVE",
+        "startedAt": 1792334430103,
+        "moderatorNotes": "Round 2 Cross-Examination",
+        "history": []
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-05-H",
+      "category": "Auditorium Controls",
+      "title": "Malformed Debate Round Payload Rejection",
+      "scenario": "Coordinator sends malformed payload (empty topic and negative round)",
+      "expected": "HTTP 400 Bad Request",
+      "actual": "HTTP 400",
+      "evidence": {
+        "error": "Debate topic required."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-05-I",
+      "category": "Auditorium Controls",
+      "title": "Debate Trailing Slash Route Normalization",
+      "scenario": "Team T01 attempts POST /api/bull-bear/debate/ with trailing slash",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403",
+      "evidence": {
+        "error": "Forbidden: Auditorium debate control requires market.control permission."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-7.5-06-A",
+      "category": "Ledger Non-Mutation",
+      "title": "Financial Ledger & Order Queue Non-Mutation Guarantee",
+      "scenario": "Verify cash balances, order slips, and FX queues remained unmutated by test suite attacks",
+      "expected": "Strict zero mutation across financial ledger, cash balances, and queues",
+      "actual": "Zero mutations observed; T01 cash exactly 10,000,000 INR; order count=4; fxQueue count=2",
+      "evidence": {
+        "cashBalance": 10000000,
+        "ordersCount": 4,
+        "fxCount": 2
+      },
+      "status": "PASSED"
+    }
+  ]
+}

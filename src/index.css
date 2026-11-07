@@ -1,78 +1,446 @@
-:root {
-  /* High-Contrast Core Theme Palette — Financial Terminal Heritage */
-  --color-paper: #F7F5EE;
+:root,
+[data-theme="light"] {
+  /* ==========================================================================
+     SAAMX ’26 — PREMIUM LIGHT GLASSMORPHISM DESIGN SYSTEM
+     Theme: Premium Light Glassmorphism (Default)
+     Canvas: Pale Blue / Cool Slate Daylight (#F4F7FB)
+     Surfaces: Translucent Frosted Glass (rgba(255,255,255,0.82)) & Pure White (#FFFFFF)
+     Borders: Hairline Frosted & Subtle Slate (#E2E8F0)
+     Accents: SAAMX Vibrant Orange (#FF6800) & Deep Navy (#0B192C)
+     ========================================================================== */
+
+  /* Canvas & Base Surfaces */
+  --color-canvas: #F4F7FB;
+  --color-paper: #F8F9FC;
   --color-surface: #FFFFFF;
-  --color-surface-2: #EDE7DB;
-  --color-surface-3: #E2DBD0;
-  --color-border: #D5CDBF;
-  --color-border-light: #E4DEC2;
-  --color-border-focus: #845508;
+  --color-surface-hover: #F1F5F9;
+  --color-surface-2: #F1F5F9;
+  --color-surface-3: #E2E8F0;
+  --color-surface-elevated: #FFFFFF;
+  --color-surface-sunken: #F1F3F8;
+  --color-surface-glass: rgba(255, 255, 255, 0.82);
+  --color-surface-glass-hover: rgba(255, 255, 255, 0.92);
+  --color-surface-subtle: rgba(15, 23, 42, 0.04);
 
-  /* Ultra High-Contrast Typography Colors */
-  --color-ink: #080A0E;
-  --color-ink-2: #1E232B;
-  --color-ink-3: #3D4450;
-  --color-ink-4: #576070;
+  /* Hairline Borders & Dividers */
+  --color-border: #E2E8F0;
+  --color-border-light: #F1F5F9;
+  --color-border-subtle: #E2E8F0;
+  --color-border-strong: #CBD5E1;
+  --color-border-focus: #FF6800;
+  --color-glass-border: rgba(255, 255, 255, 0.85);
 
-  /* Deep Royal Antique Brass (7:1+ Contrast Ratio on Paper/Surface) */
-  --color-brass: #845508;
-  --color-brass-hover: #6C4404;
-  --color-brass-light: #F5E8CB;
-  --color-brass-gradient: linear-gradient(135deg, #9C6A12 0%, #B88523 50%, #845508 100%);
-  --color-brass-subtle: rgba(132, 85, 8, 0.10);
+  /* Typography & Text Hierarchy */
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #475569;
+  --color-text-muted: #64748B;
+  --color-text-tertiary: #94A3B8;
+  --color-text-inverted: #FFFFFF;
 
-  /* Deep Market Rise & Fall Colors */
-  --color-rise: #065F3E;
-  --color-rise-hover: #044B31;
-  --color-rise-light: #CEF2E2;
-  --color-rise-subtle: rgba(6, 95, 62, 0.10);
-  --color-rise-gradient: linear-gradient(135deg, #0A7A50 0%, #065F3E 100%);
+  --color-ink: #0F172A;
+  --color-ink-2: #1E293B;
+  --color-ink-3: #475569;
+  --color-ink-4: #94A3B8;
+  --color-ink-primary: #0F172A;
+  --color-ink-secondary: #475569;
+  --color-ink-muted: #94A3B8;
+  --color-ink-inverted: #FFFFFF;
 
-  --color-fall: #931913;
-  --color-fall-hover: #78120D;
-  --color-fall-light: #FCD8D5;
-  --color-fall-subtle: rgba(147, 25, 19, 0.10);
-  --color-fall-gradient: linear-gradient(135deg, #BD241D 0%, #931913 100%);
+  /* SAAMX Brand Accents: Deep Navy & Vibrant Orange */
+  --color-navy: #0B192C;
+  --color-navy-dark: #070F1D;
+  --color-navy-light: #1E293B;
+  --color-orange: #FF6800;
+  --color-orange-hover: #EA580C;
+  --color-orange-light: #FFF4ED;
+  --color-orange-subtle: rgba(255, 104, 0, 0.08);
+  --color-orange-border: rgba(255, 104, 0, 0.3);
+  --color-orange-gradient: linear-gradient(135deg, #FF7700 0%, #EA580C 100%);
 
-  --color-accent-blue: #134B8E;
-  --color-accent-blue-light: #DCE8F8;
+  /* Primary Brand Accent (SAAMX Orange Primary CTA, Royal Blue Secondary) */
+  --color-accent: #FF6800;
+  --color-accent-blue: #2563EB;
+  --color-accent-cyan: #0284C7;
+  --color-accent-hover: #EA580C;
+  --color-accent-light: #FFF4ED;
+  --color-accent-subtle: rgba(255, 104, 0, 0.08);
+  --color-accent-border: rgba(255, 104, 0, 0.3);
+  --color-accent-solid: #FF6800;
+  --color-accent-gradient: linear-gradient(135deg, #FF7700 0%, #EA580C 100%);
 
-  /* Premium Typography Hierarchy */
-  --font-display: 'Fraunces', 'Cinzel', Georgia, serif;
-  --font-brand: 'Cinzel', 'Fraunces', Georgia, serif;
-  --font-sans: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+  /* Market Dynamics & Status Indicators */
+  --color-rise: #059669;
+  --color-rise-hover: #047857;
+  --color-rise-light: #ECFDF5;
+  --color-rise-subtle: rgba(5, 150, 105, 0.08);
+  --color-rise-gradient: linear-gradient(135deg, #059669 0%, #047857 100%);
+
+  --color-fall: #DC2626;
+  --color-fall-hover: #B91C1C;
+  --color-fall-light: #FEF2F2;
+  --color-fall-subtle: rgba(220, 38, 38, 0.08);
+  --color-fall-gradient: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
+
+  --color-gain: #059669;
+  --color-gain-text: #065F3E;
+  --color-gain-bg: #ECFDF5;
+  --color-gain-border: #A7F3D0;
+  --color-gain-solid: #059669;
+  --color-gain-subtle: rgba(5, 150, 105, 0.08);
+
+  --color-loss: #DC2626;
+  --color-loss-text: #931913;
+  --color-loss-bg: #FEF2F2;
+  --color-loss-border: #FECACA;
+  --color-loss-solid: #DC2626;
+  --color-loss-subtle: rgba(220, 38, 38, 0.08);
+
+  --color-warn: #D97706;
+  --color-warning: #D97706;
+  --color-warn-text: #8A4B08;
+  --color-warn-bg: #FFFBEB;
+  --color-warn-border: #FDE68A;
+  --color-warn-solid: #D97706;
+  --color-warn-subtle: rgba(217, 119, 6, 0.08);
+
+  --color-info: #2563EB;
+  --color-info-text: #1E429F;
+  --color-info-bg: #EFF6FF;
+  --color-info-border: #BFDBFE;
+  --color-info-solid: #2563EB;
+
+  --color-gold: #B45309;
+  --color-gold-hover: #92400E;
+  --color-gold-light: #FFFBEB;
+  --color-gold-subtle: rgba(180, 83, 9, 0.08);
+  --color-gold-border: #FDE68A;
+  --color-gold-gradient: linear-gradient(135deg, #D97706 0%, #B45309 100%);
+
+  /* Backward Compatibility Aliases */
+  --color-brass: #2563EB;
+  --color-brass-primary: #2563EB;
+  --color-brass-hover: #1D4ED8;
+  --color-brass-light: #EFF6FF;
+  --color-brass-subtle: rgba(37, 99, 235, 0.08);
+  --color-brass-border: #BFDBFE;
+  --color-brass-gradient: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+  --color-accent-teal: #0284C7;
+
+  --card-bg: var(--color-surface);
+  --border-soft: var(--color-border);
+  --navy-900: var(--color-ink);
+  --navy-800: var(--color-ink-2);
+  --text-muted: var(--color-text-muted);
+  --gold-royal: var(--color-gold);
+  --green-emerald: var(--color-rise);
+  --red-crimson: var(--color-fall);
+  --bg-warm: var(--color-canvas);
+  --color-paper-subtle: var(--color-surface-2);
+
+  /* Modern FinTech Typography Hierarchy */
+  --font-display: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-brand: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-sans: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-body: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  /* Spacing */
+  /* Standard Spacing Scale */
   --space-unit: 4px;
+  --space-0: 0;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* Standard Border Radii */
+  --radius-xs: 4px;
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
+  --radius-xl: 24px;
   --radius-full: 9999px;
 
-  /* Elevation Shadows */
-  --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-card: 0 4px 16px -2px rgba(8, 10, 14, 0.07), 0 2px 6px -1px rgba(8, 10, 14, 0.04);
-  --shadow-card-hover: 0 12px 28px -4px rgba(8, 10, 14, 0.14), 0 4px 10px -2px rgba(8, 10, 14, 0.07);
-  --shadow-l1: 0 2px 8px rgba(0, 0, 0, 0.08);
-  --shadow-l2: 0 12px 32px rgba(0, 0, 0, 0.15);
-  --shadow-modal: 0 24px 48px -12px rgba(0, 0, 0, 0.28);
+  /* Elevation Shadows for Light Glassmorphism Canvas */
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-subtle: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-card: 0 4px 20px -2px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+  --shadow-card-hover: 0 12px 32px -4px rgba(15, 23, 42, 0.10), 0 4px 12px -2px rgba(15, 23, 42, 0.05);
+  --shadow-l1: 0 2px 8px rgba(15, 23, 42, 0.06);
+  --shadow-l2: 0 12px 28px -4px rgba(15, 23, 42, 0.12);
+  --shadow-modal: 0 24px 48px -12px rgba(15, 23, 42, 0.18), 0 8px 16px -4px rgba(15, 23, 42, 0.08);
 
-  /* Transitions */
   --transition-fast: 0.12s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-smooth: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Projector — High Contrast Room Display Overrides */
+/* ==========================================================================
+   DARK THEME ALTERNATIVE (Obsidian Terminal Mode)
+   ========================================================================== */
+[data-theme="dark"] {
+  /* Canvas & Dark Layered Surfaces */
+  --color-canvas: #0B0F19;
+  --color-paper: #0B0F19;
+  --color-surface: #111827;
+  --color-surface-hover: #1F2937;
+  --color-surface-2: #1F2937;
+  --color-surface-3: #374151;
+  --color-surface-elevated: #1F2937;
+  --color-surface-sunken: #070A10;
+  --color-surface-glass: rgba(17, 24, 39, 0.85);
+  --color-surface-subtle: rgba(255, 255, 255, 0.04);
+
+  /* Hairline Borders & Dividers */
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-light: rgba(255, 255, 255, 0.05);
+  --color-border-subtle: #1F2937;
+  --color-border-strong: #374151;
+  --color-border-focus: #FF6800;
+  --color-glass-border: rgba(255, 255, 255, 0.12);
+
+  /* Typography & Text Hierarchy */
+  --color-text-primary: #F1F5F9;
+  --color-text-secondary: #94A3B8;
+  --color-text-muted: #64748B;
+  --color-text-tertiary: #475569;
+  --color-text-inverted: #0B0F19;
+
+  --color-ink: #F1F5F9;
+  --color-ink-2: #E2E8F0;
+  --color-ink-3: #94A3B8;
+  --color-ink-4: #64748B;
+  --color-ink-primary: #F1F5F9;
+  --color-ink-secondary: #94A3B8;
+  --color-ink-muted: #64748B;
+  --color-ink-inverted: #0B0F19;
+
+  /* Primary Brand Accent */
+  --color-accent: #FF6800;
+  --color-accent-blue: #3B82F6;
+  --color-accent-cyan: #00E5FF;
+  --color-accent-hover: #EA580C;
+  --color-accent-light: rgba(255, 104, 0, 0.15);
+  --color-accent-subtle: rgba(255, 104, 0, 0.08);
+  --color-accent-border: rgba(255, 104, 0, 0.35);
+  --color-accent-solid: #FF6800;
+  --color-accent-gradient: linear-gradient(135deg, #FF7700 0%, #EA580C 100%);
+
+  /* Market Dynamics & Status Indicators */
+  --color-rise: #10B981;
+  --color-rise-hover: #059669;
+  --color-rise-light: rgba(16, 185, 129, 0.14);
+  --color-rise-subtle: rgba(16, 185, 129, 0.08);
+  --color-rise-gradient: linear-gradient(135deg, #10B981 0%, #059669 100%);
+
+  --color-fall: #EF4444;
+  --color-fall-hover: #DC2626;
+  --color-fall-light: rgba(239, 68, 68, 0.14);
+  --color-fall-subtle: rgba(239, 68, 68, 0.08);
+  --color-fall-gradient: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+
+  --color-gain: #10B981;
+  --color-gain-text: #34D399;
+  --color-gain-bg: rgba(16, 185, 129, 0.14);
+  --color-gain-border: rgba(16, 185, 129, 0.30);
+  --color-gain-solid: #10B981;
+  --color-gain-subtle: rgba(16, 185, 129, 0.08);
+
+  --color-loss: #EF4444;
+  --color-loss-text: #F87171;
+  --color-loss-bg: rgba(239, 68, 68, 0.14);
+  --color-loss-border: rgba(239, 68, 68, 0.30);
+  --color-loss-solid: #EF4444;
+  --color-loss-subtle: rgba(239, 68, 68, 0.08);
+
+  --color-warn: #F59E0B;
+  --color-warning: #F59E0B;
+  --color-warn-text: #FBBF24;
+  --color-warn-bg: rgba(245, 158, 11, 0.14);
+  --color-warn-border: rgba(245, 158, 11, 0.30);
+  --color-warn-solid: #F59E0B;
+  --color-warn-subtle: rgba(245, 158, 11, 0.08);
+
+  --color-info: #3B82F6;
+  --color-info-text: #60A5FA;
+  --color-info-bg: rgba(59, 130, 246, 0.14);
+  --color-info-border: rgba(59, 130, 246, 0.30);
+  --color-info-solid: #3B82F6;
+
+  --color-gold: #F59E0B;
+  --color-gold-hover: #FBBF24;
+  --color-gold-light: rgba(245, 158, 11, 0.14);
+  --color-gold-subtle: rgba(245, 158, 11, 0.08);
+  --color-gold-border: rgba(245, 158, 11, 0.30);
+  --color-gold-gradient: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+
+  /* Backward Compatibility Aliases */
+  --color-brass: #3B82F6;
+  --color-brass-primary: #3B82F6;
+  --color-brass-hover: #60A5FA;
+  --color-brass-light: rgba(59, 130, 246, 0.12);
+  --color-brass-subtle: rgba(59, 130, 246, 0.08);
+  --color-brass-border: rgba(59, 130, 246, 0.30);
+  --color-brass-gradient: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+  --color-accent-teal: #00E5FF;
+
+  --card-bg: var(--color-surface);
+  --border-soft: var(--color-border);
+  --navy-900: var(--color-ink);
+  --navy-800: var(--color-ink-2);
+  --text-muted: var(--color-text-muted);
+  --gold-royal: var(--color-gold);
+  --green-emerald: var(--color-rise);
+  --red-crimson: var(--color-fall);
+  --bg-warm: var(--color-canvas);
+  --color-paper-subtle: var(--color-surface-2);
+
+  /* Elevation Shadows for Dark Slate Surfaces */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-card: 0 4px 16px -2px rgba(0, 0, 0, 0.55), 0 2px 6px -1px rgba(0, 0, 0, 0.35);
+  --shadow-card-hover: 0 12px 28px -4px rgba(0, 0, 0, 0.65), 0 4px 10px -2px rgba(0, 0, 0, 0.45);
+  --shadow-l1: 0 2px 8px rgba(0, 0, 0, 0.45);
+  --shadow-l2: 0 12px 32px rgba(0, 0, 0, 0.65);
+  --shadow-modal: 0 24px 48px -12px rgba(0, 0, 0, 0.85);
+}
+
+/* ==========================================================================
+   ADAPTIVE DENSITY SCALING TOKENS (R3 Foundation)
+   Comfortable Studio View (Default) vs Compact Terminal View
+   ========================================================================== */
+:root,
+[data-density="comfortable"] {
+  --density-mode: comfortable;
+
+  /* Table Geometry (Comfortable Studio: 48px row height) */
+  --table-row-height: 48px;
+  --table-th-padding-y: 12px;
+  --table-th-padding-x: 16px;
+  --table-th-padding: 12px 16px;
+  --table-td-padding-y: 13px;
+  --table-td-padding-x: 16px;
+  --table-td-padding: 13px 16px;
+  --table-font-size: 0.88rem;
+  --table-th-font-size: 0.74rem;
+  --table-th-position: static;
+  --table-th-top: auto;
+  --table-th-z-index: auto;
+
+  /* Density Aliases for Primitives */
+  --density-table-row-h: 48px;
+  --density-table-cell-py: 12px;
+  --density-table-cell-px: 16px;
+  --density-table-py: 12px;
+  --density-table-px: 16px;
+  --density-table-font: 0.88rem;
+  --density-font-size-base: 14px;
+  --density-font-size-table: 0.88rem;
+  --density-gap: 16px;
+
+  /* Card Geometry (Comfortable Studio: 24px card padding) */
+  --card-padding: 24px;
+  --card-padding-sm: 16px;
+  --card-padding-md: 24px;
+  --card-padding-lg: 32px;
+  --card-header-gap: 16px;
+  --card-header-pb: 12px;
+  --density-card-padding: 24px;
+
+  /* Controls & Tap Targets */
+  --btn-height-sm: 32px;
+  --btn-height-md: 40px;
+  --btn-height-lg: 48px;
+  --btn-padding-sm: 6px 12px;
+  --btn-padding-md: 9px 18px;
+  --btn-padding-lg: 12px 24px;
+  --density-btn-py: 8px;
+  --density-btn-px: 16px;
+  --input-height: 42px;
+  --input-padding-y: 10px;
+  --input-padding-x: 14px;
+  --density-input-py: 9px;
+  --form-group-mb: 16px;
+  --badge-padding-sm: 3px 7px;
+  --badge-padding-md: 5px 10px;
+}
+
+[data-density="compact"] {
+  --density-mode: compact;
+
+  /* Table Geometry (Compact Terminal: 32px row height, sticky headers) */
+  --table-row-height: 32px;
+  --table-th-padding-y: 6px;
+  --table-th-padding-x: 10px;
+  --table-th-padding: 6px 10px;
+  --table-td-padding-y: 6px;
+  --table-td-padding-x: 10px;
+  --table-td-padding: 6px 10px;
+  --table-font-size: 0.82rem;
+  --table-th-font-size: 0.70rem;
+  --table-th-position: sticky;
+  --table-th-top: 0;
+  --table-th-z-index: 10;
+
+  /* Density Aliases for Primitives */
+  --density-table-row-h: 32px;
+  --density-table-cell-py: 6px;
+  --density-table-cell-px: 10px;
+  --density-table-py: 6px;
+  --density-table-px: 10px;
+  --density-table-font: 0.82rem;
+  --density-font-size-base: 13px;
+  --density-font-size-table: 0.78rem;
+  --density-gap: 8px;
+
+  /* Card Geometry (Compact Terminal: 12px card padding) */
+  --card-padding: 12px;
+  --card-padding-sm: 8px;
+  --card-padding-md: 12px;
+  --card-padding-lg: 16px;
+  --card-header-gap: 8px;
+  --card-header-pb: 6px;
+  --density-card-padding: 12px;
+
+  /* Controls & Tap Targets (High Data Density) */
+  --btn-height-sm: 26px;
+  --btn-height-md: 32px;
+  --btn-height-lg: 38px;
+  --btn-padding-sm: 4px 8px;
+  --btn-padding-md: 5px 12px;
+  --btn-padding-lg: 8px 16px;
+  --density-btn-py: 6px;
+  --density-btn-px: 10px;
+  --input-height: 32px;
+  --input-padding-y: 5px;
+  --input-padding-x: 10px;
+  --density-input-py: 6px;
+  --form-group-mb: 10px;
+  --badge-padding-sm: 1px 5px;
+  --badge-padding-md: 2px 7px;
+}
+
+/* ==========================================================================
+   PROJECTOR VIEW OVERRIDES
+   Ultra High Contrast Auditorium Display Specification
+   ========================================================================== */
 .projector-view {
-  --color-paper: #FBFBFA;
-  --color-surface: #FFFFFF;
-  --color-surface-2: #F3EFE7;
-  --color-ink: #050709;
-  --color-brass: #784C04;
-  --color-rise: #055437;
-  --color-fall: #7E140F;
-  --color-border: #CEC5B3;
+  --color-canvas: #0B0F19;
+  --color-paper: #0B0F19;
+  --color-surface: #111827;
+  --color-surface-2: #1F2937;
+  --color-surface-3: #374151;
+  --color-ink: #FFFFFF;
+  --color-ink-2: #F1F5F9;
+  --color-ink-3: #CBD5E1;
+  --color-accent: #38BDF8;
+  --color-brass: #38BDF8;
+  --color-rise: #10B981;
+  --color-fall: #EF4444;
+  --color-border: rgba(255, 255, 255, 0.15);
 }
 
 *, *::before, *::after {
@@ -102,14 +470,14 @@ body {
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--color-paper);
+  background: var(--color-canvas);
 }
 ::-webkit-scrollbar-thumb {
-  background: #C4BAA8;
+  background: var(--color-border-strong);
   border-radius: var(--radius-full);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-brass);
+  background: var(--color-accent);
 }
 
 /* Typography Hierarchy */
@@ -130,9 +498,45 @@ h1, h2, h3, h4, .slab-title {
 .font-data {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
   letter-spacing: -0.02em;
   color: var(--color-ink);
   font-weight: 700;
+}
+
+/* Financial Tabular Numerals & Monospace Typography Enforcement */
+.font-mono {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace) !important;
+}
+
+.font-sans {
+  font-family: var(--font-sans, 'Inter', sans-serif) !important;
+}
+
+.font-display {
+  font-family: var(--font-display, 'Plus Jakarta Sans', sans-serif) !important;
+}
+
+.tabular-nums, .tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Accessibility: High-Contrast Electric Cyan Focus Rings */
+:focus-visible {
+  outline: 2px solid var(--color-accent, #00E5FF) !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 2px var(--color-canvas), 0 0 0 4px rgba(0, 229, 255, 0.45) !important;
+}
+
+/* Accessibility: Motion Sensitivity */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Glass & Card Surfaces */
@@ -144,27 +548,43 @@ h1, h2, h3, h4, .slab-title {
   transition: transform var(--transition-smooth), box-shadow var(--transition-smooth), border-color var(--transition-smooth);
 }
 
+.saamx-glass-panel,
+.glass-panel {
+  background: var(--glass-bg, rgba(255, 255, 255, 0.85));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border, rgba(11, 25, 44, 0.08));
+  border-radius: var(--radius-lg, 16px);
+  box-shadow: 0 4px 20px -2px rgba(11, 25, 44, 0.05);
+  transition: transform var(--transition-smooth, 0.2s ease), box-shadow var(--transition-smooth, 0.2s ease);
+}
+
+.saamx-glass-panel:hover,
+.glass-panel:hover {
+  box-shadow: 0 10px 28px -4px rgba(11, 25, 44, 0.09);
+}
+
 .glass-interactive:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-card-hover);
-  border-color: #B5AB99;
+  border-color: var(--color-border-strong);
 }
 
 .card {
-  padding: 24px;
+  padding: var(--card-padding, 24px);
 }
 
 @media (max-width: 768px) {
   .card {
-    padding: 16px;
+    padding: var(--card-padding-sm, 16px);
   }
 }
 
 /* Buttons with tactile feedback */
 .btn {
   font-family: var(--font-sans);
-  font-weight: 700;
-  padding: 10px 18px;
+  font-weight: 600;
+  padding: 9px 18px;
   border-radius: var(--radius-sm);
   border: 1px solid transparent;
   cursor: pointer;
@@ -175,65 +595,65 @@ h1, h2, h3, h4, .slab-title {
   transition: transform var(--transition-fast), background-color var(--transition-smooth), box-shadow var(--transition-smooth), border-color var(--transition-smooth);
   user-select: none;
   text-decoration: none;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   line-height: 1.2;
 }
 
 .btn:active {
-  transform: scale(0.97);
+  transform: scale(0.98);
 }
 
 .btn-primary {
-  background: var(--color-brass-gradient);
+  background: var(--color-accent-gradient);
   color: #FFFFFF !important;
-  border-color: rgba(132, 85, 8, 0.4);
-  box-shadow: 0 2px 6px rgba(132, 85, 8, 0.30);
-  font-weight: 800;
+  border-color: rgba(37, 99, 235, 0.4);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+  font-weight: 700;
 }
 .btn-primary:hover {
-  background: linear-gradient(135deg, #AB7414 0%, #C79228 50%, #905D0A 100%);
-  box-shadow: 0 4px 12px rgba(132, 85, 8, 0.40);
+  background: linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
 }
 
 .btn-secondary {
   background-color: var(--color-surface-2);
   color: var(--color-ink) !important;
   border-color: var(--color-border);
-  font-weight: 700;
+  font-weight: 600;
 }
 .btn-secondary:hover {
   background-color: var(--color-surface-3);
-  border-color: #BEB4A2;
+  border-color: var(--color-border-strong);
 }
 
 .btn-success {
   background: var(--color-rise-gradient);
   color: #FFFFFF !important;
-  box-shadow: 0 2px 6px rgba(6, 95, 62, 0.30);
-  font-weight: 800;
+  box-shadow: 0 2px 6px rgba(5, 150, 105, 0.25);
+  font-weight: 700;
 }
 .btn-success:hover {
-  box-shadow: 0 4px 12px rgba(6, 95, 62, 0.40);
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.35);
 }
 
 .btn-danger {
   background: var(--color-fall-gradient);
   color: #FFFFFF !important;
-  box-shadow: 0 2px 6px rgba(147, 25, 19, 0.30);
-  font-weight: 800;
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25);
+  font-weight: 700;
 }
 .btn-danger:hover {
-  box-shadow: 0 4px 12px rgba(147, 25, 19, 0.40);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35);
 }
 
 .btn-outline-brass {
   background: transparent;
-  color: var(--color-brass) !important;
-  border: 2px solid var(--color-brass);
-  font-weight: 800;
+  color: var(--color-accent) !important;
+  border: 1.5px solid var(--color-accent);
+  font-weight: 700;
 }
 .btn-outline-brass:hover {
-  background: var(--color-brass-light);
+  background: var(--color-accent-light);
 }
 
 /* Tabular Financial Data Layouts */
@@ -248,28 +668,36 @@ h1, h2, h3, h4, .slab-title {
 .fms-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.92rem;
+  font-size: var(--table-font-size, 0.90rem);
 }
 
 .fms-table th {
+  position: var(--table-th-position, static);
+  top: var(--table-th-top, auto);
+  z-index: var(--table-th-z-index, auto);
+  background-color: var(--color-surface-2);
+  box-shadow: inset 0 -1px 0 var(--color-border);
   text-align: left;
-  padding: 12px 16px;
-  border-bottom: 2px solid var(--color-border);
-  color: #1E232B !important;
-  font-weight: 800;
-  font-size: 0.78rem;
+  padding: var(--table-th-padding, 10px 16px);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-ink-2) !important;
+  font-weight: 700;
+  font-size: var(--table-th-font-size, 0.76rem);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  background-color: #F5EFE4;
+  letter-spacing: 0.05em;
   user-select: none;
   white-space: nowrap;
 }
 
+.fms-table tr {
+  height: var(--table-row-height, 48px);
+}
+
 .fms-table td {
-  padding: 12px 16px;
-  border-bottom: 1px solid #EAE3D6;
+  padding: var(--table-td-padding, 10px 16px);
+  border-bottom: 1px solid var(--color-border-light);
   vertical-align: middle;
-  color: #080A0E;
+  color: var(--color-ink);
   transition: background-color var(--transition-fast);
 }
 
@@ -278,7 +706,32 @@ h1, h2, h3, h4, .slab-title {
 }
 
 .fms-table tr:hover td {
-  background-color: #F7F2E7;
+  background-color: var(--color-surface-hover);
+}
+
+/* Universal compact table fallback for unmigrated raw tables inside cards */
+[data-density="compact"] .card table th,
+[data-density="compact"] .saamx-card table th,
+[data-density="compact"] .fms-table-container table th {
+  padding: var(--table-th-padding-y, 6px) var(--table-th-padding-x, 10px) !important;
+  font-size: var(--table-th-font-size, 0.70rem);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: var(--color-surface-2);
+}
+
+[data-density="compact"] .card table td,
+[data-density="compact"] .saamx-card table td,
+[data-density="compact"] .fms-table-container table td {
+  padding: var(--table-td-padding-y, 6px) var(--table-td-padding-x, 10px) !important;
+  font-size: var(--table-font-size, 0.82rem);
+}
+
+[data-density="compact"] .card table tr,
+[data-density="compact"] .saamx-card table tr,
+[data-density="compact"] .fms-table-container table tr {
+  height: var(--table-row-height, 32px);
 }
 
 /* Forms & Modern Text Inputs */
@@ -288,36 +741,36 @@ h1, h2, h3, h4, .slab-title {
 
 .form-group label {
   display: block;
-  font-size: 0.82rem;
-  font-weight: 800;
+  font-size: 0.80rem;
+  font-weight: 700;
   margin-bottom: 6px;
-  color: #1E232B;
+  color: var(--color-ink-2);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
 .input-field {
   width: 100%;
-  padding: 10px 14px;
+  padding: 9px 14px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   background-color: var(--color-surface);
   color: var(--color-ink);
   font-family: var(--font-sans);
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-size: 0.92rem;
+  font-weight: 500;
   outline: none;
   transition: border-color var(--transition-smooth), box-shadow var(--transition-smooth);
 }
 
 .input-field:focus {
   border-color: var(--color-border-focus);
-  box-shadow: 0 0 0 3px rgba(132, 85, 8, 0.20);
+  box-shadow: 0 0 0 3px var(--color-accent-subtle);
 }
 
 .input-field::placeholder {
-  color: #576070;
-  font-weight: 500;
+  color: var(--color-ink-4);
+  font-weight: 400;
 }
 
 /* Badges & Status Chips with Bold Contrast */
@@ -325,43 +778,43 @@ h1, h2, h3, h4, .slab-title {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 4px 9px;
-  border-radius: var(--radius-sm);
-  font-size: 0.74rem;
-  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: var(--radius-xs);
+  font-size: 0.72rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  line-height: 1;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
 }
 
 .badge-public {
-  background-color: #F5E8CB;
-  color: #6C4404 !important;
-  border: 1px solid rgba(132, 85, 8, 0.35);
+  background-color: var(--color-gold-light);
+  color: var(--color-gold) !important;
+  border: 1px solid var(--color-gold-border);
 }
 
 .badge-rise {
-  background-color: #CEF2E2;
-  color: #044B31 !important;
-  border: 1px solid rgba(6, 95, 62, 0.35);
+  background-color: var(--color-gain-bg);
+  color: var(--color-gain-text) !important;
+  border: 1px solid var(--color-gain-border);
 }
 
 .badge-fall {
-  background-color: #FCD8D5;
-  color: #78120D !important;
-  border: 1px solid rgba(147, 25, 19, 0.35);
+  background-color: var(--color-loss-bg);
+  color: var(--color-loss-text) !important;
+  border: 1px solid var(--color-loss-border);
 }
 
 .badge-protected {
-  background-color: #FCD8D5;
-  color: #78120D !important;
-  border: 1px solid rgba(147, 25, 19, 0.35);
+  background-color: var(--color-loss-bg);
+  color: var(--color-loss-text) !important;
+  border: 1px solid var(--color-loss-border);
 }
 
 .badge-info {
-  background-color: #DCE8F8;
-  color: #0E396E !important;
-  border: 1px solid rgba(19, 75, 142, 0.35);
+  background-color: var(--color-info-bg);
+  color: var(--color-info-text) !important;
+  border: 1px solid var(--color-info-border);
 }
 
 .text-up { color: var(--color-rise) !important; font-weight: 700; }
@@ -440,7 +893,7 @@ h1, h2, h3, h4, .slab-title {
   right: 0;
   bottom: 0;
   z-index: 100000;
-  background-color: rgba(247, 245, 238, 0.97);
+  background-color: rgba(15, 23, 42, 0.85);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
@@ -454,11 +907,11 @@ h1, h2, h3, h4, .slab-title {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-modal);
-  padding: 44px;
+  padding: 40px;
   text-align: center;
-  border-top: 8px solid var(--color-brass);
+  border-top: 6px solid var(--color-accent);
   border: 1px solid var(--color-border);
-  border-top-width: 8px;
+  border-top-width: 6px;
 }
 
 .takeover-card.bankruptcy {
@@ -471,18 +924,18 @@ h1, h2, h3, h4, .slab-title {
 
 .takeover-title {
   font-family: var(--font-display);
-  font-size: 2.6rem;
-  font-weight: 900;
-  margin-bottom: 14px;
+  font-size: 2.2rem;
+  font-weight: 800;
+  margin-bottom: 12px;
   letter-spacing: -0.02em;
-  color: #080A0E;
+  color: var(--color-ink);
 }
 
 .takeover-desc {
-  font-size: 1.15rem;
-  color: #1E232B;
+  font-size: 1.05rem;
+  color: var(--color-ink-2);
   line-height: 1.6;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 @keyframes fade-in {
@@ -496,7 +949,7 @@ h1, h2, h3, h4, .slab-title {
   justify-content: space-between;
   align-items: center;
   padding: 12px 24px;
-  background-color: rgba(255, 255, 255, 0.98);
+  background-color: var(--color-surface);
   backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--color-border);
   box-shadow: var(--shadow-subtle);
@@ -515,31 +968,31 @@ h1, h2, h3, h4, .slab-title {
 }
 
 .logo-avatar {
-  background: var(--color-brass-gradient);
+  background: var(--color-accent-gradient);
   color: #FFFFFF;
   font-family: var(--font-brand);
-  font-weight: 900;
-  font-size: 1.2rem;
-  width: 38px;
-  height: 38px;
+  font-weight: 800;
+  font-size: 1.1rem;
+  width: 36px;
+  height: 36px;
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(132, 85, 8, 0.30);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
 }
 
 .logo-title {
   font-family: var(--font-brand);
-  font-weight: 900;
-  font-size: 1.35rem;
-  letter-spacing: 0.05em;
-  color: #080A0E;
+  font-weight: 800;
+  font-size: 1.25rem;
+  letter-spacing: 0.04em;
+  color: var(--color-ink);
 }
 
 .nav-tabs {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   background-color: var(--color-surface-2);
   padding: 4px;
   border-radius: var(--radius-md);
@@ -548,24 +1001,24 @@ h1, h2, h3, h4, .slab-title {
 
 .nav-link {
   text-decoration: none;
-  color: #1E232B !important;
-  font-weight: 700;
-  font-size: 0.86rem;
-  padding: 7px 14px;
+  color: var(--color-ink-2) !important;
+  font-weight: 600;
+  font-size: 0.84rem;
+  padding: 6px 14px;
   border-radius: var(--radius-sm);
   transition: all var(--transition-fast);
 }
 
 .nav-link:hover {
-  color: #000000 !important;
-  background-color: rgba(255, 255, 255, 0.85);
+  color: var(--color-ink) !important;
+  background-color: var(--color-surface);
 }
 
 .nav-link.active {
   color: #FFFFFF !important;
-  background: var(--color-brass-gradient);
-  box-shadow: 0 2px 6px rgba(132, 85, 8, 0.30);
-  font-weight: 800;
+  background: var(--color-accent-gradient);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+  font-weight: 700;
 }
 
 .main-content {
@@ -693,6 +1146,153 @@ h1, h2, h3, h4, .slab-title {
   border-left: 4px solid var(--color-fall);
   border-radius: var(--radius-md);
   padding: 20px;
+}
+
+/* ==========================================================================
+   DARK THEME COMPONENT OVERRIDES
+   Ensures complete dark styling across tables, forms, badges, modals, & cards
+   ========================================================================== */
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: var(--color-canvas);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent);
+}
+
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3,
+[data-theme="dark"] h4,
+[data-theme="dark"] .slab-title,
+[data-theme="dark"] .brand-heading,
+[data-theme="dark"] .font-data {
+  color: var(--color-ink);
+}
+
+/* Tables */
+[data-theme="dark"] .fms-table-container {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+[data-theme="dark"] .fms-table th {
+  background-color: var(--color-surface-2);
+  color: var(--color-ink-2) !important;
+  border-bottom: 1px solid var(--color-border);
+}
+
+[data-theme="dark"] .fms-table td {
+  border-bottom: 1px solid var(--color-border-light);
+  color: var(--color-ink);
+}
+
+[data-theme="dark"] .fms-table tr:hover td {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+/* Forms & Inputs */
+[data-theme="dark"] .form-group label {
+  color: var(--color-ink-2);
+}
+
+[data-theme="dark"] .input-field {
+  background-color: var(--color-surface-2);
+  color: var(--color-ink);
+  border-color: var(--color-border);
+}
+
+[data-theme="dark"] .input-field:focus {
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px var(--color-accent-subtle);
+}
+
+[data-theme="dark"] .input-field::placeholder {
+  color: var(--color-ink-4);
+}
+
+/* Badges */
+[data-theme="dark"] .badge-public {
+  background-color: var(--color-gold-light);
+  color: var(--color-gold-hover) !important;
+  border-color: var(--color-gold-border);
+}
+
+[data-theme="dark"] .badge-rise {
+  background-color: var(--color-gain-bg);
+  color: var(--color-gain-text) !important;
+  border-color: var(--color-gain-border);
+}
+
+[data-theme="dark"] .badge-fall,
+[data-theme="dark"] .badge-protected {
+  background-color: var(--color-loss-bg);
+  color: var(--color-loss-text) !important;
+  border-color: var(--color-loss-border);
+}
+
+[data-theme="dark"] .badge-info {
+  background-color: var(--color-info-bg);
+  color: var(--color-info-text) !important;
+  border-color: var(--color-info-border);
+}
+
+/* Header & Navigation */
+[data-theme="dark"] .app-header {
+  background-color: rgba(17, 24, 39, 0.95);
+  border-bottom-color: var(--color-border);
+}
+
+[data-theme="dark"] .logo-title {
+  color: var(--color-ink);
+}
+
+[data-theme="dark"] .nav-link {
+  color: var(--color-ink-2) !important;
+}
+
+[data-theme="dark"] .nav-link:hover {
+  color: #FFFFFF !important;
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Modals & Overlays */
+[data-theme="dark"] .takeover-overlay {
+  background-color: rgba(11, 15, 25, 0.96);
+}
+
+[data-theme="dark"] .takeover-title {
+  color: var(--color-ink);
+}
+
+[data-theme="dark"] .takeover-desc {
+  color: var(--color-ink-2);
+}
+
+[data-theme="dark"] .split-flap-char {
+  background: var(--color-surface-2);
+  color: var(--color-ink);
+  border-color: var(--color-border);
+}
+
+/* Card Archetypes */
+[data-theme="dark"] .card-hero {
+  background: linear-gradient(135deg, #111827 0%, #1F2937 100%);
+  border-color: var(--color-border);
+}
+
+[data-theme="dark"] .card-data {
+  background: var(--color-surface-2);
+  border-color: var(--color-border);
+}
+
+[data-theme="dark"] .card-alert {
+  background: var(--color-surface);
+  border-color: rgba(239, 68, 68, 0.3);
 }
 
 /* Media Print Optimization */

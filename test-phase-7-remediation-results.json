@@ -1,0 +1,331 @@
+[
+  {
+    "id": "SEC-01.1",
+    "title": "Unauthenticated Security Creation Blocked via POST /api/securities",
+    "scenario": "Calling POST /api/securities with no authentication headers",
+    "expected": "401 Unauthorized or 403 Forbidden",
+    "actual": "HTTP 401 (401 Unauthorized: Valid session authentication required.)",
+    "evidence": {
+      "status": 401,
+      "error": "401 Unauthorized: Valid session authentication required."
+    },
+    "status": "REMEDIATED"
+  },
+  {
+    "id": "SEC-01.2",
+    "title": "Unauthenticated Security Modification Blocked via PUT /api/securities/:id",
+    "scenario": "Calling PUT /api/securities/STK_RELIANCE_ea1e16 with no authentication headers",
+    "expected": "401 Unauthorized or 403 Forbidden",
+    "actual": "HTTP 401 (401 Unauthorized: Valid session authentication required.)",
+    "evidence": {
+      "status": 401,
+      "error": "401 Unauthorized: Valid session authentication required."
+    },
+    "status": "REMEDIATED"
+  },
+  {
+    "id": "SEC-01.3",
+    "title": "Unauthenticated Security Deletion Blocked via DELETE /api/securities/:id",
+    "scenario": "Calling DELETE /api/securities/STK_RELIANCE_ea1e16 with no authentication headers",
+    "expected": "401 Unauthorized or 403 Forbidden",
+    "actual": "HTTP 401 (401 Unauthorized: Valid session authentication required.)",
+    "evidence": {
+      "status": 401,
+      "error": "401 Unauthorized: Valid session authentication required."
+    },
+    "status": "REMEDIATED"
+  },
+  {
+    "id": "SEC-01.4",
+    "title": "Unauthenticated Global FX Rate Manipulation Blocked via POST /api/fx/rates",
+    "scenario": "Calling POST /api/fx/rates with no authentication headers",
+    "expected": "401 Unauthorized or 403 Forbidden",
+    "actual": "HTTP 401 (401 Unauthorized: Valid session authentication required.)",
+    "evidence": {
+      "status": 401,
+      "error": "401 Unauthorized: Valid session authentication required."
+    },
+    "status": "REMEDIATED"
+  },
+  {
+    "id": "SEC-02.1",
+    "title": "Trailing Slash Normalized & Cross-Team Resubmit Blocked on /api/orders/resubmit/",
+    "scenario": "Team T02 resubmitting Team T01 returned order via /api/orders/resubmit/",
+    "expected": "403 Forbidden",
+    "actual": "HTTP 403 (Forbidden: Team T02 cannot resubmit orders belonging to team T01.)",
+    "evidence": {
+      "status": 403,
+      "error": "Forbidden: Team T02 cannot resubmit orders belonging to team T01."
+    },
+    "status": "REMEDIATED"
+  },
+  {
+    "id": "SEC-02.2",
+    "title": "Trailing Slash Normalized & Cross-Team Cancel Blocked on /api/orders/cancel/",
+    "scenario": "Team T02 cancelling Team T01 pending order via /api/orders/cancel/",
+    "expected": "403 Forbidden",
+    "actual": "HTTP 403 (Forbidden: Team T02 cannot cancel orders belonging to team T01.)",
+    "evidence": {
+      "status": 403,
+      "error": "Forbidden: Team T02 cannot cancel orders belonging to team T01."
+    },
+    "status": "REMEDIATED"
+  },
+  {
+    "id": "FIN-01",
+    "title": "Unprivileged Transaction Voiding Blocked via POST /api/transactions/void",
+    "scenario": "Team T02 calling POST /api/transactions/void to void Team T01 transaction",
+    "expected": "403 Forbidden (Requires Admin/SEBI role)",
+    "actual": "HTTP 403 (Forbidden: Transaction voiding requires SEBI or Administrator privileges.)",
+    "evidence": {
+      "status": 403,
+      "error": "Forbidden: Transaction voiding requires SEBI or Administrator privileges."
+    },
+    "status": "REMEDIATED"
+  },
+  {
+    "id": "FIN-02.1",
+    "title": "Unprivileged Stock Bankruptcy Blocked via POST /api/corporate-action",
+    "scenario": "Team T01 triggering Bankruptcy on Security INFY",
+    "expected": "403 Forbidden (Requires Admin/SEBI role)",
+    "actual": "HTTP 403 (Forbidden: Corporate actions require SEBI or Administrator privileges.)",
+    "evidence": {
+      "status": 403,
+      "error": "Forbidden: Corporate actions require SEBI or Administrator privileges."
+    },
+    "status": "REMEDIATED"
+  },
+  {
+    "id": "FIN-02.2",
+    "title": "Unprivileged Dividend Distribution Blocked via POST /api/corporate-action",
+    "scenario": "Team T01 triggering Dividend payout on Security TCS",
+    "expected": "403 Forbidden (Requires Admin/SEBI role)",
+    "actual": "HTTP 403 (Forbidden: Corporate actions require SEBI or Administrator privileges.)",
+    "evidence": {
+      "status": 403,
+      "error": "Forbidden: Corporate actions require SEBI or Administrator privileges."
+    },
+    "status": "REMEDIATED"
+  },
+  {
+    "id": "AUD-D31-01.1",
+    "title": "Non-Team Role / Omitted teamCode Resubmit Blocked",
+    "scenario": "Journalist session resubmitting Team T01 order with teamCode omitted in body",
+    "expected": "403 Forbidden",
+    "actual": "HTTP 403 (Forbidden: Only the owning Investment House or Administrator can modify or cancel orders.)",
+    "evidence": {
+      "status": 403,
+      "error": "Forbidden: Only the owning Investment House or Administrator can modify or cancel orders."
+    },
+    "status": "REMEDIATED"
+  },
+  {
+    "id": "AUD-D31-01.2",
+    "title": "Non-Team Role / Spoofed teamCode Cancellation Blocked",
+    "scenario": "Advisor session cancelling Team T01 order with spoofed teamCode: T01 in body",
+    "expected": "403 Forbidden",
+    "actual": "HTTP 403 (Forbidden: Only the owning Investment House or Administrator can modify or cancel orders.)",
+    "evidence": {
+      "status": 403,
+      "error": "Forbidden: Only the owning Investment House or Administrator can modify or cancel orders."
+    },
+    "status": "REMEDIATED"
+  },
+  {
+    "id": "SEC-03",
+    "title": "Cross-Team Injection Blocked on /api/order/submit Alias",
+    "scenario": "Team T02 injecting order on behalf of Team T01 via /api/order/submit alias",
+    "expected": "403 Forbidden",
+    "actual": "HTTP 403 (Forbidden: Team T02 cannot submit orders on behalf of team T01.)",
+    "evidence": {
+      "status": 403,
+      "error": "Forbidden: Team T02 cannot submit orders on behalf of team T01."
+    },
+    "status": "REMEDIATED"
+  },
+  {
+    "id": "FIN-03",
+    "title": "Direct Trade Execution Blocked for Trading Floor Participants",
+    "scenario": "Participant Team T01 calling POST /api/trade to execute directly",
+    "expected": "403 Forbidden",
+    "actual": "HTTP 403 (Forbidden: Trading floor participants cannot execute trades directly. Orders must be submitted as slips via /api/order/create.)",
+    "evidence": {
+      "status": 403,
+      "error": "Forbidden: Trading floor participants cannot execute trades directly. Orders must be submitted as slips via /api/order/create."
+    },
+    "status": "REMEDIATED"
+  },
+  {
+    "id": "FIN-04.1",
+    "title": "Cross-Team IPO Bid & Fund Reservation Blocked via /api/ipo/bid",
+    "scenario": "Team T02 placing IPO bid on behalf of Team T01",
+    "expected": "403 Forbidden",
+    "actual": "HTTP 403 (Forbidden: Team T02 cannot place IPO bids for team T01.)",
+    "evidence": {
+      "status": 403,
+      "error": "Forbidden: Team T02 cannot place IPO bids for team T01."
+    },
+    "status": "REMEDIATED"
+  },
+  {
+    "id": "FIN-04.2",
+    "title": "Unprivileged IPO Allotment Trigger Blocked via /api/ipo/allot",
+    "scenario": "Team T01 calling POST /api/ipo/allot",
+    "expected": "403 Forbidden",
+    "actual": "HTTP 403 (Forbidden: IPO lifecycle operations require Administrator privileges.)",
+    "evidence": {
+      "status": 403,
+      "error": "Forbidden: IPO lifecycle operations require Administrator privileges."
+    },
+    "status": "REMEDIATED"
+  },
+  {
+    "id": "SEC-04.1",
+    "title": "Unprivileged Competitor Penalty Injection Blocked via /api/penalties/create",
+    "scenario": "Team T01 submitting penalty against competing Team T02",
+    "expected": "403 Forbidden",
+    "actual": "HTTP 403 (Forbidden: Issuing penalties requires SEBI or Administrator privileges.)",
+    "evidence": {
+      "status": 403,
+      "error": "Forbidden: Issuing penalties requires SEBI or Administrator privileges."
+    },
+    "status": "REMEDIATED"
+  },
+  {
+    "id": "SEC-04.2",
+    "title": "Self-Service Penalty Overturn Blocked via /api/penalties/resolve-appeal",
+    "scenario": "Team T02 overturning penalty points deduction",
+    "expected": "403 Forbidden",
+    "actual": "HTTP 403 (Forbidden: Resolving penalty appeals requires Administrator privileges.)",
+    "evidence": {
+      "status": 403,
+      "error": "Forbidden: Resolving penalty appeals requires Administrator privileges."
+    },
+    "status": "REMEDIATED"
+  },
+  {
+    "id": "PRIV-01",
+    "title": "Cross-Team Order Slip Privacy Enforced in WebSocket Broadcasts",
+    "scenario": "Client T02 observing WebSocket broadcast when Team T01 creates order slip",
+    "expected": "Zero details of Team T01 orders delivered to Client T02",
+    "actual": "Client T02 received sanitized broadcast with 0 leaked orders from Team T01",
+    "evidence": {
+      "receivedCount": 3,
+      "hasLeak": false,
+      "clientT02OrdersCount": 0
+    },
+    "status": "REMEDIATED"
+  },
+  {
+    "id": "AUD-RTDB-01",
+    "title": "Non-Destructive State Merging in useFirebaseState.js",
+    "scenario": "Simulating RTDB partial key sync over existing authoritative REST state",
+    "expected": "All server-only collections preserved; functional prevState merger present in hook",
+    "actual": "All 10 collections preserved across sync with functional setState",
+    "evidence": {
+      "hasFunctionalMergeInSource": true,
+      "preservedCollectionsCount": 10,
+      "serverOnlyCollections": [
+        "investmentHouses",
+        "schools",
+        "registrations",
+        "events",
+        "currentEventId",
+        "scoringConfig",
+        "resultsLifecycle",
+        "judgeScorecards",
+        "bullBearDebate",
+        "riskControls"
+      ]
+    },
+    "status": "REMEDIATED"
+  },
+  {
+    "id": "LEG-01",
+    "title": "Legitimate Order Submission by Authenticated Team",
+    "scenario": "Team T01 submitting valid BUY order for TCS with correct session credentials",
+    "expected": "HTTP 200 with status PENDING",
+    "actual": "HTTP 200 (Order ORD_1792334438263_jfkv, status: PENDING)",
+    "evidence": {
+      "status": 200,
+      "orderId": "ORD_1792334438263_jfkv",
+      "orderStatus": "PENDING"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "LEG-02",
+    "title": "Legitimate Clearance Desk Verification",
+    "scenario": "DESK_1 operator claiming and verifying order slip",
+    "expected": "HTTP 200 with status VERIFIED_AWAITING_EXCHANGE",
+    "actual": "HTTP 200 (Order status: VERIFIED_AWAITING_EXCHANGE)",
+    "evidence": {
+      "claimStatus": 200,
+      "verifyStatus": 200,
+      "orderStatus": "VERIFIED_AWAITING_EXCHANGE"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "LEG-03",
+    "title": "Legitimate Trade Execution & Multi-Currency Financial Ledger Invariants",
+    "scenario": "Exchange Operator executing verified order; verifying cash wallet and holdings accounting",
+    "expected": "HTTP 200, status EXECUTED, exact INR wallet reduction, exact holdings increment",
+    "actual": "HTTP 200 (Cash delta: ₹64000, Holdings delta: +20)",
+    "evidence": {
+      "execStatus": 200,
+      "orderStatus": "EXECUTED",
+      "transactionId": "TX0002",
+      "preCashINR": 10000000,
+      "postCashINR": 9936000,
+      "totalCost": 64000,
+      "cashDeductedCorrectly": true,
+      "holdingsUpdatedCorrectly": true
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "LEG-04",
+    "title": "Legitimate Order Resubmission by Owning Team",
+    "scenario": "Team T01 resubmitting its own returned order with updated quantity",
+    "expected": "HTTP 200, status PENDING, quantity 90",
+    "actual": "HTTP 200 (Status: PENDING, Qty: 90)",
+    "evidence": {
+      "status": 200,
+      "orderId": "ORD_TEST_T01_RET_AUD31",
+      "newQuantity": 90,
+      "orderStatus": "PENDING"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "LEG-05",
+    "title": "Legitimate Order Cancellation by Owning Team",
+    "scenario": "Team T01 cancelling its own pending order",
+    "expected": "HTTP 200, status CANCELLED",
+    "actual": "HTTP 200 (Status: CANCELLED)",
+    "evidence": {
+      "status": 200,
+      "orderId": "ORD_1792334438652_dsi8",
+      "orderStatus": "CANCELLED"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "LEG-06",
+    "title": "Legitimate Primary IPO Subscription by Authenticated Team",
+    "scenario": "Team T01 placing valid IPO bid for DTAI with sufficient USD cash wallet",
+    "expected": "HTTP 200, successful fund reservation",
+    "actual": "HTTP 200 (Successfully placed subscription for 10 units of DTAI ($1,000 reserved).)",
+    "evidence": {
+      "status": 200,
+      "teamBid": {
+        "quantity": 10,
+        "capitalReserved": 1000,
+        "timestamp": 1792334438718
+      },
+      "totalSubscription": 10
+    },
+    "status": "PASSED"
+  }
+]

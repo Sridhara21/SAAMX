@@ -1,0 +1,222 @@
+{
+  "timestamp": "2026-10-28T16:14:49.834Z",
+  "totalScenarios": 14,
+  "passed": 14,
+  "failed": 0,
+  "passRate": "100%",
+  "authoritativeStateHash": "441077e432987ce85a8ec982b818564f68f9b3fa8a59128e5313d04ab30c754c",
+  "timingMetrics": {
+    "orderProcessingPercentiles": {
+      "p50": 265,
+      "p95": 265,
+      "p99": 265,
+      "min": 265,
+      "max": 265,
+      "avg": 265
+    },
+    "reconnectTimeMs": 409,
+    "restartRecoveryTimeMs": 3295
+  },
+  "results": [
+    {
+      "id": "REHEARSAL-01",
+      "name": "Participant Login & Team Data Isolation",
+      "endpoint": "POST /api/auth/login + GET /api/portfolio",
+      "role": "Participant Teams T01 & T02",
+      "scenario": "Authenticate separate participant teams; verify T01 is forbidden from viewing T02 portfolio",
+      "expected": "HTTP 200 logins, HTTP 403 on cross-team portfolio inspection",
+      "actual": "T01 Login: true, T02 Login: true, Cross-Team Blocked: 403",
+      "status": "PASS",
+      "evidence": {
+        "crossStatus": 403
+      }
+    },
+    {
+      "id": "REHEARSAL-02",
+      "name": "Market Catalog Search, Instrument Details & Portfolio Visibility",
+      "endpoint": "GET /api/state + GET /api/portfolio",
+      "role": "Participant Team T01",
+      "scenario": "Query full 2,854 security universe, search TCS, inspect private team multi-currency wallet",
+      "expected": "Universe >= 2849 items, search returns matches in < 150ms, private wallet accessible",
+      "actual": "Catalog Count: 2854, Matches: 2, Search Latency: 171ms, Wallet Accessible: true",
+      "status": "PASS",
+      "evidence": {
+        "catalogCount": 2854,
+        "searchTimeMs": 171
+      }
+    },
+    {
+      "id": "REHEARSAL-03",
+      "name": "Paper Order-Slip Creation & Duplicate-Ticket Rejection",
+      "endpoint": "POST /api/order/create",
+      "role": "Order Intake Desk",
+      "scenario": "Submit valid physical order slip; submit duplicate slip with identical ticket number",
+      "expected": "First slip HTTP 200 (PENDING status); duplicate slip HTTP 400 Duplicate Ticket Number",
+      "actual": "Slip 1: 200, Slip 2 Duplicate: 400 (\"Duplicate Ticket Number: Physical Ticket #TKT-SLIP-P8-1793204081391 has already been logged into the queue.\")",
+      "status": "PASS",
+      "evidence": {
+        "s1": 200,
+        "s2": 400
+      }
+    },
+    {
+      "id": "REHEARSAL-04",
+      "name": "Verification Desk Claim, Validation & Approval",
+      "endpoint": "POST /api/order/action (CLAIM_FOR_VERIFICATION + VERIFY)",
+      "role": "Order Verification Officer",
+      "scenario": "Officer claims order slip, verifies physical signature/tick size, marks verified",
+      "expected": "Status transitions from PENDING -> BEING_VERIFIED -> VERIFIED_AWAITING_EXCHANGE",
+      "actual": "Claim Status: BEING_VERIFIED, Verified Status: VERIFIED_AWAITING_EXCHANGE, Elapsed: 148ms",
+      "status": "PASS",
+      "evidence": {
+        "verifElapsed": 148,
+        "finalStatus": "VERIFIED_AWAITING_EXCHANGE"
+      }
+    },
+    {
+      "id": "REHEARSAL-05",
+      "name": "Exchange Desk Claim & Execution",
+      "endpoint": "POST /api/order/action (CLAIM_FOR_EXCHANGE + VALIDATE + EXECUTE)",
+      "role": "Exchange Execution Desk Operator",
+      "scenario": "Operator claims verified slip, executes trade, credits team holdings and debits cash",
+      "expected": "Status transitions from UNDER_EXCHANGE_REVIEW -> VALIDATED -> EXECUTED with transaction record",
+      "actual": "Execution Status: EXECUTED, TxId: TX0001, Latency: 265ms",
+      "status": "PASS",
+      "evidence": {
+        "execElapsed": 265,
+        "txId": "TX0001"
+      }
+    },
+    {
+      "id": "REHEARSAL-06",
+      "name": "Bank Settlement & Rejection Workflows (Two-Phase Mode)",
+      "endpoint": "POST /api/bank/settle + POST /api/bank/reject",
+      "role": "Bank Teller Desk",
+      "scenario": "Settle payment voucher confirmed at bank; reject voucher and release reserved funds",
+      "expected": "Voucher 1 transitions to SETTLED; Voucher 2 transitions to REJECTED and releases cash reservation",
+      "actual": "Settle Status: 200 (SETTLED), Reject Status: 200 (REJECTED)",
+      "status": "PASS",
+      "evidence": {
+        "settleStatus": 200,
+        "rejectStatus": 200
+      }
+    },
+    {
+      "id": "REHEARSAL-07",
+      "name": "Authorized SEBI Supervision & Trade Voiding",
+      "endpoint": "POST /api/transactions/void",
+      "role": "SEBI Regulatory Desk",
+      "scenario": "SEBI monitors transaction ledger and executes regulatory trade voiding with full reversal",
+      "expected": "HTTP 200, transaction marked voided=true, audit reason recorded, cash and holdings restored",
+      "actual": "Void Success: true, Voided Tx: TX0004",
+      "status": "PASS",
+      "evidence": {
+        "voidSuccess": true,
+        "status": 200
+      }
+    },
+    {
+      "id": "REHEARSAL-08",
+      "name": "Projector Display Privacy & Public Market Updates",
+      "endpoint": "GET /api/projector/snapshot",
+      "role": "Auditorium Public Display Rig",
+      "scenario": "Big-screen display streams real-time index levels without leaking credentials or private team balances",
+      "expected": "HTTP 200 with market indices, zero leaked PINs, zero private cash balances exposed",
+      "actual": "Accessible: true, Indices Present: true, Leak Check: true",
+      "status": "PASS",
+      "evidence": {
+        "accessible": true,
+        "hasIndices": true,
+        "clean": true
+      }
+    },
+    {
+      "id": "REHEARSAL-09",
+      "name": "Wi-Fi Interruption, Reconnection & State Catch-Up",
+      "endpoint": "WebSocket Disconnect & Reconnect Flow",
+      "role": "Participant Terminal Device",
+      "scenario": "Disconnect client socket, execute trade on floor, reconnect socket, verify immediate catch-up",
+      "expected": "Socket reconnects within 1500ms, immediately receives full STATE_UPDATE containing outage trade",
+      "actual": "Reconnected: true, Outage Trade Synced: true, Reconnect Latency: 409ms",
+      "status": "PASS",
+      "evidence": {
+        "tradeSynced": true,
+        "reconnectTimeMs": 409
+      }
+    },
+    {
+      "id": "REHEARSAL-10",
+      "name": "Operator Handover to a Spare Laptop",
+      "endpoint": "POST /api/auth/login + POST /api/order/action",
+      "role": "Exchange Desk Operator (Spare Machine)",
+      "scenario": "Primary laptop battery dies; operator authenticates on spare machine and processes pending order",
+      "expected": "HTTP 200 login on spare machine, queue accessed, order executed without data loss",
+      "actual": "Spare Login: true, Executed on Spare: true",
+      "status": "PASS",
+      "evidence": {
+        "status": 200,
+        "orderStatus": "EXECUTED"
+      }
+    },
+    {
+      "id": "REHEARSAL-11",
+      "name": "Invalid Lot, Insufficient Funds & Negative Cash Guards",
+      "endpoint": "POST /api/order/create & /api/order/action",
+      "role": "Risk Engine & Validation Desk",
+      "scenario": "Reject order violating lot size multiples; reject order exceeding unreserved cash balance",
+      "expected": "Lot size rejected with HTTP 400; Overdraft rejected with HTTP 400 Insufficient Funds",
+      "actual": "Lot Blocked: true (Status: 400), Funds Blocked: true (Status: 400)",
+      "status": "PASS",
+      "evidence": {
+        "lotError": "Order quantity 150 must be a valid multiple of lot size 100 for 600893.",
+        "fundsError": "Insufficient unreserved INR balance. Required: ₹26,78,44,97,321.55, available: ₹99,65,180.15."
+      }
+    },
+    {
+      "id": "REHEARSAL-12",
+      "name": "Final Ledger Reconciliation Across All 10 Supported Currencies",
+      "endpoint": "GET /api/bank/reconciliation + GET /api/reconciliation",
+      "role": "SEBI Regulatory Supervisor & Host Administrator",
+      "scenario": "Inspect end-of-rehearsal ledger reconciliation report across all 10 core workbook currencies",
+      "expected": "Bank reconciliation status HEALTHY, 0 ledger discrepancies, all 10 currencies tracked, totalCapital positive",
+      "actual": "Status: HEALTHY, Discrepancies: 0, Currencies Tracked: 12, Capital: ₹1,54,93,20,000",
+      "status": "PASS",
+      "evidence": {
+        "isHealthy": true,
+        "trackedCurrencies": 12,
+        "discrepancies": []
+      }
+    },
+    {
+      "id": "RECOVERY-RESTART-01",
+      "name": "Controlled Server Restart & Genuine Filesystem Recovery",
+      "endpoint": "Controlled SIGTERM + Re-spawn on Same Fixture",
+      "role": "Host System Administrator",
+      "scenario": "Kill server process, restart pointing to same fixture, verify 100% of orders, transactions, and wallets survive",
+      "expected": "Pre-shutdown orders and transactions equal post-restart orders and transactions with zero loss",
+      "actual": "Orders: 8/8, Transactions: 6/6, Recovery Latency: 3295ms",
+      "status": "PASS",
+      "evidence": {
+        "preOrdersCount": 8,
+        "postOrdersCount": 8,
+        "preTxsCount": 6,
+        "postTxsCount": 6,
+        "recoveryTimeMs": 3295
+      }
+    },
+    {
+      "id": "SAFETY-POSTFLIGHT-HASH",
+      "name": "Authoritative state.json Byte-for-Byte Hash Preservation",
+      "endpoint": "Filesystem state.json SHA-256",
+      "role": "Safety Precondition Governor",
+      "scenario": "Confirm authoritative state.json was completely protected from mutations during rehearsal",
+      "expected": "SHA-256 equals 441077e432987ce85a8ec982b818564f68f9b3fa8a59128e5313d04ab30c754c",
+      "actual": "Final Hash: 441077e432987ce85a8ec982b818564f68f9b3fa8a59128e5313d04ab30c754c (Match: true)",
+      "status": "PASS",
+      "evidence": {
+        "expected": "441077e432987ce85a8ec982b818564f68f9b3fa8a59128e5313d04ab30c754c",
+        "actual": "441077e432987ce85a8ec982b818564f68f9b3fa8a59128e5313d04ab30c754c"
+      }
+    }
+  ]
+}

@@ -1,0 +1,698 @@
+[
+  {
+    "id": "PHASE-D-PREFLIGHT-01",
+    "title": "Pre-flight Authoritative Baseline Hash Verification",
+    "endpoint": "Local File System (state.json)",
+    "role": "system",
+    "scenario": "Verify state.json SHA-256 is strictly bit-exact before testing",
+    "expected": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "actual": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "evidence": {
+      "sha256": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-D-LEGACY-CAD-CHF-01",
+    "title": "Legacy CAD/CHF Rejection (HTTP 400)",
+    "endpoint": "/api/fx/request, /api/fx/exchange, /api/fx/convert",
+    "role": "team, exchange",
+    "scenario": "Attempting exchange, request, or conversion with CAD/CHF returns HTTP 400",
+    "expected": "HTTP 400 rejection across all endpoints with legacy currency error",
+    "actual": "Request=400, Exchange=400, Convert=400",
+    "evidence": {
+      "cadReqError": "CAD and CHF are legacy currencies and not available for new exchange transactions.",
+      "chfExError": "CAD and CHF are legacy currencies and not available for new exchange transactions.",
+      "cadConvError": "CAD and CHF are legacy currencies and not available for new exchange transactions."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-D-PRECISION-JPY-KRW-01",
+    "title": "Integer Rounding for JPY/KRW (Zero Decimals)",
+    "endpoint": "POST /api/fx/convert",
+    "role": "team",
+    "scenario": "Conversions to JPY and KRW must strictly produce whole integers with zero fractional decimals",
+    "expected": "Number.isInteger(toAmount) === true for both JPY and KRW",
+    "actual": "JPY toAmount=171641 (isInteger=true), KRW toAmount=1605678 (isInteger=true)",
+    "evidence": {
+      "jpyAmount": 171641,
+      "krwAmount": 1605678
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-D-SCARCITY-CURVE-01",
+    "title": "Scarcity Pricing Curve Bounded 0.45% to 25.00% Ceiling",
+    "endpoint": "server.js:getScarcityPricingMetrics",
+    "role": "system",
+    "scenario": "Verify spread remains at base 0.45% for <=50% drawdown and scales to 25.00% ceiling at 100% drawdown",
+    "expected": "u<=0.50 spread=0.45%, u=0.75 spread~12.725%, u=1.00 spread=25.00%",
+    "actual": "u=0 spread=0.45%, u=0.5 spread=0.45%, u=0.75 spread=12.725%, u=1.0 spread=25%",
+    "evidence": {
+      "metric0": {
+        "utilization": 0,
+        "spreadPercent": 0.45,
+        "midRateMultiplier": 1,
+        "scarcityImpact": 0,
+        "availableReserve": 10000000
+      },
+      "metric50": {
+        "utilization": 0.5,
+        "spreadPercent": 0.45,
+        "midRateMultiplier": 1,
+        "scarcityImpact": 0,
+        "availableReserve": 5000000
+      },
+      "metric75": {
+        "utilization": 0.75,
+        "spreadPercent": 12.725,
+        "midRateMultiplier": 1.025,
+        "scarcityImpact": 2.5,
+        "availableReserve": 2500000
+      },
+      "metric100": {
+        "utilization": 1,
+        "spreadPercent": 25,
+        "midRateMultiplier": 1.1,
+        "scarcityImpact": 10,
+        "availableReserve": 0
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-D-QUEUE-INTAKE-01",
+    "title": "FX Queue Intake & Initial State (pending)",
+    "endpoint": "POST /api/fx/request",
+    "role": "team (T01)",
+    "scenario": "Submit conversion slip with delayWindowSec; verify status is initialized to pending with locked client cash and desk inventory",
+    "expected": "HTTP 200, status=pending, clearsAt set, client reservedCash.INR locked, desk reservedInventory locked",
+    "actual": "HTTP 200: status=pending, clearsAt=1794041685492, clientReservedINR=88600, deskReservedUSD=16350.47",
+    "evidence": {
+      "createdItem": {
+        "id": "FX_1794041565267_1d02",
+        "requestId": "FX_1794041565267_1d02",
+        "teamCode": "T01",
+        "teamName": "Trader Elite 1",
+        "eventId": "EVT_LIVE_MAIN",
+        "fromCurrency": "INR",
+        "toCurrency": "USD",
+        "fromAmount": 88600,
+        "toAmount": 1000.03,
+        "quoteRate": 88.5969,
+        "spreadPercent": 0.45,
+        "scarcityImpact": 0,
+        "utilization": 0.0031,
+        "status": "pending",
+        "canonicalStatus": "pending",
+        "legacyStatus": "QUEUED",
+        "operatorId": "T01",
+        "notes": "Phase D Queue intake testing",
+        "simulationDurationSec": 120,
+        "delayWindowSec": 120,
+        "clearsAt": 1794041685492,
+        "lockedByOperator": null,
+        "holdReason": null,
+        "returnReason": null,
+        "createdAt": 1794041565492,
+        "settledAt": null,
+        "rejectionReason": null
+      },
+      "teamReservedInr": 88600,
+      "postUsdAvail": 204368892.83,
+      "postUsdResv": 16350.47
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-D-SOLVENCY-INVARIANT-01",
+    "title": "Finite FX Reserve Solvency Invariant (A + Res = I)",
+    "endpoint": "GET /api/fx/reserves",
+    "role": "public",
+    "scenario": "Verify availableReserve + reservedInventory === currentInventory holds strictly across all 9 foreign currencies",
+    "expected": "A + Res === I strictly holds within 0.001 precision across all 9 foreign currencies",
+    "actual": "Invariant holds across all 9 foreign currencies: true",
+    "evidence": {
+      "USD": {
+        "inv": 204385243.3,
+        "avail": 204368892.83,
+        "resv": 16350.47,
+        "diff": 0,
+        "holds": true
+      },
+      "GBP": {
+        "inv": 7951633.68,
+        "avail": 7939794.149999999,
+        "resv": 11839.53,
+        "diff": 0,
+        "holds": true
+      },
+      "EUR": {
+        "inv": 8952518.83,
+        "avail": 8938187.2,
+        "resv": 14331.63,
+        "diff": 0,
+        "holds": true
+      },
+      "JPY": {
+        "inv": 3271309599,
+        "avail": 3266709610,
+        "resv": 4599989,
+        "diff": 0,
+        "holds": true
+      },
+      "AED": {
+        "inv": 35700761.35,
+        "avail": 35644579.35,
+        "resv": 56182,
+        "diff": 0,
+        "holds": true
+      },
+      "SGD": {
+        "inv": 12965797.66,
+        "avail": 12945380.58,
+        "resv": 20417.08,
+        "diff": 0,
+        "holds": true
+      },
+      "CNY": {
+        "inv": 69897817.2,
+        "avail": 69783230.81,
+        "resv": 114586.39,
+        "diff": 0,
+        "holds": true
+      },
+      "AUD": {
+        "inv": 14975874.31,
+        "avail": 14949865.22,
+        "resv": 26009.09,
+        "diff": 0,
+        "holds": true
+      },
+      "KRW": {
+        "inv": 12777770656,
+        "avail": 12728315781,
+        "resv": 49454875,
+        "diff": 0,
+        "holds": true
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-D-CLAIM-MUTEX-01",
+    "title": "Operator Claim Mutex Locking & Concurrency Protection",
+    "endpoint": "POST /api/fx/queue-action (CLAIM)",
+    "role": "exchange, admin",
+    "scenario": "Operator 1 claims ticket; Operator 2 attempting concurrent claim on same ticket receives HTTP 409 Conflict",
+    "expected": "Operator 1 HTTP 200 status=processing; Operator 2 HTTP 409 Conflict",
+    "actual": "Op1=200 (status=processing, lockedBy=exchange), Op2=409",
+    "evidence": {
+      "claim1": {
+        "success": true,
+        "fxRequest": {
+          "id": "FX_1794041565267_1d02",
+          "requestId": "FX_1794041565267_1d02",
+          "teamCode": "T01",
+          "teamName": "Trader Elite 1",
+          "eventId": "EVT_LIVE_MAIN",
+          "fromCurrency": "INR",
+          "toCurrency": "USD",
+          "fromAmount": 88600,
+          "toAmount": 1000.03,
+          "quoteRate": 88.5969,
+          "spreadPercent": 0.45,
+          "scarcityImpact": 0,
+          "utilization": 0.0031,
+          "status": "processing",
+          "canonicalStatus": "processing",
+          "legacyStatus": "QUEUED",
+          "operatorId": "T01",
+          "notes": "Phase D Queue intake testing",
+          "simulationDurationSec": 120,
+          "delayWindowSec": 120,
+          "clearsAt": 1794041685492,
+          "lockedByOperator": "exchange",
+          "holdReason": null,
+          "returnReason": null,
+          "createdAt": 1794041565492,
+          "settledAt": null,
+          "rejectionReason": null,
+          "operator": "exchange",
+          "claimedAt": 1794041565607
+        }
+      },
+      "claim2": {
+        "error": "Conflict: FX request FX_1794041565267_1d02 is already claimed by exchange."
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-D-DELAY-TIMER-SIM-01",
+    "title": "Operational Simulation Delay Window & Zero Auto-Settlement Bypass",
+    "endpoint": "POST /api/fx/queue-action (START_PROCESSING)",
+    "role": "exchange",
+    "scenario": "Start operational delay window; wait for clearsAt to elapse; confirm timer expiry does NOT trigger auto-settlement",
+    "expected": "clearsAt elapsed, status remains processing, settledAt is null, no automatic bypass",
+    "actual": "status=processing, elapsed=true, settledAt=null",
+    "evidence": {
+      "ticketAfterDelay": {
+        "id": "FX_1794041565267_1d02",
+        "requestId": "FX_1794041565267_1d02",
+        "teamCode": "T01",
+        "teamName": "Trader Elite 1",
+        "eventId": "EVT_LIVE_MAIN",
+        "fromCurrency": "INR",
+        "toCurrency": "USD",
+        "fromAmount": 88600,
+        "toAmount": 1000.03,
+        "quoteRate": 88.5969,
+        "spreadPercent": 0.45,
+        "scarcityImpact": 0,
+        "utilization": 0.0031,
+        "status": "processing",
+        "canonicalStatus": "processing",
+        "legacyStatus": "QUEUED",
+        "operatorId": "T01",
+        "notes": "Phase D Queue intake testing",
+        "simulationDurationSec": 1,
+        "delayWindowSec": 1,
+        "clearsAt": 1794041566837,
+        "lockedByOperator": "exchange",
+        "holdReason": null,
+        "returnReason": null,
+        "createdAt": 1794041565492,
+        "settledAt": null,
+        "rejectionReason": null,
+        "operator": "exchange",
+        "claimedAt": 1794041565607,
+        "processingStartedAt": 1794041565837
+      },
+      "elapsedMs": 609
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-D-HOLD-ACTION-01",
+    "title": "Operator Control: HOLD with Mandatory Reason",
+    "endpoint": "POST /api/fx/queue-action (HOLD)",
+    "role": "exchange",
+    "scenario": "Missing hold reason returns HTTP 400; valid reason sets status on_hold while preserving reservations",
+    "expected": "No reason: HTTP 400; Valid reason: HTTP 200 status=on_hold, reservations held intact",
+    "actual": "NoReason=400, ValidReason=200 (status=on_hold, reservedUSD=16350.47)",
+    "evidence": {
+      "holdNoReason": {
+        "error": "Hold action requires a mandatory holdReason (minimum 3 characters)."
+      },
+      "holdWithReason": {
+        "success": true,
+        "fxRequest": {
+          "id": "FX_1794041565267_1d02",
+          "requestId": "FX_1794041565267_1d02",
+          "teamCode": "T01",
+          "teamName": "Trader Elite 1",
+          "eventId": "EVT_LIVE_MAIN",
+          "fromCurrency": "INR",
+          "toCurrency": "USD",
+          "fromAmount": 88600,
+          "toAmount": 1000.03,
+          "quoteRate": 88.5969,
+          "spreadPercent": 0.45,
+          "scarcityImpact": 0,
+          "utilization": 0.0031,
+          "status": "on_hold",
+          "canonicalStatus": "on_hold",
+          "legacyStatus": "QUEUED",
+          "operatorId": "T01",
+          "notes": "Phase D Queue intake testing",
+          "simulationDurationSec": 1,
+          "delayWindowSec": 1,
+          "clearsAt": 1794041566837,
+          "lockedByOperator": "exchange",
+          "holdReason": "Awaiting KYC compliance documentation from participant",
+          "returnReason": null,
+          "createdAt": 1794041565492,
+          "settledAt": null,
+          "rejectionReason": null,
+          "operator": "exchange",
+          "claimedAt": 1794041565607,
+          "processingStartedAt": 1794041565837,
+          "heldAt": 1794041567451
+        }
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-D-CORRECTION-ACTION-01",
+    "title": "Operator Control: RETURN_FOR_CORRECTION with Mandatory Reason",
+    "endpoint": "POST /api/fx/queue-action (RETURN_FOR_CORRECTION)",
+    "role": "exchange",
+    "scenario": "Missing reason returns HTTP 400; valid return sets status rejected and cleanly releases funds without cash balance leakage",
+    "expected": "No reason: HTTP 400; Valid: HTTP 200 status=rejected, reservations released, 0% cash leakage",
+    "actual": "NoReason=400, Valid=200 (status=rejected, cashWallets.INR untouched=true)",
+    "evidence": {
+      "returnNoReason": {
+        "error": "RETURN_FOR_CORRECTION requires a mandatory reason (minimum 3 characters)."
+      },
+      "returnWithReason": {
+        "success": true,
+        "fxRequest": {
+          "id": "FX_1794041567553_51mk",
+          "requestId": "FX_1794041567553_51mk",
+          "teamCode": "T01",
+          "teamName": "Trader Elite 1",
+          "eventId": "EVT_LIVE_MAIN",
+          "fromCurrency": "INR",
+          "toCurrency": "GBP",
+          "fromAmount": 120000,
+          "toAmount": 1000.52,
+          "quoteRate": 119.9373,
+          "spreadPercent": 0.45,
+          "scarcityImpact": 0,
+          "utilization": 0.0075,
+          "status": "rejected",
+          "canonicalStatus": "rejected",
+          "legacyStatus": "QUEUED",
+          "operatorId": "T01",
+          "notes": "Floor FX conversion request",
+          "simulationDurationSec": 120,
+          "delayWindowSec": 120,
+          "clearsAt": 1794041687791,
+          "lockedByOperator": null,
+          "holdReason": null,
+          "returnReason": "Amount deviates from trade confirmation voucher",
+          "createdAt": 1794041567791,
+          "settledAt": null,
+          "rejectionReason": "Amount deviates from trade confirmation voucher",
+          "releasedAt": 1794041567885
+        }
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-D-REJECT-LEAKAGE-01",
+    "title": "Clean Reservation Release on REJECT (Zero Balance Leakage)",
+    "endpoint": "POST /api/fx/queue-action (REJECT)",
+    "role": "exchange",
+    "scenario": "Missing reason returns HTTP 400; valid rejection restores client unreserved cash and desk inventory with 0% balance leakage",
+    "expected": "No reason: HTTP 400; Valid: HTTP 200 status=rejected, reservations released, cashWallets intact",
+    "actual": "NoReason=400, Valid=200 (status=rejected, cashLeakage=0)",
+    "evidence": {
+      "rejectNoReason": {
+        "error": "REJECT requires a mandatory reason (minimum 3 characters)."
+      },
+      "rejectWithReason": {
+        "success": true,
+        "fxRequest": {
+          "id": "FX_1794041568293_1vga",
+          "requestId": "FX_1794041568293_1vga",
+          "teamCode": "T01",
+          "teamName": "Trader Elite 1",
+          "eventId": "EVT_LIVE_MAIN",
+          "fromCurrency": "INR",
+          "toCurrency": "EUR",
+          "fromAmount": 95000,
+          "toAmount": 913.76,
+          "quoteRate": 103.96575,
+          "spreadPercent": 0.45,
+          "scarcityImpact": 0,
+          "utilization": 0.0069,
+          "status": "rejected",
+          "canonicalStatus": "rejected",
+          "legacyStatus": "QUEUED",
+          "operatorId": "T01",
+          "notes": "Floor FX conversion request",
+          "simulationDurationSec": 120,
+          "delayWindowSec": 120,
+          "clearsAt": 1794041688515,
+          "lockedByOperator": null,
+          "holdReason": null,
+          "returnReason": null,
+          "createdAt": 1794041568515,
+          "settledAt": null,
+          "rejectionReason": "Exceeds foreign procurement threshold for this round",
+          "releasedAt": 1794041568609
+        }
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-D-CANCEL-LEAKAGE-01",
+    "title": "Clean Reservation Release on CANCEL (Zero Balance Leakage)",
+    "endpoint": "POST /api/fx/queue-action (CANCEL)",
+    "role": "exchange",
+    "scenario": "Ticket cancellation releases reservations cleanly with zero balance leakage",
+    "expected": "HTTP 200 status=cancelled, client unreserved cash and desk inventory fully restored",
+    "actual": "HTTP 200: status=cancelled, cashLeakage=0",
+    "evidence": {
+      "cancelRes": {
+        "success": true,
+        "fxRequest": {
+          "id": "FX_1794041568884_s89p",
+          "requestId": "FX_1794041568884_s89p",
+          "teamCode": "T01",
+          "teamName": "Trader Elite 1",
+          "eventId": "EVT_LIVE_MAIN",
+          "fromCurrency": "INR",
+          "toCurrency": "SGD",
+          "fromAmount": 67000,
+          "toAmount": 998.5,
+          "quoteRate": 67.1006,
+          "spreadPercent": 0.45,
+          "scarcityImpact": 0,
+          "utilization": 0.0042,
+          "status": "cancelled",
+          "canonicalStatus": "cancelled",
+          "legacyStatus": "QUEUED",
+          "operatorId": "T01",
+          "notes": "Floor FX conversion request",
+          "simulationDurationSec": 120,
+          "delayWindowSec": 120,
+          "clearsAt": 1794041689107,
+          "lockedByOperator": null,
+          "holdReason": null,
+          "returnReason": null,
+          "createdAt": 1794041569107,
+          "settledAt": null,
+          "rejectionReason": "Cancelled by client team",
+          "releasedAt": 1794041569199
+        }
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-D-EXPIRE-LEAKAGE-01",
+    "title": "Clean Reservation Release on EXPIRE (Zero Balance Leakage)",
+    "endpoint": "POST /api/fx/queue-action (EXPIRE)",
+    "role": "exchange",
+    "scenario": "Expired ticket releases reservations cleanly without leaving stranded or duplicated funds",
+    "expected": "HTTP 200 status=expired, client cash and desk inventory restored with zero leakage",
+    "actual": "HTTP 200: status=expired, cashLeakage=0",
+    "evidence": {
+      "expireRes": {
+        "success": true,
+        "fxRequest": {
+          "id": "FX_1794041569465_bquk",
+          "requestId": "FX_1794041569465_bquk",
+          "teamCode": "T01",
+          "teamName": "Trader Elite 1",
+          "eventId": "EVT_LIVE_MAIN",
+          "fromCurrency": "INR",
+          "toCurrency": "AED",
+          "fromAmount": 50000,
+          "toAmount": 2073.14,
+          "quoteRate": 24.118045,
+          "spreadPercent": 0.45,
+          "scarcityImpact": 0,
+          "utilization": 0.0106,
+          "status": "expired",
+          "canonicalStatus": "expired",
+          "legacyStatus": "QUEUED",
+          "operatorId": "T01",
+          "notes": "Floor FX conversion request",
+          "simulationDurationSec": 120,
+          "delayWindowSec": 120,
+          "clearsAt": 1794041689934,
+          "lockedByOperator": null,
+          "holdReason": null,
+          "returnReason": null,
+          "createdAt": 1794041569934,
+          "settledAt": null,
+          "rejectionReason": "Operational clearance window expired without operator settlement.",
+          "releasedAt": 1794041570071
+        }
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-D-APPROVE-SETTLE-01",
+    "title": "Atomic Settlement (APPROVE) & Terminal Status Guard",
+    "endpoint": "POST /api/fx/queue-action (APPROVE)",
+    "role": "exchange",
+    "scenario": "Execute conversion settlement; verify source debit, destination credit, reserve update, and terminal status guard",
+    "expected": "HTTP 200 status=approved, client INR debited, USD credited, double settlement blocked (HTTP 400)",
+    "actual": "HTTP 200: status=approved, inrDebited=88600, usdCredited=1000.0300000000007, doubleSettleBlocked=true",
+    "evidence": {
+      "approveRes": {
+        "success": true,
+        "fxRequest": {
+          "id": "FX_1794041565267_1d02",
+          "requestId": "FX_1794041565267_1d02",
+          "teamCode": "T01",
+          "teamName": "Trader Elite 1",
+          "eventId": "EVT_LIVE_MAIN",
+          "fromCurrency": "INR",
+          "toCurrency": "USD",
+          "fromAmount": 88600,
+          "toAmount": 1000.03,
+          "quoteRate": 88.5969,
+          "spreadPercent": 0.45,
+          "scarcityImpact": 0,
+          "utilization": 0.0031,
+          "status": "approved",
+          "canonicalStatus": "approved",
+          "legacyStatus": "QUEUED",
+          "operatorId": "exchange",
+          "notes": "Phase D Queue intake testing",
+          "simulationDurationSec": 1,
+          "delayWindowSec": 1,
+          "clearsAt": 1794041566837,
+          "lockedByOperator": "exchange",
+          "holdReason": "Awaiting KYC compliance documentation from participant",
+          "returnReason": null,
+          "createdAt": 1794041565492,
+          "settledAt": 1794041572066,
+          "rejectionReason": null,
+          "operator": "exchange",
+          "claimedAt": 1794041565607,
+          "processingStartedAt": 1794041565837,
+          "heldAt": 1794041567451
+        },
+        "transaction": {
+          "id": "FXTX_1794041570331_6tom",
+          "ticketNumber": "FX_1794041565267_1d02",
+          "timestamp": 1794041570331,
+          "teamCode": "T01",
+          "teamId": "T01",
+          "teamName": "Trader Elite 1",
+          "fromCurrency": "INR",
+          "toCurrency": "USD",
+          "fromAmount": 88600,
+          "toAmount": 1000.03,
+          "rate": 88.5969,
+          "spreadPercent": 0.45,
+          "scarcityImpact": 0,
+          "utilization": 0.0031,
+          "operatorId": "exchange",
+          "notes": "Phase D Queue intake testing",
+          "walletsAfter": {
+            "INR": 9711400,
+            "USD": 11000.03,
+            "GBP": 5000,
+            "EUR": 5000,
+            "JPY": 1171641,
+            "AED": 20000,
+            "SGD": 10000,
+            "CNY": 50000,
+            "AUD": 10000,
+            "KRW": 11605678
+          }
+        },
+        "settleTx": {
+          "id": "FXTX_1794041570331_6tom",
+          "ticketNumber": "FX_1794041565267_1d02",
+          "timestamp": 1794041570331,
+          "teamCode": "T01",
+          "teamId": "T01",
+          "teamName": "Trader Elite 1",
+          "fromCurrency": "INR",
+          "toCurrency": "USD",
+          "fromAmount": 88600,
+          "toAmount": 1000.03,
+          "rate": 88.5969,
+          "spreadPercent": 0.45,
+          "scarcityImpact": 0,
+          "utilization": 0.0031,
+          "operatorId": "exchange",
+          "notes": "Phase D Queue intake testing",
+          "walletsAfter": {
+            "INR": 9711400,
+            "USD": 11000.03,
+            "GBP": 5000,
+            "EUR": 5000,
+            "JPY": 1171641,
+            "AED": 20000,
+            "SGD": 10000,
+            "CNY": 50000,
+            "AUD": 10000,
+            "KRW": 11605678
+          }
+        },
+        "cashWallets": {
+          "INR": 9711400,
+          "USD": 11000.03,
+          "GBP": 5000,
+          "EUR": 5000,
+          "JPY": 1171641,
+          "AED": 20000,
+          "SGD": 10000,
+          "CNY": 50000,
+          "AUD": 10000,
+          "KRW": 11605678
+        },
+        "cashBalance": 15510906.46
+      },
+      "inrDebited": 88600,
+      "usdCredited": 1000.0300000000007,
+      "doubleStatus": 400
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-D-RESERVE-EXHAUST-01",
+    "title": "Desk Reserve Exhaustion & Negative Inventory Guard",
+    "endpoint": "POST /api/fx/request",
+    "role": "team",
+    "scenario": "Attempt conversion exceeding desk reserve pool; verify HTTP 400 rejection and zero negative inventory",
+    "expected": "HTTP 400 rejection preventing desk reserves from dipping below zero",
+    "actual": "HTTP 400: error=\"Insufficient unreserved INR funds. Available: ₹97,11,400, Requested: ₹50,00,00,00,000\", USD available=204368892.83",
+    "evidence": {
+      "error": "Insufficient unreserved INR funds. Available: ₹97,11,400, Requested: ₹50,00,00,00,000",
+      "usdReserve": {
+        "currency": "USD",
+        "openingReserve": 10000000,
+        "replenishments": 195000000,
+        "completedPurchases": 5250,
+        "completedSales": 621006.73,
+        "reservedInventory": 15350.44,
+        "availableReserve": 204368892.83,
+        "currentInventory": 204384243.27,
+        "deskInrCash": 5055164826.55,
+        "minReserveThreshold": 1000000,
+        "maxCapacity": 1000000000,
+        "updatedAt": "2026-11-07T08:52:36.583Z"
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-D-POSTFLIGHT-01",
+    "title": "Post-flight Authoritative Baseline Hash Verification",
+    "endpoint": "Local File System (state.json)",
+    "role": "system",
+    "scenario": "Confirm authoritative state.json was 100% bit-for-bit untouched throughout all test executions",
+    "expected": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "actual": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "evidence": {
+      "sha256": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca"
+    },
+    "status": "PASSED"
+  }
+]

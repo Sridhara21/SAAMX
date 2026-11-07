@@ -2,7 +2,10 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import './index.css';
+import './components/ui/primitives.css';
 import { apiFetch } from './lib/api.js';
+import { ThemeProvider } from './context/ThemeContext.jsx';
+import { DensityProvider } from './context/DensityContext.jsx';
 
 // Global Fetch Interceptor to route server api paths to local client-side firebase adapter
 const originalFetch = typeof window !== 'undefined' && window.fetch ? window.fetch.bind(window) : null;
@@ -24,6 +27,10 @@ window.fetch = async function (input, init) {
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <App />
+    <ThemeProvider>
+      <DensityProvider>
+        <App />
+      </DensityProvider>
+    </ThemeProvider>
   </React.StrictMode>
 );

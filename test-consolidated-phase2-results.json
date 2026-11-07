@@ -1,0 +1,503 @@
+{
+  "timestamp": "2026-10-31T01:40:40.825Z",
+  "suite": "SAAMX Consolidated Build Phase 2 — Physical Bank Desk and Two-Phase Settlement",
+  "authoritativeStateHash": "441077e432987ce85a8ec982b818564f68f9b3fa8a59128e5313d04ab30c754c",
+  "totalTests": 26,
+  "passedCount": 26,
+  "failedCount": 0,
+  "results": [
+    {
+      "id": "PREFLIGHT-01",
+      "title": "Pre-flight Authoritative State Hash Verification",
+      "endpoint": "N/A",
+      "role": "system",
+      "scenario": "Verify state.json SHA-256 matches immutable baseline",
+      "expected": "441077e432987ce85a8ec982b818564f68f9b3fa8a59128e5313d04ab30c754c",
+      "actual": "441077e432987ce85a8ec982b818564f68f9b3fa8a59128e5313d04ab30c754c",
+      "evidence": {
+        "sha256": "441077e432987ce85a8ec982b818564f68f9b3fa8a59128e5313d04ab30c754c"
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "AUTH-LOGIN-01",
+      "title": "Session Token Acquisition for Bank Desk Roles",
+      "endpoint": "POST /api/auth/login",
+      "role": "all roles",
+      "scenario": "Acquire JWT/HMAC session tokens for all operational roles including bank_teller",
+      "expected": "HTTP 200 with valid session tokens for bank_teller, admin, sebi, and participant teams",
+      "actual": "bank: role=bank_teller, admin: role=admin, T01: role=team",
+      "evidence": {
+        "bankRole": "bank_teller",
+        "adminRole": "admin",
+        "t01Role": "team"
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "MODE-SEC-01",
+      "title": "Settlement Mode Configuration RBAC Enforcement",
+      "endpoint": "POST /api/admin/settlement-mode",
+      "role": "team (T01)",
+      "scenario": "Unauthorized participant team attempts to change settlement mode",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403",
+      "evidence": {
+        "error": "Forbidden: Requires Admin privileges."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "MODE-VAL-01",
+      "title": "Settlement Mode Validation (Invalid Mode Rejection)",
+      "endpoint": "POST /api/admin/settlement-mode",
+      "role": "admin",
+      "scenario": "Administrator attempts to set an invalid settlement mode",
+      "expected": "HTTP 400 Bad Request with supported modes message",
+      "actual": "HTTP 400",
+      "evidence": {
+        "error": "Invalid settlement mode. Supported modes are 'INSTANT' and 'TWO_PHASE_BANK'."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "MODE-CFG-01",
+      "title": "Admin Sets Settlement Mode to INSTANT",
+      "endpoint": "POST /api/admin/settlement-mode",
+      "role": "admin",
+      "scenario": "Administrator sets settlementMode to INSTANT",
+      "expected": "HTTP 200 with settlementMode: INSTANT",
+      "actual": "HTTP 200, mode=INSTANT",
+      "evidence": {
+        "success": true,
+        "settlementMode": "INSTANT",
+        "message": "Settlement mode successfully updated to INSTANT."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SETTLE-INSTANT-01",
+      "title": "INSTANT Mode Backwards Compatibility",
+      "endpoint": "POST /api/order/action (EXECUTE)",
+      "role": "admin",
+      "scenario": "Execute BUY order in INSTANT mode; verify immediate debit/credit and no pending voucher",
+      "expected": "orderStatus: EXECUTED, settlementStatus: SETTLED, no pending bank vouchers created",
+      "actual": "orderStatus: EXECUTED, txSettlementStatus: SETTLED, bankQueueCount: 0",
+      "evidence": {
+        "orderStatus": "EXECUTED",
+        "txStatus": "SETTLED",
+        "settlementsLength": 0
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "TWO-PHASE-BUY-01",
+      "title": "TWO_PHASE_BANK Buy Execution & Cash Reservation",
+      "endpoint": "POST /api/order/action (EXECUTE)",
+      "role": "admin",
+      "scenario": "Execute BUY in TWO_PHASE_BANK mode; verify EXECUTED_PENDING_SETTLEMENT, cash reserved not debited, holdings not credited yet",
+      "expected": "Order EXECUTED_PENDING_SETTLEMENT, cashWallets.INR unchanged, reservedCash increased by totalValue, holdings unchanged, pending voucher created",
+      "actual": "orderStatus: EXECUTED_PENDING_SETTLEMENT, cashWallets.INR: 993847.6 (pre: 993847.6), reservedCash.INR: 12304.8 (pre: 0), holdings.TCS: 110 (pre: 110), voucher: SETTLE_1793410838166_R4MK",
+      "evidence": {
+        "orderStatus": "EXECUTED_PENDING_SETTLEMENT",
+        "orderSettlementStatus": "PENDING",
+        "cashDelta": 0,
+        "reservedDelta": 12304.8,
+        "holdingsDelta": 0,
+        "voucherRef": "BNK-PAY-TKT_2P_BUY_01-MVVQIB2U",
+        "voucherStatus": "PENDING"
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "DOUBLE-SPEND-PREV-01",
+      "title": "Double-Spend & Purchasing Power Protection",
+      "endpoint": "POST /api/order/action (VALIDATE & EXECUTE)",
+      "role": "admin",
+      "scenario": "Attempt order exceeding unreserved cash balance (cash minus reservedCash)",
+      "expected": "HTTP 400 rejection stating Insufficient unreserved INR balance with reservation notice",
+      "actual": "VALIDATE HTTP 400: \"Insufficient unreserved INR balance. Required: ₹9,91,766.88, Available: ₹9,81,542.80 (₹12,304.80 reserved for pending settlement).\", EXECUTE HTTP 400: \"Insufficient unreserved INR balance. Required: ₹9,91,766.88, available: ₹9,81,542.80 (₹12,304.80 reserved for pending settlement).\"",
+      "evidence": {
+        "validateError": "Insufficient unreserved INR balance. Required: ₹9,91,766.88, Available: ₹9,81,542.80 (₹12,304.80 reserved for pending settlement).",
+        "execError": "Insufficient unreserved INR balance. Required: ₹9,91,766.88, available: ₹9,81,542.80 (₹12,304.80 reserved for pending settlement)."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "TWO-PHASE-SELL-01",
+      "title": "TWO_PHASE_BANK Sell Execution & Proceeds Locking",
+      "endpoint": "POST /api/order/action (EXECUTE)",
+      "role": "admin",
+      "scenario": "Execute SELL in TWO_PHASE_BANK; verify shares surrendered immediately but cash proceeds uncredited",
+      "expected": "Order EXECUTED_PENDING_SETTLEMENT, holdings reduced immediately, cashWallets unchanged (unspendable), voucher PROCEEDS_DISBURSEMENT created",
+      "actual": "orderStatus: EXECUTED_PENDING_SETTLEMENT, holdings.INFY: 75 (pre: 100), cashWallets.INR: 993847.6 (pre: 993847.6), voucher: SETTLE_1793410838626_LJUO",
+      "evidence": {
+        "orderStatus": "EXECUTED_PENDING_SETTLEMENT",
+        "holdingsDelta": -25,
+        "cashDelta": 0,
+        "voucherType": "PROCEEDS_DISBURSEMENT",
+        "voucherStatus": "PENDING"
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "BANK-SETTLE-BUY-01",
+      "title": "Bank Teller Settlement Confirmation (Payment Collection / Buy)",
+      "endpoint": "POST /api/bank/settle",
+      "role": "bank_teller",
+      "scenario": "Bank teller confirms BUY payment collection voucher; cash debited, reservation released, holdings credited",
+      "expected": "HTTP 200, settlement SETTLED, order SETTLED, reservedCash reduced, cashWallet debited, holdings credited",
+      "actual": "HTTP 200, settlementStatus: SETTLED, orderStatus: SETTLED, reservedCash.INR: 0, holdings.TCS: 130",
+      "evidence": {
+        "settlement": {
+          "id": "SETTLE_1793410838166_R4MK",
+          "orderId": "ORD-1793410838062-9859",
+          "bankDeskId": "BANK_1",
+          "ticketNumber": "TKT_2P_BUY_01",
+          "transactionId": "TX0002",
+          "teamId": "T01",
+          "teamCode": "T01",
+          "securityId": "STK_TCS_1e211e",
+          "ticker": "TCS",
+          "securityName": "Tata Consultancy Services Ltd",
+          "currency": "INR",
+          "quantity": 20,
+          "price": 615.24,
+          "totalAmount": 12304.8,
+          "action": "BUY",
+          "direction": "PAY_IN",
+          "classification": "PAY_IN",
+          "type": "PAYMENT_COLLECTION",
+          "status": "SETTLED",
+          "voucherReference": "BNK-PAY-TKT_2P_BUY_01-MVVQIB2U",
+          "executedAt": 1793410838197,
+          "settledAt": 1793410838763,
+          "settledBy": "bank",
+          "rejectedAt": null,
+          "rejectedBy": null,
+          "rejectionReason": null,
+          "notes": "Cash collected at Bank Window 1",
+          "createdAt": 1793410838197
+        },
+        "wallets": {
+          "INR": 981542.8,
+          "USD": 2000,
+          "GBP": 0,
+          "EUR": 0,
+          "JPY": 0,
+          "AED": 0,
+          "SGD": 0,
+          "CNY": 0,
+          "AUD": 0,
+          "KRW": 0,
+          "CAD": 0,
+          "CHF": 0
+        },
+        "holdings": {
+          "INFY": 75,
+          "TCS": 130
+        }
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "BANK-SETTLE-SELL-01",
+      "title": "Bank Teller Settlement Confirmation (Proceeds Disbursement / Sell)",
+      "endpoint": "POST /api/bank/settle",
+      "role": "bank_teller",
+      "scenario": "Bank teller confirms SELL proceeds disbursement voucher; cash credited to team wallet",
+      "expected": "HTTP 200, settlement SETTLED, order SETTLED, cashWallets.INR credited with totalAmount",
+      "actual": "HTTP 200, settlementStatus: SETTLED, orderStatus: SETTLED, cashWallets.INR: 1020673.55",
+      "evidence": {
+        "settlement": {
+          "id": "SETTLE_1793410838626_LJUO",
+          "orderId": "ORD-1793410838545-7450",
+          "bankDeskId": "BANK_2",
+          "ticketNumber": "TKT_2P_SELL_01",
+          "transactionId": "TX0003",
+          "teamId": "T01",
+          "teamCode": "T01",
+          "securityId": "STK_INFY_32cd51",
+          "ticker": "INFY",
+          "securityName": "Infosys Ltd",
+          "currency": "INR",
+          "quantity": 25,
+          "price": 1565.23,
+          "totalAmount": 39130.75,
+          "action": "SELL",
+          "direction": "PAY_OUT",
+          "classification": "PAY_OUT",
+          "type": "PROCEEDS_DISBURSEMENT",
+          "status": "SETTLED",
+          "voucherReference": "BNK-REC-TKT_2P_SELL_01-MVVQIBFM",
+          "executedAt": 1793410838651,
+          "settledAt": 1793410838889,
+          "settledBy": "bank",
+          "rejectedAt": null,
+          "rejectedBy": null,
+          "rejectionReason": null,
+          "notes": "Proceeds disbursed at Bank Window 2",
+          "createdAt": 1793410838651
+        },
+        "cashBalance": 1197073.55,
+        "creditedAmount": 39130.75
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "DUP-SETTLE-01",
+      "title": "Duplicate Settlement Attempt Rejection (409 Conflict)",
+      "endpoint": "POST /api/bank/settle",
+      "role": "bank_teller",
+      "scenario": "Attempt second settlement call on already SETTLED voucher",
+      "expected": "HTTP 409 Conflict with duplicate settlement notice; zero ledger modification",
+      "actual": "HTTP 409: \"Duplicate settlement prevented: This voucher has already been settled and funds processed.\", cashWallets.INR unchanged at 1020673.55",
+      "evidence": {
+        "status": 409,
+        "error": "Duplicate settlement prevented: This voucher has already been settled and funds processed."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SETTLE-REJECT-BUY-01",
+      "title": "Settlement Rejection for Buy Voucher (Cash Reservation Release)",
+      "endpoint": "POST /api/bank/reject",
+      "role": "bank_teller",
+      "scenario": "Bank teller rejects BUY voucher; verify reason enforced, reservation released, float returned",
+      "expected": "Empty reason 400; valid reason 200; settlement REJECTED, order SETTLEMENT_REJECTED, reservedCash restored, float units restored",
+      "actual": "noReason: HTTP 400, validReject: HTTP 200, reservedCash.INR: 0 (was 9228.6), float: 12834138 (was 12834123)",
+      "evidence": {
+        "noReasonStatus": 400,
+        "rejectStatus": 200,
+        "reservedBefore": 9228.6,
+        "reservedAfter": 0,
+        "floatBefore": 12834123,
+        "floatAfter": 12834138,
+        "orderStatus": "SETTLEMENT_REJECTED"
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SETTLE-REJECT-SELL-01",
+      "title": "Settlement Rejection for Sell Voucher (Holdings Restoration)",
+      "endpoint": "POST /api/bank/reject",
+      "role": "bank_teller",
+      "scenario": "Bank teller rejects SELL voucher; verify surrendered shares returned to team holdings",
+      "expected": "HTTP 200, settlement REJECTED, order SETTLEMENT_REJECTED, holdings restored",
+      "actual": "HTTP 200, holdings.INFY: 75 (surrendered mid: 65)",
+      "evidence": {
+        "rejectStatus": 200,
+        "holdingsBefore": 65,
+        "holdingsAfter": 75,
+        "reason": "Physical delivery slip signature invalid"
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "AUTH-BANK-ANON-01",
+      "title": "Anonymous Access Blocked on /api/bank/settlements",
+      "endpoint": "GET /api/bank/settlements",
+      "role": "anonymous",
+      "scenario": "Unauthenticated caller attempts to query bank settlements list",
+      "expected": "HTTP 401 Unauthorized",
+      "actual": "HTTP 401",
+      "evidence": {
+        "error": "401 Unauthorized: Valid session authentication required."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "ISOLATION-BANK-LIST-01",
+      "title": "Team Settlement List Scoping & Privacy",
+      "endpoint": "GET /api/bank/settlements",
+      "role": "team (T01)",
+      "scenario": "Team T01 queries settlements; must only see T01 records, T02 strictly excluded",
+      "expected": "HTTP 200, array containing only T01 records, 0 records for T02",
+      "actual": "HTTP 200, totalRecords: 4, hasT02InView: false",
+      "evidence": {
+        "recordCount": 4,
+        "hasT02": false
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "ISOLATION-BANK-ID-01",
+      "title": "Cross-Team Individual Voucher Inspection Blocked",
+      "endpoint": "GET /api/bank/settlements/:id",
+      "role": "team (T01)",
+      "scenario": "Team T01 attempts to inspect settlement voucher belonging to T02",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403",
+      "evidence": {
+        "error": "Forbidden: You cannot access settlement records belonging to another team."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "AUTH-BANK-SETTLE-TEAM-01",
+      "title": "Participant Team Prohibited from Self-Settling",
+      "endpoint": "POST /api/bank/settle",
+      "role": "team (T01)",
+      "scenario": "Student participant team attempts to confirm settlement on a voucher",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403",
+      "evidence": {
+        "error": "Forbidden: Processing bank settlements requires Bank Teller or Administrator privileges."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "AUTH-BANK-REJECT-TEAM-01",
+      "title": "Participant Team Prohibited from Rejecting Settlements",
+      "endpoint": "POST /api/bank/reject",
+      "role": "team (T01)",
+      "scenario": "Participant team attempts to call settlement rejection endpoint",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403",
+      "evidence": {
+        "error": "Forbidden: Processing bank settlements requires Bank Teller or Administrator privileges."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "MULTI-CURRENCY-01",
+      "title": "Native USD Currency Wallet Accuracy & Reservation Release",
+      "endpoint": "POST /api/bank/settle",
+      "role": "bank_teller",
+      "scenario": "Settle USD trade voucher for OAI; verify cashWallets.USD debited, reservedCash.USD released, INR wallet unchanged",
+      "expected": "cashWallets.USD debited by 900 USD, reservedCash.USD reduced to 0, INR wallet strictly untouched",
+      "actual": "cashWallets.USD: 4100 (pre: 5000), reservedCash.USD: 0 (pre: 900), cashWallets.INR: 10000000 (pre: 10000000)",
+      "evidence": {
+        "usdPre": 5000,
+        "usdPost": 4100,
+        "reservedUSDPre": 900,
+        "reservedUSDPost": 0,
+        "inrPre": 10000000,
+        "inrPost": 10000000
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "VOID-SETTLE-CONSISTENCY-01",
+      "title": "Transaction Void of Pending Two-Phase Trade",
+      "endpoint": "POST /api/transactions/void",
+      "role": "sebi",
+      "scenario": "Void transaction with linked pending bank voucher; verify reservedCash released without double-crediting cashWallets",
+      "expected": "HTTP 200, transaction voided, settlement VOIDED, order VOIDED, reservedCash released, cashWallets unchanged",
+      "actual": "HTTP 200, settlementStatus: VOIDED, orderStatus: VOIDED, reservedCash: 0 (was 7382.88), cashWallets: 1020673.55 (was 1020673.55)",
+      "evidence": {
+        "txVoided": true,
+        "settlementStatus": "VOIDED",
+        "orderStatus": "VOIDED",
+        "cashDelta": 0,
+        "reservedDelta": -7382.88
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "AUTH-BANK-RECON-ANON-01",
+      "title": "Anonymous Access Blocked on /api/bank/reconciliation",
+      "endpoint": "GET /api/bank/reconciliation",
+      "role": "anonymous",
+      "scenario": "Unauthenticated caller attempts to access bank reconciliation report",
+      "expected": "HTTP 401 Unauthorized",
+      "actual": "HTTP 401",
+      "evidence": {
+        "error": "401 Unauthorized: Valid session authentication required."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "AUTH-BANK-RECON-TEAM-01",
+      "title": "Participant Team Blocked from /api/bank/reconciliation",
+      "endpoint": "GET /api/bank/reconciliation",
+      "role": "team (T01)",
+      "scenario": "Participant team attempts to access supervisory bank reconciliation report",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403",
+      "evidence": {
+        "error": "Forbidden: Bank reconciliation requires Bank Desk or Regulatory privileges."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "BANK-RECONCILIATION-01",
+      "title": "Bank Reconciliation Report Accuracy & Health Check",
+      "endpoint": "GET /api/bank/reconciliation",
+      "role": "bank_teller",
+      "scenario": "Bank teller queries reconciliation audit summary and discrepancy check",
+      "expected": "HTTP 200, status: HEALTHY, discrepancies: [], accurate summary counts and currency breakdown",
+      "actual": "HTTP 200, status: HEALTHY, totalSettlements: 6, settledCount: 3, discrepancies: 0",
+      "evidence": {
+        "status": "HEALTHY",
+        "summary": {
+          "totalTradesExecuted": 4,
+          "totalVoidedTrades": 3,
+          "totalSettlements": 6,
+          "settledCount": 3,
+          "pendingCount": 0,
+          "rejectedCount": 2,
+          "voidedCount": 1,
+          "settledAmountsByCurrency": {
+            "INR": 51435.55,
+            "USD": 900,
+            "GBP": 0,
+            "EUR": 0,
+            "JPY": 0,
+            "AED": 0,
+            "SGD": 0,
+            "CNY": 0,
+            "AUD": 0,
+            "KRW": 0,
+            "CAD": 0,
+            "CHF": 0
+          },
+          "pendingAmountsByCurrency": {
+            "INR": 0,
+            "USD": 0,
+            "GBP": 0,
+            "EUR": 0,
+            "JPY": 0,
+            "AED": 0,
+            "SGD": 0,
+            "CNY": 0,
+            "AUD": 0,
+            "KRW": 0,
+            "CAD": 0,
+            "CHF": 0
+          }
+        },
+        "discrepanciesCount": 0
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "UI-BANK-INTEGRATION-01",
+      "title": "Bank Desk UI Route & Navigation Registration Audit",
+      "endpoint": "UI / Client Architecture",
+      "role": "all roles",
+      "scenario": "Verify BankPage component exists, registered in App.jsx routing and navigationConfig.js",
+      "expected": "BankPage.jsx exists, navigation item registered for bank_teller/admin/sebi/team, route case #/bank in App.jsx",
+      "actual": "BankPage exists: true, navConfig registered: true, App.jsx routing registered: true",
+      "evidence": {
+        "bankPageExists": true,
+        "hasBankInNav": true,
+        "hasBankInApp": true
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "POSTFLIGHT-01",
+      "title": "Post-flight Authoritative State Hash Verification",
+      "endpoint": "N/A",
+      "role": "system",
+      "scenario": "Confirm authoritative state.json was completely protected from mutations",
+      "expected": "441077e432987ce85a8ec982b818564f68f9b3fa8a59128e5313d04ab30c754c",
+      "actual": "441077e432987ce85a8ec982b818564f68f9b3fa8a59128e5313d04ab30c754c",
+      "evidence": {
+        "sha256": "441077e432987ce85a8ec982b818564f68f9b3fa8a59128e5313d04ab30c754c"
+      },
+      "status": "PASSED"
+    }
+  ]
+}

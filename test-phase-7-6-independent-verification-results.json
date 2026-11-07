@@ -1,0 +1,961 @@
+{
+  "totalScenarios": 54,
+  "passed": 54,
+  "failed": 0,
+  "timestamp": "2026-10-30T14:47:07.074Z",
+  "expectedStateHash": "441077e432987ce85a8ec982b818564f68f9b3fa8a59128e5313d04ab30c754c",
+  "finalStateHash": "441077e432987ce85a8ec982b818564f68f9b3fa8a59128e5313d04ab30c754c",
+  "results": [
+    {
+      "id": "AUTH-REAL-01",
+      "category": "Production Auth",
+      "title": "Real Team Login & HMAC Token Generation (T01)",
+      "endpoint": "POST /api/auth/login",
+      "role": "team (T01)",
+      "testMethod": "POST credentials",
+      "scenario": "Team T01 authenticates via POST /api/auth/login with valid password",
+      "expected": "HTTP 200 with valid saamx... HMAC token and role=team, teamCode=T01",
+      "actual": "HTTP 200, tokenPrefix=saamx",
+      "evidence": {
+        "success": true,
+        "role": "team",
+        "teamCode": "T01",
+        "tokenLength": 126
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "AUTH-REAL-02",
+      "category": "Production Auth",
+      "title": "Real Team Login & HMAC Token Generation (T02)",
+      "endpoint": "POST /api/auth/login",
+      "role": "team (T02)",
+      "testMethod": "POST credentials",
+      "scenario": "Team T02 authenticates via POST /api/auth/login",
+      "expected": "HTTP 200 with role=team, teamCode=T02",
+      "actual": "HTTP 200, role=team, teamCode=T02",
+      "evidence": {
+        "success": true,
+        "role": "team",
+        "teamCode": "T02"
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "AUTH-REAL-03",
+      "category": "Production Auth",
+      "title": "Real Judge Authentication & Granular Permissions",
+      "endpoint": "POST /api/auth/login",
+      "role": "judge",
+      "testMethod": "POST scrypt verified credentials",
+      "scenario": "Official Judge logs in with password",
+      "expected": "HTTP 200 with role=judge and judging.score permission",
+      "actual": "HTTP 200, role=judge, hasJudgingScore=true",
+      "evidence": {
+        "role": "judge",
+        "permissions": [
+          "market.view",
+          "judging.view",
+          "judging.score",
+          "results.view"
+        ]
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "AUTH-REAL-04",
+      "category": "Production Auth",
+      "title": "Real Coordinator Authentication & Market Control Permission",
+      "endpoint": "POST /api/auth/login",
+      "role": "coordinator",
+      "testMethod": "POST scrypt verified credentials",
+      "scenario": "Floor Coordinator logs in with password",
+      "expected": "HTTP 200 with role=coordinator and market.control permission",
+      "actual": "HTTP 200, role=coordinator, hasMarketControl=true",
+      "evidence": {
+        "role": "coordinator",
+        "permissions": [
+          "dashboard.view",
+          "market.view",
+          "market.control",
+          "scenarios.trigger",
+          "news.view",
+          "news.draft",
+          "news.publish",
+          "results.view"
+        ]
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "AUTH-REAL-05",
+      "category": "Production Auth",
+      "title": "Real Administrator Authentication & Full Staff Rights",
+      "endpoint": "POST /api/auth/login",
+      "role": "admin",
+      "testMethod": "POST scrypt verified credentials",
+      "scenario": "Administrator logs in with password",
+      "expected": "HTTP 200 with role=admin and audit.view/results.approve permissions",
+      "actual": "HTTP 200, role=admin",
+      "evidence": {
+        "role": "admin",
+        "hasAuditView": true
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "AUTH-REAL-06",
+      "category": "Production Auth",
+      "title": "Real SEBI Auditor Authentication & Surveillance Permissions",
+      "endpoint": "POST /api/auth/login",
+      "role": "sebi",
+      "testMethod": "POST scrypt verified credentials",
+      "scenario": "SEBI officer logs in with password",
+      "expected": "HTTP 200 with role=sebi and audit.view/sebi.surveil permissions",
+      "actual": "HTTP 200, role=sebi",
+      "evidence": {
+        "role": "sebi",
+        "permissions": [
+          "dashboard.view",
+          "market.view",
+          "sebi.surveil",
+          "sebi.halt",
+          "audit.view",
+          "news.view",
+          "results.view"
+        ]
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "AUTH-REAL-07",
+      "category": "Production Auth",
+      "title": "Real Exchange Operator Authentication & Desk Execution Permissions",
+      "endpoint": "POST /api/auth/login",
+      "role": "exchange",
+      "testMethod": "POST scrypt verified credentials",
+      "scenario": "Exchange desk operator logs in with password",
+      "expected": "HTTP 200 with exchange.execute and orders.view_queue permissions",
+      "actual": "HTTP 200, role=exchange",
+      "evidence": {
+        "role": "exchange",
+        "permissions": [
+          "dashboard.view",
+          "market.view",
+          "orders.view_queue",
+          "exchange.view",
+          "exchange.execute",
+          "exchange.reject",
+          "exchange.manual_entry",
+          "news.view",
+          "results.view"
+        ]
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "AUTH-REAL-08",
+      "category": "Production Auth",
+      "title": "Real Journalist Authentication",
+      "endpoint": "POST /api/auth/login",
+      "role": "journalist",
+      "testMethod": "POST scrypt verified credentials",
+      "scenario": "Press journalist logs in with password",
+      "expected": "HTTP 200 with role=journalist and news.publish permission",
+      "actual": "HTTP 200, role=journalist",
+      "evidence": {
+        "role": "journalist"
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "AUTH-REAL-09",
+      "category": "Production Auth",
+      "title": "Real Advisor Authentication",
+      "endpoint": "POST /api/auth/login",
+      "role": "advisor",
+      "testMethod": "POST scrypt verified credentials",
+      "scenario": "Floor advisor logs in with password",
+      "expected": "HTTP 200 with role=advisor and advisor.signal permission",
+      "actual": "HTTP 200, role=advisor",
+      "evidence": {
+        "role": "advisor"
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "AUTH-REAL-10",
+      "category": "Production Auth",
+      "title": "Invalid Credentials Rejection",
+      "endpoint": "POST /api/auth/login",
+      "role": "anonymous/bad credentials",
+      "testMethod": "POST bad credentials",
+      "scenario": "Caller submits incorrect password for admin account",
+      "expected": "HTTP 401 Unauthorized",
+      "actual": "HTTP 401",
+      "evidence": {
+        "error": "Invalid username, PIN or password"
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "AUTH-REAL-11",
+      "category": "Cryptographic Integrity",
+      "title": "HMAC Signature Tampering Rejection",
+      "endpoint": "GET /api/auth/me",
+      "role": "tampered token",
+      "testMethod": "GET with forged signature",
+      "scenario": "Attacker mutates HMAC signature bytes of a valid session token",
+      "expected": "HTTP 401 Unauthorized (timingSafeEqual rejection)",
+      "actual": "HTTP 401",
+      "evidence": {
+        "authenticated": false,
+        "error": "Session invalid or expired"
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "AUTH-REAL-12",
+      "category": "Cryptographic Integrity",
+      "title": "Token Payload Role Tampering Rejection",
+      "endpoint": "GET /api/auth/me",
+      "role": "forged admin token",
+      "testMethod": "GET with forged payload",
+      "scenario": "Attacker modifies token payload segment from team to admin",
+      "expected": "HTTP 401 Unauthorized (HMAC mismatch)",
+      "actual": "HTTP 401",
+      "evidence": {
+        "authenticated": false,
+        "error": "Session invalid or expired"
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-01-01",
+      "category": "Finding 7.4-01 (Orders)",
+      "title": "Anonymous /api/orders Rejection",
+      "endpoint": "GET /api/orders",
+      "role": "anonymous",
+      "testMethod": "GET without token",
+      "scenario": "Unauthenticated caller requests GET /api/orders",
+      "expected": "HTTP 401 Unauthorized",
+      "actual": "HTTP 401",
+      "evidence": {
+        "error": "401 Unauthorized: Valid session authentication required."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-01-02",
+      "category": "Finding 7.4-01 (Orders)",
+      "title": "Team T01 Private Order Slip Isolation",
+      "endpoint": "GET /api/orders",
+      "role": "team (T01)",
+      "testMethod": "GET with real T01 token",
+      "scenario": "Team T01 requests order history with valid cryptographic token",
+      "expected": "HTTP 200 with strictly T01 orders (2 slips, zero T02/T03 slips)",
+      "actual": "HTTP 200, count=2",
+      "evidence": [
+        {
+          "id": "ORD_T01_101",
+          "teamCode": "T01"
+        },
+        {
+          "id": "ORD_T01_102",
+          "teamCode": "T01"
+        }
+      ],
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-01-03",
+      "category": "Finding 7.4-01 (Orders)",
+      "title": "Team T01 Query Parameter Tampering Prevention",
+      "endpoint": "GET /api/orders?teamCode=T02",
+      "role": "team (T01)",
+      "testMethod": "GET with spoofed query param",
+      "scenario": "Team T01 passes ?teamCode=T02 to view rival team orders",
+      "expected": "HTTP 200 with strictly T01 orders (session identity strictly enforced)",
+      "actual": "HTTP 200, count=2",
+      "evidence": [
+        {
+          "id": "ORD_T01_101",
+          "teamCode": "T01"
+        },
+        {
+          "id": "ORD_T01_102",
+          "teamCode": "T01"
+        }
+      ],
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-01-04",
+      "category": "Finding 7.4-01 (Orders)",
+      "title": "Team T02 Private Order Slip Isolation",
+      "endpoint": "GET /api/orders",
+      "role": "team (T02)",
+      "testMethod": "GET with real T02 token",
+      "scenario": "Team T02 requests order slips",
+      "expected": "HTTP 200 with strictly T02 orders (1 slip)",
+      "actual": "HTTP 200, count=1",
+      "evidence": [
+        {
+          "id": "ORD_T02_101",
+          "teamCode": "T02"
+        }
+      ],
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-01-05",
+      "category": "Finding 7.4-01 (Orders)",
+      "title": "Unprivileged Staff Roles Deny-By-Default for Orders",
+      "endpoint": "GET /api/orders",
+      "role": "journalist, judge, advisor",
+      "testMethod": "GET with staff tokens",
+      "scenario": "Staff members lacking desk permissions attempt to inspect order queue",
+      "expected": "HTTP 403 Forbidden for all unprivileged staff",
+      "actual": "Journalist=403, Judge=403, Advisor=403",
+      "evidence": {
+        "journalist": {
+          "error": "Forbidden: Requires desk or audit authorization to view orders queue."
+        },
+        "judge": {
+          "error": "Forbidden: Requires desk or audit authorization to view orders queue."
+        },
+        "advisor": {
+          "error": "Forbidden: Requires desk or audit authorization to view orders queue."
+        }
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-01-06",
+      "category": "Finding 7.4-01 (Orders)",
+      "title": "Authorized Exchange Operator Global Queue Access",
+      "endpoint": "GET /api/orders",
+      "role": "exchange operator",
+      "testMethod": "GET with exchange token",
+      "scenario": "Authorized desk operator requests global orders queue",
+      "expected": "HTTP 200 with complete active orders queue (4 orders)",
+      "actual": "HTTP 200, count=4",
+      "evidence": {
+        "count": 4
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-01-07",
+      "category": "Finding 7.4-01 (Orders)",
+      "title": "Trailing Slash Route Normalization (/api/orders/)",
+      "endpoint": "GET /api/orders/",
+      "role": "team (T01)",
+      "testMethod": "GET with trailing slash",
+      "scenario": "Team T01 requests /api/orders/ with trailing slash",
+      "expected": "HTTP 200 with strictly T01 orders",
+      "actual": "HTTP 200, count=2",
+      "evidence": {
+        "count": 2
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-01-08",
+      "category": "Finding 7.4-01 (Desks)",
+      "title": "Desk Metrics & Queue Inspection Authorization",
+      "endpoint": "GET /api/order-desks",
+      "role": "anonymous, team, exchange",
+      "testMethod": "GET desk status",
+      "scenario": "Verify /api/order-desks rejects anonymous (401) and team (403), allows desk staff (200)",
+      "expected": "Anonymous=401, Team=403, DeskStaff=200",
+      "actual": "Anon=401, Team=403, Staff=200",
+      "evidence": {
+        "anon": 401,
+        "team": 403,
+        "staff": 200
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-02-01",
+      "category": "Finding 7.4-02 (FX)",
+      "title": "Anonymous /api/fx/transactions Rejection",
+      "endpoint": "GET /api/fx/transactions",
+      "role": "anonymous",
+      "testMethod": "GET without token",
+      "scenario": "Unauthenticated caller requests FX history",
+      "expected": "HTTP 401 Unauthorized",
+      "actual": "HTTP 401",
+      "evidence": {
+        "error": "401 Unauthorized: Valid session authentication required."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-02-02",
+      "category": "Finding 7.4-02 (FX)",
+      "title": "Team T01 Private FX Transaction Scoping",
+      "endpoint": "GET /api/fx/transactions",
+      "role": "team (T01)",
+      "testMethod": "GET with real T01 token",
+      "scenario": "Team T01 requests FX transactions",
+      "expected": "HTTP 200 with strictly T01 FX records (1 tx)",
+      "actual": "HTTP 200, count=1",
+      "evidence": [
+        {
+          "id": "FX_TX_T01_101",
+          "ticketNumber": "FX-101",
+          "teamCode": "T01",
+          "fromCurrency": "INR",
+          "toCurrency": "USD",
+          "fromAmount": 100000,
+          "toAmount": 1128.67,
+          "status": "SETTLED",
+          "timestamp": 1793371623692
+        }
+      ],
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-02-03",
+      "category": "Finding 7.4-02 (FX)",
+      "title": "Team T01 FX History Query Parameter Tampering Prevention",
+      "endpoint": "GET /api/fx/transactions?teamCode=T02",
+      "role": "team (T01)",
+      "testMethod": "GET with spoofed query params",
+      "scenario": "Team T01 supplies ?teamCode=T02&actorTeamCode=T02&role=admin",
+      "expected": "HTTP 200 with strictly T01 FX transactions (query params discarded)",
+      "actual": "HTTP 200, count=1",
+      "evidence": [
+        {
+          "id": "FX_TX_T01_101",
+          "ticketNumber": "FX-101",
+          "teamCode": "T01",
+          "fromCurrency": "INR",
+          "toCurrency": "USD",
+          "fromAmount": 100000,
+          "toAmount": 1128.67,
+          "status": "SETTLED",
+          "timestamp": 1793371623692
+        }
+      ],
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-02-04",
+      "category": "Finding 7.4-02 (FX)",
+      "title": "Anonymous /api/fx/queue Rejection",
+      "endpoint": "GET /api/fx/queue",
+      "role": "anonymous",
+      "testMethod": "GET without token",
+      "scenario": "Unauthenticated caller requests FX conversion queue",
+      "expected": "HTTP 401 Unauthorized",
+      "actual": "HTTP 401",
+      "evidence": {
+        "error": "401 Unauthorized: Valid session authentication required."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-02-05",
+      "category": "Finding 7.4-02 (FX)",
+      "title": "Team T01 Private FX Queue Scoping",
+      "endpoint": "GET /api/fx/queue",
+      "role": "team (T01)",
+      "testMethod": "GET with real T01 token",
+      "scenario": "Team T01 requests pending FX conversions",
+      "expected": "HTTP 200 with strictly T01 items (1 item, zero T02 leakage)",
+      "actual": "HTTP 200, count=1",
+      "evidence": [
+        {
+          "id": "FX_Q_T01_101",
+          "teamCode": "T01",
+          "fromCurrency": "INR",
+          "toCurrency": "GBP",
+          "fromAmount": 50000,
+          "status": "PENDING",
+          "timestamp": 1793371623692
+        }
+      ],
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-02-06",
+      "category": "Finding 7.4-02 (FX)",
+      "title": "Team T01 FX Queue Query Spoofing Prevention",
+      "endpoint": "GET /api/fx/queue?teamCode=T02",
+      "role": "team (T01)",
+      "testMethod": "GET with spoofed query param",
+      "scenario": "Team T01 requests /api/fx/queue?teamCode=T02",
+      "expected": "HTTP 200 with strictly T01 items",
+      "actual": "HTTP 200, count=1",
+      "evidence": [
+        {
+          "id": "FX_Q_T01_101",
+          "teamCode": "T01",
+          "fromCurrency": "INR",
+          "toCurrency": "GBP",
+          "fromAmount": 50000,
+          "status": "PENDING",
+          "timestamp": 1793371623692
+        }
+      ],
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-02-07",
+      "category": "Finding 7.4-02 (FX)",
+      "title": "Authorized Operator Global FX Queue Access",
+      "endpoint": "GET /api/fx/queue",
+      "role": "exchange operator",
+      "testMethod": "GET with exchange token",
+      "scenario": "Exchange desk operator inspects complete FX queue",
+      "expected": "HTTP 200 with all pending FX requests (2 items)",
+      "actual": "HTTP 200, count=2",
+      "evidence": {
+        "count": 2
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-03-01",
+      "category": "Finding 7.4-03 (Judging)",
+      "title": "Anonymous Scorecard Submission Rejection",
+      "endpoint": "POST /api/judging/scorecard/save",
+      "role": "anonymous",
+      "testMethod": "POST without token",
+      "scenario": "Unauthenticated caller attempts to save scorecard for T01",
+      "expected": "HTTP 401 Unauthorized",
+      "actual": "HTTP 401",
+      "evidence": {
+        "error": "401 Unauthorized: Valid session authentication required."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-03-02",
+      "category": "Finding 7.4-03 (Judging)",
+      "title": "Participant Team Self-Scoring Rejection",
+      "endpoint": "POST /api/judging/scorecard/save",
+      "role": "team (T01)",
+      "testMethod": "POST with team token",
+      "scenario": "Team T01 attempts to award themselves perfect scores",
+      "expected": "HTTP 403 Forbidden (judging.score required)",
+      "actual": "HTTP 403",
+      "evidence": {
+        "error": "Forbidden: Requires judging.score permission."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-03-03",
+      "category": "Finding 7.4-03 (Judging)",
+      "title": "Unauthorized Staff Scorecard Submission Rejection",
+      "endpoint": "POST /api/judging/scorecard/save",
+      "role": "advisor",
+      "testMethod": "POST with advisor token",
+      "scenario": "Floor advisor attempts to submit judge scorecard",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403",
+      "evidence": {
+        "error": "Forbidden: Requires judging.score permission."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-03-04",
+      "category": "Finding 7.4-03 (Judging)",
+      "title": "Authorized Judge Legitimate Scorecard Submission",
+      "endpoint": "POST /api/judging/scorecard/save",
+      "role": "judge",
+      "testMethod": "POST with judge token",
+      "scenario": "Authorized judge submits scorecard for team T02",
+      "expected": "HTTP 200 with scorecard bound to judge session identity",
+      "actual": "HTTP 200, judgeId=USR_JDG_01",
+      "evidence": {
+        "id": "CARD_1793371625947_vfb8",
+        "judgeId": "USR_JDG_01",
+        "judgeName": "judge",
+        "teamCode": "T02",
+        "responseToEvents": 4,
+        "decisionTiming": 4,
+        "adaptability": 4,
+        "riskRecognition": 4,
+        "forwardPositioning": 4,
+        "resilience": 4,
+        "balance": 4,
+        "adaptCapacity": 4,
+        "notes": "Official deliberation evaluation by Judge",
+        "isLocked": false,
+        "updatedAt": 1793371625947
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-03-05",
+      "category": "Finding 7.4-03 (Judging)",
+      "title": "Judge Identity Forgery Prevention",
+      "endpoint": "POST /api/judging/scorecard/save",
+      "role": "judge",
+      "testMethod": "POST with spoofed body judgeId",
+      "scenario": "Judge attempts to submit body { judgeId: \"CHIEF_JUSTICE_SPOOFED\" }",
+      "expected": "HTTP 200 with judge identity bound strictly to session, ignoring body",
+      "actual": "HTTP 200, resolvedJudgeId=USR_JDG_01",
+      "evidence": {
+        "resolvedJudgeId": "USR_JDG_01"
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-03-06",
+      "category": "Finding 7.4-03 (Judging)",
+      "title": "Rubric Score Bounds Validation ([0, 5])",
+      "endpoint": "POST /api/judging/scorecard/save",
+      "role": "judge",
+      "testMethod": "POST with score > 5",
+      "scenario": "Judge submits score of 99",
+      "expected": "HTTP 400 Bad Request",
+      "actual": "HTTP 400",
+      "evidence": {
+        "error": "Invalid rubric score for responseToEvents: must be a number between 0 and 5."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-03-07",
+      "category": "Finding 7.4-03 (Judging)",
+      "title": "Scorecard Moderation Authorization (results.approve)",
+      "endpoint": "POST /api/judging/moderate",
+      "role": "judge vs admin",
+      "testMethod": "POST moderation",
+      "scenario": "Verify Judge cannot moderate (403), Administrator can moderate (200)",
+      "expected": "Judge=403, Admin=200",
+      "actual": "Judge=403, Admin=200",
+      "evidence": {
+        "judgeStatus": 403,
+        "adminStatus": 200,
+        "isModerated": true
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-03-08",
+      "category": "Finding 7.4-03 (Judging)",
+      "title": "Deliberation Scorecards Viewing Privacy",
+      "endpoint": "GET /api/judging/scorecards",
+      "role": "team vs judge",
+      "testMethod": "GET scorecards before publishing",
+      "scenario": "Verify Team is blocked (403), Judge is permitted (200)",
+      "expected": "Team=403, Judge=200",
+      "actual": "Team=403, Judge=200",
+      "evidence": {
+        "teamStatus": 403,
+        "judgeStatus": 200,
+        "cardsCount": 3
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-04-01",
+      "category": "Finding 7.4-04 (Reports)",
+      "title": "Anonymous Orders CSV Report Rejection",
+      "endpoint": "GET /api/reports/orders/csv",
+      "role": "anonymous",
+      "testMethod": "GET without token",
+      "scenario": "Unauthenticated caller requests orders CSV export",
+      "expected": "HTTP 401 Unauthorized",
+      "actual": "HTTP 401",
+      "evidence": {
+        "error": "401 Unauthorized: Valid session authentication required."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-04-02",
+      "category": "Finding 7.4-04 (Reports)",
+      "title": "Participant Team Orders CSV Export Rejection",
+      "endpoint": "GET /api/reports/orders/csv",
+      "role": "team (T01)",
+      "testMethod": "GET with team token",
+      "scenario": "Team T01 requests complete orders CSV export",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403",
+      "evidence": {
+        "error": "Forbidden: Requires audit.view or desk supervision authorization to export orders CSV report."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-04-03",
+      "category": "Finding 7.4-04 (Reports)",
+      "title": "Authorized Desk Operator Orders CSV Export",
+      "endpoint": "GET /api/reports/orders/csv",
+      "role": "exchange operator",
+      "testMethod": "GET with exchange token",
+      "scenario": "Exchange desk operator exports orders CSV",
+      "expected": "HTTP 200 with text/csv header and order rows",
+      "actual": "HTTP 200, isCsv=true",
+      "evidence": {
+        "status": 200,
+        "preview": "Order ID,Ticket Number,Team Code,Ticker,Security Name,Action,Quantity,Order Type,Limit Price,Request"
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-04-04",
+      "category": "Finding 7.4-04 (Reports)",
+      "title": "SEBI Auditor Financial Reconciliation CSV Export",
+      "endpoint": "GET /api/reports/reconciliation/csv",
+      "role": "sebi auditor",
+      "testMethod": "GET with sebi token",
+      "scenario": "SEBI auditor exports reconciliation rankings CSV",
+      "expected": "HTTP 200 with text/csv header and team financial metrics",
+      "actual": "HTTP 200, isCsv=true",
+      "evidence": {
+        "status": 200,
+        "preview": "Rank,Team Code,Team Name,School,Team Type,Starting Capital (INR),Cash Balance (INR),Holdings Valuati"
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-04-05",
+      "category": "Finding 7.4-04 (Reports)",
+      "title": "Browser Query-Token Authentication (Authorized SEBI)",
+      "endpoint": "GET /api/reports/orders/csv?token=...",
+      "role": "sebi (query token)",
+      "testMethod": "GET with URL token parameter",
+      "scenario": "Browser downloads orders CSV via link with valid SEBI query token",
+      "expected": "HTTP 200 with CSV stream",
+      "actual": "HTTP 200, isCsv=true",
+      "evidence": {
+        "status": 200
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-04-06",
+      "category": "Finding 7.4-04 (Reports)",
+      "title": "Browser Query-Token Privilege Enforcement (Team Forbidden)",
+      "endpoint": "GET /api/reports/orders/csv?token=...",
+      "role": "team (query token)",
+      "testMethod": "GET with URL team token",
+      "scenario": "Team attempts to download complete orders CSV via query token",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403",
+      "evidence": {
+        "error": "Forbidden: Requires audit.view or desk supervision authorization to export orders CSV report."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-04-07",
+      "category": "Finding 7.4-04 (Reports)",
+      "title": "Browser Query-Token Signature Tampering Rejection",
+      "endpoint": "GET /api/reports/orders/csv?token=...",
+      "role": "tampered query token",
+      "testMethod": "GET with forged signature in URL parameter",
+      "scenario": "Attacker supplies forged token in query string",
+      "expected": "HTTP 401 Unauthorized",
+      "actual": "HTTP 401",
+      "evidence": {
+        "error": "401 Unauthorized: Valid session authentication required."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-05-01",
+      "category": "Finding 7.4-05 (Debate)",
+      "title": "Anonymous Auditorium Debate Takeover Rejection",
+      "endpoint": "POST /api/bull-bear/debate",
+      "role": "anonymous",
+      "testMethod": "POST without token",
+      "scenario": "Unauthenticated caller attempts to hijack projector display",
+      "expected": "HTTP 401 Unauthorized",
+      "actual": "HTTP 401",
+      "evidence": {
+        "error": "401 Unauthorized: Valid session authentication required."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-05-02",
+      "category": "Finding 7.4-05 (Debate)",
+      "title": "Participant Team Debate Takeover Rejection",
+      "endpoint": "POST /api/bull-bear/debate",
+      "role": "team (T01)",
+      "testMethod": "POST with team token",
+      "scenario": "Team T01 attempts to trigger debate stage showdown",
+      "expected": "HTTP 403 Forbidden (market.control required)",
+      "actual": "HTTP 403",
+      "evidence": {
+        "error": "Forbidden: Auditorium debate control requires market.control permission."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-05-03",
+      "category": "Finding 7.4-05 (Debate)",
+      "title": "Authorized Coordinator Debate Showdown Activation",
+      "endpoint": "POST /api/bull-bear/debate",
+      "role": "coordinator",
+      "testMethod": "POST with coordinator token",
+      "scenario": "Floor Coordinator activates debate showdown on projector",
+      "expected": "HTTP 200 with debateData initialized and takeoverEvent active",
+      "actual": "HTTP 200, topic=Semiconductor CapEx Supercycles",
+      "evidence": {
+        "success": true,
+        "debateData": {
+          "topic": "Semiconductor CapEx Supercycles",
+          "round": 1,
+          "active": true,
+          "startedAt": 1793371626086
+        }
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-05-04",
+      "category": "Finding 7.4-05 (Debate)",
+      "title": "Anonymous Debate Round Modification Rejection",
+      "endpoint": "POST /api/bull-bear/round",
+      "role": "anonymous",
+      "testMethod": "POST without token",
+      "scenario": "Unauthenticated caller attempts to modify debate round",
+      "expected": "HTTP 401 Unauthorized",
+      "actual": "HTTP 401",
+      "evidence": {
+        "error": "401 Unauthorized: Valid session authentication required."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-05-05",
+      "category": "Finding 7.4-05 (Debate)",
+      "title": "Participant Team Debate Round Modification Rejection",
+      "endpoint": "POST /api/bull-bear/round",
+      "role": "team (T01)",
+      "testMethod": "POST with team token",
+      "scenario": "Team T01 attempts to advance debate round",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403",
+      "evidence": {
+        "error": "Forbidden: Auditorium debate control requires market.control permission."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "VER-7.5-05-06",
+      "category": "Finding 7.4-05 (Debate)",
+      "title": "Authorized Coordinator Debate Round Management",
+      "endpoint": "POST /api/bull-bear/round",
+      "role": "coordinator",
+      "testMethod": "POST with coordinator token",
+      "scenario": "Coordinator advances debate round with topic and timer",
+      "expected": "HTTP 200 with debate round updated",
+      "actual": "HTTP 200, round=2",
+      "evidence": {
+        "activeRound": 2,
+        "currentTopic": "High Yield Credit Spreads vs Equity Valuations",
+        "timerSeconds": 300,
+        "status": "ACTIVE",
+        "startedAt": 1793371626134,
+        "moderatorNotes": "Official Round 2 Discussion",
+        "history": []
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "REG-7.1-01",
+      "category": "Phase 7.1 Regression",
+      "title": "Cross-Team Order Resubmission Prevention",
+      "endpoint": "POST /api/orders/resubmit",
+      "role": "team (T01)",
+      "testMethod": "POST with rival orderId",
+      "scenario": "Team T01 attempts to resubmit Team T02 order",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403",
+      "evidence": {
+        "error": "Forbidden: Team T01 cannot resubmit orders belonging to team T02."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "REG-7.1-02",
+      "category": "Phase 7.1 Regression",
+      "title": "Cross-Team Order Cancellation Prevention",
+      "endpoint": "POST /api/orders/cancel",
+      "role": "team (T01)",
+      "testMethod": "POST with rival orderId",
+      "scenario": "Team T01 attempts to cancel Team T02 order",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403",
+      "evidence": {
+        "error": "Forbidden: Team T01 cannot cancel orders belonging to team T02."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "REG-7.1-03",
+      "category": "Phase 7.1 Regression",
+      "title": "Direct Trade Execution Blocked for Floor Participants",
+      "endpoint": "POST /api/trade",
+      "role": "team (T01)",
+      "testMethod": "POST direct trade execution",
+      "scenario": "Team T01 attempts to bypass desk clearance and execute trade directly",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403",
+      "evidence": {
+        "error": "Forbidden: Trading floor participants cannot execute trades directly. Orders must be submitted as slips via /api/order/create."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "REG-7.3-01",
+      "category": "Phase 7.3 Regression",
+      "title": "Cross-Team Poll Vote Spoofing Prevention",
+      "endpoint": "POST /api/polls/vote",
+      "role": "team (T01 attempting T02 vote)",
+      "testMethod": "POST vote with rival teamCode",
+      "scenario": "Team T01 attempts to cast poll vote on behalf of Team T02",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403",
+      "evidence": {
+        "error": "Forbidden: Team T01 cannot vote on behalf of team T02."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "REG-7.3-02",
+      "category": "Phase 7.3 Regression",
+      "title": "Unprivileged Broker Recommendation Creation Blocked",
+      "endpoint": "POST /api/broker/recommendation",
+      "role": "team (T01)",
+      "testMethod": "POST recommendation",
+      "scenario": "Participant team attempts to publish stock advisory signal",
+      "expected": "HTTP 403 Forbidden (requires advisor role)",
+      "actual": "HTTP 403",
+      "evidence": {
+        "error": "Forbidden: Publishing broker recommendations or bulletins requires Advisory or Administrator privileges."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "LEDGER-VER-01",
+      "category": "Ledger Invariants",
+      "title": "Financial Ledger & Queue Invariants Preserved",
+      "endpoint": "Database State Invariants",
+      "role": "system state",
+      "testMethod": "Deep fixture assertion",
+      "scenario": "Verify cash balance, orders collection, and FX queues remained uncorrupted by hostile test vectors",
+      "expected": "Zero mutations on cash, orders, and FX queues",
+      "actual": "T01 Cash=10000000, OrdersCount=4, FxQueueCount=2",
+      "evidence": {
+        "cashBalance": 10000000,
+        "ordersCount": 4,
+        "fxQueueCount": 2
+      },
+      "status": "PASSED"
+    }
+  ]
+}

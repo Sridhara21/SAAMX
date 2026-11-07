@@ -1,0 +1,437 @@
+{
+  "testDate": "2026-10-18T14:40:45.358Z",
+  "suite": "SAAMX Phase 7.3 Secondary Authorization & Identity Enforcement",
+  "totalTests": 28,
+  "passed": 28,
+  "failed": 0,
+  "results": [
+    {
+      "id": "SEC-NEW-01-01",
+      "category": "FX RBAC",
+      "title": "Participant Direct /api/fx/exchange Rejection",
+      "scenario": "Participant team T01 attempting direct currency exchange execution without exchange desk staff privileges",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403 (Forbidden: Direct currency exchange and desk queue processing require Exchange Desk Operator privileges.)",
+      "evidence": {
+        "error": "Forbidden: Direct currency exchange and desk queue processing require Exchange Desk Operator privileges."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-NEW-01-02",
+      "category": "FX RBAC",
+      "title": "Participant Direct /api/fx/convert Rejection",
+      "scenario": "Participant team T01 attempting direct /api/fx/convert conversion without desk privileges",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403 (Forbidden: Direct currency exchange and desk queue processing require Exchange Desk Operator privileges.)",
+      "evidence": {
+        "error": "Forbidden: Direct currency exchange and desk queue processing require Exchange Desk Operator privileges."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-NEW-01-03",
+      "category": "FX RBAC",
+      "title": "Participant /api/fx/queue-action Rejection",
+      "scenario": "Participant team T01 attempting desk queue action (SETTLE)",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403 (Forbidden: Direct currency exchange and desk queue processing require Exchange Desk Operator privileges.)",
+      "evidence": {
+        "error": "Forbidden: Direct currency exchange and desk queue processing require Exchange Desk Operator privileges."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-NEW-01-04",
+      "category": "FX RBAC",
+      "title": "Unauthorized Staff Role /api/fx/exchange Rejection",
+      "scenario": "Journalist staff role attempting direct FX execution",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403 (Forbidden: Direct currency exchange and desk queue processing require Exchange Desk Operator privileges.)",
+      "evidence": {
+        "error": "Forbidden: Direct currency exchange and desk queue processing require Exchange Desk Operator privileges."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-NEW-01-05",
+      "category": "FX Ownership",
+      "title": "Cross-Team /api/fx/request Spoofing Rejection",
+      "scenario": "Team T02 attempting to submit an FX intake slip specifying teamCode: T01",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403 (Forbidden: Team T02 cannot submit FX requests for team T01.)",
+      "evidence": {
+        "error": "Forbidden: Team T02 cannot submit FX requests for team T01."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-NEW-01-06",
+      "category": "FX RBAC",
+      "title": "Trailing Slash /api/fx/exchange/ Rejection",
+      "scenario": "Participant team T01 attempting path alias /api/fx/exchange/",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403 (Forbidden: Direct currency exchange and desk queue processing require Exchange Desk Operator privileges.)",
+      "evidence": {
+        "error": "Forbidden: Direct currency exchange and desk queue processing require Exchange Desk Operator privileges."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-NEW-01-07",
+      "category": "FX Auth",
+      "title": "Unauthenticated /api/fx/exchange Rejection",
+      "scenario": "Anonymous request to /api/fx/exchange without session token or credentials",
+      "expected": "HTTP 401 Unauthorized",
+      "actual": "HTTP 401 (401 Unauthorized: Valid session authentication required.)",
+      "evidence": {
+        "error": "401 Unauthorized: Valid session authentication required."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-NEW-01-08",
+      "category": "State Integrity",
+      "title": "Ledger Non-Mutation Post Rejected FX Requests",
+      "scenario": "Verify Team T01 cashWallets and cashBalance remain strictly unmodified after all rejected attempts",
+      "expected": "INR: 10000000, USD: 0, Cash: 10000000",
+      "actual": "INR: 10000000, USD: 0, Cash: 10000000",
+      "evidence": {
+        "cashBalance": 10000000,
+        "cashWallets": {
+          "INR": 10000000,
+          "USD": 0,
+          "GBP": 0,
+          "EUR": 0
+        }
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-NEW-01-09",
+      "category": "FX Operations",
+      "title": "Authorized Team /api/fx/request Submission",
+      "scenario": "Team T01 submitting legitimate FX request for their own team",
+      "expected": "HTTP 200 OK & Queued",
+      "actual": "HTTP 200 (Status: QUEUED)",
+      "evidence": {
+        "success": true,
+        "fxRequest": {
+          "id": "FX_1792334444499_2aq5",
+          "requestId": "FX_1792334444499_2aq5",
+          "teamCode": "T01",
+          "teamName": "Trader Elite 1",
+          "eventId": "EVT_LIVE_MAIN",
+          "fromCurrency": "INR",
+          "toCurrency": "USD",
+          "fromAmount": 50000,
+          "toAmount": 564.33,
+          "quoteRate": 88.6,
+          "spreadPercent": 0.45,
+          "status": "QUEUED",
+          "operatorId": "team",
+          "notes": "Treasury hedging order",
+          "createdAt": 1792334444499,
+          "settledAt": null,
+          "rejectionReason": null
+        }
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-NEW-01-10",
+      "category": "FX Operations",
+      "title": "Authorized Exchange Desk Execution (/api/fx/exchange)",
+      "scenario": "Exchange Operator (operator_x) executing currency exchange for T01 (100,000 INR -> USD)",
+      "expected": "HTTP 200 OK, Wallets Debited/Credited, Operator Session Bound",
+      "actual": "HTTP 200 (Debited: 100000 INR, Credited: 1128.67 USD, Operator: operator_x)",
+      "evidence": {
+        "fxTransaction": {
+          "id": "FX000002",
+          "ticketNumber": "FX-4523",
+          "timestamp": 1792334444523,
+          "teamCode": "T01",
+          "teamId": "T01",
+          "teamName": "Trader Elite 1",
+          "fromCurrency": "INR",
+          "toCurrency": "USD",
+          "fromAmount": 100000,
+          "toAmount": 1128.67,
+          "effectiveRate": 88.6,
+          "spreadPercent": 0.45,
+          "operatorId": "operator_x",
+          "status": "CONFIRMED",
+          "notes": "Counter-order execution"
+        },
+        "cashWallets": {
+          "INR": 9900000,
+          "USD": 1128.67,
+          "GBP": 0,
+          "EUR": 0
+        }
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-NEW-02-01",
+      "category": "Polling RBAC",
+      "title": "Participant /api/polls/create Rejection",
+      "scenario": "Participant team T01 attempting to create a floor sentiment poll",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403 (Forbidden: Creating or closing sentiment polls requires Coordinator or Administrator privileges.)",
+      "evidence": {
+        "error": "Forbidden: Creating or closing sentiment polls requires Coordinator or Administrator privileges."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-NEW-02-02",
+      "category": "Polling RBAC",
+      "title": "Participant /api/polls/close Rejection",
+      "scenario": "Participant team T01 attempting to close a sentiment poll",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403 (Forbidden: Creating or closing sentiment polls requires Coordinator or Administrator privileges.)",
+      "evidence": {
+        "error": "Forbidden: Creating or closing sentiment polls requires Coordinator or Administrator privileges."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-NEW-02-03",
+      "category": "Polling RBAC",
+      "title": "Unauthorized Staff Role /api/polls/create Rejection",
+      "scenario": "Floor Analyst attempting poll creation (requires Coordinator or Admin)",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403 (Forbidden: Creating or closing sentiment polls requires Coordinator or Administrator privileges.)",
+      "evidence": {
+        "error": "Forbidden: Creating or closing sentiment polls requires Coordinator or Administrator privileges."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-NEW-02-04",
+      "category": "Polling Identity",
+      "title": "Cross-Team /api/polls/vote Spoofing Rejection",
+      "scenario": "Team T02 attempting to cast a vote with body teamCode: T01",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403 (Forbidden: Team T02 cannot vote on behalf of team T01.)",
+      "evidence": {
+        "error": "Forbidden: Team T02 cannot vote on behalf of team T01."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-NEW-02-05",
+      "category": "Polling RBAC",
+      "title": "Trailing Slash /api/polls/create/ Rejection",
+      "scenario": "Participant team T01 attempting path alias /api/polls/create/",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403 (Forbidden: Creating or closing sentiment polls requires Coordinator or Administrator privileges.)",
+      "evidence": {
+        "error": "Forbidden: Creating or closing sentiment polls requires Coordinator or Administrator privileges."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-NEW-02-06",
+      "category": "Polling Auth",
+      "title": "Unauthenticated /api/polls/create Rejection",
+      "scenario": "Anonymous request to /api/polls/create without authentication",
+      "expected": "HTTP 401 Unauthorized",
+      "actual": "HTTP 401 (401 Unauthorized: Valid session authentication required.)",
+      "evidence": {
+        "error": "401 Unauthorized: Valid session authentication required."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-NEW-02-07",
+      "category": "Polling Operations",
+      "title": "Authorized Floor Coordinator /api/polls/create",
+      "scenario": "Floor Coordinator successfully creating market sentiment poll",
+      "expected": "HTTP 200 OK & Status OPEN",
+      "actual": "HTTP 200 (Poll ID: POLL_1792334444570, Status: OPEN)",
+      "evidence": {
+        "id": "POLL_1792334444570",
+        "question": "Will Nifty reach 26,000 this session?",
+        "options": [
+          {
+            "id": 0,
+            "text": "Bullish 🐂",
+            "votes": 0
+          },
+          {
+            "id": 1,
+            "text": "Bearish 🐻",
+            "votes": 0
+          },
+          {
+            "id": 2,
+            "text": "Sideways ⚖️",
+            "votes": 0
+          }
+        ],
+        "status": "OPEN",
+        "createdAt": 1792334444570,
+        "expiresAt": 1792334744570,
+        "votes": {}
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-NEW-02-08",
+      "category": "Polling Operations",
+      "title": "Authorized Participant /api/polls/vote Submission",
+      "scenario": "Team T01 legitimately casting vote for option 0 in active poll",
+      "expected": "HTTP 200 OK",
+      "actual": "HTTP 200",
+      "evidence": {
+        "success": true
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-NEW-02-09",
+      "category": "Polling Operations",
+      "title": "Duplicate Poll Vote Rejection",
+      "scenario": "Team T01 attempting to vote a second time in the same active poll",
+      "expected": "HTTP 400 Bad Request",
+      "actual": "HTTP 400 (Team has already voted in this poll.)",
+      "evidence": {
+        "error": "Team has already voted in this poll."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-NEW-02-10",
+      "category": "Polling Operations",
+      "title": "Authorized Floor Coordinator /api/polls/close",
+      "scenario": "Floor Coordinator closing the active poll",
+      "expected": "HTTP 200 OK",
+      "actual": "HTTP 200",
+      "evidence": {
+        "success": true
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-NEW-03-01",
+      "category": "Broker RBAC",
+      "title": "Participant /api/broker/recommendation Rejection",
+      "scenario": "Participant team T01 attempting to publish a broker advisory recommendation",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403 (Forbidden: Publishing broker recommendations or bulletins requires Advisory or Administrator privileges.)",
+      "evidence": {
+        "error": "Forbidden: Publishing broker recommendations or bulletins requires Advisory or Administrator privileges."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-NEW-03-02",
+      "category": "Broker RBAC",
+      "title": "Participant /api/broker/bulletin Rejection",
+      "scenario": "Participant team T01 attempting to publish a broker advisory bulletin",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403 (Forbidden: Publishing broker recommendations or bulletins requires Advisory or Administrator privileges.)",
+      "evidence": {
+        "error": "Forbidden: Publishing broker recommendations or bulletins requires Advisory or Administrator privileges."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-NEW-03-03",
+      "category": "Broker RBAC",
+      "title": "Unauthorized Staff Role /api/broker/recommendation Rejection",
+      "scenario": "Journalist staff role attempting to publish broker recommendation",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403 (Forbidden: Publishing broker recommendations or bulletins requires Advisory or Administrator privileges.)",
+      "evidence": {
+        "error": "Forbidden: Publishing broker recommendations or bulletins requires Advisory or Administrator privileges."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-NEW-03-04",
+      "category": "Broker RBAC",
+      "title": "Unauthorized Staff Role /api/broker/bulletin Rejection",
+      "scenario": "Exchange Operator attempting to publish broker bulletin",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403 (Forbidden: Publishing broker recommendations or bulletins requires Advisory or Administrator privileges.)",
+      "evidence": {
+        "error": "Forbidden: Publishing broker recommendations or bulletins requires Advisory or Administrator privileges."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-NEW-03-05",
+      "category": "Broker RBAC",
+      "title": "Trailing Slash /api/broker/recommendation/ Rejection",
+      "scenario": "Participant team T01 attempting path alias /api/broker/recommendation/",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403 (Forbidden: Publishing broker recommendations or bulletins requires Advisory or Administrator privileges.)",
+      "evidence": {
+        "error": "Forbidden: Publishing broker recommendations or bulletins requires Advisory or Administrator privileges."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-NEW-03-06",
+      "category": "Broker Auth",
+      "title": "Unauthenticated /api/broker/recommendation Rejection",
+      "scenario": "Anonymous request to /api/broker/recommendation without authentication",
+      "expected": "HTTP 401 Unauthorized",
+      "actual": "HTTP 401 (401 Unauthorized: Valid session authentication required.)",
+      "evidence": {
+        "error": "401 Unauthorized: Valid session authentication required."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-NEW-03-07",
+      "category": "Broker Operations",
+      "title": "Authorized Advisor /api/broker/recommendation Publication",
+      "scenario": "Floor Advisor legitimately publishing stock recommendation with session identity binding",
+      "expected": "HTTP 200 OK & Author Bound to Session",
+      "actual": "HTTP 200 (Ticker: TCS, Broker: advisor)",
+      "evidence": {
+        "id": "REC_1792334444681_8xez",
+        "brokerName": "advisor",
+        "ticker": "TCS",
+        "recommendation": "ACCUMULATE",
+        "confidence": 88,
+        "reasoning": "Strong quarterly order pipeline and stable cloud margins.",
+        "riskLevel": "LOW",
+        "timeframe": "MEDIUM",
+        "publishedAt": 1792334444681
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "SEC-NEW-03-08",
+      "category": "Broker Operations",
+      "title": "Authorized Advisor /api/broker/bulletin Publication",
+      "scenario": "Floor Advisor legitimately publishing research bulletin with session identity binding",
+      "expected": "HTTP 200 OK & Author Bound to Session",
+      "actual": "HTTP 200 (Headline: IT Sector Momentum Call, Author: advisor)",
+      "evidence": {
+        "id": "ADV_1792334444714_4vyy",
+        "advisorId": "DOMESTIC",
+        "advisorName": "Domestic Equities & Sector Strategist",
+        "coverage": "NSE/BSE Indian Large, Mid & Small Caps",
+        "headline": "IT Sector Momentum Call",
+        "body": "Midcap and largecap IT services exhibit favorable risk-reward setups.",
+        "relatedTickers": [
+          "TCS",
+          "INFY"
+        ],
+        "relatedSectors": [
+          "Information Technology"
+        ],
+        "opinionType": "BULLISH",
+        "publishedAt": 1792334444714,
+        "author": "advisor"
+      },
+      "status": "PASSED"
+    }
+  ]
+}

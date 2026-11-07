@@ -1,0 +1,220 @@
+[
+  {
+    "id": "PREFLIGHT-HASH",
+    "title": "Pre-flight Authoritative state.json SHA-256 Baseline",
+    "scenario": "Verify state.json SHA-256 matches baseline hash",
+    "expected": "441077e432987ce85a8ec982b818564f68f9b3fa8a59128e5313d04ab30c754c",
+    "actual": "441077e432987ce85a8ec982b818564f68f9b3fa8a59128e5313d04ab30c754c",
+    "evidence": {
+      "sha256": "441077e432987ce85a8ec982b818564f68f9b3fa8a59128e5313d04ab30c754c"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "VOUCHER-01-SUBMIT-NO-VOUCHER",
+    "title": "Order Submission MUST NOT Generate Bank Voucher or Assign Bank Desk",
+    "scenario": "Submit order ticket to Desk 1 and verify zero vouchers generated in state",
+    "expected": "voucher = undefined, bankDeskId = undefined, matchingSettlement = null",
+    "actual": "matchingSettlement = null, bankDeskId = none",
+    "evidence": {
+      "orderId": "ORD-1793410828274-6995",
+      "status": "PENDING"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "VOUCHER-02-REVIEW-NO-VOUCHER",
+    "title": "Floor Verification & Risk Validation MUST NOT Generate Bank Voucher",
+    "scenario": "Claim and risk-validate order slip; verify order is VALIDATED without voucher or bank desk",
+    "expected": "status = VALIDATED, vouchers = 0, bankDeskId = undefined",
+    "actual": "status = VALIDATED, matchingSettlement = null",
+    "evidence": {
+      "orderStatus": "VALIDATED",
+      "deskId": "DESK_1"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "VOUCHER-03-REJECT-NO-VOUCHER",
+    "title": "Exchange Rejection MUST NEVER Generate Bank Voucher or Assign Bank Desk",
+    "scenario": "Reject order ticket; verify status REJECTED, 0 vouchers created, 0 bank desks assigned",
+    "expected": "status = REJECTED, matchingSettlement = null, bankDeskId = undefined",
+    "actual": "status = REJECTED, matchingSettlement = null",
+    "evidence": {
+      "orderId": "ORD-1793410828560-2554",
+      "rejectionReason": "Invalid broker signature on physical intake"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "VOUCHER-04-ACCEPT-ATOMIC-VOUCHER",
+    "title": "Exchange Acceptance Atomically Generates Exactly ONE Persistent Voucher",
+    "scenario": "Execute ACCEPT action; verify voucher generated with BNK-PAY- prefix, direction PAY_IN, assigned to BANK_1/BANK_2",
+    "expected": "status = EXECUTED_PENDING_SETTLEMENT, voucher = BNK-PAY-*, bankDeskId in [BANK_1, BANK_2], count = 1",
+    "actual": "voucher = BNK-PAY-TKT-1001-MVVQI3TI, bankDesk = BANK_1, direction = PAY_IN, count = 1",
+    "evidence": {
+      "voucherReference": "BNK-PAY-TKT-1001-MVVQI3TI",
+      "bankDeskId": "BANK_1",
+      "direction": "PAY_IN",
+      "orderStatus": "EXECUTED_PENDING_SETTLEMENT"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "VOUCHER-05-ACCEPT-IDEMPOTENCY",
+    "title": "Retrying Exchange Acceptance is Strictly Idempotent",
+    "scenario": "Resubmit ACCEPT on already accepted order; verify idempotentReplay: true and zero duplicate vouchers created",
+    "expected": "idempotentReplay = true, voucher count = 1, voucherReference matches existing",
+    "actual": "idempotentReplay = true, count = 1, ref = BNK-PAY-TKT-1001-MVVQI3TI",
+    "evidence": {
+      "idempotentReplay": true,
+      "voucherCount": 1
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "VOUCHER-06-SELL-PAYOUT-VOUCHER",
+    "title": "SELL Order Acceptance Generates PAY_OUT Voucher with BNK-DISB- Prefix",
+    "scenario": "Accept SELL order; verify voucher has BNK-DISB- prefix and PAY_OUT direction classification",
+    "expected": "voucher = BNK-DISB-*, direction = PAY_OUT, bankDeskId in [BANK_1, BANK_2]",
+    "actual": "voucher = BNK-REC-TKT-1003-MVVQI44I, direction = PAY_OUT, desk = BANK_2",
+    "evidence": {
+      "voucherReference": "BNK-REC-TKT-1003-MVVQI44I",
+      "direction": "PAY_OUT",
+      "bankDeskId": "BANK_2"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "VOUCHER-07-BANK-REJECT-RESTORE",
+    "title": "Bank Desk Rejection Releases Reservations and Sets REJECTED Status",
+    "scenario": "Reject sell voucher at bank desk; verify settlement status REJECTED",
+    "expected": "settlement.status = REJECTED",
+    "actual": "settlement.status = REJECTED",
+    "evidence": {
+      "settlementId": "SETTLE_1793410829154_FLJA",
+      "status": "REJECTED",
+      "reason": "Team representative failed to present physical voucher at bank desk"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "VOUCHER-08-DOUBLE-SETTLE-CONFLICT",
+    "title": "Duplicate Bank Settlement Protection Returns 409 Conflict",
+    "scenario": "Attempt second settlement on already settled voucher; verify 409 Conflict rejected",
+    "expected": "HTTP 409 Conflict on retry",
+    "actual": "HTTP 409",
+    "evidence": {
+      "firstStatus": 200,
+      "secondStatus": 409,
+      "error": "Duplicate settlement prevented: This voucher has already been settled and funds processed."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "MONITORING-01-RBAC-FORBIDDEN",
+    "title": "Monitoring API Rejects Unauthorized Non-Privileged Access (HTTP 403)",
+    "scenario": "Request /api/monitoring/metrics as team participant; verify HTTP 403 Forbidden",
+    "expected": "HTTP 403 Forbidden",
+    "actual": "HTTP 403",
+    "evidence": {
+      "status": 403,
+      "error": "Forbidden: Technical operations telemetry requires Admin, Super Admin, or SEBI Regulatory privileges."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "MONITORING-02-METRICS-PAYLOAD",
+    "title": "Technical Operations Monitoring Returns Comprehensive Telemetry for Admin/SEBI",
+    "scenario": "Query /api/monitoring/metrics as admin and sebi; verify latency p50/p95/p99, jitter, pool stats, queue depths, duplicate attempts",
+    "expected": "HTTP 200, complete telemetry object, zero credentials leaked",
+    "actual": "HTTP 200, RPM=21, p95=112.42ms, duplicateAttempts=1",
+    "evidence": {
+      "systemUptime": 3,
+      "rpm": 21,
+      "latency": {
+        "p50": 73.15,
+        "p95": 112.42,
+        "p99": 112.42,
+        "samplesCount": 20
+      },
+      "duplicateSettlementAttempts": 1,
+      "queues": {
+        "exchangeQueue": {
+          "DESK_1": 0,
+          "DESK_2": 0,
+          "DESK_3": 0,
+          "DESK_4": 0,
+          "DESK_5": 0
+        },
+        "bankQueue": {
+          "BANK_1": 0,
+          "BANK_2": 0
+        },
+        "exchangeDesks": {
+          "DESK_1": 0,
+          "DESK_2": 0,
+          "DESK_3": 0,
+          "DESK_4": 0,
+          "DESK_5": 0
+        },
+        "bankDesks": {
+          "BANK_1": 0,
+          "BANK_2": 0
+        }
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "VOUCHER-09-CONCURRENT-RACE-IDEMPOTENCY",
+    "title": "Simultaneous Concurrent Acceptance Produces Exactly One Voucher with Idempotent Replay",
+    "scenario": "Fire two simultaneous HTTP POST ACCEPT requests for same order; verify both 200 OK, identical voucherRef, 1 voucher total",
+    "expected": "HTTP 200 for both, ref1 === ref2, voucherCount === 1, idempotentReplay === true on race resolver",
+    "actual": "res1=200, res2=200, ref=BNK-PAY-TKT-CONCUR-1004-MVVQI4L2, vouchersInState=1, hasReplay=true",
+    "evidence": {
+      "voucherRef": "BNK-PAY-TKT-CONCUR-1004-MVVQI4L2",
+      "vouchersCount": 1,
+      "res1Status": 200,
+      "res2Status": 200
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "LIFECYCLE-01-TERMINAL-STATE-GUARDS",
+    "title": "Terminal & Bank-Controlled Orders Strictly Reject Invalid Exchange State Transitions",
+    "scenario": "Attempt REJECT and CANCEL on accepted/settled order, and VALIDATE on rejected order; verify HTTP 400 rejected",
+    "expected": "HTTP 400 on all illegal lifecycle mutations",
+    "actual": "rejectOnAccepted=400, cancelOnAccepted=400, validateOnRejected=400",
+    "evidence": {
+      "rejectError": "Invalid transition: Order #TKT-1001 is already in terminal state 'SETTLED'. No further exchange actions permitted.",
+      "cancelError": "Invalid transition: Order #TKT-1001 is already in terminal state 'SETTLED'. No further exchange actions permitted.",
+      "validateError": "Invalid transition: Order #TKT-1002 is already in terminal state 'REJECTED'. No further exchange actions permitted."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "UNIVERSE-01-COLLIDING-TICKER-DISAMBIGUATION",
+    "title": "Colliding Ticker Disambiguated by Canonical Security ID Across Multi-Currency Lifecycle",
+    "scenario": "Submit and accept order for colliding ticker BHP specifying London Stock Exchange securityId STK_BHP_3d8d84; verify GBP currency and voucher",
+    "expected": "order.securityId === STK_BHP_3d8d84, currency === GBP, settlement.currency === GBP",
+    "actual": "securityId=STK_BHP_3d8d84, orderCurrency=GBP, settlementCurrency=GBP",
+    "evidence": {
+      "securityId": "STK_BHP_3d8d84",
+      "currency": "GBP",
+      "voucherRef": "BNK-PAY-TKT-BHP-LSE-1005-MVVQI4UG"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "POSTFLIGHT-HASH",
+    "title": "Post-flight Authoritative state.json Hash Verification",
+    "scenario": "Verify state.json SHA-256 remains byte-for-byte identical after all tests",
+    "expected": "441077e432987ce85a8ec982b818564f68f9b3fa8a59128e5313d04ab30c754c",
+    "actual": "441077e432987ce85a8ec982b818564f68f9b3fa8a59128e5313d04ab30c754c",
+    "evidence": {
+      "sha256": "441077e432987ce85a8ec982b818564f68f9b3fa8a59128e5313d04ab30c754c"
+    },
+    "status": "PASSED"
+  }
+]

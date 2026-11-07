@@ -1,0 +1,16 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "public": {
+      ".read": true,
+      ".write": false,
+      "live_prices": {
+        "$ticker": {
+          ".read": true,
+          ".write": false
+        }
+      }
+    }
+  }
+}

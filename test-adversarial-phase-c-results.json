@@ -1,0 +1,429 @@
+[
+  {
+    "id": "ADV-C-PREFLIGHT",
+    "title": "Pre-flight Authoritative State Hash Verification",
+    "endpoint": "N/A",
+    "scenario": "Verify state.json SHA-256 matches authoritative baseline before test suite",
+    "expected": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "actual": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "evidence": {
+      "sha256": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-C-CONCUR-EXCH-CLAIM-01",
+    "title": "10-Way Concurrent Claim Race on Exchange Order Ticket",
+    "endpoint": "POST /api/order/claim (10 concurrent requests)",
+    "scenario": "10 clerks concurrently claim the exact same unverified ticket. Verify strictly 1x HTTP 200, 9x HTTP 409 Conflict, and winning clerk holds lock without state corruption.",
+    "expected": "Exactly 1x HTTP 200, 9x HTTP 409 Conflict. Order locked to winning clerk and status VERIFYING_AT_EXCHANGE.",
+    "actual": "200 Count=1, 409 Count=9, FinalStatus=VERIFYING_AT_EXCHANGE, LockedBy=DESK_1, Operator=exchange",
+    "evidence": {
+      "statuses": [
+        200,
+        409,
+        409,
+        409,
+        409,
+        409,
+        409,
+        409,
+        409,
+        409
+      ],
+      "winningClerk": {
+        "deskId": "DESK_1",
+        "operator": "Clerk Station 1"
+      },
+      "winnerResponse": {
+        "success": true,
+        "order": {
+          "id": "ORD-1794041545477-7868",
+          "idempotencyKey": null,
+          "ticketNumber": "TKN-EX-RACE-1794041545468-001",
+          "teamCode": "T01",
+          "eventId": "EVT_LIVE_MAIN",
+          "securityId": "STK_TCS_1e211e",
+          "ticker": "TCS",
+          "securityName": "Tata Consultancy Services Ltd",
+          "currency": "INR",
+          "lotSize": 1,
+          "minOrderQty": 1,
+          "tickSize": 0.05,
+          "action": "BUY",
+          "quantity": 1,
+          "orderType": "MARKET",
+          "limitPrice": null,
+          "requestedValue": 381.2,
+          "estimatedCost": 381.2,
+          "reservedCashAmount": 400.26,
+          "executionBuffer": 19.06,
+          "lockedUnits": 0,
+          "brokerId": "B01",
+          "notes": "",
+          "status": "VERIFYING_AT_EXCHANGE",
+          "workflowStage": "VERIFYING_AT_EXCHANGE",
+          "verificationStatus": "IN_PROGRESS",
+          "exchangeStatus": "PENDING",
+          "finalStatus": "PENDING",
+          "physicalSlipChecked": false,
+          "deskId": "DESK_1",
+          "assignedAt": 1794041545478,
+          "operator": "exchange",
+          "verifiedBy": null,
+          "verifiedAt": null,
+          "returnedAt": null,
+          "returnReason": null,
+          "rejectionReason": null,
+          "executionQuantity": null,
+          "executionPrice": null,
+          "executionValue": null,
+          "executedAt": null,
+          "executedByDesk": null,
+          "executedByOperator": null,
+          "lockedByDesk": "DESK_1",
+          "submittedAt": 1794041545478,
+          "timestamp": 1794041545478,
+          "enteredBy": "Broker Terminal",
+          "statusHistory": [
+            {
+              "stage": "AWAITING_PHYSICAL_SLIP",
+              "status": "AWAITING_PHYSICAL_SLIP",
+              "timestamp": 1794041545478,
+              "actor": "T01",
+              "note": "Order slip generated and awaiting physical slip presentation at exchange intake desk Order Desk 1 (Blue)"
+            },
+            {
+              "stage": "VERIFYING_AT_EXCHANGE",
+              "status": "VERIFYING_AT_EXCHANGE",
+              "timestamp": 1794041546262,
+              "actor": "exchange",
+              "note": "Claimed for physical slip verification at exchange desk DESK_1"
+            }
+          ],
+          "claimedAt": 1794041546262
+        }
+      },
+      "sampleConflictError": "Conflict: Order #TKN-EX-RACE-1794041545468-001 is already claimed and in status VERIFYING_AT_EXCHANGE by DESK_1 (exchange)."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-C-ROLE-GUARD-ACCEPT-01",
+    "title": "Role Authorization Boundary on Physical Slip Approval (actionType: ACCEPT)",
+    "endpoint": "POST /api/order/action (actionType: ACCEPT by role \"team\")",
+    "scenario": "Audit whether participant teams (role \"team\") are prohibited from accepting/approving order slips. In authMiddleware, EXECUTE is guarded with 403, but ACCEPT was omitted from the permission check.",
+    "expected": "HTTP 403 Forbidden: Participant teams must not be permitted to approve physical slips.",
+    "actual": "HTTP 403 returned.",
+    "evidence": {
+      "teamClaimStatus": 403,
+      "teamExecuteStatus": 403,
+      "teamAcceptStatus": 403,
+      "vulnerabilityExposed": false,
+      "acceptResponse": {
+        "error": "Forbidden: Order execution and acceptance requires exchange staff permissions."
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-C-LOCK-RELEASE-HANDOFF-01",
+    "title": "Exchange Approval Lock Release & Bank Desk Handoff (Deadlock Prevention)",
+    "endpoint": "POST /api/order/action (ACCEPT) -> POST /api/bank/claim",
+    "scenario": "Exchange approves verified order, releasing exchange mutex (lockedByDesk: null) and generating BNK-PAY voucher. Bank Teller immediately claims voucher without deadlock or contention.",
+    "expected": "lockedByDesk === null, client cash undebited, voucher emitted, Bank Desk claims voucher with HTTP 200.",
+    "actual": "Status=EXCHANGE_APPROVED, lockedByDesk=null, CashDelta=0, Voucher=BNK-PAY-TKN-EX-HANDOFF-1794041545468-003-MW660LC1, BankClaimHTTP=200",
+    "evidence": {
+      "orderStatus": "EXCHANGE_APPROVED",
+      "lockedByDesk": null,
+      "voucherReference": "BNK-PAY-TKN-EX-HANDOFF-1794041545468-003-MW660LC1",
+      "cashBefore": 10000000,
+      "cashAfter": 10000000,
+      "bankClaimStatus": 200,
+      "bankSettlementStatus": "VERIFYING_AT_BANK"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-C-CONCUR-BANK-CLAIM-01",
+    "title": "Concurrent Claim Race on Bank Settlement Voucher (Mutual Exclusion)",
+    "endpoint": "POST /api/bank/claim (Concurrent bank vs admin)",
+    "scenario": "Two authorized operators concurrently claim the exact same approved voucher. Verify atomic mutual exclusion (1x HTTP 200, 1x HTTP 409 Conflict).",
+    "expected": "Exactly 1x HTTP 200 (lock acquired), 1x HTTP 409 Conflict (contention blocked)",
+    "actual": "Statuses=[200, 409]",
+    "evidence": {
+      "claim1Status": 200,
+      "claim1Data": {
+        "success": true,
+        "settlement": {
+          "id": "SETTLE_1794041548753_1CXO",
+          "orderId": "ORD-1794041548249-3336",
+          "bankDeskId": "BANK_1",
+          "ticketNumber": "TKN-EX-RACE-1794041545468-004",
+          "transactionId": "TX0002",
+          "teamId": "T01",
+          "teamCode": "T01",
+          "securityId": "STK_INFY_32cd51",
+          "ticker": "INFY",
+          "securityName": "Infosys Ltd",
+          "currency": "INR",
+          "quantity": 1,
+          "price": 531.83,
+          "totalAmount": 531.83,
+          "action": "BUY",
+          "direction": "PAY_IN",
+          "classification": "PAY_IN",
+          "type": "PAYMENT_COLLECTION",
+          "status": "VERIFYING_AT_BANK",
+          "workflowStage": "VERIFYING_AT_BANK",
+          "voucherReference": "BNK-PAY-TKN-EX-RACE-1794041545468-004-MW660MHD",
+          "executedAt": 1794041549602,
+          "settledAt": null,
+          "settledBy": null,
+          "rejectedAt": null,
+          "rejectedBy": null,
+          "rejectionReason": null,
+          "notes": "",
+          "createdAt": 1794041549602,
+          "claimedAt": 1794041549747,
+          "claimedBy": "bank"
+        },
+        "voucher": {
+          "id": "SETTLE_1794041548753_1CXO",
+          "orderId": "ORD-1794041548249-3336",
+          "bankDeskId": "BANK_1",
+          "ticketNumber": "TKN-EX-RACE-1794041545468-004",
+          "transactionId": "TX0002",
+          "teamId": "T01",
+          "teamCode": "T01",
+          "securityId": "STK_INFY_32cd51",
+          "ticker": "INFY",
+          "securityName": "Infosys Ltd",
+          "currency": "INR",
+          "quantity": 1,
+          "price": 531.83,
+          "totalAmount": 531.83,
+          "action": "BUY",
+          "direction": "PAY_IN",
+          "classification": "PAY_IN",
+          "type": "PAYMENT_COLLECTION",
+          "status": "VERIFYING_AT_BANK",
+          "workflowStage": "VERIFYING_AT_BANK",
+          "voucherReference": "BNK-PAY-TKN-EX-RACE-1794041545468-004-MW660MHD",
+          "executedAt": 1794041549602,
+          "settledAt": null,
+          "settledBy": null,
+          "rejectedAt": null,
+          "rejectedBy": null,
+          "rejectionReason": null,
+          "notes": "",
+          "createdAt": 1794041549602,
+          "claimedAt": 1794041549747,
+          "claimedBy": "bank"
+        },
+        "order": {
+          "id": "ORD-1794041548249-3336",
+          "idempotencyKey": null,
+          "ticketNumber": "TKN-EX-RACE-1794041545468-004",
+          "teamCode": "T01",
+          "eventId": "EVT_LIVE_MAIN",
+          "securityId": "STK_INFY_32cd51",
+          "ticker": "INFY",
+          "securityName": "Infosys Ltd",
+          "currency": "INR",
+          "lotSize": 1,
+          "minOrderQty": 1,
+          "tickSize": 0.05,
+          "action": "BUY",
+          "quantity": 1,
+          "orderType": "MARKET",
+          "limitPrice": null,
+          "requestedValue": 531.83,
+          "estimatedCost": 531.83,
+          "reservedCashAmount": 558.42,
+          "executionBuffer": 26.59,
+          "lockedUnits": 0,
+          "brokerId": "B01",
+          "notes": "",
+          "status": "VERIFYING_AT_BANK",
+          "workflowStage": "VERIFYING_AT_BANK",
+          "verificationStatus": "EXECUTED",
+          "exchangeStatus": "EXECUTED",
+          "finalStatus": "PENDING_SETTLEMENT",
+          "physicalSlipChecked": true,
+          "deskId": "DESK_3",
+          "assignedAt": 1794041548249,
+          "operator": "exchange",
+          "verifiedBy": "exchange",
+          "verifiedAt": 1794041549602,
+          "returnedAt": null,
+          "returnReason": null,
+          "rejectionReason": null,
+          "executionQuantity": 1,
+          "executionPrice": 531.83,
+          "executionValue": 531.83,
+          "executedAt": 1794041549602,
+          "executedByDesk": "DESK_3",
+          "executedByOperator": "exchange",
+          "lockedByDesk": null,
+          "submittedAt": 1794041548249,
+          "timestamp": 1794041548249,
+          "enteredBy": "Broker Terminal",
+          "statusHistory": [
+            {
+              "stage": "AWAITING_PHYSICAL_SLIP",
+              "status": "AWAITING_PHYSICAL_SLIP",
+              "timestamp": 1794041548249,
+              "actor": "T01",
+              "note": "Order slip generated and awaiting physical slip presentation at exchange intake desk Order Desk 3 (Emerald)"
+            },
+            {
+              "stage": "VERIFYING_AT_EXCHANGE",
+              "status": "VERIFYING_AT_EXCHANGE",
+              "timestamp": 1794041548673,
+              "actor": "exchange",
+              "note": "Claimed for physical slip verification at exchange desk DESK_3"
+            },
+            {
+              "stage": "AWAITING_BANK_SETTLEMENT",
+              "status": "EXCHANGE_APPROVED",
+              "timestamp": 1794041549602,
+              "actor": "exchange",
+              "note": "Executed on central exchange at ₹531.83. Awaiting physical bank desk settlement (Payment Collection)."
+            },
+            {
+              "stage": "VERIFYING_AT_BANK",
+              "status": "VERIFYING_AT_BANK",
+              "timestamp": 1794041549747,
+              "actor": "bank",
+              "note": "Bank teller claimed voucher for verification"
+            }
+          ],
+          "claimedAt": 1794041548673,
+          "priceAtExecution": 531.83,
+          "settlementStatus": "PENDING",
+          "bankDeskId": "BANK_1",
+          "bankAssignedAt": 1794041549602,
+          "voucherReference": "BNK-PAY-TKN-EX-RACE-1794041545468-004-MW660MHD",
+          "settlementId": "SETTLE_1794041548753_1CXO"
+        }
+      },
+      "claim2Status": 409,
+      "claim2Data": {
+        "error": "Conflict: Voucher BNK-PAY-TKN-EX-RACE-1794041545468-004-MW660MHD is already claimed by bank."
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-C-CONCUR-FX-CLAIM-01",
+    "title": "Concurrent Claim Race on FX Queue Ticket (Mutual Exclusion)",
+    "endpoint": "POST /api/fx/queue-action (actionType: CLAIM, exchange vs admin)",
+    "scenario": "Two FX operators concurrently claim the same pending FX intake slip. Verify strictly 1x HTTP 200 and 1x HTTP 409 Conflict.",
+    "expected": "Exactly 1x HTTP 200 (lock acquired), 1x HTTP 409 Conflict (contention blocked)",
+    "actual": "Statuses=[200, 409]",
+    "evidence": {
+      "claim1Status": 200,
+      "claim1Data": {
+        "success": true,
+        "fxRequest": {
+          "id": "FX_1794041549830_zwt4",
+          "requestId": "FX_1794041549830_zwt4",
+          "teamCode": "T01",
+          "teamName": "Trader Elite 1",
+          "eventId": "EVT_LIVE_MAIN",
+          "fromCurrency": "INR",
+          "toCurrency": "USD",
+          "fromAmount": 90000,
+          "toAmount": 1015.84,
+          "quoteRate": 88.5969,
+          "spreadPercent": 0.45,
+          "scarcityImpact": 0,
+          "utilization": 0.0031,
+          "status": "CLAIMED",
+          "canonicalStatus": "processing",
+          "legacyStatus": "QUEUED",
+          "operatorId": "T01",
+          "notes": "Adversarial FX Claim Race Slip",
+          "simulationDurationSec": 120,
+          "delayWindowSec": 120,
+          "clearsAt": 1794041670028,
+          "lockedByOperator": "exchange",
+          "holdReason": null,
+          "returnReason": null,
+          "createdAt": 1794041550028,
+          "settledAt": null,
+          "rejectionReason": null,
+          "operator": "exchange",
+          "claimedAt": 1794041550106
+        }
+      },
+      "claim2Status": 409,
+      "claim2Data": {
+        "error": "Conflict: FX request FX_1794041549830_zwt4 is already claimed by exchange."
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-C-DOUBLE-SETTLE-PREVENTION-01",
+    "title": "Concurrent Double Settlement Attack on Bank Voucher",
+    "endpoint": "POST /api/bank/settle (Concurrent)",
+    "scenario": "Simultaneously execute two settle requests on the same claimed voucher. Verify exactly 1 succeeds, double crediting/debiting is prevented, and post-settlement reclaim is rejected with HTTP 400.",
+    "expected": "Exactly 1x HTTP 200, 1x rejection (400/409), exactly 2 units delivered, reclaim returns HTTP 400.",
+    "actual": "Statuses=[200, 409], UnitsDelivered=2, ReclaimHTTP=400",
+    "evidence": {
+      "statuses": [
+        200,
+        409
+      ],
+      "unitsDelivered": 2,
+      "cashDeducted": 5356.58,
+      "reclaimError": "Cannot claim record in terminal status SETTLED."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-C-REJECT-RETURN-LOCK-RELEASE-01",
+    "title": "Lock Release & 100% Buffer Restoration on Rejection and Return",
+    "endpoint": "POST /api/order/action (RETURN_FOR_CORRECTION & REJECT)",
+    "scenario": "Verify desk locks are cleanly cleared to null upon return and rejection, and 100% of cash reservations (+5% buffer) are restored with zero leakage.",
+    "expected": "lockedByDesk === null on both, unreserved cash delta equals exact reservedCost (0% leakage).",
+    "actual": "ReturnLockCleared=true, RejectLockCleared=true, UnreservedDelta=2001.3 === ReservedCost=2001.3",
+    "evidence": {
+      "returnStatus": "RETURNED_FOR_CORRECTION",
+      "returnLock": null,
+      "rejectStatus": "REJECTED_BY_EXCHANGE",
+      "rejectLock": null,
+      "reservedCost": 2001.3,
+      "unreservedDelta": 2001.3
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-C-TERMINAL-CLAIM-PROTECTION-01",
+    "title": "Sequential Mutex Guard on Terminal Order Statuses",
+    "endpoint": "POST /api/order/claim (on REJECTED and SETTLED orders)",
+    "scenario": "Attempt to claim orders that have already reached terminal state (REJECTED_BY_EXCHANGE or SETTLED). Verify HTTP 409 Conflict rejection.",
+    "expected": "HTTP 409 Conflict returned for both terminal states, preventing resurrection or state tampering.",
+    "actual": "RejectedOrderClaimHTTP=409, SettledOrderClaimHTTP=409",
+    "evidence": {
+      "claimRejectedError": "Conflict: Order #TKN-EX-RACE-1794041545468-006 is already claimed and in status REJECTED_BY_EXCHANGE by DESK_2 (exchange).",
+      "claimSettledError": "Conflict: Order #TKN-EX-HANDOFF-1794041545468-003 is already claimed and in status SETTLED by DESK_2 (exchange)."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-C-POSTFLIGHT",
+    "title": "Post-Flight Authoritative State Baseline Hash Integrity",
+    "endpoint": "Local File System (state.json)",
+    "scenario": "Confirm authoritative state.json was 100% bit-for-bit untouched throughout all test executions",
+    "expected": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "actual": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "evidence": {
+      "sha256": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+      "bitExact": true
+    },
+    "status": "PASSED"
+  }
+]

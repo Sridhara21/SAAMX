@@ -1,20 +1,31 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useFirebaseState } from '../hooks/useFirebaseState';
 import { apiFetch } from '../lib/api';
+import { CURRENCY_DIRECTORY, CURRENCY_SYMBOLS, DEFAULT_FX_RATES, ACTIVE_CURRENCIES, ACTIVE_FOREIGN_CURRENCIES, formatCurrency, roundCurrency } from '../lib/formatters';
 
-export default function CurrencyExchangePage() {
-  const { state, connected } = useFirebaseState();
+export default function CurrencyExchangePage({ state, connected = true }) {
   const [selectedTeam, setSelectedTeam] = useState('T01');
   const [fromCurrency, setFromCurrency] = useState('INR');
   const [toCurrency, setToCurrency] = useState('USD');
   const [fromAmount, setFromAmount] = useState('500000');
   const [operatorId, setOperatorId] = useState('FX-DESK-01');
   const [notes, setNotes] = useState('Physical order slip request');
-  const [simulationDurationSec, setSimulationDurationSec] = useState(15);
+  const [simulationDurationSec, setSimulationDurationSec] = useState(120); // Phase D: 1-5 minute operational delay window (default 2 min)
+  const [now, setNow] = useState(Date.now());
+  const [actionModal, setActionModal] = useState({
+    isOpen: false,
+    action: null, // 'HOLD' | 'REJECT' | 'RETURN_FOR_CORRECTION'
+    item: null,
+    reason: ''
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [statusMessage, setStatusMessage] = useState(null);
   const [lastTicket, setLastTicket] = useState(null);
-  const [queueFilter, setQueueFilter] = useState('ACTIVE'); // 'ACTIVE', 'ALL', 'SETTLED'
+  const [queueFilter, setQueueFilter] = useState('ACTIVE'); // 'ACTIVE', 'ALL', 'SETTLED', 'REJECTED'
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   // SEBI Rate Change Modal State
   const [showRateModal, setShowRateModal] = useState(false);
@@ -22,6 +33,26 @@ export default function CurrencyExchangePage() {
   const [newMidRate, setNewMidRate] = useState('88.20');
   const [newSpread, setNewSpread] = useState('0.45');
   const [rateChangeReason, setRateChangeReason] = useState('Central bank monetary policy shift');
+
+  // Authorized FX Reserve Replenishment Modal State
+  const [showReplenishModal, setShowReplenishModal] = useState(false);
+  const [replenishCurrency, setReplenishCurrency] = useState('USD');
+  const [replenishAmount, setReplenishAmount] = useState('1000000');
+  const [replenishReason, setReplenishReason] = useState('Central bank liquidity support');
+  const [isReplenishing, setIsReplenishing] = useState(false);
+
+  // Tradable active reference currencies (excluding legacy CAD/CHF)
+  const tradableCurrencies = useMemo(() => {
+    return Object.values(CURRENCY_DIRECTORY).filter(c => !c.isLegacy && c.tradable !== false);
+  }, []);
+
+  const foreignTradableCurrencies = useMemo(() => {
+    return tradableCurrencies.filter(c => c.code !== 'INR');
+  }, [tradableCurrencies]);
+
+  const fxReserves = useMemo(() => {
+    return state?.fxReserves || {};
+  }, [state?.fxReserves]);
 
   // Active teams in state
   const teams = useMemo(() => {
@@ -45,11 +76,7 @@ export default function CurrencyExchangePage() {
 
   const fxRates = useMemo(() => {
     if (state?.fxRates) return state.fxRates;
-    return {
-      USDINR: { pair: 'USD/INR', base: 'USD', quote: 'INR', midRate: 88.20, buyRate: 88.60, sellRate: 87.80, spreadPercent: 0.45 },
-      GBPINR: { pair: 'GBP/INR', base: 'GBP', quote: 'INR', midRate: 119.40, buyRate: 119.95, sellRate: 118.85, spreadPercent: 0.45 },
-      EURINR: { pair: 'EUR/INR', base: 'EUR', quote: 'INR', midRate: 103.50, buyRate: 103.95, sellRate: 103.05, spreadPercent: 0.45 }
-    };
+    return DEFAULT_FX_RATES;
   }, [state?.fxRates]);
 
   // FX Transactions Ledger
@@ -71,69 +98,117 @@ export default function CurrencyExchangePage() {
 
   const filteredQueue = useMemo(() => {
     if (queueFilter === 'ACTIVE') {
-      return fxQueue.filter(q => ['QUEUED', 'RATE_CHECK', 'PROCESSING'].includes(q.status));
+      return fxQueue.filter(q => ['pending', 'QUEUED', 'CLAIMED', 'processing', 'PROCESSING', 'RATE_CHECK', 'on_hold', 'ON_HOLD'].includes(q.status));
     }
     if (queueFilter === 'SETTLED') {
-      return fxQueue.filter(q => q.status === 'SETTLED');
+      return fxQueue.filter(q => ['approved', 'SETTLED', 'settled'].includes(q.status));
+    }
+    if (queueFilter === 'REJECTED') {
+      return fxQueue.filter(q => ['rejected', 'REJECTED', 'cancelled', 'CANCELLED', 'expired', 'EXPIRED'].includes(q.status));
     }
     return fxQueue;
   }, [fxQueue, queueFilter]);
 
-  // Wallets of Selected Team
+  // Phase D: Aggregate Foreign Currency Demand vs Reserve Pool
+  const aggregateDemand = useMemo(() => {
+    const demand = {};
+    for (const c of foreignTradableCurrencies) {
+      demand[c.code] = {
+        code: c.code,
+        name: c.name,
+        symbol: c.symbol,
+        flag: c.flag,
+        precision: c.precision,
+        queuedDemand: 0,
+        ticketCount: 0,
+        availableReserve: Number(fxReserves[c.code]?.availableReserve ?? 0),
+        currentInventory: Number(fxReserves[c.code]?.currentInventory ?? 0),
+        reservedInventory: Number(fxReserves[c.code]?.reservedInventory ?? 0)
+      };
+    }
+    rawFxQueue.forEach(q => {
+      const activeStatuses = ['pending', 'QUEUED', 'CLAIMED', 'processing', 'PROCESSING', 'on_hold', 'ON_HOLD', 'RATE_CHECK'];
+      if (activeStatuses.includes(q.status) && demand[q.toCurrency]) {
+        const amt = Number(q.toAmount || q.estimatedToAmount || 0);
+        demand[q.toCurrency].queuedDemand += amt;
+        demand[q.toCurrency].ticketCount += 1;
+      }
+    });
+    return demand;
+  }, [foreignTradableCurrencies, fxReserves, rawFxQueue]);
+
+  // Wallets of Selected Team across all 10 currencies
   const teamWallets = useMemo(() => {
-    if (!activeTeamObj) return { INR: 0, USD: 0, GBP: 0, EUR: 0 };
-    return activeTeamObj.cashWallets || {
-      INR: Number(activeTeamObj.cashBalance) || 0,
-      USD: 0,
-      GBP: 0,
-      EUR: 0
-    };
+    const defaultWallets = {};
+    for (const cur of Object.keys(CURRENCY_DIRECTORY)) {
+      defaultWallets[cur] = 0;
+    }
+    if (!activeTeamObj) return defaultWallets;
+    const base = activeTeamObj.cashWallets || { INR: Number(activeTeamObj.cashBalance) || 0 };
+    for (const cur of Object.keys(CURRENCY_DIRECTORY)) {
+      if (base[cur] === undefined) base[cur] = 0;
+    }
+    return base;
   }, [activeTeamObj]);
 
-  // Live Conversion Calculation
+  const teamReserved = useMemo(() => {
+    const defaultRes = {};
+    for (const cur of Object.keys(CURRENCY_DIRECTORY)) {
+      defaultRes[cur] = 0;
+    }
+    if (!activeTeamObj?.reservedCash) return defaultRes;
+    return { ...defaultRes, ...activeTeamObj.reservedCash };
+  }, [activeTeamObj]);
+
+  // Live Conversion Calculation with unreserved balance validation & precision support
   const conversionQuote = useMemo(() => {
     const amount = parseFloat(fromAmount) || 0;
     if (amount <= 0 || fromCurrency === toCurrency) {
-      return { toAmount: 0, effectiveRate: 1, spreadPercent: 0, valid: false };
+      return { toAmount: 0, effectiveRate: 1, spreadPercent: 0, valid: false, unreservedAvailable: 0, reservedAmount: 0 };
     }
 
     let effectiveRate = 1.0;
-    let toAmount = 0;
+    let rawToAmount = 0;
     let spreadPercent = 0.45;
 
     if (fromCurrency === 'INR') {
       const pairKey = `${toCurrency}INR`;
-      const fx = fxRates[pairKey] || { buyRate: toCurrency === 'USD' ? 88.60 : toCurrency === 'GBP' ? 119.95 : 103.95, spreadPercent: 0.45 };
-      effectiveRate = fx.buyRate;
-      spreadPercent = fx.spreadPercent || 0.45;
-      toAmount = parseFloat((amount / effectiveRate).toFixed(2));
+      const fx = fxRates[pairKey] || DEFAULT_FX_RATES[pairKey];
+      effectiveRate = fx?.buyRate || 1.0;
+      spreadPercent = fx?.spreadPercent || 0.45;
+      rawToAmount = amount / effectiveRate;
     } else if (toCurrency === 'INR') {
       const pairKey = `${fromCurrency}INR`;
-      const fx = fxRates[pairKey] || { sellRate: fromCurrency === 'USD' ? 87.80 : fromCurrency === 'GBP' ? 118.85 : 103.05, spreadPercent: 0.45 };
-      effectiveRate = fx.sellRate;
-      spreadPercent = fx.spreadPercent || 0.45;
-      toAmount = parseFloat((amount * effectiveRate).toFixed(2));
+      const fx = fxRates[pairKey] || DEFAULT_FX_RATES[pairKey];
+      effectiveRate = fx?.sellRate || 1.0;
+      spreadPercent = fx?.spreadPercent || 0.45;
+      rawToAmount = amount * effectiveRate;
     } else {
-      const fromPair = fxRates[`${fromCurrency}INR`] || { sellRate: 87.80, spreadPercent: 0.45 };
-      const toPair = fxRates[`${toCurrency}INR`] || { buyRate: 103.95, spreadPercent: 0.45 };
-      const inrVal = amount * fromPair.sellRate;
-      toAmount = parseFloat((inrVal / toPair.buyRate).toFixed(2));
-      effectiveRate = parseFloat((fromPair.sellRate / toPair.buyRate).toFixed(4));
-      spreadPercent = Math.max(fromPair.spreadPercent || 0.45, toPair.spreadPercent || 0.45);
+      const fromPair = fxRates[`${fromCurrency}INR`] || DEFAULT_FX_RATES[`${fromCurrency}INR`];
+      const toPair = fxRates[`${toCurrency}INR`] || DEFAULT_FX_RATES[`${toCurrency}INR`];
+      const inrVal = amount * (fromPair?.sellRate || 1.0);
+      rawToAmount = inrVal / (toPair?.buyRate || 1.0);
+      effectiveRate = parseFloat(((fromPair?.sellRate || 1.0) / (toPair?.buyRate || 1.0)).toFixed(6));
+      spreadPercent = Math.max(fromPair?.spreadPercent || 0.45, toPair?.spreadPercent || 0.45);
     }
 
-    const available = Number(teamWallets[fromCurrency] || 0);
-    const hasSufficient = available >= amount;
+    const toAmount = roundCurrency(rawToAmount, toCurrency);
+    const totalHeld = Number(teamWallets[fromCurrency] || 0);
+    const reservedAmount = Number(teamReserved[fromCurrency] || 0);
+    const unreservedAvailable = Math.max(0, totalHeld - reservedAmount);
+    const hasSufficient = unreservedAvailable >= amount;
 
     return {
       toAmount,
       effectiveRate,
       spreadPercent,
       hasSufficient,
-      available,
+      available: totalHeld,
+      unreservedAvailable,
+      reservedAmount,
       valid: hasSufficient && amount > 0
     };
-  }, [fromAmount, fromCurrency, toCurrency, fxRates, teamWallets]);
+  }, [fromAmount, fromCurrency, toCurrency, fxRates, teamWallets, teamReserved]);
 
   // Submit into Workflow Queue (FX REQUEST -> QUEUED)
   const handleQueueRequest = async (e) => {
@@ -219,12 +294,14 @@ export default function CurrencyExchangePage() {
   };
 
   // Move request through workflow actions: RATE_CHECK -> PROCESS -> SETTLE -> REJECT
+  // Move request through workflow actions: CLAIM -> START_PROCESSING -> HOLD -> APPROVE -> REJECT / RETURN / CANCEL
   const handleQueueAction = async (requestId, action, payload = {}) => {
     try {
       const res = await apiFetch('/api/fx/queue-action', {
         method: 'POST',
         body: JSON.stringify({
           requestId,
+          actionType: action,
           action,
           operatorId,
           ...payload
@@ -243,6 +320,25 @@ export default function CurrencyExchangePage() {
       console.error(err);
       alert('Network error advancing FX request.');
     }
+  };
+
+  const handleConfirmActionModal = async (e) => {
+    e.preventDefault();
+    if (!actionModal.reason || actionModal.reason.trim().length < 3) {
+      alert('Please enter a valid reason (minimum 3 characters required).');
+      return;
+    }
+    const reasonText = actionModal.reason.trim();
+    const payload = { reason: reasonText };
+    if (actionModal.action === 'HOLD') {
+      payload.holdReason = reasonText;
+    } else if (actionModal.action === 'REJECT') {
+      payload.rejectionReason = reasonText;
+    } else if (actionModal.action === 'RETURN_FOR_CORRECTION') {
+      payload.returnReason = reasonText;
+    }
+    await handleQueueAction(actionModal.item.id, actionModal.action, payload);
+    setActionModal({ isOpen: false, action: null, item: null, reason: '' });
   };
 
   const handleUpdateFxRate = async (e) => {
@@ -273,7 +369,49 @@ export default function CurrencyExchangePage() {
     }
   };
 
-  const currencySymbols = { INR: '₹', USD: '$', GBP: '£', EUR: '€' };
+  const handleReplenishReserve = async (e) => {
+    e.preventDefault();
+    const qty = parseFloat(replenishAmount);
+    if (!qty || qty <= 0) {
+      alert('Replenishment amount must be a positive number.');
+      return;
+    }
+    if (!replenishReason || replenishReason.trim().length < 5) {
+      alert('A valid reason (minimum 5 characters) is required for authorized replenishment.');
+      return;
+    }
+    setIsReplenishing(true);
+    try {
+      const res = await apiFetch('/api/fx/reserves/replenish', {
+        method: 'POST',
+        headers: {
+          'x-role': 'sebi'
+        },
+        body: JSON.stringify({
+          currency: replenishCurrency,
+          amount: qty,
+          reason: replenishReason.trim(),
+          actor: operatorId || 'SEBI FX Desk'
+        })
+      });
+      if (res.error) {
+        alert(`Replenishment rejected: ${res.error}`);
+      } else {
+        setShowReplenishModal(false);
+        setStatusMessage({
+          type: 'success',
+          text: `✓ FX RESERVE REPLENISHED: +${CURRENCY_SYMBOLS[replenishCurrency] || ''}${qty.toLocaleString()} added to ${replenishCurrency} pool. (Ledger ref: ${res.auditLogId || 'REPL-OK'})`
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Network error during reserve replenishment.');
+    } finally {
+      setIsReplenishing(false);
+    }
+  };
+
+  const currencySymbols = CURRENCY_SYMBOLS;
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-warm)', color: 'var(--navy-900)' }}>
@@ -310,13 +448,13 @@ export default function CurrencyExchangePage() {
               </span>
             </div>
             <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
-              Full FX Workflow: FX REQUEST ➔ QUEUED ➔ RATE CHECK ➔ PROCESSING ➔ SETTLED (INR, USD, GBP, EUR)
+              Full FX Workflow: FX REQUEST ➔ QUEUED ➔ RATE CHECK ➔ PROCESSING ➔ SETTLED (10 Active Reference Currencies: INR, USD, GBP, EUR, JPY, AED, SGD, CNY, AUD, KRW)
             </p>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: '600' }}>
-              <span style={{ color: 'var(--text-muted)' }}>Sim Clearance:</span>
+              <span style={{ color: 'var(--text-muted)' }}>Operational Delay:</span>
               <select
                 value={simulationDurationSec}
                 onChange={(e) => setSimulationDurationSec(Number(e.target.value))}
@@ -329,11 +467,11 @@ export default function CurrencyExchangePage() {
                   fontWeight: '700'
                 }}
               >
-                <option value={0}>Instant (0s)</option>
-                <option value={5}>5 Seconds</option>
-                <option value={15}>15 Seconds</option>
-                <option value={30}>30 Seconds</option>
-                <option value={60}>60 Seconds</option>
+                <option value={60}>1 Min (60s)</option>
+                <option value={120}>2 Min (120s)</option>
+                <option value={180}>3 Min (180s)</option>
+                <option value={240}>4 Min (240s)</option>
+                <option value={300}>5 Min (300s)</option>
               </select>
             </div>
 
@@ -358,6 +496,30 @@ export default function CurrencyExchangePage() {
               }}
             >
               ⚙️ Modify FX Rates
+            </button>
+
+            <button
+              onClick={() => {
+                setReplenishCurrency('USD');
+                setReplenishAmount('1000000');
+                setReplenishReason('Central bank liquidity support');
+                setShowReplenishModal(true);
+              }}
+              style={{
+                background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                color: '#fff',
+                border: 'none',
+                padding: '8px 14px',
+                borderRadius: '6px',
+                fontSize: '12px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              🏦 Authorized Replenish
             </button>
 
             <div style={{
@@ -437,6 +599,278 @@ export default function CurrencyExchangePage() {
           ))}
         </div>
 
+        {/* Finite FX Desk Reserves & Scarcity Monitor */}
+        <div style={{
+          background: 'var(--card-bg)',
+          border: '1px solid var(--border-soft)',
+          borderRadius: '12px',
+          padding: '18px 20px',
+          marginBottom: '20px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '18px' }}>🏦</span>
+                <h2 style={{ fontSize: '16px', fontWeight: '800', margin: 0, color: 'var(--navy-900)' }}>
+                  Finite FX Desk Reserves & Scarcity Monitor
+                </h2>
+                <span style={{
+                  background: 'rgba(6, 95, 62, 0.1)',
+                  color: 'var(--green-emerald)',
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  padding: '2px 8px',
+                  borderRadius: '4px'
+                }}>
+                  SOLVENCY INVARIANT ACTIVE (A + Res = I)
+                </span>
+              </div>
+              <p style={{ margin: '3px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+                Desk Domestic INR Cash: <strong>₹{Number(fxReserves.INR?.availableReserve ?? fxReserves.INR?.currentInventory ?? 5000000000).toLocaleString('en-IN')}</strong> &bull; Utilization curve dynamically widens spreads and applies mid-rate scarcity premiums beyond 50% pool drawdown.
+              </p>
+            </div>
+
+            <button
+              onClick={() => {
+                setReplenishCurrency('USD');
+                setReplenishAmount('1000000');
+                setReplenishReason('Central bank liquidity support');
+                setShowReplenishModal(true);
+              }}
+              style={{
+                background: 'var(--navy-900)',
+                color: '#fff',
+                border: 'none',
+                padding: '6px 12px',
+                borderRadius: '6px',
+                fontSize: '11px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              + Authorized Replenishment
+            </button>
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+            gap: '12px'
+          }}>
+            {foreignTradableCurrencies.map(c => {
+              const res = fxReserves[c.code] || {};
+              const avail = Number(res.availableReserve ?? 0);
+              const reserved = Number(res.reservedInventory ?? 0);
+              const currentInv = Number(res.currentInventory ?? (avail + reserved));
+              const initialPool = Number(res.initialPool ?? 0);
+              const totalReplenished = Number(res.totalReplenished ?? 0);
+              const netPurchased = Number(res.netProceedsPurchased ?? 0);
+              const poolCap = Math.max(1, initialPool + totalReplenished + netPurchased);
+              const utilization = Math.min(1, Math.max(0, 1 - (avail / poolCap)));
+              const uPct = (utilization * 100).toFixed(1);
+              const isCritical = utilization > 0.85 || avail <= 0;
+              const isElevated = utilization > 0.50 && !isCritical;
+              const isZeroDec = c.code === 'JPY' || c.code === 'KRW';
+
+              return (
+                <div key={c.code} style={{
+                  background: 'var(--bg-warm)',
+                  border: isCritical ? '1px solid rgba(220, 38, 38, 0.4)' : isElevated ? '1px solid rgba(255, 104, 0, 0.3)' : '1px solid var(--border-soft)',
+                  borderRadius: '8px',
+                  padding: '12px 14px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '15px' }}>{c.flag}</span>
+                      <strong style={{ fontSize: '13px', color: 'var(--navy-900)' }}>{c.code}</strong>
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>({c.symbol})</span>
+                    </div>
+                    <span style={{
+                      fontSize: '10px',
+                      fontWeight: '800',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      background: isCritical ? 'rgba(220, 38, 38, 0.15)' : isElevated ? 'rgba(255, 104, 0, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                      color: isCritical ? 'var(--red-crimson)' : isElevated ? '#D97706' : 'var(--green-emerald)'
+                    }}>
+                      {isCritical ? `CRITICAL (${uPct}%)` : isElevated ? `ELEVATED (${uPct}%)` : `NORMAL (${uPct}%)`}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', fontSize: '11px', marginBottom: '8px' }}>
+                    <div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '10px' }}>Available (A)</div>
+                      <div style={{ fontWeight: '800', fontFamily: 'monospace', color: 'var(--navy-900)' }}>
+                        {c.symbol}{avail.toLocaleString('en-US', { maximumFractionDigits: isZeroDec ? 0 : 2 })}
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '10px' }}>In Queue (Res)</div>
+                      <div style={{ fontWeight: '800', fontFamily: 'monospace', color: reserved > 0 ? 'var(--gold-royal)' : 'var(--text-muted)' }}>
+                        {c.symbol}{reserved.toLocaleString('en-US', { maximumFractionDigits: isZeroDec ? 0 : 2 })}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    paddingTop: '6px',
+                    borderTop: '1px solid var(--border-soft)',
+                    fontSize: '10px'
+                  }}>
+                    <span style={{ color: 'var(--text-muted)' }}>
+                      Desk Inv: <strong>{c.symbol}{currentInv.toLocaleString('en-US', { maximumFractionDigits: isZeroDec ? 0 : 2 })}</strong>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setReplenishCurrency(c.code);
+                        setReplenishAmount(isZeroDec ? '100000000' : '1000000');
+                        setReplenishReason('Central bank liquidity support');
+                        setShowReplenishModal(true);
+                      }}
+                      style={{
+                        background: 'transparent',
+                        border: '1px solid var(--border-soft)',
+                        borderRadius: '4px',
+                        padding: '2px 6px',
+                        fontSize: '10px',
+                        fontWeight: '700',
+                        color: 'var(--navy-900)',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      + Replenish
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Phase D: Aggregate Foreign Currency Demand vs Reserve Pool Panel */}
+        <div style={{
+          background: 'var(--card-bg)',
+          border: '1px solid var(--border-soft)',
+          borderRadius: '12px',
+          padding: '18px 20px',
+          marginBottom: '20px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '18px' }}>📊</span>
+                <h2 style={{ fontSize: '16px', fontWeight: '800', margin: 0, color: 'var(--navy-900)' }}>
+                  Aggregate Foreign Currency Demand vs Reserve Pool
+                </h2>
+                <span style={{
+                  background: 'rgba(37, 99, 235, 0.1)',
+                  color: '#2563eb',
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  padding: '2px 8px',
+                  borderRadius: '4px'
+                }}>
+                  REAL-TIME QUEUE LIQUIDITY COVERAGE
+                </span>
+              </div>
+              <p style={{ margin: '3px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+                Aggregates pending and processing demand slips across active tickets against available desk reserve liquidity.
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', fontSize: '12px', fontWeight: '700' }}>
+              <span style={{ background: 'var(--bg-warm)', padding: '4px 10px', borderRadius: '6px', border: '1px solid var(--border-soft)' }}>
+                Active Slips: {rawFxQueue.filter(q => ['pending', 'QUEUED', 'CLAIMED', 'processing', 'PROCESSING', 'on_hold', 'ON_HOLD', 'RATE_CHECK'].includes(q.status)).length}
+              </span>
+              <span style={{ background: 'var(--bg-warm)', padding: '4px 10px', borderRadius: '6px', border: '1px solid var(--border-soft)' }}>
+                Currencies with Demand: {Object.values(aggregateDemand).filter(d => d.queuedDemand > 0).length} / 9
+              </span>
+            </div>
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+            gap: '12px'
+          }}>
+            {Object.values(aggregateDemand).map(d => {
+              const isZeroDec = d.code === 'JPY' || d.code === 'KRW';
+              const coverageRatio = d.availableReserve > 0 ? (d.queuedDemand / d.availableReserve) * 100 : (d.queuedDemand > 0 ? 100 : 0);
+              const isDeficit = d.queuedDemand > d.availableReserve;
+              const isHighPressure = !isDeficit && coverageRatio > 60;
+
+              return (
+                <div key={d.code} style={{
+                  background: 'var(--bg-warm)',
+                  border: isDeficit ? '1px solid rgba(220, 38, 38, 0.5)' : isHighPressure ? '1px solid rgba(245, 158, 11, 0.4)' : '1px solid var(--border-soft)',
+                  borderRadius: '8px',
+                  padding: '12px 14px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '15px' }}>{d.flag}</span>
+                      <strong style={{ fontSize: '13px', color: 'var(--navy-900)' }}>{d.code}</strong>
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>({d.name})</span>
+                    </div>
+                    <span style={{
+                      fontSize: '10px',
+                      fontWeight: '800',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      background: isDeficit ? 'rgba(220, 38, 38, 0.15)' : isHighPressure ? 'rgba(245, 158, 11, 0.15)' : d.queuedDemand > 0 ? 'rgba(37, 99, 235, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                      color: isDeficit ? 'var(--red-crimson)' : isHighPressure ? '#b45309' : d.queuedDemand > 0 ? '#2563eb' : 'var(--green-emerald)'
+                    }}>
+                      {isDeficit ? 'DEFICIT ALERT' : isHighPressure ? 'HIGH PRESSURE' : d.queuedDemand > 0 ? 'COVERED' : 'NO DEMAND'}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '11px', marginBottom: '8px' }}>
+                    <div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '10px' }}>Queued Demand</div>
+                      <div style={{ fontWeight: '800', fontFamily: 'monospace', color: d.queuedDemand > 0 ? (isDeficit ? 'var(--red-crimson)' : 'var(--navy-900)') : 'var(--text-muted)' }}>
+                        {d.symbol}{d.queuedDemand.toLocaleString('en-US', { maximumFractionDigits: isZeroDec ? 0 : 2 })}
+                      </div>
+                      <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{d.ticketCount} active ticket{d.ticketCount === 1 ? '' : 's'}</div>
+                    </div>
+                    <div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '10px' }}>Available Reserve</div>
+                      <div style={{ fontWeight: '800', fontFamily: 'monospace', color: 'var(--green-emerald)' }}>
+                        {d.symbol}{d.availableReserve.toLocaleString('en-US', { maximumFractionDigits: isZeroDec ? 0 : 2 })}
+                      </div>
+                      <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Total: {d.symbol}{d.currentInventory.toLocaleString('en-US', { maximumFractionDigits: isZeroDec ? 0 : 2 })}</div>
+                    </div>
+                  </div>
+
+                  {/* Liquidity Utilization Bar */}
+                  <div style={{ background: '#e5e7eb', height: '6px', borderRadius: '3px', overflow: 'hidden', marginBottom: '6px' }}>
+                    <div style={{
+                      height: '100%',
+                      width: `${Math.min(100, coverageRatio)}%`,
+                      background: isDeficit ? 'var(--red-crimson)' : isHighPressure ? '#f59e0b' : '#2563eb',
+                      borderRadius: '3px'
+                    }} />
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-muted)' }}>
+                    <span>Demand / Available Reserve:</span>
+                    <strong style={{ color: isDeficit ? 'var(--red-crimson)' : 'var(--navy-900)' }}>
+                      {coverageRatio.toFixed(1)}%
+                    </strong>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Global Alert Notification */}
         {statusMessage && (
           <div style={{
@@ -496,33 +930,37 @@ export default function CurrencyExchangePage() {
                   ))}
                 </select>
 
-                {/* Team Multi-Currency Balances */}
+                {/* Team Multi-Currency Balances (10 Currencies) */}
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(4, 1fr)',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
                   gap: '6px',
                   marginTop: '8px',
                   padding: '8px 10px',
                   background: 'var(--bg-warm)',
                   borderRadius: '6px',
-                  fontSize: '11px'
+                  fontSize: '11px',
+                  maxHeight: '140px',
+                  overflowY: 'auto'
                 }}>
-                  <div>
-                    <span style={{ color: 'var(--text-muted)' }}>INR:</span>{' '}
-                    <strong style={{ color: 'var(--navy-900)' }}>₹{Number(teamWallets.INR || 0).toLocaleString()}</strong>
-                  </div>
-                  <div>
-                    <span style={{ color: 'var(--text-muted)' }}>USD:</span>{' '}
-                    <strong style={{ color: 'var(--navy-900)' }}>${Number(teamWallets.USD || 0).toLocaleString()}</strong>
-                  </div>
-                  <div>
-                    <span style={{ color: 'var(--text-muted)' }}>GBP:</span>{' '}
-                    <strong style={{ color: 'var(--navy-900)' }}>£{Number(teamWallets.GBP || 0).toLocaleString()}</strong>
-                  </div>
-                  <div>
-                    <span style={{ color: 'var(--text-muted)' }}>EUR:</span>{' '}
-                    <strong style={{ color: 'var(--navy-900)' }}>€{Number(teamWallets.EUR || 0).toLocaleString()}</strong>
-                  </div>
+                  {tradableCurrencies.map(c => {
+                    const total = Number(teamWallets[c.code] || 0);
+                    const res = Number(teamReserved[c.code] || 0);
+                    const unres = Math.max(0, total - res);
+                    return (
+                      <div key={c.code} style={{ padding: '3px 4px', borderRight: '1px solid var(--border-soft)' }}>
+                        <span style={{ color: 'var(--text-muted)' }}>{c.flag} {c.code}:</span>{' '}
+                        <strong style={{ color: 'var(--navy-900)' }}>
+                          {CURRENCY_SYMBOLS[c.code]}{total.toLocaleString()}
+                        </strong>
+                        {res > 0 && (
+                          <div style={{ fontSize: '9px', color: 'var(--gold-royal)' }}>
+                            Unres: {CURRENCY_SYMBOLS[c.code]}{unres.toLocaleString()}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -545,10 +983,11 @@ export default function CurrencyExchangePage() {
                       fontWeight: '700'
                     }}
                   >
-                    <option value="INR">INR (₹)</option>
-                    <option value="USD">USD ($)</option>
-                    <option value="GBP">GBP (£)</option>
-                    <option value="EUR">EUR (€)</option>
+                    {tradableCurrencies.map(c => (
+                      <option key={c.code} value={c.code}>
+                        {c.flag} {c.code} ({c.symbol}) — {c.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -573,10 +1012,11 @@ export default function CurrencyExchangePage() {
                       fontWeight: '700'
                     }}
                   >
-                    <option value="USD">USD ($)</option>
-                    <option value="INR">INR (₹)</option>
-                    <option value="GBP">GBP (£)</option>
-                    <option value="EUR">EUR (€)</option>
+                    {tradableCurrencies.map(c => (
+                      <option key={c.code} value={c.code}>
+                        {c.flag} {c.code} ({c.symbol}) — {c.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -588,7 +1028,7 @@ export default function CurrencyExchangePage() {
                     Amount to Sell ({fromCurrency})
                   </label>
                   <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                    Max: {currencySymbols[fromCurrency]}{Number(teamWallets[fromCurrency] || 0).toLocaleString()}
+                    Max Unreserved: {currencySymbols[fromCurrency]}{Number(conversionQuote.unreservedAvailable || 0).toLocaleString()}
                   </span>
                 </div>
                 <input
@@ -619,14 +1059,24 @@ export default function CurrencyExchangePage() {
                 padding: '12px 14px',
                 marginBottom: '14px'
               }}>
+                <div style={{
+                  fontSize: '10px',
+                  fontWeight: '700',
+                  color: 'var(--gold-royal)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  marginBottom: '6px'
+                }}>
+                  Simulation Reference Rate (Central Bank Seed)
+                </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '11px' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Spot Rate:</span>
                   <strong>
                     {fromCurrency === 'INR'
-                      ? `1 ${toCurrency} = ₹${conversionQuote.effectiveRate.toFixed(2)}`
+                      ? `1 ${toCurrency} = ₹${(toCurrency === 'JPY' || toCurrency === 'KRW') ? conversionQuote.effectiveRate.toFixed(4) : conversionQuote.effectiveRate.toFixed(2)}`
                       : toCurrency === 'INR'
-                      ? `1 ${fromCurrency} = ₹${conversionQuote.effectiveRate.toFixed(2)}`
-                      : `Rate: ${conversionQuote.effectiveRate.toFixed(4)}`}
+                      ? `1 ${fromCurrency} = ₹${(fromCurrency === 'JPY' || fromCurrency === 'KRW') ? conversionQuote.effectiveRate.toFixed(4) : conversionQuote.effectiveRate.toFixed(2)}`
+                      : `Rate: ${conversionQuote.effectiveRate.toFixed(6)}`}
                   </strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '11px' }}>
@@ -646,6 +1096,11 @@ export default function CurrencyExchangePage() {
                     {currencySymbols[toCurrency]}{conversionQuote.toAmount.toLocaleString()}
                   </span>
                 </div>
+                {conversionQuote.reservedAmount > 0 && (
+                  <div style={{ marginTop: '6px', fontSize: '10px', color: 'var(--text-muted)' }}>
+                    🔒 Reserved: {currencySymbols[fromCurrency]}{conversionQuote.reservedAmount.toLocaleString()} | Available unreserved: {currencySymbols[fromCurrency]}{conversionQuote.unreservedAvailable.toLocaleString()}
+                  </div>
+                )}
               </div>
 
               {/* Operator Identification */}
@@ -688,18 +1143,20 @@ export default function CurrencyExchangePage() {
                   disabled={!conversionQuote.valid || isSubmitting}
                   style={{
                     width: '100%',
-                    background: conversionQuote.valid ? 'var(--navy-900)' : '#ccc',
+                    background: conversionQuote.valid ? 'linear-gradient(135deg, #FF6800 0%, #E65100 100%)' : '#ccc',
                     color: '#fff',
                     border: 'none',
-                    borderRadius: '8px',
+                    borderRadius: '9999px',
                     padding: '12px',
                     fontSize: '13px',
-                    fontWeight: '700',
+                    fontWeight: '800',
                     cursor: conversionQuote.valid ? 'pointer' : 'not-allowed',
-                    transition: 'all 0.2s'
+                    boxShadow: conversionQuote.valid ? '0 4px 14px rgba(255, 104, 0, 0.35)' : 'none',
+                    transition: 'all 0.2s',
+                    letterSpacing: '0.02em'
                   }}
                 >
-                  {isSubmitting ? 'Submitting...' : `➔ Submit to FX Queue (Sim Duration: ${simulationDurationSec}s)`}
+                  {isSubmitting ? 'Submitting...' : `Convert & Submit to FX Queue (${simulationDurationSec}s)`}
                 </button>
 
                 <button
@@ -708,10 +1165,10 @@ export default function CurrencyExchangePage() {
                   disabled={!conversionQuote.valid || isSubmitting}
                   style={{
                     width: '100%',
-                    background: conversionQuote.valid ? 'var(--gold-royal)' : '#e5e7eb',
+                    background: conversionQuote.valid ? 'var(--color-navy, #0B192C)' : '#e5e7eb',
                     color: conversionQuote.valid ? '#fff' : '#9ca3af',
                     border: 'none',
-                    borderRadius: '8px',
+                    borderRadius: '9999px',
                     padding: '10px',
                     fontSize: '12px',
                     fontWeight: '700',
@@ -797,16 +1254,29 @@ export default function CurrencyExchangePage() {
                     ) : (
                       filteredQueue.map(item => {
                         const statusColors = {
+                          pending: '#d97706',
                           QUEUED: '#d97706',
+                          CLAIMED: '#2563eb',
                           RATE_CHECK: '#2563eb',
+                          processing: '#7c3aed',
                           PROCESSING: '#7c3aed',
+                          on_hold: '#f59e0b',
+                          ON_HOLD: '#f59e0b',
+                          approved: '#059669',
                           SETTLED: '#059669',
-                          REJECTED: '#dc2626'
+                          rejected: '#dc2626',
+                          REJECTED: '#dc2626',
+                          cancelled: '#6b7280',
+                          CANCELLED: '#6b7280',
+                          expired: '#9ca3af',
+                          EXPIRED: '#9ca3af'
                         };
 
-                        const isProcessing = item.status === 'PROCESSING';
+                        const isProcessing = item.status === 'processing' || item.status === 'PROCESSING';
                         const clearsAt = item.clearsAt || 0;
-                        const isTimeElapsed = clearsAt > 0 && Date.now() >= clearsAt;
+                        const remainingSec = Math.max(0, Math.ceil((clearsAt - now) / 1000));
+                        const isTimeElapsed = clearsAt > 0 && now >= clearsAt;
+                        const isTerminal = ['approved', 'SETTLED', 'settled', 'rejected', 'REJECTED', 'cancelled', 'CANCELLED', 'expired', 'EXPIRED'].includes(item.status);
 
                         return (
                           <tr key={item.id} style={{ borderBottom: '1px solid var(--border-soft)' }}>
@@ -850,98 +1320,236 @@ export default function CurrencyExchangePage() {
                               }}>
                                 ● {item.status}
                               </span>
+
+                              {/* Phase D: Live Countdown Timer with Simulated Delay Notice (No Auto-Settlement) */}
                               {isProcessing && clearsAt > 0 && (
-                                <div style={{ fontSize: '10px', color: '#7c3aed', marginTop: '2px', fontWeight: '600' }}>
-                                  {isTimeElapsed ? 'Ready to settle' : `Clearing...`}
+                                <div style={{ marginTop: '4px', fontSize: '10px' }}>
+                                  {!isTimeElapsed ? (
+                                    <>
+                                      <span style={{
+                                        background: 'rgba(124, 58, 237, 0.12)',
+                                        color: '#7c3aed',
+                                        padding: '2px 6px',
+                                        borderRadius: '4px',
+                                        fontWeight: '700',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '4px'
+                                      }}>
+                                        ⏱️ {Math.floor(remainingSec / 60)}:{(remainingSec % 60).toString().padStart(2, '0')} remaining
+                                      </span>
+                                      <div style={{ color: '#6b7280', fontSize: '9px', marginTop: '2px' }}>
+                                        Simulated Delay &bull; No Auto-Settlement
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <span style={{
+                                        background: 'rgba(16, 185, 129, 0.15)',
+                                        color: '#059669',
+                                        padding: '2px 6px',
+                                        borderRadius: '4px',
+                                        fontWeight: '700',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '4px'
+                                      }}>
+                                        ⏱️ Elapsed (00:00)
+                                      </span>
+                                      <div style={{ color: '#059669', fontSize: '9px', marginTop: '2px', fontWeight: '600' }}>
+                                        Ready for Operator Review (No Auto-Settlement)
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              )}
+
+                              {item.status === 'on_hold' && (
+                                <div style={{ fontSize: '10px', color: '#b45309', marginTop: '3px', fontWeight: '600' }}>
+                                  Reason: {item.holdReason || 'Hold applied by operator'}
+                                </div>
+                              )}
+
+                              {(item.status === 'rejected' || item.status === 'REJECTED') && item.rejectionReason && (
+                                <div style={{ fontSize: '10px', color: '#dc2626', marginTop: '3px' }}>
+                                  {item.rejectionReason}
                                 </div>
                               )}
                             </td>
                             <td style={{ padding: '10px', textAlign: 'right' }}>
-                              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '4px' }}>
-                                {item.status === 'QUEUED' && (
-                                  <button
-                                    onClick={() => handleQueueAction(item.id, 'RATE_CHECK', {
-                                      rate: conversionQuote.effectiveRate,
-                                      spread: conversionQuote.spreadPercent
-                                    })}
-                                    style={{
-                                      padding: '4px 8px',
-                                      background: '#2563eb',
-                                      color: '#fff',
-                                      border: 'none',
-                                      borderRadius: '4px',
-                                      fontSize: '11px',
-                                      fontWeight: '700',
-                                      cursor: 'pointer'
-                                    }}
-                                  >
-                                    1. Rate Check
-                                  </button>
-                                )}
+                              <div style={{ display: 'flex', justifyContent: 'flex-end', flexWrap: 'wrap', gap: '4px' }}>
+                                {isTerminal ? (
+                                  <div>
+                                    {['approved', 'SETTLED', 'settled'].includes(item.status) && (
+                                      <span style={{ fontSize: '11px', color: 'var(--green-emerald)', fontWeight: '700' }}>
+                                        ✓ Approved & Settled
+                                      </span>
+                                    )}
+                                    {['rejected', 'REJECTED'].includes(item.status) && (
+                                      <span style={{ fontSize: '11px', color: 'var(--red-crimson)', fontWeight: '700' }}>
+                                        ✕ Rejected
+                                      </span>
+                                    )}
+                                    {['cancelled', 'CANCELLED'].includes(item.status) && (
+                                      <span style={{ fontSize: '11px', color: '#6b7280', fontWeight: '700' }}>
+                                        ⊘ Cancelled
+                                      </span>
+                                    )}
+                                    {['expired', 'EXPIRED'].includes(item.status) && (
+                                      <span style={{ fontSize: '11px', color: '#9ca3af', fontWeight: '700' }}>
+                                        ⌛ Expired
+                                      </span>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <>
+                                    {/* 1. Claim Operator Control */}
+                                    {!item.lockedByOperator ? (
+                                      <button
+                                        onClick={() => handleQueueAction(item.id, 'CLAIM')}
+                                        style={{
+                                          padding: '4px 8px',
+                                          background: '#2563eb',
+                                          color: '#fff',
+                                          border: 'none',
+                                          borderRadius: '4px',
+                                          fontSize: '11px',
+                                          fontWeight: '700',
+                                          cursor: 'pointer'
+                                        }}
+                                      >
+                                        Claim
+                                      </button>
+                                    ) : (
+                                      <span style={{ fontSize: '10px', color: '#4b5563', padding: '2px 4px', background: '#e5e7eb', borderRadius: '4px', fontWeight: '600' }}>
+                                        🔒 {item.lockedByOperator}
+                                      </span>
+                                    )}
 
-                                {item.status === 'RATE_CHECK' && (
-                                  <button
-                                    onClick={() => handleQueueAction(item.id, 'PROCESS', {
-                                      durationSec: simulationDurationSec
-                                    })}
-                                    style={{
-                                      padding: '4px 8px',
-                                      background: '#7c3aed',
-                                      color: '#fff',
-                                      border: 'none',
-                                      borderRadius: '4px',
-                                      fontSize: '11px',
-                                      fontWeight: '700',
-                                      cursor: 'pointer'
-                                    }}
-                                  >
-                                    2. Start Clearance
-                                  </button>
-                                )}
+                                    {/* 2. Start Clearance / Process */}
+                                    {(['pending', 'QUEUED', 'CLAIMED', 'RATE_CHECK'].includes(item.status)) && (
+                                      <button
+                                        onClick={() => handleQueueAction(item.id, 'START_PROCESSING', { durationSec: simulationDurationSec })}
+                                        style={{
+                                          padding: '4px 8px',
+                                          background: '#7c3aed',
+                                          color: '#fff',
+                                          border: 'none',
+                                          borderRadius: '4px',
+                                          fontSize: '11px',
+                                          fontWeight: '700',
+                                          cursor: 'pointer'
+                                        }}
+                                      >
+                                        Start Clearance
+                                      </button>
+                                    )}
 
-                                {item.status === 'PROCESSING' && (
-                                  <button
-                                    onClick={() => handleQueueAction(item.id, 'SETTLE')}
-                                    style={{
-                                      padding: '4px 8px',
-                                      background: '#059669',
-                                      color: '#fff',
-                                      border: 'none',
-                                      borderRadius: '4px',
-                                      fontSize: '11px',
-                                      fontWeight: '700',
-                                      cursor: 'pointer'
-                                    }}
-                                  >
-                                    3. Settle Trade
-                                  </button>
-                                )}
+                                    {/* 3. Approve / Settle Trade */}
+                                    {(isProcessing || item.status === 'on_hold') && (
+                                      <button
+                                        onClick={() => handleQueueAction(item.id, 'APPROVE')}
+                                        style={{
+                                          padding: '4px 8px',
+                                          background: '#059669',
+                                          color: '#fff',
+                                          border: 'none',
+                                          borderRadius: '4px',
+                                          fontSize: '11px',
+                                          fontWeight: '700',
+                                          cursor: 'pointer'
+                                        }}
+                                      >
+                                        Approve
+                                      </button>
+                                    )}
 
-                                {item.status !== 'SETTLED' && item.status !== 'REJECTED' && (
-                                  <button
-                                    onClick={() => {
-                                      const reason = prompt('Enter rejection reason:');
-                                      if (reason) handleQueueAction(item.id, 'REJECT', { reason });
-                                    }}
-                                    style={{
-                                      padding: '4px 8px',
-                                      background: 'transparent',
-                                      color: 'var(--red-crimson)',
-                                      border: '1px solid var(--red-crimson)',
-                                      borderRadius: '4px',
-                                      fontSize: '11px',
-                                      fontWeight: '700',
-                                      cursor: 'pointer'
-                                    }}
-                                  >
-                                    Reject
-                                  </button>
-                                )}
+                                    {/* 4. Hold Operator Control */}
+                                    {item.status !== 'on_hold' ? (
+                                      <button
+                                        onClick={() => setActionModal({ isOpen: true, action: 'HOLD', item, reason: '' })}
+                                        style={{
+                                          padding: '4px 8px',
+                                          background: '#f59e0b',
+                                          color: '#fff',
+                                          border: 'none',
+                                          borderRadius: '4px',
+                                          fontSize: '11px',
+                                          fontWeight: '700',
+                                          cursor: 'pointer'
+                                        }}
+                                      >
+                                        Hold
+                                      </button>
+                                    ) : (
+                                      <button
+                                        onClick={() => handleQueueAction(item.id, 'START_PROCESSING', { durationSec: simulationDurationSec })}
+                                        style={{
+                                          padding: '4px 8px',
+                                          background: '#7c3aed',
+                                          color: '#fff',
+                                          border: 'none',
+                                          borderRadius: '4px',
+                                          fontSize: '11px',
+                                          fontWeight: '700',
+                                          cursor: 'pointer'
+                                        }}
+                                      >
+                                        Resume
+                                      </button>
+                                    )}
 
-                                {item.status === 'SETTLED' && (
-                                  <span style={{ fontSize: '11px', color: 'var(--green-emerald)', fontWeight: '700' }}>
-                                    ✓ Cleared
-                                  </span>
+                                    {/* 5. Return for Correction */}
+                                    <button
+                                      onClick={() => setActionModal({ isOpen: true, action: 'RETURN_FOR_CORRECTION', item, reason: '' })}
+                                      style={{
+                                        padding: '4px 8px',
+                                        background: 'transparent',
+                                        color: '#ea580c',
+                                        border: '1px solid #ea580c',
+                                        borderRadius: '4px',
+                                        fontSize: '11px',
+                                        fontWeight: '700',
+                                        cursor: 'pointer'
+                                      }}
+                                    >
+                                      Return
+                                    </button>
+
+                                    {/* 6. Reject Operator Control */}
+                                    <button
+                                      onClick={() => setActionModal({ isOpen: true, action: 'REJECT', item, reason: '' })}
+                                      style={{
+                                        padding: '4px 8px',
+                                        background: 'transparent',
+                                        color: 'var(--red-crimson)',
+                                        border: '1px solid var(--red-crimson)',
+                                        borderRadius: '4px',
+                                        fontSize: '11px',
+                                        fontWeight: '700',
+                                        cursor: 'pointer'
+                                      }}
+                                    >
+                                      Reject
+                                    </button>
+
+                                    {/* 7. Cancel Control */}
+                                    <button
+                                      onClick={() => handleQueueAction(item.id, 'CANCEL')}
+                                      style={{
+                                        padding: '4px 8px',
+                                        background: 'transparent',
+                                        color: '#6b7280',
+                                        border: '1px solid #9ca3af',
+                                        borderRadius: '4px',
+                                        fontSize: '11px',
+                                        fontWeight: '700',
+                                        cursor: 'pointer'
+                                      }}
+                                    >
+                                      Cancel
+                                    </button>
+                                  </>
                                 )}
                               </div>
                             </td>
@@ -1092,6 +1700,12 @@ export default function CurrencyExchangePage() {
                   <option value="USDINR">USD / INR (US Dollar)</option>
                   <option value="GBPINR">GBP / INR (British Pound)</option>
                   <option value="EURINR">EUR / INR (Eurozone Euro)</option>
+                  <option value="JPYINR">JPY / INR (Japanese Yen)</option>
+                  <option value="AEDINR">AED / INR (UAE Dirham)</option>
+                  <option value="SGDINR">SGD / INR (Singapore Dollar)</option>
+                  <option value="CNYINR">CNY / INR (Chinese Yuan)</option>
+                  <option value="AUDINR">AUD / INR (Australian Dollar)</option>
+                  <option value="KRWINR">KRW / INR (South Korean Won)</option>
                 </select>
               </div>
 
@@ -1102,7 +1716,7 @@ export default function CurrencyExchangePage() {
                   </label>
                   <input
                     type="number"
-                    step="0.01"
+                    step={(modPair === 'JPYINR' || modPair === 'KRWINR') ? '0.0001' : '0.01'}
                     value={newMidRate}
                     onChange={(e) => setNewMidRate(e.target.value)}
                     style={{
@@ -1190,6 +1804,254 @@ export default function CurrencyExchangePage() {
                   }}
                 >
                   Publish New Rate
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Authorized Reserve Replenishment Modal */}
+      {showReplenishModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: 'var(--card-bg)',
+            border: '1px solid var(--border-soft)',
+            borderRadius: '12px',
+            width: '100%',
+            maxWidth: '460px',
+            padding: '24px',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.15)'
+          }}>
+            <h3 style={{ margin: '0 0 16px', fontSize: '17px', color: 'var(--navy-900)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>🏦</span> Authorized FX Reserve Replenishment
+            </h3>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '-10px 0 16px' }}>
+              Inject foreign liquidity into desk reserves. Balanced double-entry equity line will be posted to the system treasury ledger.
+            </p>
+
+            <form onSubmit={handleReplenishReserve}>
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: 'var(--navy-800)', marginBottom: '4px' }}>
+                  Target Foreign Currency
+                </label>
+                <select
+                  value={replenishCurrency}
+                  onChange={(e) => setReplenishCurrency(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 10px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-soft)',
+                    fontSize: '13px',
+                    fontWeight: '700'
+                  }}
+                >
+                  {foreignTradableCurrencies.map(c => (
+                    <option key={c.code} value={c.code}>
+                      {c.flag} {c.code} ({c.symbol}) — {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: 'var(--navy-800)', marginBottom: '4px' }}>
+                  Replenishment Amount ({replenishCurrency})
+                </label>
+                <input
+                  type="number"
+                  step={(replenishCurrency === 'JPY' || replenishCurrency === 'KRW') ? '1' : '0.01'}
+                  value={replenishAmount}
+                  onChange={(e) => setReplenishAmount(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 10px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-soft)',
+                    fontSize: '14px',
+                    fontWeight: '700',
+                    fontFamily: 'monospace'
+                  }}
+                  required
+                />
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: 'var(--navy-800)', marginBottom: '4px' }}>
+                  Audit Justification / Central Bank Authorization Reason
+                </label>
+                <input
+                  type="text"
+                  value={replenishReason}
+                  onChange={(e) => setReplenishReason(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 10px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-soft)',
+                    fontSize: '13px'
+                  }}
+                  placeholder="e.g. Bilateral currency swap allocation"
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowReplenishModal(false)}
+                  disabled={isReplenishing}
+                  style={{
+                    background: 'var(--bg-warm)',
+                    border: '1px solid var(--border-soft)',
+                    borderRadius: '6px',
+                    padding: '8px 14px',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isReplenishing}
+                  style={{
+                    background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '8px 16px',
+                    fontSize: '13px',
+                    fontWeight: '700',
+                    cursor: isReplenishing ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {isReplenishing ? 'Replenishing...' : 'Authorize & Post Replenishment'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Operator Reason Modal for HOLD, REJECT, and RETURN_FOR_CORRECTION */}
+      {actionModal.isOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: 'var(--card-bg)',
+            border: '1px solid var(--border-soft)',
+            borderRadius: '12px',
+            width: '100%',
+            maxWidth: '460px',
+            padding: '24px',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.15)'
+          }}>
+            <h3 style={{ margin: '0 0 16px', fontSize: '17px', color: 'var(--navy-900)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>{actionModal.action === 'HOLD' ? '⏸️' : actionModal.action === 'RETURN_FOR_CORRECTION' ? '↩️' : '🚫'}</span>
+              <span>
+                {actionModal.action === 'HOLD' && 'Hold FX Conversion Request'}
+                {actionModal.action === 'REJECT' && 'Reject FX Conversion Request'}
+                {actionModal.action === 'RETURN_FOR_CORRECTION' && 'Return FX Slip for Correction'}
+              </span>
+            </h3>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '-10px 0 16px' }}>
+              {actionModal.action === 'HOLD' && 'Place request on hold. Client funds and desk inventory reservations will remain held.'}
+              {actionModal.action === 'REJECT' && 'Reject request. Client funds and desk inventory reservations will be released cleanly (0% leakage).'}
+              {actionModal.action === 'RETURN_FOR_CORRECTION' && 'Return request for correction. Client funds and desk reservations will be released cleanly.'}
+            </p>
+
+            <form onSubmit={handleConfirmActionModal}>
+              <div style={{ marginBottom: '14px', background: 'var(--bg-warm)', padding: '10px 12px', borderRadius: '6px', fontSize: '12px' }}>
+                <div><strong>Ticket:</strong> {actionModal.item?.ticketNumber || actionModal.item?.id?.slice(-6)}</div>
+                <div><strong>Team:</strong> {actionModal.item?.teamCode}</div>
+                <div><strong>Pair:</strong> {actionModal.item?.fromCurrency} ➔ {actionModal.item?.toCurrency}</div>
+                <div><strong>Amount:</strong> {actionModal.item?.fromAmount} {actionModal.item?.fromCurrency} ➔ {actionModal.item?.toAmount} {actionModal.item?.toCurrency}</div>
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: 'var(--navy-800)', marginBottom: '4px' }}>
+                  Mandatory Justification Reason (min 3 characters) *
+                </label>
+                <textarea
+                  value={actionModal.reason}
+                  onChange={(e) => setActionModal(prev => ({ ...prev, reason: e.target.value }))}
+                  rows={3}
+                  style={{
+                    width: '100%',
+                    padding: '8px 10px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-soft)',
+                    fontSize: '13px',
+                    fontFamily: 'inherit',
+                    resize: 'vertical'
+                  }}
+                  placeholder={
+                    actionModal.action === 'HOLD'
+                      ? 'e.g. Awaiting KYC document verification or desk compliance review'
+                      : actionModal.action === 'RETURN_FOR_CORRECTION'
+                      ? 'e.g. Slip amount does not match treasury ledger requisition'
+                      : 'e.g. Exceeds single-session foreign currency procurement cap'
+                  }
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setActionModal({ isOpen: false, action: null, item: null, reason: '' })}
+                  style={{
+                    background: 'var(--bg-warm)',
+                    border: '1px solid var(--border-soft)',
+                    borderRadius: '6px',
+                    padding: '8px 14px',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    background: actionModal.action === 'HOLD' ? '#f59e0b' : actionModal.action === 'RETURN_FOR_CORRECTION' ? '#ea580c' : '#dc2626',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '8px 16px',
+                    fontSize: '13px',
+                    fontWeight: '700',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Confirm {actionModal.action === 'HOLD' ? 'Hold' : actionModal.action === 'RETURN_FOR_CORRECTION' ? 'Return' : 'Rejection'}
                 </button>
               </div>
             </form>

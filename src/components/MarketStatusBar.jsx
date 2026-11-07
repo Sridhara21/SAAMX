@@ -9,31 +9,36 @@ export default function MarketStatusBar({ state, serverTimeOffset = 0, connected
   const mode = marketState.mode || 'DEMO';
   const status = marketState.status || 'NotStarted';
 
-  let statusBg = 'var(--color-brass-light)';
-  let statusColor = 'var(--color-brass)';
+  let statusBg = 'var(--color-accent-light, rgba(0, 229, 255, 0.12))';
+  let statusColor = 'var(--color-accent, #00E5FF)';
+  let statusBorder = '1px solid var(--color-accent-border, rgba(0, 229, 255, 0.30))';
   let statusText = clock.sessionState.replace(/_/g, ' ');
 
   if (status === 'Open' || clock.sessionState === 'CONTINUOUS_TRADING') {
-    statusBg = 'var(--color-rise-light)';
-    statusColor = 'var(--color-rise)';
+    statusBg = 'var(--color-rise-light, rgba(16, 185, 129, 0.14))';
+    statusColor = 'var(--color-rise, #10B981)';
+    statusBorder = '1px solid rgba(16, 185, 129, 0.30)';
   } else if (status === 'Paused' || marketState.haltReason) {
-    statusBg = 'var(--color-fall-light)';
-    statusColor = 'var(--color-fall)';
+    statusBg = 'var(--color-fall-light, rgba(239, 68, 68, 0.14))';
+    statusColor = 'var(--color-fall, #EF4444)';
+    statusBorder = '1px solid rgba(239, 68, 68, 0.30)';
     statusText = 'HALTED / PAUSED';
   } else if (clock.sessionState === 'RESULTS') {
-    statusBg = 'var(--color-brass-light)';
-    statusColor = 'var(--color-brass)';
+    statusBg = 'var(--color-accent-light, rgba(0, 229, 255, 0.12))';
+    statusColor = 'var(--color-accent, #00E5FF)';
+    statusBorder = '1px solid var(--color-accent-border, rgba(0, 229, 255, 0.30))';
     statusText = 'RESULTS PUBLISHED';
   } else if (status === 'Closed' || clock.sessionState === 'MARKET_CLOSED') {
-    statusBg = 'var(--color-surface-2)';
-    statusColor = 'var(--color-ink-2)';
+    statusBg = 'var(--color-surface-2, #161D2B)';
+    statusColor = 'var(--color-text-secondary, #94A3B8)';
+    statusBorder = '1px solid var(--color-border, rgba(255, 255, 255, 0.08))';
     statusText = 'MARKET CLOSED';
   }
 
   return (
     <div className="market-status-bar" style={{
-      backgroundColor: '#111419',
-      color: '#FFFFFF',
+      backgroundColor: 'var(--color-surface, #121722)',
+      color: 'var(--color-ink, #F8FAFC)',
       padding: '8px 24px',
       fontSize: '0.8rem',
       display: 'flex',
@@ -41,50 +46,67 @@ export default function MarketStatusBar({ state, serverTimeOffset = 0, connected
       justifyContent: 'space-between',
       flexWrap: 'wrap',
       gap: '12px',
-      borderBottom: '2px solid #845508',
-      letterSpacing: '0.03em'
+      borderBottom: '1px solid var(--color-border, rgba(255, 255, 255, 0.08))',
+      letterSpacing: '0.02em',
+      transition: 'background-color var(--transition-smooth, 0.22s ease), border-color var(--transition-smooth, 0.22s ease)'
     }}>
-      {/* Left: Session ID & Mode */}
+      {/* Left: Session ID, Active Teams & Mode */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span style={{ color: '#CBD5E1', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase' }}>SESSION</span>
-          <span className="font-data" style={{ color: '#F6ECD5', fontWeight: 800 }}>{sessionId}</span>
+          <span style={{ color: 'var(--color-text-muted, #64748B)', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>SESSION</span>
+          <span style={{
+            color: 'var(--color-accent, #00E5FF)',
+            fontWeight: 800,
+            fontFamily: 'var(--font-mono, monospace)',
+            fontVariantNumeric: 'tabular-nums',
+            fontFeatureSettings: '"tnum" 1',
+            letterSpacing: '0.04em'
+          }}>{sessionId}</span>
         </div>
 
-        <div style={{ width: '1px', height: '14px', backgroundColor: '#333842' }} />
+        <div style={{ width: '1px', height: '14px', backgroundColor: 'var(--color-border, rgba(255, 255, 255, 0.08))' }} />
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span style={{ color: '#CBD5E1', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase' }}>TEAMS</span>
-          <span className="font-data" style={{ color: '#FFFFFF', fontWeight: 700 }}>{teamsCount} ACTIVE</span>
+          <span style={{ color: 'var(--color-text-muted, #64748B)', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>TEAMS</span>
+          <span style={{
+            color: 'var(--color-ink, #F8FAFC)',
+            fontWeight: 700,
+            fontFamily: 'var(--font-mono, monospace)',
+            fontVariantNumeric: 'tabular-nums',
+            fontFeatureSettings: '"tnum" 1'
+          }}>{teamsCount} ACTIVE</span>
         </div>
 
-        <div style={{ width: '1px', height: '14px', backgroundColor: '#333842' }} />
+        <div style={{ width: '1px', height: '14px', backgroundColor: 'var(--color-border, rgba(255, 255, 255, 0.08))' }} />
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span style={{ color: '#CBD5E1', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase' }}>MODE</span>
+          <span style={{ color: 'var(--color-text-muted, #64748B)', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>MODE</span>
           <span style={{
             fontSize: '0.68rem',
             fontWeight: 800,
-            padding: '2px 6px',
+            padding: '2px 8px',
             borderRadius: '4px',
-            backgroundColor: mode === 'EVENT' ? 'rgba(132, 85, 8, 0.4)' : 'rgba(255, 255, 255, 0.1)',
-            color: mode === 'EVENT' ? '#F6ECD5' : '#D1D5DB'
+            backgroundColor: mode === 'EVENT' ? 'var(--color-accent-light, rgba(0, 229, 255, 0.12))' : 'var(--color-surface-2, #161D2B)',
+            color: mode === 'EVENT' ? 'var(--color-accent, #00E5FF)' : 'var(--color-text-secondary, #94A3B8)',
+            border: mode === 'EVENT' ? '1px solid var(--color-accent-border, rgba(0, 229, 255, 0.30))' : '1px solid var(--color-border, rgba(255, 255, 255, 0.08))',
+            letterSpacing: '0.05em'
           }}>
             {mode}
           </span>
         </div>
       </div>
 
-      {/* Center: Phase Status & Clock */}
+      {/* Center: Phase Status & IST Tabular Clock */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
         <div style={{
           display: 'inline-flex',
           alignItems: 'center',
           gap: '6px',
           padding: '3px 10px',
-          borderRadius: '4px',
+          borderRadius: '6px',
           backgroundColor: statusBg,
           color: statusColor,
+          border: statusBorder,
           fontWeight: 800,
           fontSize: '0.72rem',
           letterSpacing: '0.05em',
@@ -95,12 +117,27 @@ export default function MarketStatusBar({ state, serverTimeOffset = 0, connected
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span style={{ color: '#CBD5E1', fontSize: '0.7rem', fontWeight: 800 }}>CLOCK</span>
-          <span className="font-data" style={{ color: '#FFFFFF', fontWeight: 800, fontSize: '0.9rem' }}>
+          <span style={{ color: 'var(--color-text-muted, #64748B)', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>CLOCK</span>
+          <span style={{
+            color: 'var(--color-ink, #F8FAFC)',
+            fontWeight: 800,
+            fontSize: '0.9rem',
+            fontFamily: 'var(--font-mono, monospace)',
+            fontVariantNumeric: 'tabular-nums',
+            fontFeatureSettings: '"tnum" 1',
+            letterSpacing: '0.02em'
+          }}>
             {clock.timeString}
           </span>
           {clock.timeLeftString && (
-            <span style={{ color: '#B38027', fontSize: '0.72rem', fontWeight: 700, marginLeft: '4px' }}>
+            <span style={{
+              color: 'var(--color-accent, #00E5FF)',
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              marginLeft: '4px',
+              fontFamily: 'var(--font-mono, monospace)',
+              fontVariantNumeric: 'tabular-nums'
+            }}>
               ({clock.timeLeftString})
             </span>
           )}
@@ -110,16 +147,16 @@ export default function MarketStatusBar({ state, serverTimeOffset = 0, connected
       {/* Right: Telemetry & Link Status */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
         {isCoordinatorOffline ? (
-          <span style={{ color: '#EF4444', fontSize: '0.72rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+          <span style={{ color: 'var(--color-fall, #EF4444)', fontSize: '0.72rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
             ⚠ COORD OFFLINE
           </span>
         ) : (
-          <span style={{ color: '#10B981', fontSize: '0.72rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+          <span style={{ color: 'var(--color-rise, #10B981)', fontSize: '0.72rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
             ● COORD ACTIVE
           </span>
         )}
 
-        <div style={{ width: '1px', height: '14px', backgroundColor: '#333842' }} />
+        <div style={{ width: '1px', height: '14px', backgroundColor: 'var(--color-border, rgba(255, 255, 255, 0.08))' }} />
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <span style={{
@@ -127,12 +164,14 @@ export default function MarketStatusBar({ state, serverTimeOffset = 0, connected
             width: '7px',
             height: '7px',
             borderRadius: '50%',
-            backgroundColor: connected ? '#10B981' : '#EF4444'
+            backgroundColor: connected ? 'var(--color-rise, #10B981)' : 'var(--color-fall, #EF4444)',
+            boxShadow: connected ? '0 0 6px rgba(16, 185, 129, 0.6)' : '0 0 6px rgba(239, 68, 68, 0.6)'
           }} />
           <span style={{
             fontSize: '0.72rem',
             fontWeight: 800,
-            color: connected ? '#10B981' : '#EF4444'
+            color: connected ? 'var(--color-rise, #10B981)' : 'var(--color-fall, #EF4444)',
+            letterSpacing: '0.04em'
           }}>
             {connected ? 'CONNECTED' : 'OFFLINE'}
           </span>

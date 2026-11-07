@@ -5,7 +5,7 @@
 
 import { ALL_SECURITIES_DATA } from './universe_data.js';
 
-export const TARGET_SECURITY_COUNT = 2061;
+export const TARGET_SECURITY_COUNT = 2849;
 
 export const NEW_SIMULATED_IPOS = [
   {
@@ -23,7 +23,9 @@ export const NEW_SIMULATED_IPOS = [
     currentPrice: 180,
     dayHigh: 180,
     dayLow: 180,
-    lotSize: 10,
+    lotSize: 1,
+    minOrderQty: 1,
+    tickSize: 0.01,
     totalUnits: 1000,
     availableUnits: 1000,
     availableFloat: 1000,
@@ -78,7 +80,9 @@ export const NEW_SIMULATED_IPOS = [
     currentPrice: 95,
     dayHigh: 95,
     dayLow: 95,
-    lotSize: 20,
+    lotSize: 1,
+    minOrderQty: 1,
+    tickSize: 0.01,
     totalUnits: 1200,
     availableUnits: 1200,
     availableFloat: 1200,
@@ -133,7 +137,9 @@ export const NEW_SIMULATED_IPOS = [
     currentPrice: 62,
     dayHigh: 62,
     dayLow: 62,
-    lotSize: 25,
+    lotSize: 1,
+    minOrderQty: 1,
+    tickSize: 0.01,
     totalUnits: 1400,
     availableUnits: 1400,
     availableFloat: 1400,
@@ -188,7 +194,9 @@ export const NEW_SIMULATED_IPOS = [
     currentPrice: 48,
     dayHigh: 48,
     dayLow: 48,
-    lotSize: 30,
+    lotSize: 1,
+    minOrderQty: 1,
+    tickSize: 0.01,
     totalUnits: 1500,
     availableUnits: 1500,
     availableFloat: 1500,
@@ -243,7 +251,9 @@ export const NEW_SIMULATED_IPOS = [
     currentPrice: 35,
     dayHigh: 35,
     dayLow: 35,
-    lotSize: 50,
+    lotSize: 1,
+    minOrderQty: 1,
+    tickSize: 0.01,
     totalUnits: 1800,
     availableUnits: 1800,
     availableFloat: 1800,
@@ -284,13 +294,130 @@ export const NEW_SIMULATED_IPOS = [
   }
 ];
 
+export const PHOENIX_SIMULATED_STOCK = {
+  id: 'S_DTAI_066',
+  ticker: 'DTAI',
+  name: 'Delta AI Labs Ltd',
+  companyName: 'Delta AI Labs Ltd',
+  sector: 'Technology',
+  industry: 'Enterprise Cognitive AI Software',
+  type: 'Stock',
+  basePrice: 218,
+  referencePrice: 218,
+  previousClose: 218,
+  openingPrice: 218,
+  currentPrice: 218,
+  dayHigh: 218,
+  dayLow: 218,
+  lotSize: 1,
+  minOrderQty: 1,
+  tickSize: 0.05,
+  totalUnits: 500,
+  availableUnits: 500,
+  availableFloat: 500,
+  tradingVolume: 0,
+  volatility: 0.85,
+  riskRating: 'High',
+  growthRating: 3,
+  exchange: 'NSE',
+  country: 'India',
+  currency: 'INR',
+  status: 'Active',
+  description: 'Delta AI Labs is a leading enterprise artificial intelligence software provider developing large language models and cognitive vision tools for Indian enterprises. Central target for Project Phoenix simulation acts.',
+  ceoName: 'Sanjay Gupta',
+  foundedYear: 1999,
+  headquarters: 'Hyderabad',
+  logoInitials: 'DT',
+  dividendYield: 2.27,
+  priceHistory: [{ timestamp: Date.now(), price: 218 }]
+};
+
+export const RELI_SIMULATED_STOCK = {
+  id: 'S_RELI_001',
+  ticker: 'RELI',
+  name: 'Reliance Energy & Petrochem Ltd',
+  companyName: 'Reliance Energy & Petrochem Ltd',
+  sector: 'Energy',
+  industry: 'Petrochemicals & Energy Infrastructure',
+  type: 'Stock',
+  basePrice: 2450,
+  referencePrice: 2450,
+  previousClose: 2450,
+  openingPrice: 2450,
+  currentPrice: 2450,
+  dayHigh: 2450,
+  dayLow: 2450,
+  lotSize: 1,
+  minOrderQty: 1,
+  tickSize: 0.05,
+  totalUnits: 10000,
+  availableUnits: 10000,
+  availableFloat: 10000,
+  tradingVolume: 0,
+  volatility: 0.45,
+  riskRating: 'Medium',
+  growthRating: 4,
+  exchange: 'NSE',
+  country: 'India',
+  currency: 'INR',
+  status: 'Active',
+  description: 'Reliance Energy & Petrochem is a major Indian energy conglomerate operating diversified refining, infrastructure, and retail distribution networks across South Asia.',
+  ceoName: 'Mukesh Ambani',
+  foundedYear: 1973,
+  headquarters: 'Mumbai',
+  logoInitials: 'RL',
+  dividendYield: 1.15,
+  priceHistory: [{ timestamp: Date.now(), price: 2450 }]
+};
+
+export const SCOPED_COLLISION_TICKER_MAP = {
+  'STK_APA_895ef4': 'APA-AU',
+  'STK_BHP_d3fb5a': 'BHP-AU',
+  'STK_BSL_f5fb2b': 'BSL-SG',
+  'STK_DOW_cb6e30': 'DOW-AU',
+  'STK_EDV_fab611': 'EDV-AU',
+  'STK_IAG_ea3aab': 'IAG-AU',
+  'STK_NXT_4a3aea': 'NXT-AU',
+  'STK_RIO_8c9039': 'RIO-AU',
+  'STK_VEA_e4af5e': 'VEA-AU',
+  'STK_DG_8cee75': 'DG-PA',
+  'STK_HAL_1835c4': 'HAL-US',
+  'STK_IEX_8cc37d': 'IEX-US',
+  'STK_LULU_3005bd': 'LULU-US',
+  'STK_ADM_2659cb': 'ADM-LN',
+  'STK_AAL_edfd9a': 'AAL-LN',
+  'MF_IFF_d3b19d': 'MF_IFF',
+  'ETF_HACK_e3b9db': 'HACK-AU',
+  'ETF_IVV_5f5a49': 'IVV-AU',
+  'CBOND_TOYOTA3Y_df1239': 'TOYOTA3Y-US',
+  'CBOND_TOYOTA5Y_69027c': 'TOYOTA5Y-US'
+};
+
 export function generateFullSecurityUniverse(targetCount = ALL_SECURITIES_DATA.length) {
   const cloned = JSON.parse(JSON.stringify(ALL_SECURITIES_DATA.slice(0, targetCount)));
+  cloned.forEach(s => {
+    if (SCOPED_COLLISION_TICKER_MAP[s.id]) {
+      s.ticker = SCOPED_COLLISION_TICKER_MAP[s.id];
+    }
+  });
+
   NEW_SIMULATED_IPOS.forEach(pristineIpo => {
     const idx = cloned.findIndex(s => s.ticker === pristineIpo.ticker);
     if (idx !== -1) {
       cloned[idx] = JSON.parse(JSON.stringify(pristineIpo));
+    } else {
+      cloned.push(JSON.parse(JSON.stringify(pristineIpo)));
     }
   });
+
+  // Ensure DTAI (Project Phoenix) and RELI exist in the active universe
+  if (!cloned.some(s => s.ticker === 'DTAI')) {
+    cloned.push(JSON.parse(JSON.stringify(PHOENIX_SIMULATED_STOCK)));
+  }
+  if (!cloned.some(s => s.ticker === 'RELI')) {
+    cloned.push(JSON.parse(JSON.stringify(RELI_SIMULATED_STOCK)));
+  }
+
   return cloned;
 }
+

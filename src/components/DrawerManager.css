@@ -1,0 +1,745 @@
+/* ==========================================================================
+   SAAMX 2.0 — ACCESSIBLE DRAWER SYSTEM STYLES (R2)
+   High-performance hardware-accelerated drawer transitions & backdrop blur
+   ========================================================================== */
+
+.saamx-drawer-system {
+  position: fixed;
+  inset: 0;
+  z-index: 1040;
+  display: flex;
+  pointer-events: auto;
+}
+
+/* Backdrop Overlay with Apple-grade blur */
+.saamx-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(10, 13, 20, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 1041;
+  animation: drawerBackdropFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+[data-theme="light"] .saamx-drawer-backdrop {
+  background-color: rgba(15, 23, 42, 0.45);
+}
+
+@keyframes drawerBackdropFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Base Drawer Container */
+.saamx-drawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  z-index: 1050;
+  background: var(--color-surface, #121722);
+  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.08));
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 48px rgba(0, 0, 0, 0.65);
+  box-sizing: border-box;
+  will-change: transform;
+}
+
+/* Left Drawer (Portal Navigation) */
+.saamx-drawer-left {
+  left: 0;
+  width: 360px;
+  max-width: 88vw;
+  border-right: 1px solid var(--color-border);
+  animation: drawerSlideInLeft 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes drawerSlideInLeft {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+/* Right Drawer (Portfolio & Desk Actions) */
+.saamx-drawer-right {
+  right: 0;
+  width: 440px;
+  max-width: 92vw;
+  border-left: 1px solid var(--color-border);
+  animation: drawerSlideInRight 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes drawerSlideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+/* Drawer Header */
+.saamx-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-2, #1A2234);
+}
+
+.saamx-drawer-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.saamx-brand-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: var(--color-accent-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0A0D14;
+}
+
+.saamx-drawer-brand-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--color-ink, #F8FAFC);
+  letter-spacing: -0.01em;
+}
+
+.saamx-drawer-brand-sub {
+  font-size: 0.74rem;
+  color: var(--color-text-muted, #94A3B8);
+}
+
+.saamx-drawer-close-btn {
+  background: var(--color-surface-subtle, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary, #94A3B8);
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.saamx-drawer-close-btn:hover {
+  background: var(--color-surface-hover, rgba(255, 255, 255, 0.1));
+  color: var(--color-ink, #F8FAFC);
+  border-color: var(--color-accent, #00E5FF);
+}
+
+/* User Identity Card */
+.saamx-drawer-user-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 18px 8px 18px;
+  padding: 10px 14px;
+  background: var(--color-surface-2, #1A2234);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.saamx-user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-surface-sunken, rgba(0, 0, 0, 0.25));
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.saamx-user-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-ink, #F8FAFC);
+}
+
+.saamx-user-badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--color-accent, #00E5FF);
+  letter-spacing: 0.05em;
+}
+
+.saamx-user-badge.master {
+  color: #FCD34D;
+}
+
+/* Search input in drawer */
+.saamx-drawer-search-wrap {
+  position: relative;
+  margin: 8px 18px 12px 18px;
+}
+
+.saamx-drawer-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-muted, #94A3B8);
+}
+
+.saamx-drawer-search-input {
+  width: 100%;
+  background: var(--color-surface-sunken, rgba(0, 0, 0, 0.25));
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 8px 12px 8px 36px;
+  font-size: 0.84rem;
+  color: var(--color-ink, #F8FAFC);
+  outline: none;
+  box-sizing: border-box;
+}
+
+.saamx-drawer-search-input:focus {
+  border-color: var(--color-accent, #00E5FF);
+  box-shadow: 0 0 0 2px var(--color-accent-subtle, rgba(0, 229, 255, 0.2));
+}
+
+/* Scrollable Drawer Body */
+.saamx-drawer-scroll-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 18px 24px 18px;
+}
+
+/* Nav Groups & Rows */
+.saamx-nav-group {
+  margin-bottom: 18px;
+}
+
+.saamx-nav-group-title {
+  font-size: 0.70rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted, #64748B);
+  margin-bottom: 8px;
+  padding-left: 4px;
+}
+
+.saamx-nav-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+  margin-bottom: 4px;
+}
+
+.saamx-nav-row:hover {
+  background: var(--color-surface-hover, rgba(255, 255, 255, 0.05));
+  border-color: var(--color-border);
+}
+
+.saamx-nav-row.active {
+  background: linear-gradient(90deg, rgba(0, 229, 255, 0.14) 0%, rgba(0, 229, 255, 0.02) 100%);
+  border-color: var(--color-accent, #00E5FF);
+}
+
+.saamx-nav-row-icon {
+  color: var(--color-accent, #00E5FF);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.saamx-nav-row-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-ink, #F8FAFC);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.saamx-item-pill {
+  font-size: 0.60rem;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--color-accent-subtle, rgba(0, 229, 255, 0.15));
+  color: var(--color-accent, #00E5FF);
+}
+
+.saamx-nav-row-desc {
+  font-size: 0.72rem;
+  color: var(--color-text-muted, #94A3B8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 250px;
+}
+
+/* Drawer Footer */
+.saamx-drawer-footer {
+  padding: 14px 18px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface-2, #1A2234);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.saamx-drawer-footer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.saamx-btn-compact-mode {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  background: var(--color-surface-sunken, rgba(0, 0, 0, 0.25));
+  border: 1px solid var(--color-border);
+  color: var(--color-ink, #F8FAFC);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.saamx-drawer-logout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px;
+  background: var(--color-loss-subtle, rgba(239, 68, 68, 0.12));
+  border: 1px solid var(--color-loss-border, rgba(239, 68, 68, 0.25));
+  color: var(--color-loss-text, #EF4444);
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.80rem;
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   COMMAND PALETTE MODAL (Ctrl+K)
+   ========================================================================== */
+.saamx-command-palette-modal {
+  position: fixed;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 680px;
+  max-width: 94vw;
+  max-height: 80vh;
+  z-index: 1055;
+  background: var(--color-surface, #121722);
+  border: 1px solid var(--color-border-strong, #2D3748);
+  border-radius: 14px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: paletteScaleIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes paletteScaleIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(-12px) scale(0.97); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+.saamx-palette-search-header {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border);
+  gap: 12px;
+  background: var(--color-surface-2, #1A2234);
+}
+
+.saamx-palette-search-icon {
+  color: var(--color-accent, #00E5FF);
+}
+
+.saamx-palette-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  font-size: 1.05rem;
+  color: var(--color-ink, #F8FAFC);
+  outline: none;
+}
+
+.saamx-kbd-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: var(--color-surface-sunken, rgba(0, 0, 0, 0.25));
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted, #94A3B8);
+}
+
+.saamx-palette-pills {
+  display: flex;
+  gap: 8px;
+  padding: 10px 18px;
+  background: var(--color-surface, #121722);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.saamx-pill-btn {
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: var(--color-surface-2, #1A2234);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary, #94A3B8);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.saamx-pill-btn.active {
+  background: var(--color-accent, #00E5FF);
+  color: #0A0D14;
+  border-color: var(--color-accent, #00E5FF);
+}
+
+.saamx-palette-results {
+  max-height: 50vh;
+  overflow-y: auto;
+  padding: 8px 12px;
+}
+
+.saamx-palette-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--color-text-muted, #94A3B8);
+  font-size: 0.88rem;
+}
+
+.saamx-palette-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  margin-bottom: 4px;
+}
+
+.saamx-palette-item:hover,
+.saamx-palette-item.selected {
+  background: var(--color-surface-2, #1A2234);
+  border-left: 3px solid var(--color-accent, #00E5FF);
+}
+
+.saamx-palette-item-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.saamx-ticker-pill {
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  background: var(--color-surface-sunken, rgba(0, 0, 0, 0.25));
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  color: var(--color-accent, #00E5FF);
+}
+
+.saamx-item-title {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--color-ink, #F8FAFC);
+}
+
+.saamx-item-sub {
+  font-size: 0.72rem;
+  color: var(--color-text-muted, #94A3B8);
+}
+
+.saamx-palette-item-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.saamx-portal-badge {
+  font-size: 0.72rem;
+  color: var(--color-text-muted, #94A3B8);
+  background: var(--color-surface-sunken, rgba(0, 0, 0, 0.25));
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.saamx-palette-icon-box {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: var(--color-surface-sunken, rgba(0, 0, 0, 0.25));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-accent, #00E5FF);
+}
+
+.saamx-palette-icon-box.action {
+  color: #F59E0B;
+}
+
+.saamx-palette-footer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface-2, #1A2234);
+  font-size: 0.72rem;
+  color: var(--color-text-muted, #94A3B8);
+}
+
+.saamx-shortcut-hint kbd {
+  background: var(--color-surface-sunken, rgba(0, 0, 0, 0.25));
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 2px 5px;
+  margin-right: 4px;
+  font-family: var(--font-mono, monospace);
+}
+
+/* ==========================================================================
+   PORTFOLIO INSPECTION STYLES
+   ========================================================================== */
+.saamx-portfolio-team-bar {
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface, #121722);
+}
+
+.saamx-team-picker-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.saamx-label-sub {
+  font-size: 0.70rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--color-text-muted, #94A3B8);
+}
+
+.saamx-team-select {
+  padding: 8px 12px;
+  background: var(--color-surface-sunken, rgba(0, 0, 0, 0.25));
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  color: var(--color-ink, #F8FAFC);
+  font-size: 0.82rem;
+}
+
+.saamx-valuation-card {
+  padding: 18px;
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.08) 0%, rgba(59, 130, 246, 0.05) 100%);
+  border: 1px solid var(--color-accent-border, rgba(0, 229, 255, 0.3));
+  border-radius: 10px;
+  margin-top: 6px;
+  margin-bottom: 18px;
+}
+
+.saamx-valuation-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted, #94A3B8);
+}
+
+.saamx-valuation-amount {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: var(--color-ink, #F8FAFC);
+  margin: 6px 0;
+}
+
+.saamx-valuation-pnl {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: var(--color-text-secondary, #94A3B8);
+}
+
+.saamx-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.saamx-section-title {
+  font-size: 0.80rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-ink, #F8FAFC);
+}
+
+.saamx-section-badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--color-accent, #00E5FF);
+  background: var(--color-accent-subtle, rgba(0, 229, 255, 0.15));
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.saamx-currencies-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.saamx-currency-card {
+  padding: 10px;
+  background: var(--color-surface-2, #1A2234);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  transition: all 0.15s ease;
+}
+
+.saamx-currency-card.has-balance {
+  border-color: rgba(0, 229, 255, 0.35);
+  background: rgba(0, 229, 255, 0.03);
+}
+
+.saamx-cur-card-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.saamx-cur-flag {
+  font-size: 0.95rem;
+}
+
+.saamx-cur-code {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--color-ink, #F8FAFC);
+}
+
+.saamx-cur-amount {
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: var(--color-ink, #F8FAFC);
+}
+
+.saamx-cur-res {
+  font-size: 0.65rem;
+  color: var(--color-warn, #F59E0B);
+  margin-top: 2px;
+}
+
+.saamx-holding-row,
+.saamx-voucher-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  background: var(--color-surface-2, #1A2234);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+.saamx-empty-state {
+  padding: 20px;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--color-text-muted, #94A3B8);
+  background: var(--color-surface-sunken, rgba(0, 0, 0, 0.25));
+  border: 1px dashed var(--color-border);
+  border-radius: 8px;
+}
+
+/* ==========================================================================
+   DESK ACTIONS STYLES
+   ========================================================================== */
+.saamx-action-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.saamx-action-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--color-surface-2, #1A2234);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+  width: 100%;
+}
+
+.saamx-action-card:hover {
+  border-color: var(--color-accent, #00E5FF);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.saamx-action-card.primary {
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.12) 0%, rgba(59, 130, 246, 0.08) 100%);
+  border-color: var(--color-accent-border, rgba(0, 229, 255, 0.3));
+}
+
+.saamx-action-card-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  background: var(--color-surface-sunken, rgba(0, 0, 0, 0.25));
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-accent, #00E5FF);
+}
+
+.saamx-action-card-text {
+  flex: 1;
+}
+
+.saamx-action-card-title {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--color-ink, #F8FAFC);
+}
+
+.saamx-action-card-desc {
+  font-size: 0.74rem;
+  color: var(--color-text-muted, #94A3B8);
+  margin-top: 2px;
+}
+
+.saamx-action-arrow {
+  color: var(--color-text-muted, #94A3B8);
+}

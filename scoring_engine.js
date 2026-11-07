@@ -49,30 +49,57 @@ const DEFAULT_SCORING_CONFIG = {
   resultsLifecycle: 'CONFIGURED' // CONFIGURED, LIVE_SCORING, MARKET_CLOSED, VALUATION_FROZEN, RECONCILIATION, JUDGING_COMPLETE, APPROVED, PUBLISHED
 };
 
+const DEFAULT_FX_MID_RATES = {
+  USDINR: 88.20,
+  GBPINR: 119.40,
+  EURINR: 103.50,
+  JPYINR: 0.58,
+  AEDINR: 24.01,
+  SGDINR: 66.80,
+  CADINR: 64.50,
+  CNYINR: 12.25,
+  AUDINR: 55.50,
+  KRWINR: 0.062
+};
+
+function getMidRate(currency, fxRates = {}) {
+  if (!currency || currency === 'INR') return 1.0;
+  const pairKey = `${currency}INR`;
+  return Number(fxRates?.[pairKey]?.midRate || DEFAULT_FX_MID_RATES[pairKey] || 1.0);
+}
+
 /**
  * Calculate total equity of an Investment House
- * Safely converts multi-currency cash wallets and holdings into INR
+ * Safely converts multi-currency cash wallets and holdings into INR across all 10 supported currencies.
  */
 function calculatePortfolioValuation(team, securities = [], fxRates = {}, startingCapital = 10000000) {
   if (!team) return { totalEquity: startingCapital, cashINR: startingCapital, holdingsINR: 0, liabilitiesINR: 0 };
 
-  const usdRate = fxRates?.USDINR?.midRate || 88.20;
-  const gbpRate = fxRates?.GBPINR?.midRate || 119.40;
-  const eurRate = fxRates?.EURINR?.midRate || 103.50;
-
   // 1. Cash Wallets
   const inrCash = Number(team.cashWallets?.INR ?? team.cashBalance ?? 0);
-  const usdCash = Number(team.cashWallets?.USD || 0) * usdRate;
-  const gbpCash = Number(team.cashWallets?.GBP || 0) * gbpRate;
-  const eurCash = Number(team.cashWallets?.EUR || 0) * eurRate;
-  const totalCashINR = inrCash + usdCash + gbpCash + eurCash;
+  let otherCashINR = 0;
+  const geoWeights = { INDIA: inrCash };
+  const cashByCurrencyINR = { INR: inrCash };
+
+  if (team.cashWallets) {
+    Object.entries(team.cashWallets).forEach(([cur, val]) => {
+      if (cur === 'INR' || !val) return;
+      const rate = getMidRate(cur, fxRates);
+      const valINR = Number(val) * rate;
+      otherCashINR += valINR;
+      cashByCurrencyINR[cur] = (cashByCurrencyINR[cur] || 0) + valINR;
+
+      const geo = cur === 'USD' ? 'US' : cur === 'GBP' ? 'UK' : cur === 'EUR' ? 'EUROPE' : cur === 'JPY' ? 'JAPAN' : cur === 'CNY' ? 'CHINA' : cur === 'SGD' ? 'SINGAPORE' : cur === 'AED' ? 'UAE' : cur === 'AUD' ? 'AUSTRALIA' : cur === 'KRW' ? 'KOREA' : cur === 'CAD' ? 'CANADA' : cur === 'CHF' ? 'SWITZERLAND' : 'GLOBAL';
+      geoWeights[geo] = (geoWeights[geo] || 0) + valINR;
+    });
+  }
+  const totalCashINR = inrCash + otherCashINR;
 
   // 2. Holdings Valuation
   let totalHoldingsINR = 0;
   const holdingsBreakdown = [];
   const sectorWeights = {};
   const assetClassWeights = {};
-  const geoWeights = { INDIA: inrCash, US: usdCash, UK: gbpCash, EUROPE: eurCash };
 
   Object.entries(team.holdings || {}).forEach(([ticker, qty]) => {
     if (qty <= 0) return;
@@ -80,8 +107,8 @@ function calculatePortfolioValuation(team, securities = [], fxRates = {}, starti
     if (!sec) return;
 
     const price = Number(sec.currentPrice || sec.basePrice || 0);
-    const secCur = sec.currency || (sec.exchange === 'NASDAQ' || sec.exchange === 'NYSE' ? 'USD' : sec.exchange === 'LSE' ? 'GBP' : sec.exchange === 'XETRA' ? 'EUR' : 'INR');
-    const fx = secCur === 'USD' ? usdRate : secCur === 'GBP' ? gbpRate : secCur === 'EUR' ? eurRate : 1.0;
+    const secCur = sec.currency || (sec.exchange === 'NASDAQ' || sec.exchange === 'NYSE' ? 'USD' : sec.exchange === 'LSE' ? 'GBP' : sec.exchange === 'XETRA' ? 'EUR' : sec.exchange === 'TSE' ? 'JPY' : sec.exchange === 'SGX' ? 'SGD' : sec.exchange === 'ADX' || sec.exchange === 'DFM' ? 'AED' : sec.exchange === 'ASX' ? 'AUD' : sec.exchange === 'KRX' ? 'KRW' : sec.exchange === 'TSX' ? 'CAD' : sec.exchange === 'SIX' ? 'CHF' : sec.exchange === 'SSE' || sec.exchange === 'SZSE' ? 'CNY' : 'INR');
+    const fx = getMidRate(secCur, fxRates);
     const valueINR = qty * price * fx;
 
     totalHoldingsINR += valueINR;
@@ -89,10 +116,10 @@ function calculatePortfolioValuation(team, securities = [], fxRates = {}, starti
     const sector = sec.sector || 'Diversified';
     sectorWeights[sector] = (sectorWeights[sector] || 0) + valueINR;
 
-    const assetClass = sec.assetClass || (sec.type === 'ETF' ? 'ETF' : sec.type === 'Commodity' ? 'Commodity' : 'Equity');
+    const assetClass = sec.assetClass || (sec.type === 'ETF' ? 'ETF' : sec.type === 'Commodity' ? 'Commodity' : (sec.type === 'Mutual Fund' || sec.type === 'MutualFund') ? 'Mutual Fund' : (sec.type && sec.type.includes('Bond')) ? 'Bond' : sec.type === 'REIT' ? 'REIT' : sec.type === 'InvIT' ? 'InvIT' : 'Equity');
     assetClassWeights[assetClass] = (assetClassWeights[assetClass] || 0) + valueINR;
 
-    const geo = secCur === 'USD' ? 'US' : secCur === 'GBP' ? 'UK' : secCur === 'EUR' ? 'EUROPE' : 'INDIA';
+    const geo = secCur === 'USD' ? 'US' : secCur === 'GBP' ? 'UK' : secCur === 'EUR' ? 'EUROPE' : secCur === 'JPY' ? 'JAPAN' : secCur === 'CNY' ? 'CHINA' : secCur === 'SGD' ? 'SINGAPORE' : secCur === 'AED' ? 'UAE' : secCur === 'AUD' ? 'AUSTRALIA' : secCur === 'KRW' ? 'KOREA' : secCur === 'CAD' ? 'CANADA' : secCur === 'CHF' ? 'SWITZERLAND' : 'INDIA';
     geoWeights[geo] = (geoWeights[geo] || 0) + valueINR;
 
     holdingsBreakdown.push({
@@ -114,16 +141,26 @@ function calculatePortfolioValuation(team, securities = [], fxRates = {}, starti
     totalEquity,
     totalCashINR: parseFloat(totalCashINR.toFixed(2)),
     totalHoldingsINR: parseFloat(totalHoldingsINR.toFixed(2)),
+    cashINR: parseFloat(totalCashINR.toFixed(2)),
+    holdingsINR: parseFloat(totalHoldingsINR.toFixed(2)),
     liabilitiesINR,
     holdingsBreakdown,
     sectorWeights,
     assetClassWeights,
     geoWeights,
     currencyExposure: {
-      INR: totalEquity > 0 ? (inrCash + (geoWeights.INDIA - inrCash)) / totalEquity : 1.0,
-      USD: totalEquity > 0 ? (usdCash + (geoWeights.US - usdCash)) / totalEquity : 0,
-      GBP: totalEquity > 0 ? (gbpCash + (geoWeights.UK - gbpCash)) / totalEquity : 0,
-      EUR: totalEquity > 0 ? (eurCash + (geoWeights.EUROPE - eurCash)) / totalEquity : 0
+      INR: totalEquity > 0 ? ((cashByCurrencyINR.INR || 0) + ((geoWeights.INDIA || 0) - (cashByCurrencyINR.INR || 0))) / totalEquity : 1.0,
+      USD: totalEquity > 0 ? ((cashByCurrencyINR.USD || 0) + ((geoWeights.US || 0) - (cashByCurrencyINR.USD || 0))) / totalEquity : 0,
+      GBP: totalEquity > 0 ? ((cashByCurrencyINR.GBP || 0) + ((geoWeights.UK || 0) - (cashByCurrencyINR.GBP || 0))) / totalEquity : 0,
+      EUR: totalEquity > 0 ? ((cashByCurrencyINR.EUR || 0) + ((geoWeights.EUROPE || 0) - (cashByCurrencyINR.EUR || 0))) / totalEquity : 0,
+      JPY: totalEquity > 0 ? ((cashByCurrencyINR.JPY || 0) + ((geoWeights.JAPAN || 0) - (cashByCurrencyINR.JPY || 0))) / totalEquity : 0,
+      AED: totalEquity > 0 ? ((cashByCurrencyINR.AED || 0) + ((geoWeights.UAE || 0) - (cashByCurrencyINR.AED || 0))) / totalEquity : 0,
+      SGD: totalEquity > 0 ? ((cashByCurrencyINR.SGD || 0) + ((geoWeights.SINGAPORE || 0) - (cashByCurrencyINR.SGD || 0))) / totalEquity : 0,
+      CNY: totalEquity > 0 ? ((cashByCurrencyINR.CNY || 0) + ((geoWeights.CHINA || 0) - (cashByCurrencyINR.CNY || 0))) / totalEquity : 0,
+      AUD: totalEquity > 0 ? ((cashByCurrencyINR.AUD || 0) + ((geoWeights.AUSTRALIA || 0) - (cashByCurrencyINR.AUD || 0))) / totalEquity : 0,
+      KRW: totalEquity > 0 ? ((cashByCurrencyINR.KRW || 0) + ((geoWeights.KOREA || 0) - (cashByCurrencyINR.KRW || 0))) / totalEquity : 0,
+      CAD: totalEquity > 0 ? ((cashByCurrencyINR.CAD || 0) + ((geoWeights.CANADA || 0) - (cashByCurrencyINR.CAD || 0))) / totalEquity : 0,
+      CHF: totalEquity > 0 ? ((cashByCurrencyINR.CHF || 0) + ((geoWeights.SWITZERLAND || 0) - (cashByCurrencyINR.CHF || 0))) / totalEquity : 0
     }
   };
 }

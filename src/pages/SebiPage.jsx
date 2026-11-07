@@ -1,8 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import SplitFlapText from '../components/SplitFlapText.jsx';
 import { apiFetch } from '../lib/api.js';
+import { useDensity } from '../context/DensityContext.jsx';
 import { NEWS_PRESETS } from '../lib/newsPresets.js';
 import { db, ref, onValue } from '../lib/firebase.js';
+import {
+  Button,
+  Input,
+  Select,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardBody,
+  SectionHeader,
+  Badge,
+  Alert,
+  EmptyState
+} from '../components/ui/index.js';
+import {
+  IconBuilding,
+  IconTrophy,
+  IconRefreshCw,
+  IconAlertTriangle,
+  IconDatabase,
+  IconScale,
+  IconClipboardList,
+  IconFileText,
+  IconSend,
+  IconCheck,
+  IconX,
+  IconPlay,
+  IconPause,
+  IconSlash,
+  IconRadio,
+  IconLayers,
+  IconTrendingUp,
+  IconShieldAlert,
+  IconZap,
+  IconDownload,
+  IconClock
+} from '../lib/icons.jsx';
 
 const STAGED_INTERVENTION_PROTOCOLS = [
   { id: 'ACT_1', triggerMinute: 8, label: 'Stage 1: DTAI Loss Announcement (-22%)', actNumber: 1, type: 'news' },
@@ -21,6 +58,7 @@ const STAGED_INTERVENTION_PROTOCOLS = [
 
 
 export default function SebiPage({ state, onOpenProfile, adminPassword, connected, coordinator, isCoordinatorOffline, mySessionUuid }) {
+  const { density } = useDensity();
   const [timeLeft, setTimeLeft] = useState('60:00');
   const [serverTimeOffset, setServerTimeOffset] = useState(0);
   const [selectedEmergencySector, setSelectedEmergencySector] = useState('');
@@ -67,19 +105,71 @@ export default function SebiPage({ state, onOpenProfile, adminPassword, connecte
 
   // Clock countdown timer logic
   useEffect(() => {
-    const status = state.marketState.status;
-    const startTime = state.marketState.simulationStartTime;
-    const durationMins = state.marketState.simulationDurationMinutes;
-    const pauseOffset = state.marketState.pauseTimeOffset || 0;
-    const pausedAt = state.marketState.pausedAt;
-
-    if (status === 'NotStarted' || !startTime) {
-      setTimeLeft(`${String(durationMins).padStart(2, '0')}:00`);
-      return;
-    }
+    const status = state?.marketState?.status || 'NotStarted';
+    const startTime = state?.marketState?.simulationStartTime;
+    const durationMins = state?.marketState?.simulationDurationMinutes || 360;
+    const mode = state?.marketState?.timerMode || 'SCHEDULE_SYNC';
+    const pauseOffset = state?.marketState?.pauseTimeOffset || 0;
+    const pausedAt = state?.marketState?.pausedAt;
 
     if (status === 'Closed') {
       setTimeLeft('00:00');
+      return;
+    }
+
+    if (mode === 'SCHEDULE_SYNC') {
+      const updateScheduleClock = () => {
+        const currentServerTime = Date.now() + serverTimeOffset;
+        let curHours = 9, curMins = 30, curSecs = 0;
+        try {
+          const parts = new Intl.DateTimeFormat('en-GB', {
+            timeZone: 'Asia/Kolkata',
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+          }).formatToParts(new Date(currentServerTime));
+          curHours = parseInt(parts.find(p => p.type === 'hour')?.value || '9', 10);
+          curMins = parseInt(parts.find(p => p.type === 'minute')?.value || '30', 10);
+          curSecs = parseInt(parts.find(p => p.type === 'second')?.value || '0', 10);
+        } catch (e) {
+          const d = new Date(currentServerTime);
+          curHours = d.getHours();
+          curMins = d.getMinutes();
+          curSecs = d.getSeconds();
+        }
+        const curTotalMins = curHours * 60 + curMins;
+
+        if (curTotalMins >= 15 * 60 + 30) {
+          setTimeLeft('00:00');
+          return;
+        }
+
+        let targetMins = 15 * 60 + 30;
+        if (curTotalMins < 9 * 60 + 30) {
+          targetMins = 9 * 60 + 30;
+        } else if (curTotalMins >= 12 * 60 && curTotalMins < 13 * 60) {
+          targetMins = 13 * 60;
+        }
+
+        const diffMins = Math.max(0, targetMins - curTotalMins);
+        const diffSecs = (60 - curSecs) % 60;
+        const displayMins = diffSecs === 0 ? diffMins : Math.max(0, diffMins - 1);
+        const displayHours = Math.floor(displayMins / 60);
+        const remMins = displayMins % 60;
+        const formatted = displayHours > 0
+          ? `${String(displayHours).padStart(2, '0')}:${String(remMins).padStart(2, '0')}:${String(diffSecs).padStart(2, '0')}`
+          : `${String(remMins).padStart(2, '0')}:${String(diffSecs).padStart(2, '0')}`;
+        setTimeLeft(formatted);
+      };
+
+      updateScheduleClock();
+      const interval = setInterval(updateScheduleClock, 1000);
+      return () => clearInterval(interval);
+    }
+
+    if (status === 'NotStarted' || !startTime) {
+      setTimeLeft(`${String(durationMins).padStart(2, '0')}:00`);
       return;
     }
 
@@ -106,7 +196,7 @@ export default function SebiPage({ state, onOpenProfile, adminPassword, connecte
       const interval = setInterval(updateClock, 1000);
       return () => clearInterval(interval);
     }
-  }, [state.marketState.status, state.marketState.simulationStartTime, state.marketState.simulationDurationMinutes, state.marketState.pauseTimeOffset, state.marketState.pausedAt, serverTimeOffset]);
+  }, [state?.marketState, serverTimeOffset]);
 
   // Preset news sequence player logic
   const currentNewsStep = state?.settings?.currentNewsStep || 1;
@@ -281,7 +371,7 @@ export default function SebiPage({ state, onOpenProfile, adminPassword, connecte
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        alert(`🏆 MARKET RECONCILED & RESULTS PUBLISHED!\n\nRank 1: Team ${data.leaderboard?.[0]?.teamId} (₹${data.leaderboard?.[0]?.portfolioValue?.toLocaleString()})\nRank 2: Team ${data.leaderboard?.[1]?.teamId} (₹${data.leaderboard?.[1]?.portfolioValue?.toLocaleString()})\nRank 3: Team ${data.leaderboard?.[2]?.teamId} (₹${data.leaderboard?.[2]?.portfolioValue?.toLocaleString()})\n\nSession state has been transitioned to 'RESULTS'. All trading remains securely frozen.`);
+        alert(`MARKET RECONCILED & RESULTS PUBLISHED!\n\nRank 1: Team ${data.leaderboard?.[0]?.teamId} (₹${data.leaderboard?.[0]?.portfolioValue?.toLocaleString()})\nRank 2: Team ${data.leaderboard?.[1]?.teamId} (₹${data.leaderboard?.[1]?.portfolioValue?.toLocaleString()})\nRank 3: Team ${data.leaderboard?.[2]?.teamId} (₹${data.leaderboard?.[2]?.portfolioValue?.toLocaleString()})\n\nSession state has been transitioned to 'RESULTS'. All trading remains securely frozen.`);
       } else {
         alert('Reconciliation failed: ' + (data.error || 'Unknown error occurred.'));
       }
@@ -334,14 +424,20 @@ export default function SebiPage({ state, onOpenProfile, adminPassword, connecte
 
   const handleClaimCoordinator = async () => {
     try {
-      const { set, ref } = await import('../lib/firebase.js');
-      await set(ref(db, 'fms/coordinator'), {
-        owner: 'sebi',
-        lastActive: Date.now() + serverTimeOffset,
-        claimedAt: Date.now() + serverTimeOffset,
-        id: mySessionUuid
+      // 1. Authoritative Backend Claim (strictly validated by server RBAC)
+      const token = localStorage.getItem('token') || localStorage.getItem('saamx_token');
+      const headers = { 'Content-Type': 'application/json' };
+      await apiFetch('/api/coordinator/claim', {
+        method: 'POST',
+        body: JSON.stringify({
+          sessionUuid: mySessionUuid,
+          role: 'sebi'
+        })
       });
-      alert('Coordinator status claimed successfully!');
+
+      // Coordinator claimed authoritatively via backend POST /api/coordinator/claim; RTDB heartbeat mirrored at ref(db, 'fms/coordinator')
+
+      alert('Coordinator status claimed successfully via authoritative backend!');
     } catch (e) {
       alert('Failed to claim coordinator: ' + e.message);
     }
@@ -352,7 +448,7 @@ export default function SebiPage({ state, onOpenProfile, adminPassword, connecte
     setInvestigatingSecIds({ ...investigatingSecIds, [sec.id]: true });
     const refNum = `SEBI/SAAMX/2026/${state.newsEvents.length + 1001}`;
     const payload = {
-      headline: `⚖️ SEBI Opens Formal Investigation into ${sec.name} (${sec.ticker})`,
+      headline: `[SEBI INVESTIGATION] Formal Investigation Opened into ${sec.name} (${sec.ticker})`,
       description: `Ref No: ${refNum}\n\nRegulatory desks initiate forensic audit citing accounting and reporting irregularities. Asset remains tradable pending findings.`,
       sentiment: 'Neutral',
       impactPercent: 0,
@@ -428,7 +524,7 @@ export default function SebiPage({ state, onOpenProfile, adminPassword, connecte
     }
 
     const refNum = `SEBI/SAAMX/2026/${state.newsEvents.length + 1001}`;
-    const fullHeadline = `⚖️ [SEBI ${noticeType}] ${headline}`;
+    const fullHeadline = `[SEBI ${noticeType.toUpperCase()}] ${headline}`;
     const fullDesc = `Ref No: ${refNum}\n\n${description}`;
 
     const payload = {
@@ -503,7 +599,7 @@ export default function SebiPage({ state, onOpenProfile, adminPassword, connecte
 
   const handleQuickPublishSebiNotice = async (notice) => {
     const nextRefNum = `SEBI/SAAMX/2026/${state.newsEvents.length + 1001}`;
-    const fullHeadline = `⚖️ [SEBI ${notice.type}] ${notice.headline}`;
+    const fullHeadline = `[SEBI ${notice.type.toUpperCase()}] ${notice.headline}`;
     const fullDesc = `Ref No: ${nextRefNum}\n\n${notice.description}`;
 
     const payload = {
@@ -580,108 +676,124 @@ export default function SebiPage({ state, onOpenProfile, adminPassword, connecte
   const refNum = `SEBI/SAAMX/2026/${state.newsEvents.length + 1001}`;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '12px', boxSizing: 'border-box' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: density === 'compact' ? '12px' : '18px', padding: density === 'compact' ? '12px 16px 104px' : '20px 24px 104px', maxWidth: '1680px', margin: '0 auto', boxSizing: 'border-box' }}>
       {/* Institutional SEBI Desk Header */}
-      <div className="card-primary" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', borderLeft: '6px solid var(--color-brass)', padding: '20px 24px' }}>
-        <div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.74rem', color: '#6C4404', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
-            <span>🏛️ SECURITIES & EXCHANGE BOARD SURVEILLANCE</span>
+      <Card variant="frosted" density={density} style={{ borderLeft: '6px solid var(--color-warning)', padding: density === 'compact' ? '14px 18px' : '20px 24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+          <div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.74rem', color: 'var(--color-warning)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
+              <IconBuilding size={14} color="var(--color-warning)" />
+              <span>SECURITIES & EXCHANGE BOARD SURVEILLANCE</span>
+            </div>
+            <h1 style={{ fontSize: density === 'compact' ? '1.6rem' : '2rem', fontWeight: 900, fontFamily: 'var(--font-brand)', margin: 0, color: 'var(--color-text-primary)' }}>
+              SEBI Regulatory Command Console
+            </h1>
+            <p style={{ margin: '4px 0 0 0', fontSize: density === 'compact' ? '0.82rem' : '0.88rem', color: 'var(--color-text-secondary)', fontWeight: 500 }}>
+              Market oversight, circuit breaker intervention, regulatory announcements & audit reconciliation.
+            </p>
           </div>
-          <h1 style={{ fontSize: '2rem', fontWeight: 900, fontFamily: 'var(--font-brand)', margin: 0, color: 'var(--color-ink)' }}>
-            SEBI Regulatory Command Console
-          </h1>
-          <p style={{ margin: '4px 0 0 0', fontSize: '0.88rem', color: '#242C38', fontWeight: 500 }}>
-            Market oversight, circuit breaker intervention, regulatory announcements & audit reconciliation.
-          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <Button
+              variant="primary"
+              onClick={handleReconcileMarket}
+              style={{ padding: density === 'compact' ? '8px 14px' : '10px 18px', fontSize: '0.88rem', fontWeight: 800 }}
+            >
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                <IconTrophy size={16} />
+                <span>Reconcile & Publish Results</span>
+              </span>
+            </Button>
+          </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-          <button
-            onClick={handleReconcileMarket}
-            className="btn btn-primary"
-            style={{ padding: '10px 18px', fontSize: '0.88rem', fontWeight: 800 }}
-          >
-            🏆 Reconcile & Publish Results
-          </button>
-        </div>
-      </div>
+      </Card>
 
       {/* Mode Control & Health Status Matrix */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: '1fr 1.2fr',
-        gap: '16px'
+        gap: density === 'compact' ? '12px' : '16px'
       }}>
         {/* Simulation Mode Toggle card */}
-        <div className="glass card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <strong style={{ fontSize: '0.75rem', color: 'var(--color-ink-2)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>SIMULATION MODE</strong>
+        <Card variant="frosted" density={density} style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <strong style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>SIMULATION MODE</strong>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span className="font-display" style={{ fontSize: '1.2rem', color: 'var(--color-brass)', fontWeight: 'bold' }}>
+            <span className="font-display" style={{ fontSize: '1.2rem', color: 'var(--color-warning)', fontWeight: 'bold' }}>
               {state.marketState?.mode || 'DEMO'} MODE
             </span>
-            <button
-              type="button"
-              className="btn"
-              style={{
-                padding: '6px 12px',
-                fontSize: '0.75rem',
-                backgroundColor: 'var(--color-surface-3)',
-                color: 'var(--color-ink)',
-                border: '1px solid var(--color-border)',
-                cursor: 'pointer',
-                fontWeight: 'bold'
-              }}
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={() => handleSetMode((state.marketState?.mode || 'DEMO') === 'DEMO' ? 'EVENT' : 'DEMO')}
             >
-              🔄 Switch to {(state.marketState?.mode || 'DEMO') === 'DEMO' ? 'EVENT' : 'DEMO'}
-            </button>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <IconRefreshCw size={14} />
+                <span>Switch to {(state.marketState?.mode || 'DEMO') === 'DEMO' ? 'EVENT' : 'DEMO'}</span>
+              </span>
+            </Button>
           </div>
-        </div>
+        </Card>
 
         {/* Health check panel */}
-        <div className="glass card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <strong style={{ fontSize: '0.75rem', color: 'var(--color-ink-2)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>CORE DESK HEALTH</strong>
+        <Card variant="frosted" density={density} style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <strong style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>CORE DESK HEALTH</strong>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', fontSize: '0.8rem', alignItems: 'center' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: connected ? '#22c55e' : '#ef4444', display: 'inline-block' }}></span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-text-primary)' }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: connected ? 'var(--color-rise)' : 'var(--color-fall)', display: 'inline-block' }}></span>
               {connected ? 'Firebase Online' : 'Firebase Offline'}
             </span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: !isCoordinatorOffline ? '#22c55e' : '#ef4444', display: 'inline-block' }}></span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-text-primary)' }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: !isCoordinatorOffline ? 'var(--color-rise)' : 'var(--color-fall)', display: 'inline-block' }}></span>
               {!isCoordinatorOffline ? 'Coordinator Heartbeat Active' : 'Coordinator Heartbeat Missing'}
             </span>
             {isCoordinatorOffline && (
-              <button
-                type="button"
-                className="btn btn-secondary"
-                style={{ padding: '4px 8px', fontSize: '0.65rem', backgroundColor: 'var(--color-fall-light)', color: 'var(--color-fall)', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}
+              <Button
+                variant="danger"
+                size="sm"
+                style={{ padding: '4px 8px', fontSize: '0.65rem' }}
                 onClick={handleClaimCoordinator}
               >
-                ⚠ Claim Coordinator
-              </button>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <IconAlertTriangle size={12} />
+                  <span>Claim Coordinator</span>
+                </span>
+              </Button>
             )}
-            <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-ink-2)' }}>
-              📂 Backups: {Object.keys(state.backups || {}).length}
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-text-secondary)' }}>
+              <IconDatabase size={14} />
+              <span>Backups: <strong className="font-mono tabular-nums" style={{ color: 'var(--color-text-primary)' }}>{Object.keys(state.backups || {}).length}</strong></span>
             </span>
           </div>
-        </div>
+        </Card>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: density === 'compact' ? '16px' : '24px' }}>
       
       {/* Column 1: Bulletin Composer & History */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: density === 'compact' ? '16px' : '24px' }}>
         
         {/* Panel 1: Broadcast bulletin news composer */}
-        <div className="glass card">
-          <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-brass)', fontSize: '1.5rem', marginBottom: '16px' }}>
+        <Card variant="frosted" density={density}>
+          <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-warning)', fontSize: '1.4rem', marginBottom: '16px', fontWeight: 800 }}>
             SEBI Regulatory Notice Composer
           </h3>
           
           <form onSubmit={handleBroadcastNews} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <div className="form-group">
-                <label>Notice Type</label>
-                <select className="input-field" value={noticeType} onChange={e => setNoticeType(e.target.value)}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>Notice Type</label>
+                <select
+                  value={noticeType}
+                  onChange={e => setNoticeType(e.target.value)}
+                  style={{
+                    padding: '10px 12px',
+                    borderRadius: 'var(--radius-sm, 6px)',
+                    backgroundColor: 'var(--color-surface)',
+                    color: 'var(--color-text-primary)',
+                    border: '1px solid var(--color-border)',
+                    fontSize: '0.88rem',
+                    outline: 'none'
+                  }}
+                >
                   <option value="Circular">Circular</option>
                   <option value="Advisory">Advisory</option>
                   <option value="Show Cause Notice">Show Cause Notice</option>
@@ -690,126 +802,174 @@ export default function SebiPage({ state, onOpenProfile, adminPassword, connecte
                   <option value="Press Release">Press Release</option>
                 </select>
               </div>
-              <div className="form-group">
-                <label>Reference Number (Auto)</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>Reference Number (Auto)</label>
                 <input
                   type="text"
-                  className="input-field font-data"
-                  style={{ backgroundColor: 'var(--color-surface-2)', cursor: 'not-allowed' }}
+                  className="font-data tabular-nums"
+                  style={{
+                    padding: '10px 12px',
+                    borderRadius: 'var(--radius-sm, 6px)',
+                    backgroundColor: 'var(--color-surface-subtle)',
+                    color: 'var(--color-text-muted)',
+                    border: '1px solid var(--color-border)',
+                    fontSize: '0.88rem',
+                    fontFamily: 'var(--font-mono)',
+                    cursor: 'not-allowed'
+                  }}
                   disabled
                   value={refNum}
                 />
               </div>
             </div>
 
-            <div className="form-group">
-              <label>Announcement Headline</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>Announcement Headline</label>
               <input
                 type="text"
-                className="input-field"
                 required
                 placeholder="Enter regulatory notice headline..."
                 value={headline}
                 onChange={e => setHeadline(e.target.value)}
+                style={{
+                  padding: '10px 12px',
+                  borderRadius: 'var(--radius-sm, 6px)',
+                  backgroundColor: 'var(--color-surface)',
+                  color: 'var(--color-text-primary)',
+                  border: '1px solid var(--color-border)',
+                  fontSize: '0.9rem',
+                  outline: 'none'
+                }}
               />
             </div>
             
-            <div className="form-group">
-              <label>Official Details & Context</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>Official Details & Context</label>
               <textarea
-                className="input-field font-data"
                 rows="4"
                 placeholder="Provide official regulatory bulletin text..."
-                style={{ resize: 'none' }}
+                style={{
+                  padding: '10px 12px',
+                  borderRadius: 'var(--radius-sm, 6px)',
+                  backgroundColor: 'var(--color-surface)',
+                  color: 'var(--color-text-primary)',
+                  border: '1px solid var(--color-border)',
+                  fontSize: '0.88rem',
+                  resize: 'none',
+                  outline: 'none',
+                  fontFamily: 'var(--font-sans)'
+                }}
                 value={description}
                 onChange={e => setDescription(e.target.value)}
               />
             </div>
 
-            <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '12px', fontWeight: 'bold' }}>
-              ⚖️ Issue Official Notice
-            </button>
+            <Button type="submit" variant="primary" style={{ width: '100%', padding: '12px', fontWeight: 800 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                <IconScale size={16} />
+                <span>Issue Official Notice</span>
+              </span>
+            </Button>
           </form>
-        </div>
+        </Card>
 
         {/* Panel: Staged Regulatory Notices Deck */}
-        <div className="glass card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-ink)', fontSize: '1.25rem' }}>
-            📋 Staged Regulatory Bulletins
+        <Card variant="frosted" density={density} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <h3 style={{ fontFamily: 'var(--font-brand)', color: 'var(--color-text-primary)', fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '8px', margin: 0, fontWeight: 800 }}>
+            <IconClipboardList size={18} color="var(--color-warning)" />
+            <span>Staged Regulatory Bulletins</span>
           </h3>
-          <p style={{ color: 'var(--color-ink-2)', fontSize: '0.8rem', margin: 0 }}>
+          <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.8rem', margin: 0 }}>
             Select a staged regulatory template to draft or broadcast it directly to the scrolling ticker.
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '280px', overflowY: 'auto' }}>
             {PRE_GENERATED_SEBI_NOTICES.map((notice, idx) => (
-              <div key={idx} className="glass" style={{ padding: '12px', borderLeft: '4px solid var(--color-brass)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div key={idx} style={{ padding: '12px', borderRadius: 'var(--radius-sm, 6px)', backgroundColor: 'var(--color-surface-subtle)', border: '1px solid var(--color-border)', borderLeft: '4px solid var(--color-warning)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <strong style={{ fontSize: '0.85rem', color: 'var(--color-ink)' }}>{notice.headline}</strong>
-                  <span className="badge badge-public" style={{ fontSize: '0.6rem' }}>{notice.type}</span>
+                  <strong style={{ fontSize: '0.85rem', color: 'var(--color-text-primary)' }}>{notice.headline}</strong>
+                  <span className="badge badge-public" style={{ fontSize: '0.65rem' }}>{notice.type}</span>
                 </div>
-                <p style={{ color: 'var(--color-ink-2)', fontSize: '0.75rem', margin: 0 }}>{notice.description}</p>
+                <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', margin: 0 }}>{notice.description}</p>
                 <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                  <button type="button" className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: '0.7rem' }} onClick={() => handleApplySebiNotice(notice)}>
-                    📝 Draft Notice
-                  </button>
-                  <button type="button" className="btn" style={{ padding: '2px 8px', fontSize: '0.7rem', backgroundColor: 'var(--color-brass-light)', color: 'var(--color-brass)', border: 'none' }} onClick={() => handleQuickPublishSebiNotice(notice)}>
-                    🚀 Broadcast Live
-                  </button>
+                  <Button variant="secondary" size="sm" onClick={() => handleApplySebiNotice(notice)}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <IconFileText size={12} />
+                      <span>Draft Notice</span>
+                    </span>
+                  </Button>
+                  <Button variant="primary" size="sm" onClick={() => handleQuickPublishSebiNotice(notice)}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <IconSend size={12} />
+                      <span>Broadcast Live</span>
+                    </span>
+                  </Button>
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </Card>
 
         {/* Dispatch History List */}
-        <div className="glass card">
-          <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-ink)', fontSize: '1.25rem', marginBottom: '16px' }}>
+        <Card variant="frosted" density={density}>
+          <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text-primary)', fontSize: '1.25rem', marginBottom: '16px', fontWeight: 800 }}>
             Historical Bulletin Log
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '250px', overflowY: 'auto' }}>
             {broadcastedNews.length === 0 ? (
-              <div style={{ color: 'var(--color-ink-3)', fontSize: '0.85rem' }}>No bulletins broadcasted yet this session.</div>
+              <div style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>No bulletins broadcasted yet this session.</div>
             ) : (
               broadcastedNews.map(n => (
                 <div key={n.id} style={{ borderBottom: '1px solid var(--color-border)', paddingBottom: '10px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--color-brass)' }}>
+                    <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--color-warning)' }}>
                       {n.headline}
                     </span>
-                    <span className="font-data" style={{ fontSize: '0.7rem', color: 'var(--color-ink-3)' }}>
+                    <span className="font-data tabular-nums" style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }}>
                       {new Date(n.triggeredAt).toLocaleTimeString()}
                     </span>
                   </div>
-                  <p style={{ color: 'var(--color-ink-2)', fontSize: '0.75rem', marginTop: '4px', whiteSpace: 'pre-line' }}>{n.description}</p>
+                  <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.75rem', marginTop: '4px', whiteSpace: 'pre-line' }}>{n.description}</p>
                 </div>
               ))
             )}
           </div>
-        </div>
+        </Card>
 
       </div>
 
       {/* Column 2: Clock Timeline Control & Freeze Matrix */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: density === 'compact' ? '16px' : '24px' }}>
         
-        {/* Panel 2: Timeline Controls */}
-        <div className="glass card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-ink)', fontSize: '1.25rem' }}>
-            Simulation Control Deck
-          </h3>
+        {/* Panel 2: Simulation Control Deck */}
+        <Card variant="frosted" density={density} style={{ display: 'flex', flexDirection: 'column', gap: density === 'compact' ? '12px' : '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text-primary)', fontSize: '1.15rem', margin: 0, fontWeight: 700 }}>
+              Simulation Control Deck
+            </h3>
+            <Badge variant={state.marketState.status === 'Open' ? 'success' : state.marketState.status === 'Paused' ? 'warning' : 'neutral'}>
+              {state.marketState.status || 'NotStarted'}
+            </Badge>
+          </div>
           
-          <div style={{ display: 'flex', justifyContent: 'space-between', backgroundColor: 'var(--color-surface-2)', padding: '16px', borderRadius: '10px' }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            backgroundColor: 'rgba(255, 255, 255, 0.03)',
+            border: '1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.08))',
+            padding: density === 'compact' ? '12px' : '16px',
+            borderRadius: '10px'
+          }}>
             <div>
-              <span style={{ fontSize: '0.7rem', color: 'var(--color-ink-2)', display: 'block', textTransform: 'uppercase', fontWeight: 600 }}>SIMULATED CLOCK</span>
+              <span style={{ fontSize: '0.68rem', color: 'var(--color-text-secondary)', display: 'block', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>SIMULATED CLOCK</span>
               <SplitFlapText text={state.marketState.timeString || '09:00 AM'} />
-              <span style={{ fontSize: '0.7rem', color: 'var(--color-ink-3)', display: 'block', marginTop: '4px' }}>
-                REMAINING: {state.marketState.timeLeftString || '60:00'}
+              <span className="font-data tabular-nums" style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', display: 'block', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
+                REMAINING: {timeLeft || state.marketState.timeLeftString || '00:00'}
               </span>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <span style={{ fontSize: '0.7rem', color: 'var(--color-ink-2)', display: 'block', textTransform: 'uppercase', fontWeight: 600 }}>SESSION PHASE</span>
+              <span style={{ fontSize: '0.68rem', color: 'var(--color-text-secondary)', display: 'block', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>SESSION PHASE</span>
               <SplitFlapText text={state.marketState.sessionState || 'PRE_OPEN'} />
-              <span style={{ fontSize: '0.7rem', color: 'var(--color-ink-3)', display: 'block', marginTop: '4px' }}>
+              <span className="font-data tabular-nums" style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', display: 'block', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
                 STATUS: {state.marketState.status || 'NotStarted'}
               </span>
             </div>
@@ -817,49 +977,63 @@ export default function SebiPage({ state, onOpenProfile, adminPassword, connecte
 
           {state.marketState.status === 'NotStarted' && (
             <div style={{
-              backgroundColor: 'var(--color-surface-2)',
+              backgroundColor: 'rgba(255, 255, 255, 0.02)',
               padding: '12px 16px',
               borderRadius: '8px',
-              border: '1px solid var(--color-border)',
+              border: '1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.08))',
               fontSize: '0.8rem',
               display: 'flex',
               flexDirection: 'column',
               gap: '6px',
-              marginBottom: '12px'
+              marginBottom: '8px'
             }}>
-              <strong style={{ color: 'var(--color-ink)', display: 'block', marginBottom: '4px' }}>📋 PRE-OPEN INTEGRITY CHECKLIST</strong>
-              <div style={{ color: preOpenChecks.firebaseConnected ? 'var(--color-rise)' : 'var(--color-fall)' }}>
-                {preOpenChecks.firebaseConnected ? '✓' : '✗'} Firebase connected
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                <IconClipboardList size={16} color="var(--color-warning)" />
+                <strong style={{ color: 'var(--color-text-primary)' }}>PRE-OPEN INTEGRITY CHECKLIST</strong>
               </div>
-              <div style={{ color: preOpenChecks.sessionInitialized ? 'var(--color-rise)' : 'var(--color-fall)' }}>
-                {preOpenChecks.sessionInitialized ? '✓' : '✗'} Session initialized
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: preOpenChecks.firebaseConnected ? 'var(--color-rise)' : 'var(--color-fall)' }}>
+                {preOpenChecks.firebaseConnected ? <IconCheck size={14} color="var(--color-rise)" /> : <IconX size={14} color="var(--color-fall)" />}
+                <span>Firebase connected</span>
               </div>
-              <div style={{ color: preOpenChecks.activeTeamCountConfigured ? 'var(--color-rise)' : 'var(--color-fall)' }}>
-                {preOpenChecks.activeTeamCountConfigured ? '✓' : '✗'} Active team count configured ({state.marketState?.activeTeamCount || 10} Teams)
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: preOpenChecks.sessionInitialized ? 'var(--color-rise)' : 'var(--color-fall)' }}>
+                {preOpenChecks.sessionInitialized ? <IconCheck size={14} color="var(--color-rise)" /> : <IconX size={14} color="var(--color-fall)" />}
+                <span>Session initialized</span>
               </div>
-              <div style={{ color: preOpenChecks.expectedTeamsPresent ? 'var(--color-rise)' : 'var(--color-fall)' }}>
-                {preOpenChecks.expectedTeamsPresent ? '✓' : '✗'} Expected teams present
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: preOpenChecks.activeTeamCountConfigured ? 'var(--color-rise)' : 'var(--color-fall)' }}>
+                {preOpenChecks.activeTeamCountConfigured ? <IconCheck size={14} color="var(--color-rise)" /> : <IconX size={14} color="var(--color-fall)" />}
+                <span className="tabular-nums">Active team count configured ({state.marketState?.activeTeamCount || 10} Teams)</span>
               </div>
-              <div style={{ color: preOpenChecks.startingCapitalVerified ? 'var(--color-rise)' : 'var(--color-fall)' }}>
-                {preOpenChecks.startingCapitalVerified ? '✓' : '✗'} Starting cash & portfolio value verified
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: preOpenChecks.expectedTeamsPresent ? 'var(--color-rise)' : 'var(--color-fall)' }}>
+                {preOpenChecks.expectedTeamsPresent ? <IconCheck size={14} color="var(--color-rise)" /> : <IconX size={14} color="var(--color-fall)" />}
+                <span>Expected teams present</span>
               </div>
-              <div style={{ color: preOpenChecks.startingHoldingsVerified ? 'var(--color-rise)' : 'var(--color-fall)' }}>
-                {preOpenChecks.startingHoldingsVerified ? '✓' : '✗'} Starting holdings verified empty
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: preOpenChecks.startingCapitalVerified ? 'var(--color-rise)' : 'var(--color-fall)' }}>
+                {preOpenChecks.startingCapitalVerified ? <IconCheck size={14} color="var(--color-rise)" /> : <IconX size={14} color="var(--color-fall)" />}
+                <span>Starting cash & portfolio value verified</span>
               </div>
-              <div style={{ color: preOpenChecks.teamPortfoliosReset ? 'var(--color-rise)' : 'var(--color-fall)' }}>
-                {preOpenChecks.teamPortfoliosReset ? '✓' : '✗'} Team portfolios reset
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: preOpenChecks.startingHoldingsVerified ? 'var(--color-rise)' : 'var(--color-fall)' }}>
+                {preOpenChecks.startingHoldingsVerified ? <IconCheck size={14} color="var(--color-rise)" /> : <IconX size={14} color="var(--color-fall)" />}
+                <span>Starting holdings verified empty</span>
               </div>
-              <div style={{ color: preOpenChecks.transactionHistoryEmpty ? 'var(--color-rise)' : 'var(--color-fall)' }}>
-                {preOpenChecks.transactionHistoryEmpty ? '✓' : '✗'} Transaction history empty
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: preOpenChecks.teamPortfoliosReset ? 'var(--color-rise)' : 'var(--color-fall)' }}>
+                {preOpenChecks.teamPortfoliosReset ? <IconCheck size={14} color="var(--color-rise)" /> : <IconX size={14} color="var(--color-fall)" />}
+                <span>Team portfolios reset</span>
               </div>
-              <div style={{ color: preOpenChecks.newsFeedEmpty ? 'var(--color-rise)' : 'var(--color-fall)' }}>
-                {preOpenChecks.newsFeedEmpty ? '✓' : '✗'} News feed empty
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: preOpenChecks.transactionHistoryEmpty ? 'var(--color-rise)' : 'var(--color-fall)' }}>
+                {preOpenChecks.transactionHistoryEmpty ? <IconCheck size={14} color="var(--color-rise)" /> : <IconX size={14} color="var(--color-fall)" />}
+                <span>Transaction history empty</span>
               </div>
-              <div style={{ color: preOpenChecks.noBankruptcies ? 'var(--color-rise)' : 'var(--color-fall)' }}>
-                {preOpenChecks.noBankruptcies ? '✓' : '✗'} No bankruptcies
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: preOpenChecks.newsFeedEmpty ? 'var(--color-rise)' : 'var(--color-fall)' }}>
+                {preOpenChecks.newsFeedEmpty ? <IconCheck size={14} color="var(--color-rise)" /> : <IconX size={14} color="var(--color-fall)" />}
+                <span>News feed empty</span>
               </div>
-              <div style={{ color: preOpenChecks.noActiveOverrides ? 'var(--color-rise)' : 'var(--color-fall)' }}>
-                {preOpenChecks.noActiveOverrides ? '✓' : '✗'} No active overrides or velocity targets
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: preOpenChecks.noBankruptcies ? 'var(--color-rise)' : 'var(--color-fall)' }}>
+                {preOpenChecks.noBankruptcies ? <IconCheck size={14} color="var(--color-rise)" /> : <IconX size={14} color="var(--color-fall)" />}
+                <span>No bankruptcies</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: preOpenChecks.noActiveOverrides ? 'var(--color-rise)' : 'var(--color-fall)' }}>
+                {preOpenChecks.noActiveOverrides ? <IconCheck size={14} color="var(--color-rise)" /> : <IconX size={14} color="var(--color-fall)" />}
+                <span>No active overrides or velocity targets</span>
               </div>
 
               {!isMarketReady && (
@@ -867,12 +1041,16 @@ export default function SebiPage({ state, onOpenProfile, adminPassword, connecte
                   color: 'var(--color-fall)',
                   fontWeight: 'bold',
                   marginTop: '8px',
-                  borderTop: '1px solid var(--color-border)',
+                  borderTop: '1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.08))',
                   paddingTop: '8px',
                   fontSize: '0.75rem',
-                  lineHeight: '1.4'
+                  lineHeight: '1.4',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
                 }}>
-                  ⚠️ INTEGRITY CHECK FAILED. You must complete a MASTER RESET from the Admin page before starting the session.
+                  <IconAlertTriangle size={14} color="var(--color-fall)" />
+                  <span>INTEGRITY CHECK FAILED. You must complete a MASTER RESET from the Admin page before starting the session.</span>
                 </div>
               )}
             </div>
@@ -880,75 +1058,101 @@ export default function SebiPage({ state, onOpenProfile, adminPassword, connecte
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             {state.marketState.status === 'NotStarted' ? (
-              <button
-                className="btn btn-primary"
+              <Button
+                variant="primary"
                 style={{
                   gridColumn: 'span 2',
-                  backgroundColor: isMarketReady ? 'var(--color-rise)' : 'var(--color-border)',
+                  backgroundColor: isMarketReady ? 'var(--color-rise)' : 'var(--color-border-subtle, rgba(255, 255, 255, 0.1))',
                   cursor: isMarketReady ? 'pointer' : 'not-allowed',
                   opacity: isMarketReady ? 1 : 0.6
                 }}
                 disabled={!isMarketReady}
                 onClick={() => handleMarketControl('START')}
               >
-                🚀 Start Session
-              </button>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                  <IconPlay size={16} />
+                  <span>Start Session</span>
+                </span>
+              </Button>
             ) : (
               <>
                 {state.marketState.status === 'Open' ? (
-                  <button className="btn btn-secondary" style={{ backgroundColor: 'var(--color-brass-light)', color: 'var(--color-brass)' }} onClick={() => handleMarketControl('PAUSE')}>
-                    ⏸ Pause Session
-                  </button>
+                  <Button variant="secondary" onClick={() => handleMarketControl('PAUSE')}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                      <IconPause size={14} />
+                      <span>Pause Session</span>
+                    </span>
+                  </Button>
                 ) : (
-                  <button className="btn btn-primary" onClick={() => handleMarketControl('RESUME')}>
-                    ▶ Resume Session
-                  </button>
+                  <Button variant="primary" onClick={() => handleMarketControl('RESUME')}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                      <IconPlay size={14} />
+                      <span>Resume Session</span>
+                    </span>
+                  </Button>
                 )}
-                <button className="btn" style={{ backgroundColor: 'var(--color-fall-light)', color: 'var(--color-fall)' }} onClick={() => handleMarketControl('CLOSE')}>
-                  ⏹ Stop/Close Session
-                </button>
+                <Button variant="danger" onClick={() => handleMarketControl('CLOSE')}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <IconSlash size={14} />
+                    <span>Stop/Close Session</span>
+                  </span>
+                </Button>
               </>
             )}
           </div>
 
           {/* Emergency Action Matrix */}
           <div style={{
-            borderTop: '1px solid var(--color-border)',
+            borderTop: '1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.08))',
             paddingTop: '16px',
             marginTop: '8px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '16px'
+            gap: '14px'
           }}>
-            <h4 style={{ margin: 0, fontFamily: 'var(--font-display)', fontSize: '1rem', color: 'var(--color-fall)' }}>
-              🚨 Emergency Action Console
+            <h4 style={{ margin: 0, fontFamily: 'var(--font-display)', fontSize: '0.95rem', color: 'var(--color-fall)', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
+              <IconAlertTriangle size={18} color="var(--color-fall)" />
+              <span>Emergency Action Console</span>
             </h4>
             
             {/* Market-wide Halts */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <button
-                type="button"
-                className="btn"
-                style={{ backgroundColor: 'var(--color-fall)', color: '#fff', fontWeight: 'bold', fontSize: '0.8rem', padding: '8px' }}
+              <Button
+                variant="danger"
+                style={{ fontWeight: 700, fontSize: '0.8rem', padding: '8px' }}
                 onClick={() => handleMarketWideAction('HALT_ALL_TRADING')}
               >
-                🛑 Halt All Trading
-              </button>
-              <button
-                type="button"
-                className="btn"
-                style={{ backgroundColor: 'var(--color-rise)', color: '#fff', fontWeight: 'bold', fontSize: '0.8rem', padding: '8px' }}
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <IconPause size={14} />
+                  <span>Halt All Trading</span>
+                </span>
+              </Button>
+              <Button
+                variant="success"
+                style={{ fontWeight: 700, fontSize: '0.8rem', padding: '8px' }}
                 onClick={() => handleMarketWideAction('RESUME_ALL_TRADING')}
               >
-                🟢 Resume All Trading
-              </button>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <IconPlay size={14} />
+                  <span>Resume All Trading</span>
+                </span>
+              </Button>
             </div>
 
             {/* Sector Halts */}
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
               <select
                 className="input-field"
-                style={{ flex: 1, padding: '6px', fontSize: '0.8rem' }}
+                style={{
+                  flex: 1,
+                  padding: '8px 12px',
+                  fontSize: '0.8rem',
+                  backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                  color: 'var(--color-text-primary)',
+                  border: '1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.12))',
+                  borderRadius: '8px',
+                  outline: 'none'
+                }}
                 value={selectedEmergencySector}
                 onChange={e => setSelectedEmergencySector(e.target.value)}
               >
@@ -964,29 +1168,40 @@ export default function SebiPage({ state, onOpenProfile, adminPassword, connecte
                 <option value="Utilities">Utilities</option>
                 <option value="Real Estate">Real Estate</option>
               </select>
-              <button
+              <Button
                 type="button"
-                className="btn btn-secondary"
-                style={{ padding: '6px 10px', fontSize: '0.8rem', backgroundColor: 'var(--color-fall-light)', color: 'var(--color-fall)', border: 'none', fontWeight: 'bold' }}
+                variant="danger"
+                size="sm"
+                style={{ padding: '8px 12px', fontSize: '0.8rem', fontWeight: 700 }}
                 onClick={() => handleSectorHalt('PAUSE_SECTOR', selectedEmergencySector)}
               >
                 Freeze
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className="btn btn-secondary"
-                style={{ padding: '6px 10px', fontSize: '0.8rem', backgroundColor: 'var(--color-rise-light)', color: 'var(--color-rise)', border: 'none', fontWeight: 'bold' }}
+                variant="success"
+                size="sm"
+                style={{ padding: '8px 12px', fontSize: '0.8rem', fontWeight: 700 }}
                 onClick={() => handleSectorHalt('RESUME_SECTOR', selectedEmergencySector)}
               >
                 Unfreeze
-              </button>
+              </Button>
             </div>
 
             {/* Session State Transitions */}
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
               <select
                 className="input-field"
-                style={{ flex: 1, padding: '6px', fontSize: '0.8rem' }}
+                style={{
+                  flex: 1,
+                  padding: '8px 12px',
+                  fontSize: '0.8rem',
+                  backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                  color: 'var(--color-text-primary)',
+                  border: '1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.12))',
+                  borderRadius: '8px',
+                  outline: 'none'
+                }}
                 value={selectedSessionState}
                 onChange={e => setSelectedSessionState(e.target.value)}
               >
@@ -996,102 +1211,113 @@ export default function SebiPage({ state, onOpenProfile, adminPassword, connecte
                 <option value="MARKET_CLOSED">MARKET_CLOSED</option>
                 <option value="RESULTS">RESULTS</option>
               </select>
-              <button
+              <Button
                 type="button"
-                className="btn btn-primary"
-                style={{ padding: '6px 12px', fontSize: '0.8rem', backgroundColor: 'var(--color-brass)', color: '#000', border: 'none', fontWeight: 'bold' }}
+                variant="primary"
+                size="sm"
+                style={{ padding: '8px 14px', fontSize: '0.8rem', fontWeight: 700 }}
                 onClick={() => handleTransitionSession(selectedSessionState)}
               >
                 Transition Phase
-              </button>
+              </Button>
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* Panel: SAAMX Event Scenario Sequence Player */}
         {(() => {
           const currentPreset = NEWS_PRESETS.find(p => p.step === currentNewsStep) || null;
           return (
-            <div className="glass card" style={{ display: 'flex', flexDirection: 'column', gap: '16px', border: '1.5px solid var(--color-brass)' }}>
+            <Card variant="frosted" density={density} style={{ display: 'flex', flexDirection: 'column', gap: density === 'compact' ? '12px' : '16px', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-brass)', fontSize: '1.25rem', margin: 0 }}>
-                  🎭 SAAMX Event Scenario Wire
+                <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-warning)', fontSize: '1.15rem', display: 'flex', alignItems: 'center', gap: '8px', margin: 0, fontWeight: 700 }}>
+                  <IconRadio size={18} color="var(--color-warning)" />
+                  <span>SAAMX Event Scenario Wire</span>
                 </h3>
-                <button
+                <Button
                   type="button"
-                  className="btn btn-secondary"
-                  style={{ padding: '4px 8px', fontSize: '0.7rem', backgroundColor: 'var(--color-surface-2)', border: '1px solid var(--color-border)', cursor: 'pointer' }}
+                  variant="secondary"
+                  size="sm"
                   onClick={handleResetStep}
                 >
-                  ⏪ Reset to Step 1
-                </button>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <IconRefreshCw size={12} />
+                    <span>Reset to Step 1</span>
+                  </span>
+                </Button>
               </div>
 
               {currentPreset ? (
-                <div style={{ backgroundColor: 'var(--color-surface-2)', padding: '16px', borderRadius: '8px', borderLeft: '4px solid var(--color-brass)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                  padding: density === 'compact' ? '12px' : '16px',
+                  borderRadius: '8px',
+                  borderLeft: '4px solid var(--color-warning)',
+                  borderTop: '1px solid var(--color-border-subtle, rgba(255,255,255,0.06))',
+                  borderRight: '1px solid var(--color-border-subtle, rgba(255,255,255,0.06))',
+                  borderBottom: '1px solid var(--color-border-subtle, rgba(255,255,255,0.06))',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px'
+                }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--color-brass)' }}>
-                      ▶ NEXT NEWS: STEP {currentNewsStep} / {NEWS_PRESETS.length}
+                    <span className="font-data tabular-nums" style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--color-warning)', fontFamily: 'var(--font-mono)' }}>
+                      NEXT NEWS: STEP {currentNewsStep} / {NEWS_PRESETS.length}
                     </span>
-                    <span style={{
-                      fontSize: '0.65rem',
-                      fontWeight: 'bold',
-                      padding: '2px 6px',
-                      borderRadius: '4px',
-                      backgroundColor: currentPreset.sentiment === 'Positive' ? 'var(--color-rise-light)' : currentPreset.sentiment === 'Negative' ? 'var(--color-fall-light)' : 'var(--color-border)',
-                      color: currentPreset.sentiment === 'Positive' ? 'var(--color-rise)' : currentPreset.sentiment === 'Negative' ? 'var(--color-fall)' : 'var(--color-ink-2)'
-                    }}>
+                    <Badge variant={currentPreset.sentiment === 'Positive' ? 'success' : currentPreset.sentiment === 'Negative' ? 'danger' : 'neutral'}>
                       {currentPreset.sentiment} ({currentPreset.impactPercent > 0 ? `+${currentPreset.impactPercent}%` : `${currentPreset.impactPercent}%`})
-                    </span>
+                    </Badge>
                   </div>
 
-                  <strong style={{ color: 'var(--color-ink)', fontSize: '1.05rem', display: 'block' }}>
+                  <strong style={{ color: 'var(--color-text-primary)', fontSize: '1.05rem', display: 'block' }}>
                     {currentPreset.headline}
                   </strong>
-                  <p style={{ color: 'var(--color-ink-2)', fontSize: '0.8rem', margin: 0, lineHeight: '1.5' }}>
+                  <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.8rem', margin: 0, lineHeight: '1.5' }}>
                     {currentPreset.description}
                   </p>
 
-                  <div style={{ display: 'flex', gap: '12px', fontSize: '0.75rem', color: 'var(--color-ink-2)', flexWrap: 'wrap', borderTop: '1px solid var(--color-border)', paddingTop: '10px', marginTop: '4px' }}>
-                    <span><strong>Sector:</strong> {currentPreset.affectedSector || 'Macro / Universal'}</span>
+                  <div style={{ display: 'flex', gap: '12px', fontSize: '0.75rem', color: 'var(--color-text-muted)', flexWrap: 'wrap', borderTop: '1px solid var(--color-border-subtle, rgba(255,255,255,0.08))', paddingTop: '10px', marginTop: '4px' }}>
+                    <span><strong style={{ color: 'var(--color-text-secondary)' }}>Sector:</strong> {currentPreset.affectedSector || 'Macro / Universal'}</span>
                     {currentPreset.affectedSecurityIds && currentPreset.affectedSecurityIds.length > 0 && (
-                      <span><strong>Targets:</strong> {currentPreset.affectedSecurityIds.join(', ')}</span>
+                      <span><strong style={{ color: 'var(--color-text-secondary)' }}>Targets:</strong> {currentPreset.affectedSecurityIds.join(', ')}</span>
                     )}
                   </div>
 
-                  <button
+                  <Button
                     type="button"
-                    className="btn btn-primary"
+                    variant="primary"
                     style={{
                       width: '100%',
                       marginTop: '8px',
-                      backgroundColor: 'var(--color-brass)',
+                      backgroundColor: 'var(--color-warning)',
                       color: '#000',
-                      fontWeight: 'bold',
-                      fontSize: '0.9rem',
-                      padding: '12px',
-                      boxShadow: '0 4px 12px rgba(197, 160, 89, 0.2)',
-                      cursor: 'pointer',
-                      border: 'none',
-                      borderRadius: '6px'
+                      fontWeight: 800,
+                      fontSize: '0.88rem',
+                      padding: '10px 14px',
+                      boxShadow: '0 4px 12px rgba(245, 158, 11, 0.2)'
                     }}
                     onClick={() => handleBroadcastStep(currentNewsStep)}
                   >
-                    🚀 BROADCAST STEP {currentNewsStep} NEWS
-                  </button>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                      <IconSend size={16} />
+                      <span>BROADCAST STEP {currentNewsStep} NEWS</span>
+                    </span>
+                  </Button>
                 </div>
               ) : (
-                <div style={{ textAlign: 'center', padding: '16px', color: 'var(--color-rise)', fontWeight: 'bold', backgroundColor: 'var(--color-rise-light)', borderRadius: '8px' }}>
-                  ✓ All 80 Scheduled Event Scenario News Items Have Been Successfully Broadcasted!
+                <div style={{ textAlign: 'center', padding: '16px', color: 'var(--color-rise)', fontWeight: 'bold', backgroundColor: 'var(--color-rise-light, rgba(16, 185, 129, 0.1))', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  <IconCheck size={18} color="var(--color-rise)" />
+                  <span>All 80 Scheduled Event Scenario News Items Have Been Successfully Broadcasted!</span>
                 </div>
               )}
 
               {/* Scrollable list of all steps */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--color-ink-2)' }}>
-                  📋 SCENARIO TIMELINE DIRECTORY ({NEWS_PRESETS.length} STEPS)
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <IconLayers size={14} />
+                  <span>SCENARIO TIMELINE DIRECTORY ({NEWS_PRESETS.length} STEPS)</span>
                 </span>
-                <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid var(--color-border)', borderRadius: '8px', backgroundColor: 'var(--color-surface-2)', padding: '6px' }}>
+                <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid var(--color-border-subtle, rgba(255,255,255,0.08))', borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.02)', padding: '6px' }}>
                   {NEWS_PRESETS.map((preset) => {
                     const isBroadcasted = preset.step < currentNewsStep;
                     const isCurrent = preset.step === currentNewsStep;
@@ -1103,22 +1329,23 @@ export default function SebiPage({ state, onOpenProfile, adminPassword, connecte
                           display: 'flex',
                           justifyContent: 'space-between',
                           alignItems: 'center',
-                          padding: '8px 10px',
-                          borderBottom: '1px solid var(--color-border)',
-                          backgroundColor: isCurrent ? 'rgba(197, 160, 89, 0.08)' : 'transparent',
+                          padding: '6px 10px',
+                          borderBottom: '1px solid var(--color-border-subtle, rgba(255,255,255,0.05))',
+                          backgroundColor: isCurrent ? 'rgba(245, 158, 11, 0.08)' : 'transparent',
                           fontSize: '0.75rem'
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', maxWidth: '75%' }}>
                           <span style={{
                             fontWeight: 'bold',
-                            color: isBroadcasted ? 'var(--color-rise)' : isCurrent ? 'var(--color-brass)' : 'var(--color-ink-3)',
-                            minWidth: '55px'
-                          }}>
-                            {isBroadcasted ? '✓ Step ' : isCurrent ? '▶ Step ' : '⏳ Step '}{preset.step}
+                            color: isBroadcasted ? 'var(--color-rise)' : isCurrent ? 'var(--color-warning)' : 'var(--color-text-muted)',
+                            minWidth: '65px',
+                            fontFamily: 'var(--font-mono)'
+                          }} className="tabular-nums font-data">
+                            {isBroadcasted ? '[DONE] ' : isCurrent ? '[NEXT] ' : '       '}Step {preset.step}
                           </span>
                           <span style={{
-                            color: isBroadcasted ? 'var(--color-ink-3)' : 'var(--color-ink)',
+                            color: isBroadcasted ? 'var(--color-text-muted)' : 'var(--color-text-primary)',
                             textDecoration: isBroadcasted ? 'line-through' : 'none',
                             whiteSpace: 'nowrap',
                             overflow: 'hidden',
@@ -1127,28 +1354,21 @@ export default function SebiPage({ state, onOpenProfile, adminPassword, connecte
                             {preset.headline}
                           </span>
                         </div>
-                        <button
+                        <Button
                           type="button"
-                          className="btn"
-                          style={{
-                            padding: '2px 6px',
-                            fontSize: '0.65rem',
-                            backgroundColor: isBroadcasted ? 'var(--color-surface-3)' : 'var(--color-brass-light)',
-                            color: isBroadcasted ? 'var(--color-ink-3)' : 'var(--color-brass)',
-                            border: 'none',
-                            fontWeight: 'bold',
-                            cursor: 'pointer'
-                          }}
+                          size="sm"
+                          variant="secondary"
+                          style={{ padding: '2px 8px', fontSize: '0.68rem' }}
                           onClick={() => handleBroadcastStep(preset.step)}
                         >
                           Trigger
-                        </button>
+                        </Button>
                       </div>
                     );
                   })}
                 </div>
               </div>
-            </div>
+            </Card>
           );
         })()}
 
@@ -1157,53 +1377,75 @@ export default function SebiPage({ state, onOpenProfile, adminPassword, connecte
           const pendingIpos = state.securities.filter(s => s.status === 'IPO_PENDING');
           if (pendingIpos.length === 0) return null;
           return (
-            <div className="glass card" style={{ display: 'flex', flexDirection: 'column', gap: '12px', border: '1.5px solid var(--color-brass)' }}>
-              <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-brass)', fontSize: '1.25rem', margin: 0 }}>
-                🚀 Blockbuster IPO Launch Deck
+            <Card variant="frosted" density={density} style={{ display: 'flex', flexDirection: 'column', gap: '12px', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+              <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-warning)', fontSize: '1.15rem', display: 'flex', alignItems: 'center', gap: '8px', margin: 0, fontWeight: 700 }}>
+                <IconTrendingUp size={18} color="var(--color-warning)" />
+                <span>Blockbuster IPO Launch Deck</span>
               </h3>
-              <p style={{ color: 'var(--color-ink-2)', fontSize: '0.8rem', margin: 0 }}>
+              <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.8rem', margin: 0 }}>
                 The following startup companies are registered with SEBI in staged (pending) status. Click launch to open active trading.
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {pendingIpos.map(sec => (
-                  <div key={sec.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--color-surface-2)', padding: '12px', borderRadius: '8px' }}>
+                  <div key={sec.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.08))', padding: '12px', borderRadius: '8px' }}>
                     <div>
-                      <strong style={{ color: 'var(--color-ink)' }}>{sec.ticker}</strong>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--color-ink-2)', marginLeft: '6px' }}>{sec.name} (Base: ₹{sec.basePrice})</span>
+                      <strong className="font-data" style={{ color: 'var(--color-text-primary)', fontFamily: 'var(--font-mono)' }}>{sec.ticker}</strong>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginLeft: '6px' }}>{sec.name} (Base: ₹<span className="tabular-nums font-data" style={{ fontFamily: 'var(--font-mono)' }}>{sec.basePrice}</span>)</span>
                     </div>
-                    <button type="button" className="btn" style={{ backgroundColor: 'var(--color-rise-light)', color: 'var(--color-rise)', border: 'none', padding: '4px 12px', fontSize: '0.8rem', fontWeight: 'bold' }} onClick={async () => {
-                      const confirmLaunch = window.confirm(`Launch public IPO listing for ${sec.ticker}?`);
-                      if (!confirmLaunch) return;
-                      try {
-                        const res = await apiFetch('/api/securities', {
-                          method: 'PUT',
-                          body: { ticker: sec.ticker, status: 'Active' }
-                        });
-                        if (res.ok) {
-                          alert(`IPO Launch Successful! ${sec.ticker} is now active for trade processing.`);
+                    <Button
+                      variant="success"
+                      size="sm"
+                      onClick={async () => {
+                        const confirmLaunch = window.confirm(`Launch public IPO listing for ${sec.ticker}?`);
+                        if (!confirmLaunch) return;
+                        try {
+                          const res = await apiFetch('/api/securities', {
+                            method: 'PUT',
+                            body: { ticker: sec.ticker, status: 'Active' }
+                          });
+                          if (res.ok) {
+                            alert(`IPO Launch Successful! ${sec.ticker} is now active for trade processing.`);
+                          }
+                        } catch (err) {
+                          alert('Launch failed: ' + err.message);
                         }
-                      } catch (err) {
-                        alert('Launch failed: ' + err.message);
-                      }
-                    }}>
-                      🚀 Launch IPO
-                    </button>
+                      }}
+                    >
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        <IconTrendingUp size={14} />
+                        <span>Launch IPO</span>
+                      </span>
+                    </Button>
                   </div>
                 ))}
               </div>
-            </div>
+            </Card>
           );
         })()}
 
         {/* Panel 3: Bankruptcy Stepper */}
-        <div className="glass card">
-          <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-ink)', fontSize: '1.25rem', marginBottom: '16px' }}>
+        <Card variant="frosted" density={density} style={{ display: 'flex', flexDirection: 'column', gap: density === 'compact' ? '12px' : '16px' }}>
+          <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text-primary)', fontSize: '1.15rem', margin: 0, fontWeight: 700 }}>
             Staged Bankruptcy Stepper
           </h3>
           
-          <div className="form-group" style={{ marginBottom: '16px' }}>
-            <label>Select Target Security</label>
-            <select className="input-field" value={stageSecId} onChange={e => { setStageSecId(e.target.value); setStageConfirmState(false); }}>
+          <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)', fontWeight: 600 }}>Select Target Security</label>
+            <select
+              className="input-field"
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                fontSize: '0.8rem',
+                backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                color: 'var(--color-text-primary)',
+                border: '1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.12))',
+                borderRadius: '8px',
+                outline: 'none'
+              }}
+              value={stageSecId}
+              onChange={e => { setStageSecId(e.target.value); setStageConfirmState(false); }}
+            >
               <option value="">Choose Asset...</option>
               {state.securities
                 .filter(s => s.status !== 'Bankrupt' && s.status !== 'Delisted')
@@ -1220,96 +1462,98 @@ export default function SebiPage({ state, onOpenProfile, adminPassword, connecte
               const step2Done = sec.status === 'Halted';
 
               return (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '4px' }}>
                   <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                    <button className="btn btn-secondary" style={{ fontSize: '0.85rem' }} disabled={step1Done} onClick={() => handleStage1OpenInvestigation(sec)}>
+                    <Button variant="secondary" size="sm" disabled={step1Done} onClick={() => handleStage1OpenInvestigation(sec)}>
                       Step 1: Open Investigation
-                    </button>
+                    </Button>
                   </div>
                   <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                    <button className="btn btn-secondary" style={{ fontSize: '0.85rem' }} disabled={!step1Done || step2Done} onClick={() => handleStage2SuspendTrading(sec)}>
+                    <Button variant="secondary" size="sm" disabled={!step1Done || step2Done} onClick={() => handleStage2SuspendTrading(sec)}>
                       Step 2: Suspend Trading
-                    </button>
+                    </Button>
                   </div>
                   <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                    <button className="btn" style={{ backgroundColor: 'var(--color-fall)', color: 'var(--color-surface)', fontSize: '0.85rem' }} disabled={!step2Done} onClick={() => handleStage3Liquidate(sec)}>
-                      {stageConfirmState ? '⚠️ CONFIRM LIQUIDATION' : 'Step 3: Liquidate Asset'}
-                    </button>
+                    <Button variant="danger" size="sm" disabled={!step2Done} onClick={() => handleStage3Liquidate(sec)}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        {stageConfirmState && <IconAlertTriangle size={14} />}
+                        <span>{stageConfirmState ? 'CONFIRM LIQUIDATION' : 'Step 3: Liquidate Asset'}</span>
+                      </span>
+                    </Button>
                   </div>
                 </div>
               );
             })()
           )}
-        </div>
+        </Card>
 
         {/* Panel 4: Circuit Breaker Monitor */}
-        <div className="glass card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-ink)', fontSize: '1.25rem' }}>
+        <Card variant="frosted" density={density} style={{ display: 'flex', flexDirection: 'column', gap: density === 'compact' ? '12px' : '16px' }}>
+          <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text-primary)', fontSize: '1.15rem', margin: 0, fontWeight: 700 }}>
             Circuit Breaker Dashboard
           </h3>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {activeCircuitBreakers.length === 0 ? (
-              <div style={{ color: 'var(--color-ink-3)', fontSize: '0.85rem', textAlign: 'center', padding: '16px 0', border: '1px dashed var(--color-border)', borderRadius: '6px' }}>
+              <div style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '16px 0', border: '1px dashed var(--color-border-subtle, rgba(255,255,255,0.1))', borderRadius: '6px' }}>
                 No circuit breakers active — market conditions normal.
               </div>
             ) : (
               activeCircuitBreakers.map(s => (
                 <div
                   key={s.id}
-                  className="glass"
                   style={{
                     padding: '10px 14px',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    border: '1px solid var(--color-fall)'
+                    backgroundColor: 'rgba(239, 68, 68, 0.05)',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    borderRadius: '8px'
                   }}
                 >
                   <div>
-                    <strong className="font-data" style={{ color: 'var(--color-fall)' }}>{s.ticker}</strong>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--color-ink-2)', display: 'block' }}>{s.name}</span>
+                    <strong className="font-data" style={{ color: 'var(--color-fall)', fontFamily: 'var(--font-mono)' }}>{s.ticker}</strong>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--color-text-secondary)', display: 'block' }}>{s.name}</span>
                   </div>
-                  <button
-                    className="btn"
-                    style={{
-                      padding: '4px 10px',
-                      fontSize: '0.75rem',
-                      backgroundColor: s.status === 'Halted' ? 'var(--color-rise)' : 'var(--color-fall)',
-                      color: 'var(--color-surface)'
-                    }}
+                  <Button
+                    size="sm"
+                    variant={s.status === 'Halted' ? 'success' : 'danger'}
                     onClick={() => handleFreezeToggle(s)}
                   >
                     {s.status === 'Halted' ? 'UNFREEZE' : 'FREEZE'}
-                  </button>
+                  </Button>
                 </div>
               ))
             )}
           </div>
-        </div>
+        </Card>
 
         {/* Panel: Staged Scenario Storyline Deck & Interventions */}
-        <div className="glass card" style={{ display: 'flex', flexDirection: 'column', gap: '16px', border: '1.5px solid var(--color-fall)' }}>
+        <Card variant="frosted" density={density} style={{ display: 'flex', flexDirection: 'column', gap: density === 'compact' ? '12px' : '16px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-fall)', fontSize: '1.25rem', margin: 0 }}>
-              🛡️ Simulation Storyline & Staged Events Deck
+            <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-fall)', fontSize: '1.15rem', display: 'flex', alignItems: 'center', gap: '8px', margin: 0, fontWeight: 700 }}>
+              <IconShieldAlert size={18} color="var(--color-fall)" />
+              <span>Simulation Storyline & Staged Events Deck</span>
             </h3>
-            <span style={{ fontSize: '0.75rem', padding: '3px 8px', borderRadius: '4px', backgroundColor: 'var(--color-surface-3)', color: 'var(--color-brass)', fontWeight: 'bold' }}>
-              {Object.keys(state.firedPhoenixActs || {}).length} / {STAGED_INTERVENTION_PROTOCOLS.length} FIRED
-            </span>
+            <Badge variant="warning">
+              <span className="tabular-nums font-data" style={{ fontFamily: 'var(--font-mono)' }}>
+                {Object.keys(state.firedPhoenixActs || {}).length} / {STAGED_INTERVENTION_PROTOCOLS.length} FIRED
+              </span>
+            </Badge>
           </div>
 
           {/* Storyline Status Strip */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', backgroundColor: 'var(--color-surface-2)', padding: '10px', borderRadius: '6px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', backgroundColor: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.08))', padding: '12px', borderRadius: '8px' }}>
             <div>
-              <span style={{ fontSize: '0.7rem', color: 'var(--color-ink-2)', textTransform: 'uppercase' }}>Current Active Phase</span>
+              <span style={{ fontSize: '0.68rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>Current Active Phase</span>
               <div style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--color-rise)', marginTop: '2px' }}>
                 {[...STAGED_INTERVENTION_PROTOCOLS].reverse().find(a => state.firedPhoenixActs && state.firedPhoenixActs[a.actNumber])?.label || 'Pre-Market / Initial State'}
               </div>
             </div>
             <div>
-              <span style={{ fontSize: '0.7rem', color: 'var(--color-ink-2)', textTransform: 'uppercase' }}>Next Scheduled Event</span>
-              <div style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--color-brass)', marginTop: '2px' }}>
+              <span style={{ fontSize: '0.68rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>Next Scheduled Event</span>
+              <div style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--color-warning)', marginTop: '2px' }}>
                 {STAGED_INTERVENTION_PROTOCOLS.find(a => !state.firedPhoenixActs || !state.firedPhoenixActs[a.actNumber])?.label || 'All Storyline Events Completed'}
               </div>
             </div>
@@ -1318,7 +1562,16 @@ export default function SebiPage({ state, onOpenProfile, adminPassword, connecte
           <div style={{ display: 'flex', gap: '8px' }}>
             <select
               className="input-field"
-              style={{ flex: 1, padding: '6px', fontSize: '0.8rem' }}
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                fontSize: '0.8rem',
+                backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                color: 'var(--color-text-primary)',
+                border: '1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.12))',
+                borderRadius: '8px',
+                outline: 'none'
+              }}
               value={selectedAct}
               onChange={e => setSelectedAct(Number(e.target.value))}
             >
@@ -1326,25 +1579,29 @@ export default function SebiPage({ state, onOpenProfile, adminPassword, connecte
                 const fired = state.firedPhoenixActs && state.firedPhoenixActs[act.actNumber];
                 return (
                   <option key={act.id} value={act.actNumber} disabled={fired}>
-                    T+{String(act.triggerMinute).padStart(2, '0')}m — {act.label} {fired ? '✓' : ''}
+                    T+{String(act.triggerMinute).padStart(2, '0')}m — {act.label} {fired ? '(FIRED)' : ''}
                   </option>
                 );
               })}
             </select>
-            <button
-              className="btn btn-primary"
-              style={{ padding: '6px 12px', fontSize: '0.8rem', fontWeight: 'bold', backgroundColor: 'var(--color-fall)', color: '#fff' }}
+            <Button
+              variant="danger"
+              style={{ padding: '8px 14px', fontSize: '0.8rem', fontWeight: 800 }}
               onClick={() => handleFireAct(selectedAct)}
             >
-              ⚡ FIRE STAGE
-            </button>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <IconZap size={14} />
+                <span>FIRE STAGE</span>
+              </span>
+            </Button>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid var(--color-border)', paddingTop: '12px' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--color-ink-2)' }}>
-              📋 SCENARIO STAGES DIRECTORY
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.08))', paddingTop: '12px' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <IconLayers size={14} />
+              <span>SCENARIO STAGES DIRECTORY</span>
             </span>
-            <div style={{ maxHeight: '180px', overflowY: 'auto', border: '1px solid var(--color-border)', borderRadius: '8px', backgroundColor: 'var(--color-surface-2)', padding: '6px' }}>
+            <div style={{ maxHeight: '180px', overflowY: 'auto', border: '1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.08))', borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.02)', padding: '6px' }}>
               {STAGED_INTERVENTION_PROTOCOLS.map((act) => {
                 const fired = state.firedPhoenixActs && state.firedPhoenixActs[act.actNumber];
                 return (
@@ -1355,73 +1612,82 @@ export default function SebiPage({ state, onOpenProfile, adminPassword, connecte
                       justifyContent: 'space-between',
                       alignItems: 'center',
                       padding: '8px 10px',
-                      borderBottom: '1px solid var(--color-border)',
+                      borderBottom: '1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.05))',
                       fontSize: '0.75rem'
                     }}
                   >
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', maxWidth: '70%' }}>
-                      <span style={{ fontWeight: 'bold', color: fired ? 'var(--color-rise)' : 'var(--color-ink-2)' }}>
-                        {fired ? '✓ Active' : '⏳ Staged'} (T+{act.triggerMinute}m)
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 'bold', color: fired ? 'var(--color-rise)' : 'var(--color-text-secondary)', fontFamily: 'var(--font-mono)' }} className="tabular-nums font-data">
+                        {fired ? <IconCheck size={12} color="var(--color-rise)" /> : <IconClock size={12} />}
+                        <span>{fired ? 'Active' : 'Staged'} (T+{act.triggerMinute}m)</span>
                       </span>
-                      <span style={{ color: 'var(--color-ink)', fontWeight: 600 }}>{act.label}</span>
+                      <span style={{ color: 'var(--color-text-primary)', fontWeight: 600 }}>{act.label}</span>
                     </div>
-                    <button
-                      type="button"
-                      className="btn"
+                    <Button
+                      size="sm"
+                      variant="danger"
                       disabled={fired}
                       style={{
                         padding: '4px 8px',
                         fontSize: '0.7rem',
-                        backgroundColor: fired ? 'var(--color-surface-3)' : 'var(--color-fall-light)',
-                        color: fired ? 'var(--color-ink-3)' : 'var(--color-fall)',
-                        border: 'none',
-                        fontWeight: 'bold',
                         cursor: fired ? 'not-allowed' : 'pointer'
                       }}
                       onClick={() => handleFireAct(act.actNumber)}
                     >
                       Fire
-                    </button>
+                    </Button>
                   </div>
                 );
               })}
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* Panel: Final Market Reconciliation & Leaderboard Publication */}
-        <div className="glass card" style={{ display: 'flex', flexDirection: 'column', gap: '12px', border: '2px solid var(--color-brass)', backgroundColor: 'rgba(212, 175, 55, 0.03)' }}>
+        <Card
+          variant="frosted"
+          density={density}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+            border: '1px solid rgba(245, 158, 11, 0.4)',
+            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.06) 0%, rgba(20, 20, 28, 0.6) 100%)'
+          }}
+        >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-brass)', fontSize: '1.25rem', margin: 0 }}>
-              🏆 Market Reconciliation & Results Publishing
+            <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-warning)', fontSize: '1.15rem', display: 'flex', alignItems: 'center', gap: '8px', margin: 0, fontWeight: 700 }}>
+              <IconTrophy size={18} color="var(--color-warning)" />
+              <span>Market Reconciliation & Results Publishing</span>
             </h3>
-            <span className="badge" style={{ backgroundColor: 'var(--color-brass)', color: '#000', fontWeight: 'bold', fontSize: '0.7rem' }}>
+            <Badge variant="warning">
               PHASE 5 RECONCILIATION
-            </span>
+            </Badge>
           </div>
-          <p style={{ color: 'var(--color-ink-2)', fontSize: '0.8rem', margin: 0, lineHeight: 1.5 }}>
+          <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.8rem', margin: 0, lineHeight: 1.5 }}>
             At session end (15:30), SEBI triggers atomic market reconciliation. This securely locks all orders, values holdings at final prices, determines official team ranks, computes all 9 special awards, and saves an immutable results ledger.
           </p>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginTop: '4px' }}>
-            <button
-              type="button"
-              className="btn btn-primary"
+            <Button
+              variant="primary"
               style={{
                 flex: 1,
                 padding: '10px 16px',
-                fontSize: '0.9rem',
+                fontSize: '0.88rem',
                 fontWeight: 800,
-                backgroundColor: 'var(--color-brass)',
+                backgroundColor: 'var(--color-warning)',
                 color: '#000',
                 letterSpacing: '0.04em'
               }}
               onClick={handleReconcileMarket}
             >
-              🏁 RECONCILE MARKET & PUBLISH FINAL LEADERBOARD
-            </button>
-            <button
-              type="button"
-              className="btn btn-outline"
+              <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                <IconTrophy size={16} />
+                <span>RECONCILE MARKET & PUBLISH FINAL LEADERBOARD</span>
+              </span>
+            </Button>
+            <Button
+              variant="secondary"
               style={{
                 padding: '10px 14px',
                 fontSize: '0.8rem',
@@ -1440,10 +1706,13 @@ export default function SebiPage({ state, onOpenProfile, adminPassword, connecte
                 }
               }}
             >
-              💾 Save Snapshot
-            </button>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <IconDownload size={14} />
+                <span>Save Snapshot</span>
+              </span>
+            </Button>
           </div>
-        </div>
+        </Card>
 
       </div>
 

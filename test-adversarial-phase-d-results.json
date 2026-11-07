@@ -1,0 +1,575 @@
+[
+  {
+    "id": "ADV-D-PREFLIGHT-01",
+    "title": "Pre-flight Authoritative Baseline Hash Verification",
+    "endpoint": "Local File System (state.json)",
+    "scenario": "Verify authoritative state.json SHA-256 matches expected baseline exactly",
+    "expected": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "actual": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "evidence": {
+      "sha256": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-D-CONCUR-01",
+    "title": "2-Way Concurrent Operator Claim Race (Mutual Exclusion)",
+    "endpoint": "POST /api/fx/queue-action (actionType: CLAIM, exchange vs admin)",
+    "scenario": "Two authorized operators concurrently claim the same pending FX intake slip. Exactly one must acquire mutex (HTTP 200), one must be blocked (HTTP 409 Conflict).",
+    "expected": "Exactly 1x HTTP 200, 1x HTTP 409 Conflict",
+    "actual": "StatusCodes: [200, 409]",
+    "evidence": {
+      "opStatus": 200,
+      "opData": {
+        "success": true,
+        "fxRequest": {
+          "id": "FX_1794041690531_jb6s",
+          "requestId": "FX_1794041690531_jb6s",
+          "teamCode": "T01",
+          "teamName": "Trader Elite 1",
+          "eventId": "EVT_LIVE_MAIN",
+          "fromCurrency": "INR",
+          "toCurrency": "USD",
+          "fromAmount": 50000,
+          "toAmount": 564.35,
+          "quoteRate": 88.5969,
+          "spreadPercent": 0.45,
+          "scarcityImpact": 0,
+          "utilization": 0.0031,
+          "status": "processing",
+          "canonicalStatus": "processing",
+          "legacyStatus": "QUEUED",
+          "operatorId": "T01",
+          "notes": "Floor FX conversion request",
+          "simulationDurationSec": 120,
+          "delayWindowSec": 120,
+          "clearsAt": 1794041811075,
+          "lockedByOperator": "exchange",
+          "holdReason": null,
+          "returnReason": null,
+          "createdAt": 1794041691075,
+          "settledAt": null,
+          "rejectionReason": null,
+          "operator": "exchange",
+          "claimedAt": 1794041691166
+        }
+      },
+      "adminStatus": 409,
+      "adminData": {
+        "error": "Conflict: FX request FX_1794041690531_jb6s is already claimed by exchange."
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-D-CONCUR-02",
+    "title": "10-Way Simultaneous Claim Storm on Single FX Ticket (10 Distinct Operators)",
+    "endpoint": "POST /api/fx/queue-action (actionType: CLAIM across 10 distinct authenticated operators)",
+    "scenario": "10 distinct authenticated operators simultaneously contend for the exact same ticket. Verify atomic mutex holds: exactly 1x 200 OK, 9x 409 Conflict.",
+    "expected": "Exactly 1x 200 OK, 9x 409 Conflict",
+    "actual": "200s: 1, 409s: 9, other: 0",
+    "evidence": {
+      "stormStatuses": [
+        200,
+        409,
+        409,
+        409,
+        409,
+        409,
+        409,
+        409,
+        409,
+        409
+      ]
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-D-CONCUR-03",
+    "title": "Concurrent Double Settlement Race (Double-Debit Immunity)",
+    "endpoint": "POST /api/fx/queue-action (actionType: APPROVE, 2x simultaneous)",
+    "scenario": "Two simultaneous APPROVE requests target the exact same ticket. Verify atomic execution: exactly 1 settlement succeeds, second is rejected, source wallet debited strictly once (75000 INR).",
+    "expected": "Exactly 1x 200 OK, 1x 400/409, Exactly 75,000 INR debited",
+    "actual": "Statuses=[200, 409], inrDebited=75000",
+    "evidence": {
+      "settle1Status": 200,
+      "settle2Status": 409,
+      "settle2Error": "Concurrent FX operation in progress for team T01. Please retry.",
+      "preBalances": {
+        "INR": 10000000,
+        "GBP": 25000
+      },
+      "postBalances": {
+        "INR": 9925000,
+        "GBP": 25625.33
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-D-CONCUR-04",
+    "title": "Idempotent Re-Claim vs Competing Non-Owning Operator Mutex Lock",
+    "endpoint": "POST /api/fx/queue-action (actionType: CLAIM)",
+    "scenario": "Owning operator re-claiming own ticket succeeds (HTTP 200); a different operator attempting to claim locked ticket is blocked (HTTP 409).",
+    "expected": "Owning: HTTP 200; Competing: HTTP 409",
+    "actual": "Owning=200, Competing=409",
+    "evidence": {
+      "reClaimData": {
+        "success": true,
+        "fxRequest": {
+          "id": "FX_1794041693843_z1v9",
+          "requestId": "FX_1794041693843_z1v9",
+          "teamCode": "T01",
+          "teamName": "Trader Elite 1",
+          "eventId": "EVT_LIVE_MAIN",
+          "fromCurrency": "INR",
+          "toCurrency": "USD",
+          "fromAmount": 20000,
+          "toAmount": 225.74,
+          "quoteRate": 88.5969,
+          "spreadPercent": 0.45,
+          "scarcityImpact": 0,
+          "utilization": 0.0031,
+          "status": "processing",
+          "canonicalStatus": "processing",
+          "legacyStatus": "QUEUED",
+          "operatorId": "T01",
+          "notes": "Floor FX conversion request",
+          "simulationDurationSec": 120,
+          "delayWindowSec": 120,
+          "clearsAt": 1794041814008,
+          "lockedByOperator": "exchange",
+          "holdReason": null,
+          "returnReason": null,
+          "createdAt": 1794041694008,
+          "settledAt": null,
+          "rejectionReason": null,
+          "operator": "exchange",
+          "claimedAt": 1794041694208
+        }
+      },
+      "conflictData": {
+        "error": "Conflict: FX request FX_1794041693843_z1v9 is already claimed by exchange."
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-D-TIMER-01",
+    "title": "Elapsed clearsAt Operational Simulation Inaction Verification",
+    "endpoint": "GET /api/fx/queue & GET /api/portfolio (post-expiration check)",
+    "scenario": "Operational delay window expires (now > clearsAt). Verify that strictly ZERO auto-settlement occurs: ticket status is not approved, cashWallets are unchanged, and reservedCash remains held.",
+    "expected": "Status is pending/processing (NOT approved), INR unspent, USD not credited, reservedCash=100000",
+    "actual": "Status=pending, INR=9925000, USD=50000, ReservedINR=100000",
+    "evidence": {
+      "targetId": "FX_1794041694542_scwm",
+      "clearsAt": 1794041695720,
+      "now": 1794041696342,
+      "status": "pending",
+      "preWallets": {
+        "INR": 9925000,
+        "USD": 50000,
+        "GBP": 25625.33,
+        "EUR": 25000,
+        "JPY": 5000000,
+        "AED": 100000,
+        "SGD": 50000,
+        "CNY": 200000,
+        "AUD": 50000,
+        "KRW": 50000000
+      },
+      "postWallets": {
+        "INR": 9925000,
+        "USD": 50000,
+        "GBP": 25625.33,
+        "EUR": 25000,
+        "JPY": 5000000,
+        "AED": 100000,
+        "SGD": 50000,
+        "CNY": 200000,
+        "AUD": 50000,
+        "KRW": 50000000
+      },
+      "postReserved": {
+        "USD": 0,
+        "GBP": 0,
+        "EUR": 0,
+        "JPY": 0,
+        "AED": 0,
+        "SGD": 0,
+        "CNY": 0,
+        "AUD": 0,
+        "KRW": 0,
+        "INR": 100000
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-D-TIMER-02",
+    "title": "Adversarial Settle Bypass: Unprivileged Team APPROVE Attempt",
+    "endpoint": "POST /api/fx/queue-action (actionType: APPROVE, caller: team role T01)",
+    "scenario": "A participant team attempts to bypass operator review and settle an expired ticket directly. Must be blocked with HTTP 403 Forbidden.",
+    "expected": "HTTP 403 Forbidden",
+    "actual": "Status: 403",
+    "evidence": {
+      "responseData": {
+        "error": "Forbidden: Direct currency exchange and desk queue processing require Exchange Desk Operator privileges."
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-D-TIMER-03",
+    "title": "Adversarial Settle Bypass: Unauthenticated APPROVE Attempt",
+    "endpoint": "POST /api/fx/queue-action (actionType: APPROVE, unauthenticated)",
+    "scenario": "An unauthenticated request attempts to trigger queue settlement. Must be blocked with HTTP 401 Unauthorized.",
+    "expected": "HTTP 401 Unauthorized",
+    "actual": "Status: 401",
+    "evidence": {
+      "responseData": {
+        "error": "401 Unauthorized: Valid session authentication required."
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-D-TIMER-04",
+    "title": "Adversarial Injection of Unsupported Action (AUTO_SETTLE)",
+    "endpoint": "POST /api/fx/queue-action (actionType: AUTO_SETTLE)",
+    "scenario": "Adversary submits an invalid actionType attempting to trigger automated settlement. Server must reject or ignore without auto-settling.",
+    "expected": "Balances untouched, action rejected or no-op (status not approved)",
+    "actual": "Status: 400",
+    "evidence": {
+      "responseData": {
+        "error": "Unknown actionType AUTO_SETTLE"
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-D-TIMER-05",
+    "title": "Explicit Operational EXPIRE Action Invariant Verification",
+    "endpoint": "POST /api/fx/queue-action (actionType: EXPIRE)",
+    "scenario": "Operational clerk or system issues EXPIRE. Verify ticket transitions to expired, reserved funds released, and zero target currency credited.",
+    "expected": "Status expired, reservedCash.INR=0, cashWallets.USD unchanged, cashWallets.INR unchanged",
+    "actual": "Status=expired, ReservedINR=0, USD=50000",
+    "evidence": {
+      "ticketStatus": "expired",
+      "reservedCash": {
+        "USD": 0,
+        "GBP": 0,
+        "EUR": 0,
+        "JPY": 0,
+        "AED": 0,
+        "SGD": 0,
+        "CNY": 0,
+        "AUD": 0,
+        "KRW": 0,
+        "INR": 0
+      },
+      "cashWallets": {
+        "INR": 9925000,
+        "USD": 50000,
+        "GBP": 25625.33,
+        "EUR": 25000,
+        "JPY": 5000000,
+        "AED": 100000,
+        "SGD": 50000,
+        "CNY": 200000,
+        "AUD": 50000,
+        "KRW": 50000000
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-D-REASON-01",
+    "title": "HOLD Mandatory Reason Boundary Stress Matrix (<3 Chars Blocked)",
+    "endpoint": "POST /api/fx/queue-action (actionType: HOLD)",
+    "scenario": "Test boundary edge cases for HOLD reasons: empty, whitespace-only, 1-char, 2-chars (all HTTP 400), and exactly 3-chars (HTTP 200).",
+    "expected": "All 5 invalid reasons return HTTP 400, 3-char reason returns HTTP 200",
+    "actual": "All boundaries strictly enforced",
+    "evidence": {
+      "holdOutcomes": [
+        {
+          "test": "Missing Reason Field",
+          "status": 400,
+          "expected": 400,
+          "match": true
+        },
+        {
+          "test": "Empty String Reason",
+          "status": 400,
+          "expected": 400,
+          "match": true
+        },
+        {
+          "test": "Whitespace-Only Reason",
+          "status": 400,
+          "expected": 400,
+          "match": true
+        },
+        {
+          "test": "1-Character Reason",
+          "status": 400,
+          "expected": 400,
+          "match": true
+        },
+        {
+          "test": "2-Character Reason",
+          "status": 400,
+          "expected": 400,
+          "match": true
+        },
+        {
+          "test": "Exactly 3-Character Reason",
+          "status": 200,
+          "expected": 200,
+          "match": true
+        }
+      ]
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-D-REASON-02",
+    "title": "REJECT Mandatory Reason Boundary Stress Matrix (<3 Chars Blocked)",
+    "endpoint": "POST /api/fx/queue-action (actionType: REJECT)",
+    "scenario": "Test boundary edge cases for REJECT reasons: empty, whitespace-only, 1-2 chars (all HTTP 400), valid string (HTTP 200).",
+    "expected": "All 5 invalid reasons return HTTP 400, valid string returns HTTP 200",
+    "actual": "All boundaries strictly enforced",
+    "evidence": {
+      "rejectOutcomes": [
+        {
+          "test": "Missing Reason Field",
+          "status": 400,
+          "expected": 400,
+          "match": true
+        },
+        {
+          "test": "Empty String Reason",
+          "status": 400,
+          "expected": 400,
+          "match": true
+        },
+        {
+          "test": "Whitespace-Only Reason",
+          "status": 400,
+          "expected": 400,
+          "match": true
+        },
+        {
+          "test": "1-Character Reason",
+          "status": 400,
+          "expected": 400,
+          "match": true
+        },
+        {
+          "test": "2-Character Reason",
+          "status": 400,
+          "expected": 400,
+          "match": true
+        },
+        {
+          "test": "Valid 3+ Character Reason",
+          "status": 200,
+          "expected": 200,
+          "match": true
+        }
+      ]
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-D-REASON-03",
+    "title": "RETURN_FOR_CORRECTION Reason Boundary Matrix (<3 Chars Blocked)",
+    "endpoint": "POST /api/fx/queue-action (actionType: RETURN_FOR_CORRECTION)",
+    "scenario": "Test boundary edge cases for RETURN_FOR_CORRECTION reasons: empty, whitespace-only, 1-2 chars (all HTTP 400), valid string (HTTP 200).",
+    "expected": "All 5 invalid reasons return HTTP 400, valid string returns HTTP 200",
+    "actual": "All boundaries strictly enforced",
+    "evidence": {
+      "returnOutcomes": [
+        {
+          "test": "Missing Reason Field",
+          "status": 400,
+          "expected": 400,
+          "match": true
+        },
+        {
+          "test": "Empty String Reason",
+          "status": 400,
+          "expected": 400,
+          "match": true
+        },
+        {
+          "test": "Whitespace-Only Reason",
+          "status": 400,
+          "expected": 400,
+          "match": true
+        },
+        {
+          "test": "1-Character Reason",
+          "status": 400,
+          "expected": 400,
+          "match": true
+        },
+        {
+          "test": "2-Character Reason",
+          "status": 400,
+          "expected": 400,
+          "match": true
+        },
+        {
+          "test": "Valid 3+ Character Reason",
+          "status": 200,
+          "expected": 200,
+          "match": true
+        }
+      ]
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-D-REASON-04",
+    "title": "Terminal Status Immutability Protection",
+    "endpoint": "POST /api/fx/queue-action (APPROVE on rejected, CLAIM on returned)",
+    "scenario": "Attempting to perform further operations on tickets that reached terminal status (rejected / returned). Must return HTTP 400.",
+    "expected": "Both actions rejected with HTTP 400",
+    "actual": "Re-Approve: 400, Re-Claim: 400",
+    "evidence": {
+      "rejectedTicketSettleResponse": {
+        "error": "FX request has already reached terminal status 'rejected'."
+      },
+      "returnedTicketClaimResponse": {
+        "error": "FX request has already reached terminal status 'rejected'."
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-D-LEAKAGE-01",
+    "title": "50-Cycle Churn: Client Cash Wallets Zero-Leakage Audit (10^-6 Precision)",
+    "endpoint": "GET /api/portfolio (post-churn delta check across all 10 currencies)",
+    "scenario": "Subject T01 client wallets to 50 rapid submit -> hold -> reject/return/cancel/expire cycles across all 9 foreign currencies. Compare pre-churn vs post-churn balances.",
+    "expected": "Max balance delta strictly < 10^-6 (0.000000)",
+    "actual": "Max wallet delta = 0.000000",
+    "evidence": {
+      "walletDeltas": {
+        "INR": 0,
+        "USD": 0,
+        "GBP": 0,
+        "EUR": 0,
+        "JPY": 0,
+        "AED": 0,
+        "SGD": 0,
+        "CNY": 0,
+        "AUD": 0,
+        "KRW": 0
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-D-LEAKAGE-02",
+    "title": "50-Cycle Churn: Client Reserved Cash Zero-Residual Audit",
+    "endpoint": "GET /api/portfolio (reservedCash check across all 10 currencies)",
+    "scenario": "Verify that reservedCash for all 10 currencies returns strictly to 0.000000 after 50 churn cycles.",
+    "expected": "All reservedCash values strictly = 0.000000",
+    "actual": "Max residual reserved = 0.000000",
+    "evidence": {
+      "reservedResiduals": {
+        "INR": 0,
+        "USD": 0,
+        "GBP": 0,
+        "EUR": 0,
+        "JPY": 0,
+        "AED": 0,
+        "SGD": 0,
+        "CNY": 0,
+        "AUD": 0,
+        "KRW": 0
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-D-LEAKAGE-03",
+    "title": "50-Cycle Churn: Finite FX Desk Reserve Invariant Audit (A + Res = I)",
+    "endpoint": "GET /api/fx/rates (desk reserves check across all 9 foreign currencies)",
+    "scenario": "Verify that Available Reserve + Reserved Inventory = Current Inventory holds bit-for-bit with 0 inventory leakage after 50 churn cycles.",
+    "expected": "Max desk invariant/inventory delta strictly < 10^-6",
+    "actual": "Max desk error = 0.000000",
+    "evidence": {
+      "reserveInvariants": {
+        "USD": {
+          "invariantError": 0,
+          "inventoryDelta": 0,
+          "availableDelta": 0,
+          "postRes": 15350.44
+        },
+        "GBP": {
+          "invariantError": 0,
+          "inventoryDelta": 0,
+          "availableDelta": 0,
+          "postRes": 11839.53
+        },
+        "EUR": {
+          "invariantError": 0,
+          "inventoryDelta": 0,
+          "availableDelta": 0,
+          "postRes": 14331.63
+        },
+        "JPY": {
+          "invariantError": 0,
+          "inventoryDelta": 0,
+          "availableDelta": 0,
+          "postRes": 4599989
+        },
+        "AED": {
+          "invariantError": 0,
+          "inventoryDelta": 0,
+          "availableDelta": 0,
+          "postRes": 56182
+        },
+        "SGD": {
+          "invariantError": 0,
+          "inventoryDelta": 0,
+          "availableDelta": 0,
+          "postRes": 20417.08
+        },
+        "CNY": {
+          "invariantError": 0,
+          "inventoryDelta": 0,
+          "availableDelta": 0,
+          "postRes": 114586.39
+        },
+        "AUD": {
+          "invariantError": 0,
+          "inventoryDelta": 0,
+          "availableDelta": 0,
+          "postRes": 26009.09
+        },
+        "KRW": {
+          "invariantError": 0,
+          "inventoryDelta": 0,
+          "availableDelta": 0,
+          "postRes": 49454875
+        }
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-D-POSTFLIGHT-01",
+    "title": "Post-flight Authoritative Baseline Hash Verification",
+    "endpoint": "Local File System (state.json)",
+    "scenario": "Confirm authoritative state.json SHA-256 remains 100% bit-exact after all adversarial stress tests",
+    "expected": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "actual": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "evidence": {
+      "sha256": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca"
+    },
+    "status": "PASSED"
+  }
+]

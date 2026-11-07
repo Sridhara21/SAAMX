@@ -62,9 +62,9 @@ export default function HomePage({ state, connected }) {
       category: 'Broker Operations',
       title: '💼 5-Desk Order Clearance',
       path: '#/exchange',
-      desc: 'Physical paper-ticket clearance terminal across 5 simultaneous order desks. Ticket claim locking, risk limits, and duplicate protection.',
+      desc: 'Consolidated intake, slip verification, correction workflows, and order clearance across 5 simultaneous desks. Ticket claim locking, risk limits, and duplicate protection.',
       isProtected: true,
-      badge: 'Mr. X Console',
+      badge: 'Exchange Desk',
       badgeClass: 'badge-protected',
       primary: true,
       action: 'OPEN EXECUTION DESK →'
@@ -74,47 +74,38 @@ export default function HomePage({ state, connected }) {
   const operationalPortals = [
     {
       category: 'Participant Advisory',
-      title: '💼 Broker Advisory Terminal',
+      title: '💼 Broker & Advisory Hub',
       path: '#/advisor',
-      desc: 'Floor advisor console. Security research, public Bull/Bear catalysts, intraday valuation metrics, and publishable broker notes.',
+      desc: 'Floor advisor console. Unified equity research, Bull momentum scanner, Bear vulnerability alerts, and client advisory notes.',
       isProtected: false,
       badge: 'Advisory Desk',
       badgeClass: 'badge-info'
     },
     {
       category: 'Market Perspectives',
-      title: '🐂 Bull Intelligence Terminal',
-      path: '#/bull',
-      desc: 'Bull strategy console. Top gainers, positive catalyst wire, momentum discoveries, and debate talking points for consultations.',
+      title: '🐂 Bull Momentum Scanner',
+      path: '#/advisor',
+      desc: 'Bull strategy scanner within Broker Advisory. Top gainers, positive catalyst wire, momentum discoveries, and growth theses.',
       isProtected: false,
-      badge: 'Bull Role',
+      badge: 'Bull Desk',
       badgeClass: 'badge-rise'
     },
     {
       category: 'Risk & Vulnerability',
-      title: '🐻 Bear Intelligence Terminal',
-      path: '#/bear',
-      desc: 'Bear risk console. Vulnerability scans, overextended equity alerts, circuit risks, and bearish debate arguments.',
+      title: '🐻 Bear Risk Scanner',
+      path: '#/advisor',
+      desc: 'Bear risk scanner within Broker Advisory. Vulnerability scans, overextended equity alerts, circuit risks, and short-bias warnings.',
       isProtected: false,
-      badge: 'Bear Role',
+      badge: 'Bear Desk',
       badgeClass: 'badge-fall'
     },
     {
-      category: 'Auditorium Arena',
-      title: '⚔️ Bull vs Bear Debate Screen',
-      path: '#/debate',
-      desc: 'Shared auditorium debate presentation display. Live indices, spotlight security research, and side-by-side Bull vs Bear arguments.',
-      isProtected: false,
-      badge: 'Public Screen',
-      badgeClass: 'badge-public'
-    },
-    {
       category: 'Broadcast Studio',
-      title: '🎙️ News Anchor Teleprompter',
-      path: '#/news',
-      desc: 'Live studio teleprompter. 10:00 AM Opening Market Rundown & 3:00 PM Closing Market Summary rundowns for broadcast anchors.',
+      title: '🎙️ News Anchor & Studio Prompter',
+      path: '#/journalist',
+      desc: 'Live studio teleprompter integrated in Journalist Console. 10:00 AM Opening Market Rundown & 3:00 PM Closing Market Summary.',
       isProtected: false,
-      badge: 'News Anchor',
+      badge: 'Anchor Mode',
       badgeClass: 'badge-info'
     },
     {
@@ -211,7 +202,7 @@ export default function HomePage({ state, connected }) {
       <div className="card-hero" style={{ position: 'relative', overflow: 'hidden' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '24px' }}>
           <div style={{ flex: 1, minWidth: '320px' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '4px 12px', borderRadius: '9999px', background: 'var(--color-brass-light)', color: '#6C4404', fontSize: '0.74rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '14px', border: '1px solid rgba(132, 85, 8, 0.3)' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '4px 12px', borderRadius: 'var(--radius-full, 9999px)', background: 'var(--color-accent-subtle, rgba(0, 229, 255, 0.08))', color: 'var(--color-accent, #00E5FF)', fontSize: '0.74rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '14px', border: '1px solid var(--color-accent-border, rgba(0, 229, 255, 0.3))' }}>
               <span>🏛️ OFFICIAL FINANCIAL MARKET SIMULATION</span>
             </div>
             <h1 style={{ fontSize: '2.6rem', fontWeight: 900, fontFamily: 'var(--font-brand)', lineHeight: '1.15', color: 'var(--color-ink)', letterSpacing: '0.02em' }}>
@@ -223,36 +214,36 @@ export default function HomePage({ state, connected }) {
           </div>
 
           <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
-            <div style={{ backgroundColor: '#FAF8F3', padding: '16px 20px', borderRadius: '10px', border: '1px solid var(--color-border)', minWidth: '150px' }}>
-              <span style={{ fontSize: '0.7rem', color: '#242C38', display: 'block', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.06em', marginBottom: '4px' }}>EXCHANGE STATUS</span>
+            <div style={{ backgroundColor: 'var(--color-surface)', padding: '16px 20px', borderRadius: 'var(--radius-md, 10px)', border: '1px solid var(--color-border)', minWidth: '150px', boxShadow: 'var(--shadow-xs)' }}>
+              <span style={{ fontSize: '0.7rem', color: 'var(--color-text-secondary)', display: 'block', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.06em', marginBottom: '4px' }}>EXCHANGE STATUS</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span className={`status-pulse-dot ${marketStatus === 'Open' ? '' : 'closed'}`} />
                 <span style={{ fontWeight: 900, fontSize: '1.15rem', color: marketStatus === 'Open' ? 'var(--color-rise)' : 'var(--color-fall)' }}>
                   {marketStatus.toUpperCase()}
                 </span>
               </div>
-              <span style={{ fontSize: '0.75rem', color: '#1E232B', marginTop: '4px', display: 'block', fontWeight: 700 }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '4px', display: 'block', fontWeight: 600 }}>
                 Phase: {sessionState}
               </span>
             </div>
 
-            <div style={{ backgroundColor: '#FAF8F3', padding: '16px 20px', borderRadius: '10px', border: '1px solid var(--color-border)', minWidth: '150px' }}>
-              <span style={{ fontSize: '0.7rem', color: '#242C38', display: 'block', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.06em', marginBottom: '4px' }}>UNIVERSE</span>
+            <div style={{ backgroundColor: 'var(--color-surface)', padding: '16px 20px', borderRadius: 'var(--radius-md, 10px)', border: '1px solid var(--color-border)', minWidth: '150px', boxShadow: 'var(--shadow-xs)' }}>
+              <span style={{ fontSize: '0.7rem', color: 'var(--color-text-secondary)', display: 'block', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.06em', marginBottom: '4px' }}>UNIVERSE</span>
               <div className="font-data" style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--color-ink)' }}>
-                {securitiesCount}+ <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#242C38' }}>Securities</span>
+                {securitiesCount}+ <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>Securities</span>
               </div>
-              <span style={{ fontSize: '0.75rem', color: '#1E232B', marginTop: '4px', display: 'block', fontWeight: 700 }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '4px', display: 'block', fontWeight: 600 }}>
                 {teamsCount} Active Teams
               </span>
             </div>
 
             {totalTrades > 0 && (
-              <div style={{ backgroundColor: '#FAF8F3', padding: '16px 20px', borderRadius: '10px', border: '1px solid var(--color-border)', minWidth: '140px' }}>
-                <span style={{ fontSize: '0.7rem', color: '#242C38', display: 'block', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.06em', marginBottom: '4px' }}>CLEARED TRADES</span>
-                <span className="font-data" style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--color-brass)' }}>
+              <div style={{ backgroundColor: 'var(--color-surface)', padding: '16px 20px', borderRadius: 'var(--radius-md, 10px)', border: '1px solid var(--color-border)', minWidth: '140px', boxShadow: 'var(--shadow-xs)' }}>
+                <span style={{ fontSize: '0.7rem', color: 'var(--color-text-secondary)', display: 'block', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.06em', marginBottom: '4px' }}>CLEARED TRADES</span>
+                <span className="font-data" style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--color-accent, #00E5FF)' }}>
                   {totalTrades.toLocaleString()}
                 </span>
-                <span style={{ fontSize: '0.75rem', color: '#1E232B', marginTop: '4px', display: 'block', fontWeight: 700 }}>
+                <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '4px', display: 'block', fontWeight: 600 }}>
                   Vol: {totalVolume.toLocaleString()}
                 </span>
               </div>
@@ -267,7 +258,7 @@ export default function HomePage({ state, connected }) {
           <h2 style={{ fontSize: '1.15rem', fontWeight: 900, color: 'var(--color-ink)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             📈 LIVE MARKET SNAPSHOT
           </h2>
-          <span style={{ fontSize: '0.8rem', color: '#242C38', fontWeight: 700 }}>
+          <span style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', fontWeight: 700 }}>
             Real-time simulated indices & market breadth
           </span>
         </div>
@@ -278,7 +269,7 @@ export default function HomePage({ state, connected }) {
             return (
               <div key={idx.key} className="card-metric">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#242C38', textTransform: 'uppercase' }}>{idx.name}</span>
+                  <span style={{ fontSize: '0.76rem', fontWeight: 800, color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>{idx.name}</span>
                   <span className={`badge ${isUp ? 'badge-rise' : 'badge-fall'}`}>
                     {isUp ? '▲' : '▼'} {Math.abs(idx.chg).toFixed(2)}%
                   </span>
@@ -294,29 +285,29 @@ export default function HomePage({ state, connected }) {
         {/* Market Breadth Strip */}
         <div className="card-data" style={{ marginTop: '16px', display: 'flex', justifyContent: 'space-around', alignItems: 'center', flexWrap: 'wrap', gap: '16px', padding: '14px 20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#242C38' }}>ADVANCERS:</span>
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--color-text-secondary)' }}>ADVANCERS:</span>
             <span className="font-data" style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--color-rise)' }}>
               {advancers}
             </span>
           </div>
           <div style={{ width: '1px', height: '20px', backgroundColor: 'var(--color-border)' }} />
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#242C38' }}>DECLINERS:</span>
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--color-text-secondary)' }}>DECLINERS:</span>
             <span className="font-data" style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--color-fall)' }}>
               {decliners}
             </span>
           </div>
           <div style={{ width: '1px', height: '20px', backgroundColor: 'var(--color-border)' }} />
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#242C38' }}>UNCHANGED:</span>
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--color-text-secondary)' }}>UNCHANGED:</span>
             <span className="font-data" style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--color-ink)' }}>
               {unchanged}
             </span>
           </div>
           <div style={{ width: '1px', height: '20px', backgroundColor: 'var(--color-border)' }} />
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#242C38' }}>TOTAL TURNOVER:</span>
-            <span className="font-data" style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--color-brass)' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--color-text-secondary)' }}>TOTAL TURNOVER:</span>
+            <span className="font-data" style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--color-accent, #00E5FF)' }}>
               {totalTrades} Trades ({totalVolume.toLocaleString()} units)
             </span>
           </div>
@@ -329,7 +320,7 @@ export default function HomePage({ state, connected }) {
           <h2 style={{ fontSize: '1.15rem', fontWeight: 900, color: 'var(--color-ink)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             🎯 PRIMARY OPERATIONAL WORKSTATIONS
           </h2>
-          <span style={{ fontSize: '0.8rem', color: '#242C38', fontWeight: 700 }}>
+          <span style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', fontWeight: 700 }}>
             Core trading, broadcast & clearance desks
           </span>
         </div>
@@ -348,32 +339,35 @@ export default function HomePage({ state, connected }) {
                 justifyContent: 'space-between',
                 minHeight: '190px',
                 padding: '24px 28px',
-                border: '2px solid rgba(132, 85, 8, 0.45)',
-                background: 'linear-gradient(135deg, #FFFFFF 0%, #FAF8F2 100%)'
+                borderRadius: 'var(--radius-lg, 16px)',
+                border: '1px solid var(--color-border)',
+                background: 'var(--color-surface)',
+                boxShadow: 'var(--shadow-card)',
+                transition: 'transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast)'
               }}
             >
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px', gap: '8px' }}>
-                  <span style={{ fontSize: '0.78rem', color: '#242C38', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                     {portal.category}
                   </span>
                   <span className={`badge ${portal.badgeClass}`}>
                     {portal.badge}
                   </span>
                 </div>
-                <h3 style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--color-ink)', marginBottom: '8px' }}>
+                <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--color-text-primary, var(--color-ink))', marginBottom: '8px' }}>
                   {portal.title}
                 </h3>
-                <p style={{ fontSize: '0.92rem', color: '#1A202C', lineHeight: '1.55', fontWeight: 500 }}>
+                <p style={{ fontSize: '0.92rem', color: 'var(--color-text-secondary)', lineHeight: '1.55', fontWeight: 500 }}>
                   {portal.desc}
                 </p>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px', paddingTop: '14px', borderTop: '1.5px solid var(--color-border)' }}>
-                <span style={{ fontSize: '0.8rem', color: '#242C38', fontWeight: 800 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px', paddingTop: '14px', borderTop: '1px solid var(--color-border)' }}>
+                <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', fontWeight: 700 }}>
                   {portal.isProtected ? '🔒 Auth Protected' : '🌐 Open Access'}
                 </span>
-                <span style={{ fontSize: '0.86rem', fontWeight: 900, color: 'var(--color-brass)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <span style={{ fontSize: '0.86rem', fontWeight: 800, color: 'var(--color-accent)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                   {portal.action}
                 </span>
               </div>
@@ -388,7 +382,7 @@ export default function HomePage({ state, connected }) {
           <h2 style={{ fontSize: '1.15rem', fontWeight: 900, color: 'var(--color-ink)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             🏛️ REGULATORY & MISSION CONTROL
           </h2>
-          <span style={{ fontSize: '0.82rem', color: '#242C38', fontWeight: 800 }}>
+          <span style={{ fontSize: '0.82rem', color: 'var(--color-text-secondary)', fontWeight: 800 }}>
             Market oversight, press wire & administrative panels
           </span>
         </div>
@@ -406,28 +400,32 @@ export default function HomePage({ state, connected }) {
                 flexDirection: 'column',
                 justifyContent: 'space-between',
                 minHeight: '150px',
-                padding: '18px 20px'
+                padding: '18px 20px',
+                borderRadius: 'var(--radius-md, 12px)',
+                border: '1px solid var(--color-border)',
+                background: 'var(--color-surface)',
+                boxShadow: 'var(--shadow-xs)'
               }}
             >
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '0.75rem', color: '#242C38', fontWeight: 800, textTransform: 'uppercase' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>
                     {portal.category}
                   </span>
                   <span className={`badge ${portal.badgeClass}`} style={{ fontSize: '0.7rem', padding: '3px 7px' }}>
                     {portal.badge}
                   </span>
                 </div>
-                <h4 style={{ fontSize: '1.08rem', fontWeight: 900, color: 'var(--color-ink)', marginBottom: '6px' }}>
+                <h4 style={{ fontSize: '1.08rem', fontWeight: 800, color: 'var(--color-text-primary, var(--color-ink))', marginBottom: '6px' }}>
                   {portal.title}
                 </h4>
-                <p style={{ fontSize: '0.86rem', color: '#1A202C', lineHeight: '1.5', fontWeight: 500 }}>
+                <p style={{ fontSize: '0.86rem', color: 'var(--color-text-secondary)', lineHeight: '1.5', fontWeight: 500 }}>
                   {portal.desc}
                 </p>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px', paddingTop: '10px', borderTop: '1px solid var(--color-border)' }}>
-                <span style={{ fontSize: '0.82rem', fontWeight: 900, color: 'var(--color-brass)' }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--color-accent)' }}>
                   OPEN →
                 </span>
               </div>
@@ -448,22 +446,24 @@ export default function HomePage({ state, connected }) {
           alignItems: 'center',
           flexWrap: 'wrap',
           gap: '16px',
-          border: '2px solid #D4AF37',
-          background: 'linear-gradient(135deg, #FFFFFF 0%, #FBF6E9 100%)'
+          borderRadius: 'var(--radius-lg, 16px)',
+          border: '1px solid var(--color-gold-border, rgba(245, 158, 11, 0.35))',
+          background: 'linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface-2) 100%)',
+          boxShadow: 'var(--shadow-card)'
         }}
       >
         <div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
             <span className="badge badge-public">CLOSING CEREMONY</span>
           </div>
-          <h3 style={{ fontSize: '1.35rem', fontWeight: 900, color: 'var(--color-ink)', marginBottom: '4px' }}>
+          <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--color-text-primary, var(--color-ink))', marginBottom: '4px' }}>
             {resultsPortal.title}
           </h3>
-          <p style={{ fontSize: '0.88rem', color: 'var(--color-ink-2)', fontWeight: 500 }}>
+          <p style={{ fontSize: '0.88rem', color: 'var(--color-text-secondary)', fontWeight: 500 }}>
             {resultsPortal.desc}
           </p>
         </div>
-        <div style={{ fontSize: '0.9rem', fontWeight: 900, color: 'var(--color-brass)', padding: '10px 20px', borderRadius: '8px', border: '2px solid var(--color-brass)', backgroundColor: '#FFFFFF' }}>
+        <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--color-gold, #F59E0B)', padding: '10px 20px', borderRadius: 'var(--radius-md, 8px)', border: '1px solid var(--color-gold-border, rgba(245, 158, 11, 0.4))', backgroundColor: 'var(--color-gold-light, rgba(245, 158, 11, 0.12))' }}>
           VIEW PODIUM & LEADERBOARD 🏆
         </div>
       </a>
@@ -471,7 +471,7 @@ export default function HomePage({ state, connected }) {
       {/* 6. Connection Diagnostic Footer */}
       <div style={{
         fontSize: '0.8rem',
-        color: '#242C38',
+        color: 'var(--color-text-muted)',
         textAlign: 'center',
         padding: '16px 8px',
         borderTop: '1px solid var(--color-border)',

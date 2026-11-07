@@ -1,12 +1,33 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { db, ref, onValue } from '../lib/firebase.js';
+import { Card, Badge, Button } from '../components/ui/index.js';
+import {
+  IconBuilding,
+  IconTrendingUp,
+  IconTrendingDown,
+  IconCurrencyExchange,
+  IconBarChart,
+  IconZap,
+  IconActivity,
+  IconAlertTriangle,
+  IconShieldAlert,
+  IconScale,
+  IconRadio,
+  IconFileText,
+  IconLayers,
+  IconMegaphone,
+  IconClock,
+  IconGlobe,
+  IconTrophy,
+  IconX
+} from '../lib/icons.jsx';
 
 // SVG Sparkline drawing from price history
 function Sparkline({ history, isUp, width = 48, height = 18 }) {
   if (!history || history.length < 2) {
     const mockPoints = isUp ? "0,15 16,11 32,13 48,3" : "0,3 16,7 32,5 48,15";
     return (
-      <svg width={width} height={height} style={{ stroke: isUp ? '#065F3E' : '#931913', strokeWidth: 1.8, fill: 'none' }}>
+      <svg width={width} height={height} style={{ stroke: isUp ? 'var(--color-rise, #065F3E)' : 'var(--color-fall, #931913)', strokeWidth: 1.8, fill: 'none' }}>
         <polyline points={mockPoints} />
       </svg>
     );
@@ -22,7 +43,7 @@ function Sparkline({ history, isUp, width = 48, height = 18 }) {
   }).join(' ');
 
   return (
-    <svg width={width} height={height} style={{ stroke: isUp ? '#065F3E' : '#931913', strokeWidth: 1.8, fill: 'none' }}>
+    <svg width={width} height={height} style={{ stroke: isUp ? 'var(--color-rise, #065F3E)' : 'var(--color-fall, #931913)', strokeWidth: 1.8, fill: 'none' }}>
       <polyline points={points} />
     </svg>
   );
@@ -38,29 +59,35 @@ function MarketPulseGauge({ score, label, color }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
       <svg width="92" height="48" viewBox="0 0 92 48">
-        <path d="M 12 40 A 34 34 0 0 1 80 40" fill="none" stroke="#E2DBD0" strokeWidth="7" strokeLinecap="round" />
-        <path d="M 58 12 A 34 34 0 0 1 80 40" fill="none" stroke="#065F3E" strokeWidth="7" strokeLinecap="round" />
-        <path d="M 12 40 A 34 34 0 0 1 34 12" fill="none" stroke="#931913" strokeWidth="7" strokeLinecap="round" />
-        <line x1="46" y1="40" x2={needleX} y2={needleY} stroke="#1E232B" strokeWidth="3" strokeLinecap="round" />
-        <circle cx="46" cy="40" r="4.5" fill="#845508" />
+        <path d="M 12 40 A 34 34 0 0 1 80 40" fill="none" stroke="var(--color-border, #E2DBD0)" strokeWidth="7" strokeLinecap="round" />
+        <path d="M 58 12 A 34 34 0 0 1 80 40" fill="none" stroke="var(--color-rise, #065F3E)" strokeWidth="7" strokeLinecap="round" />
+        <path d="M 12 40 A 34 34 0 0 1 34 12" fill="none" stroke="var(--color-fall, #931913)" strokeWidth="7" strokeLinecap="round" />
+        <line x1="46" y1="40" x2={needleX} y2={needleY} stroke="var(--color-ink, #1E232B)" strokeWidth="3" strokeLinecap="round" />
+        <circle cx="46" cy="40" r="4.5" fill="var(--color-brass, #845508)" />
       </svg>
       <div>
-        <div style={{ fontSize: '1.05rem', fontWeight: 900, color, fontFamily: 'monospace', letterSpacing: '0.5px' }}>
+        <div style={{ fontSize: '1.05rem', fontWeight: 900, color, fontFamily: 'var(--font-mono, monospace)', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: color, display: 'inline-block' }} />
           {label}
         </div>
-        <div style={{ fontSize: '0.74rem', color: '#4A5568', fontWeight: 700 }}>
-          Breadth Index: {score}/100
+        <div style={{ fontSize: '0.74rem', color: 'var(--color-ink-muted, #4A5568)', fontWeight: 700 }}>
+          Breadth Index: <span className="font-mono tabular-nums">{score}</span>/100
         </div>
       </div>
     </div>
   );
 }
 
-export default function ProjectorPage({ state, takeoverEvent }) {
+export default function ProjectorPage({
+  state,
+  takeoverEvent,
+  onOpenProfile,
+  connected = true,
+  isCoordinatorOffline = false
+}) {
   const [timeLeft, setTimeLeft] = useState('60:00');
   const [serverTimeOffset, setServerTimeOffset] = useState(0);
   const [currentTimeStr, setCurrentTimeStr] = useState('');
-  const [activeModal, setActiveModal] = useState(null);
   const [activeTakeover, setActiveTakeover] = useState(null);
 
   // Auto-dismiss breaking overlays after 8 seconds so overlays never get stuck on projector
@@ -99,33 +126,96 @@ export default function ProjectorPage({ state, takeoverEvent }) {
     return () => unsub();
   }, []);
 
-  // Update digital clock time string
+  // Update digital clock time string in Asia/Kolkata timezone
   useEffect(() => {
     const updateTime = () => {
       const now = new Date(Date.now() + serverTimeOffset);
-      setCurrentTimeStr(now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }));
+      try {
+        setCurrentTimeStr(new Intl.DateTimeFormat('en-US', {
+          timeZone: 'Asia/Kolkata',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true
+        }).format(now));
+      } catch (e) {
+        setCurrentTimeStr(now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }));
+      }
     };
     updateTime();
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
   }, [serverTimeOffset]);
 
-  // Session Clock countdown logic
+  // Session Clock countdown logic (Supports SCHEDULE_SYNC and COUNTDOWN)
   useEffect(() => {
     const status = state?.marketState?.status || 'NotStarted';
     const startTime = state?.marketState?.simulationStartTime;
-    const durationMins = state?.marketState?.simulationDurationMinutes || 60;
+    const durationMins = state?.marketState?.simulationDurationMinutes || 360;
+    const mode = state?.marketState?.timerMode || 'SCHEDULE_SYNC';
     const pauseOffset = state?.marketState?.pauseTimeOffset || 0;
     const pausedAt = state?.marketState?.pausedAt;
 
-    if (status === 'NotStarted' || !startTime) {
-      const minutesStr = String(durationMins).padStart(2, '0');
-      setTimeLeft(`${minutesStr}:00`);
+    if (status === 'Closed') {
+      setTimeLeft('00:00');
       return;
     }
 
-    if (status === 'Closed') {
-      setTimeLeft('00:00');
+    if (mode === 'SCHEDULE_SYNC') {
+      const updateScheduleClock = () => {
+        const currentServerTime = Date.now() + serverTimeOffset;
+        let curHours = 9, curMins = 30, curSecs = 0;
+        try {
+          const parts = new Intl.DateTimeFormat('en-GB', {
+            timeZone: 'Asia/Kolkata',
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+          }).formatToParts(new Date(currentServerTime));
+          curHours = parseInt(parts.find(p => p.type === 'hour')?.value || '9', 10);
+          curMins = parseInt(parts.find(p => p.type === 'minute')?.value || '30', 10);
+          curSecs = parseInt(parts.find(p => p.type === 'second')?.value || '0', 10);
+        } catch (e) {
+          const d = new Date(currentServerTime);
+          curHours = d.getHours();
+          curMins = d.getMinutes();
+          curSecs = d.getSeconds();
+        }
+        const curTotalMins = curHours * 60 + curMins;
+
+        if (curTotalMins >= 15 * 60 + 30) {
+          setTimeLeft('00:00');
+          return;
+        }
+
+        let targetMins = 15 * 60 + 30;
+        if (curTotalMins < 9 * 60 + 30) {
+          targetMins = 9 * 60 + 30;
+        } else if (curTotalMins >= 12 * 60 && curTotalMins < 13 * 60) {
+          targetMins = 13 * 60;
+        }
+
+        const diffMins = Math.max(0, targetMins - curTotalMins);
+        const diffSecs = (60 - curSecs) % 60;
+        const displayMins = diffSecs === 0 ? diffMins : Math.max(0, diffMins - 1);
+        const displayHours = Math.floor(displayMins / 60);
+        const remMins = displayMins % 60;
+        const formatted = displayHours > 0
+          ? `${String(displayHours).padStart(2, '0')}:${String(remMins).padStart(2, '0')}:${String(diffSecs).padStart(2, '0')}`
+          : `${String(remMins).padStart(2, '0')}:${String(diffSecs).padStart(2, '0')}`;
+        setTimeLeft(formatted);
+      };
+
+      updateScheduleClock();
+      const interval = setInterval(updateScheduleClock, 1000);
+      return () => clearInterval(interval);
+    }
+
+    // COUNTDOWN MODE
+    if (status === 'NotStarted' || !startTime) {
+      const minutesStr = String(durationMins).padStart(2, '0');
+      setTimeLeft(`${minutesStr}:00`);
       return;
     }
 
@@ -139,7 +229,7 @@ export default function ProjectorPage({ state, takeoverEvent }) {
       } else {
         elapsedMs = currentServerTime - startTime - pauseOffset;
       }
-      
+
       const remainingMs = Math.max(0, durationMs - elapsedMs);
       const mins = Math.floor(remainingMs / 60000);
       const secs = Math.floor((remainingMs % 60000) / 1000);
@@ -189,7 +279,7 @@ export default function ProjectorPage({ state, takeoverEvent }) {
     };
   }, [state?.marketIndices]);
 
-  // Comprehensive Market Breadth (Active Universe of 1,800 assets)
+  // Comprehensive Market Breadth
   const breadth = useMemo(() => {
     const active = securities.filter(s => s.status !== 'UNLISTED');
     let adv = 0;
@@ -205,7 +295,7 @@ export default function ProjectorPage({ state, takeoverEvent }) {
     });
 
     const ratio = dec > 0 ? (adv / dec).toFixed(2) : adv > 0 ? (adv / 1).toFixed(2) : '1.00';
-    const total = active.length || 1800;
+    const total = active.length || 2000;
     const advPct = total > 0 ? (adv / total) * 100 : 50;
     const decPct = total > 0 ? (dec / total) * 100 : 50;
 
@@ -223,29 +313,29 @@ export default function ProjectorPage({ state, takeoverEvent }) {
     score = Math.max(5, Math.min(95, score));
 
     let label = 'NEUTRAL / MIXED';
-    let color = '#845508';
+    let color = 'var(--color-brass, #845508)';
 
     if (score >= 70) {
-      label = '🟢 BULLISH';
-      color = '#065F3E';
+      label = 'BULLISH';
+      color = 'var(--color-rise, #065F3E)';
     } else if (score >= 56) {
-      label = '🟢 MILDLY BULLISH';
+      label = 'MILDLY BULLISH';
       color = '#0A7A50';
     } else if (score <= 30) {
-      label = '🔴 STRONGLY BEARISH';
-      color = '#931913';
+      label = 'STRONGLY BEARISH';
+      color = 'var(--color-fall, #931913)';
     } else if (score <= 44) {
-      label = '🔴 BEARISH';
+      label = 'BEARISH';
       color = '#B91C1C';
     } else {
-      label = '🟡 BALANCED';
-      color = '#845508';
+      label = 'BALANCED';
+      color = 'var(--color-brass, #845508)';
     }
 
     return { score, label, color };
   }, [breadth, marketIndices]);
 
-  // Top Gainers (across entire active 1,800 universe)
+  // Top Gainers
   const topGainers = useMemo(() => {
     return [...securities]
       .filter(s => s.status !== 'UNLISTED' && s.status !== 'Bankrupt')
@@ -260,7 +350,7 @@ export default function ProjectorPage({ state, takeoverEvent }) {
       .slice(0, 6);
   }, [securities]);
 
-  // Top Losers (across entire active 1,800 universe)
+  // Top Losers
   const topLosers = useMemo(() => {
     return [...securities]
       .filter(s => s.status !== 'UNLISTED' && s.status !== 'Bankrupt')
@@ -275,7 +365,7 @@ export default function ProjectorPage({ state, takeoverEvent }) {
       .slice(0, 6);
   }, [securities]);
 
-  // Top Most Active by Volume (incorporates live trades + volume)
+  // Top Most Active by Volume
   const mostActive = useMemo(() => {
     const volMap = {};
     transactions.forEach(tx => {
@@ -317,7 +407,6 @@ export default function ProjectorPage({ state, takeoverEvent }) {
   // Dynamic Market Narrative Statements
   const marketNarrative = useMemo(() => {
     const topSec = sectorPerformance[0];
-    const botSec = sectorPerformance[sectorPerformance.length - 1];
     const lines = [];
 
     if (topSec && topSec.avgPct > 0) {
@@ -369,7 +458,11 @@ export default function ProjectorPage({ state, takeoverEvent }) {
   };
 
   const sessionState = state?.marketState?.sessionState || (state?.marketState?.status === 'Open' ? 'CONTINUOUS_TRADING' : 'PRE_OPEN');
-  const leaderboard = state?.leaderboard || [];
+  const leaderboard = useMemo(() => {
+    const raw = state?.leaderboard;
+    const list = Array.isArray(raw) ? raw : Object.values(raw || {});
+    return [...list].sort((a, b) => (Number(a.rank) || 999) - (Number(b.rank) || 999));
+  }, [state?.leaderboard]);
 
   // =========================================================================
   // HIGH-SEVERITY NEWS & TAKEOVER OVERLAYS
@@ -386,8 +479,8 @@ export default function ProjectorPage({ state, takeoverEvent }) {
             onClick={() => setActiveTakeover(null)}
             style={{
               position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-              backgroundColor: 'rgba(10, 13, 20, 0.88)',
-              backdropFilter: 'blur(6px)',
+              backgroundColor: 'rgba(10, 13, 20, 0.90)',
+              backdropFilter: 'blur(8px)',
               zIndex: 100000,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               padding: '24px',
@@ -397,25 +490,26 @@ export default function ProjectorPage({ state, takeoverEvent }) {
             <div
               onClick={(e) => e.stopPropagation()}
               style={{
-                backgroundColor: '#FFFFFF',
-                border: `4px solid ${severity === 'CRITICAL' ? '#931913' : '#845508'}`,
+                backgroundColor: 'var(--color-surface, #FFFFFF)',
+                border: `4px solid ${severity === 'CRITICAL' ? 'var(--color-fall, #931913)' : 'var(--color-brass, #845508)'}`,
                 borderRadius: '16px',
                 maxWidth: '840px',
                 width: '100%',
                 padding: '36px 44px',
-                boxShadow: '0 25px 70px rgba(0, 0, 0, 0.5)',
+                boxShadow: '0 25px 70px rgba(0, 0, 0, 0.6)',
                 position: 'relative',
                 animation: 'slideUpModal 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
                 cursor: 'default'
               }}
             >
               <button
+                type="button"
                 onClick={() => setActiveTakeover(null)}
                 style={{
                   position: 'absolute', top: '16px', right: '20px',
-                  background: '#F1F5F9', border: '1px solid #CBD5E1',
-                  borderRadius: '6px', padding: '4px 10px',
-                  fontSize: '0.75rem', fontWeight: 800, color: '#475569',
+                  background: 'var(--color-surface-sunken, #F1F5F9)', border: '1px solid var(--color-border, #CBD5E1)',
+                  borderRadius: '6px', padding: '6px 12px',
+                  fontSize: '0.78rem', fontWeight: 800, color: 'var(--color-ink, #475569)',
                   cursor: 'pointer'
                 }}
               >
@@ -423,7 +517,7 @@ export default function ProjectorPage({ state, takeoverEvent }) {
               </button>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
                 <span style={{
-                  backgroundColor: severity === 'CRITICAL' ? '#931913' : '#845508',
+                  backgroundColor: severity === 'CRITICAL' ? 'var(--color-fall, #931913)' : 'var(--color-brass, #845508)',
                   color: '#FFFFFF',
                   padding: '6px 16px',
                   borderRadius: '6px',
@@ -434,18 +528,18 @@ export default function ProjectorPage({ state, takeoverEvent }) {
                   alignItems: 'center',
                   gap: '8px'
                 }}>
-                  <span>⚡</span> {severity || 'BREAKING'} MARKET NEWS
+                  <IconZap size={16} color="#FFFFFF" /> {severity || 'BREAKING'} MARKET NEWS
                 </span>
-                <span style={{ color: '#845508', fontSize: '0.88rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px' }}>
+                <span style={{ color: 'var(--color-brass, #845508)', fontSize: '0.88rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px' }}>
                   CATEGORY: {category || 'GLOBAL MACRO'}
                 </span>
               </div>
 
               <h1 style={{
                 fontSize: '2.4rem',
-                fontFamily: 'Cinzel, serif',
+                fontFamily: "var(--font-display, 'Cinzel', serif)",
                 fontWeight: 900,
-                color: '#1E232B',
+                color: 'var(--color-ink, #1E232B)',
                 lineHeight: 1.25,
                 margin: '0 0 16px 0'
               }}>
@@ -454,7 +548,7 @@ export default function ProjectorPage({ state, takeoverEvent }) {
 
               <p style={{
                 fontSize: '1.2rem',
-                color: '#4A5568',
+                color: 'var(--color-ink-muted, #4A5568)',
                 lineHeight: 1.5,
                 margin: '0 0 24px 0'
               }}>
@@ -466,20 +560,19 @@ export default function ProjectorPage({ state, takeoverEvent }) {
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 paddingTop: '16px',
-                borderTop: '1.5px solid #E2DBD0'
+                borderTop: '1.5px solid var(--color-border, #E2DBD0)'
               }}>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.85rem', color: '#6B6863', fontWeight: 800 }}>MARKET REACTION:</span>
-                  <span style={{
-                    color: (impactPercent || 0) >= 0 ? '#065F3E' : '#931913',
+                  <span style={{ fontSize: '0.85rem', color: 'var(--color-ink-muted, #6B6863)', fontWeight: 800 }}>MARKET REACTION:</span>
+                  <span className="font-mono tabular-nums" style={{
+                    color: (impactPercent || 0) >= 0 ? 'var(--color-rise, #065F3E)' : 'var(--color-fall, #931913)',
                     fontWeight: 900,
-                    fontSize: '1.2rem',
-                    fontFamily: 'monospace'
+                    fontSize: '1.2rem'
                   }}>
                     {(impactPercent !== undefined && impactPercent !== 0) ? `${impactPercent > 0 ? '▲ +' : '▼ '}${Math.abs(impactPercent)}%` : 'HIGH VOLATILITY'}
                   </span>
                 </div>
-                <span style={{ color: '#6B6863', fontSize: '0.8rem', fontWeight: 700 }}>
+                <span style={{ color: 'var(--color-ink-muted, #6B6863)', fontSize: '0.8rem', fontWeight: 700 }}>
                   SAAMX FINANCIAL NEWS WIRE &bull; DISPATCHED TO ALL TRADING FLOORS
                 </span>
               </div>
@@ -494,7 +587,8 @@ export default function ProjectorPage({ state, takeoverEvent }) {
             onClick={() => setActiveTakeover(null)}
             style={{
               position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-              backgroundColor: 'rgba(8, 10, 14, 0.85)',
+              backgroundColor: 'rgba(8, 10, 14, 0.90)',
+              backdropFilter: 'blur(8px)',
               zIndex: 100000,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: 'pointer'
@@ -503,38 +597,41 @@ export default function ProjectorPage({ state, takeoverEvent }) {
             <div
               onClick={(e) => e.stopPropagation()}
               style={{
-                backgroundColor: '#FFFFFF',
-                border: '3px solid #D97706',
+                backgroundColor: 'var(--color-surface, #FFFFFF)',
+                border: '3px solid var(--color-warning, #D97706)',
                 borderRadius: '16px',
                 padding: '40px',
                 textAlign: 'center',
                 maxWidth: '700px',
                 width: '90%',
-                boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
                 position: 'relative',
                 cursor: 'default'
               }}
             >
               <button
+                type="button"
                 onClick={() => setActiveTakeover(null)}
                 style={{
                   position: 'absolute', top: '16px', right: '20px',
-                  background: '#F1F5F9', border: '1px solid #CBD5E1',
-                  borderRadius: '6px', padding: '4px 10px',
-                  fontSize: '0.75rem', fontWeight: 800, color: '#475569',
+                  background: 'var(--color-surface-sunken, #F1F5F9)', border: '1px solid var(--color-border, #CBD5E1)',
+                  borderRadius: '6px', padding: '6px 12px',
+                  fontSize: '0.78rem', fontWeight: 800, color: 'var(--color-ink, #475569)',
                   cursor: 'pointer'
                 }}
               >
                 ✕ CLOSE [ESC]
               </button>
-              <span style={{ fontSize: '4.5rem', display: 'inline-block', marginBottom: '14px' }}>⚠️</span>
-              <h1 style={{ color: '#D97706', fontSize: '2.3rem', fontFamily: 'Cinzel, serif', margin: '0 0 10px 0' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px' }}>
+                <IconAlertTriangle size={56} color="var(--color-warning, #D97706)" />
+              </div>
+              <h1 style={{ color: 'var(--color-warning, #D97706)', fontSize: '2.3rem', fontFamily: "var(--font-display, 'Cinzel', serif)", margin: '0 0 10px 0' }}>
                 TRADING HALTED &bull; REGULATORY BREAKER
               </h1>
-              <p style={{ color: '#1E232B', fontSize: '1.3rem', fontWeight: 800, margin: '0 0 14px 0' }}>
+              <p style={{ color: 'var(--color-ink, #1E232B)', fontSize: '1.3rem', fontWeight: 800, margin: '0 0 14px 0' }}>
                 Asset / Listing: {ticker} {name ? `(${name})` : ''}
               </p>
-              <p style={{ color: '#4A5568', fontSize: '1rem', lineHeight: 1.5, margin: 0 }}>
+              <p style={{ color: 'var(--color-ink-muted, #4A5568)', fontSize: '1rem', lineHeight: 1.5, margin: 0 }}>
                 Order execution temporarily suspended by SEBI Exchange Regulators. Floor desks are locked.
               </p>
             </div>
@@ -549,8 +646,8 @@ export default function ProjectorPage({ state, takeoverEvent }) {
             onClick={() => setActiveTakeover(null)}
             style={{
               position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-              backgroundColor: 'rgba(10, 15, 26, 0.88)',
-              backdropFilter: 'blur(6px)',
+              backgroundColor: 'rgba(10, 15, 26, 0.90)',
+              backdropFilter: 'blur(8px)',
               zIndex: 100000,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               padding: '24px',
@@ -560,42 +657,47 @@ export default function ProjectorPage({ state, takeoverEvent }) {
             <div
               onClick={(e) => e.stopPropagation()}
               style={{
-                backgroundColor: '#FFFFFF',
-                border: '4px solid #845508',
+                backgroundColor: 'var(--color-surface, #FFFFFF)',
+                border: '4px solid var(--color-brass, #845508)',
                 borderRadius: '16px',
                 maxWidth: '780px',
                 width: '90%',
                 padding: '36px 44px',
                 textAlign: 'center',
-                boxShadow: '0 25px 70px rgba(0, 0, 0, 0.5)',
+                boxShadow: '0 25px 70px rgba(0, 0, 0, 0.6)',
                 position: 'relative',
                 cursor: 'default'
               }}
             >
               <button
+                type="button"
                 onClick={() => setActiveTakeover(null)}
                 style={{
                   position: 'absolute', top: '16px', right: '20px',
-                  background: '#F1F5F9', border: '1px solid #CBD5E1',
-                  borderRadius: '6px', padding: '4px 10px',
-                  fontSize: '0.75rem', fontWeight: 800, color: '#475569',
+                  background: 'var(--color-surface-sunken, #F1F5F9)', border: '1px solid var(--color-border, #CBD5E1)',
+                  borderRadius: '6px', padding: '6px 12px',
+                  fontSize: '0.78rem', fontWeight: 800, color: 'var(--color-ink, #475569)',
                   cursor: 'pointer'
                 }}
               >
                 ✕ CLOSE [ESC]
               </button>
-              <span style={{ fontSize: '4.5rem', display: 'inline-block', marginBottom: '12px' }}>🔔</span>
-              <span style={{ backgroundColor: '#845508', color: '#FFF', padding: '6px 16px', borderRadius: '6px', fontWeight: 900, fontSize: '0.88rem', letterSpacing: '1px' }}>
-                PRIMARY IPO SUBSCRIPTION OPEN
-              </span>
-              <h1 style={{ fontSize: '2.4rem', fontFamily: 'Cinzel, serif', color: '#1E232B', margin: '16px 0 8px 0' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
+                <IconActivity size={56} color="var(--color-brass, #845508)" />
+              </div>
+              <div>
+                <span style={{ backgroundColor: 'var(--color-brass, #845508)', color: '#FFF', padding: '6px 16px', borderRadius: '6px', fontWeight: 900, fontSize: '0.88rem', letterSpacing: '1px' }}>
+                  PRIMARY IPO SUBSCRIPTION OPEN
+                </span>
+              </div>
+              <h1 style={{ fontSize: '2.4rem', fontFamily: "var(--font-display, 'Cinzel', serif)", color: 'var(--color-ink, #1E232B)', margin: '16px 0 8px 0' }}>
                 {name || headline || ticker}
               </h1>
-              <p style={{ color: '#845508', fontSize: '1.3rem', fontWeight: 800, margin: '0 0 16px 0' }}>
+              <p className="font-mono tabular-nums" style={{ color: 'var(--color-brass, #845508)', fontSize: '1.3rem', fontWeight: 800, margin: '0 0 16px 0' }}>
                 Ticker: {ticker} &bull; Issue Price: ₹{activeTakeover.ipoPrice || activeTakeover.offerPrice || 100}
               </p>
-              <p style={{ color: '#4A5568', fontSize: '1.05rem', lineHeight: 1.5, margin: 0 }}>
-                Primary bidding window is now active across institutional terminals. Order matching opens in 60 seconds.
+              <p style={{ color: 'var(--color-ink-muted, #4A5568)', fontSize: '1.05rem', lineHeight: 1.5, margin: 0 }}>
+                Primary bidding window is now active across institutional terminals. Order matching opens shortly.
               </p>
             </div>
           </div>
@@ -608,8 +710,8 @@ export default function ProjectorPage({ state, takeoverEvent }) {
             onClick={() => setActiveTakeover(null)}
             style={{
               position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-              backgroundColor: 'rgba(6, 40, 26, 0.88)',
-              backdropFilter: 'blur(6px)',
+              backgroundColor: 'rgba(6, 40, 26, 0.90)',
+              backdropFilter: 'blur(8px)',
               zIndex: 100000,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               padding: '24px',
@@ -619,41 +721,46 @@ export default function ProjectorPage({ state, takeoverEvent }) {
             <div
               onClick={(e) => e.stopPropagation()}
               style={{
-                backgroundColor: '#FFFFFF',
-                border: '4px solid #065F3E',
+                backgroundColor: 'var(--color-surface, #FFFFFF)',
+                border: '4px solid var(--color-rise, #065F3E)',
                 borderRadius: '16px',
                 maxWidth: '780px',
                 width: '90%',
                 padding: '36px 44px',
                 textAlign: 'center',
-                boxShadow: '0 25px 70px rgba(0, 0, 0, 0.5)',
+                boxShadow: '0 25px 70px rgba(0, 0, 0, 0.6)',
                 position: 'relative',
                 cursor: 'default'
               }}
             >
               <button
+                type="button"
                 onClick={() => setActiveTakeover(null)}
                 style={{
                   position: 'absolute', top: '16px', right: '20px',
-                  background: '#F1F5F9', border: '1px solid #CBD5E1',
-                  borderRadius: '6px', padding: '4px 10px',
-                  fontSize: '0.75rem', fontWeight: 800, color: '#475569',
+                  background: 'var(--color-surface-sunken, #F1F5F9)', border: '1px solid var(--color-border, #CBD5E1)',
+                  borderRadius: '6px', padding: '6px 12px',
+                  fontSize: '0.78rem', fontWeight: 800, color: 'var(--color-ink, #475569)',
                   cursor: 'pointer'
                 }}
               >
                 ✕ CLOSE [ESC]
               </button>
-              <span style={{ fontSize: '4.5rem', display: 'inline-block', marginBottom: '12px' }}>🚀</span>
-              <span style={{ backgroundColor: '#065F3E', color: '#FFF', padding: '6px 16px', borderRadius: '6px', fontWeight: 900, fontSize: '0.88rem', letterSpacing: '1px' }}>
-                IPO LISTED & ACTIVE TRADING LIVE
-              </span>
-              <h1 style={{ fontSize: '2.4rem', fontFamily: 'Cinzel, serif', color: '#1E232B', margin: '16px 0 8px 0' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
+                <IconTrendingUp size={56} color="var(--color-rise, #065F3E)" />
+              </div>
+              <div>
+                <span style={{ backgroundColor: 'var(--color-rise, #065F3E)', color: '#FFF', padding: '6px 16px', borderRadius: '6px', fontWeight: 900, fontSize: '0.88rem', letterSpacing: '1px' }}>
+                  IPO LISTED & ACTIVE TRADING LIVE
+                </span>
+              </div>
+              <h1 style={{ fontSize: '2.4rem', fontFamily: "var(--font-display, 'Cinzel', serif)", color: 'var(--color-ink, #1E232B)', margin: '16px 0 8px 0' }}>
                 {name || ticker} ({ticker})
               </h1>
-              <p style={{ color: '#065F3E', fontSize: '1.25rem', fontWeight: 800, margin: '0 0 16px 0' }}>
+              <p style={{ color: 'var(--color-rise, #065F3E)', fontSize: '1.25rem', fontWeight: 800, margin: '0 0 16px 0' }}>
                 Listing Allotments Finalized &bull; Continuous Secondary Market Trading Live
               </p>
-              <p style={{ color: '#4A5568', fontSize: '1.05rem', lineHeight: 1.5, margin: 0 }}>
+              <p style={{ color: 'var(--color-ink-muted, #4A5568)', fontSize: '1.05rem', lineHeight: 1.5, margin: 0 }}>
                 Allotments credited to institutional participant portfolios. Secondary market orders active.
               </p>
             </div>
@@ -668,8 +775,8 @@ export default function ProjectorPage({ state, takeoverEvent }) {
             onClick={() => setActiveTakeover(null)}
             style={{
               position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-              backgroundColor: 'rgba(30, 8, 8, 0.90)',
-              backdropFilter: 'blur(6px)',
+              backgroundColor: 'rgba(30, 8, 8, 0.92)',
+              backdropFilter: 'blur(8px)',
               zIndex: 100000,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               padding: '24px',
@@ -679,41 +786,46 @@ export default function ProjectorPage({ state, takeoverEvent }) {
             <div
               onClick={(e) => e.stopPropagation()}
               style={{
-                backgroundColor: '#FFFFFF',
-                border: '4px solid #931913',
+                backgroundColor: 'var(--color-surface, #FFFFFF)',
+                border: '4px solid var(--color-fall, #931913)',
                 borderRadius: '16px',
                 maxWidth: '780px',
                 width: '90%',
                 padding: '36px 44px',
                 textAlign: 'center',
-                boxShadow: '0 25px 70px rgba(0, 0, 0, 0.5)',
+                boxShadow: '0 25px 70px rgba(0, 0, 0, 0.6)',
                 position: 'relative',
                 cursor: 'default'
               }}
             >
               <button
+                type="button"
                 onClick={() => setActiveTakeover(null)}
                 style={{
                   position: 'absolute', top: '16px', right: '20px',
-                  background: '#F1F5F9', border: '1px solid #CBD5E1',
-                  borderRadius: '6px', padding: '4px 10px',
-                  fontSize: '0.75rem', fontWeight: 800, color: '#475569',
+                  background: 'var(--color-surface-sunken, #F1F5F9)', border: '1px solid var(--color-border, #CBD5E1)',
+                  borderRadius: '6px', padding: '6px 12px',
+                  fontSize: '0.78rem', fontWeight: 800, color: 'var(--color-ink, #475569)',
                   cursor: 'pointer'
                 }}
               >
                 ✕ CLOSE [ESC]
               </button>
-              <span style={{ fontSize: '4.5rem', display: 'inline-block', marginBottom: '12px' }}>⚖️</span>
-              <span style={{ backgroundColor: '#931913', color: '#FFF', padding: '6px 16px', borderRadius: '6px', fontWeight: 900, fontSize: '0.88rem', letterSpacing: '1px' }}>
-                NCLT INSOLVENCY DECREE &bull; LIQUIDATION
-              </span>
-              <h1 style={{ fontSize: '2.4rem', fontFamily: 'Cinzel, serif', color: '#931913', margin: '16px 0 8px 0' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
+                <IconScale size={56} color="var(--color-fall, #931913)" />
+              </div>
+              <div>
+                <span style={{ backgroundColor: 'var(--color-fall, #931913)', color: '#FFF', padding: '6px 16px', borderRadius: '6px', fontWeight: 900, fontSize: '0.88rem', letterSpacing: '1px' }}>
+                  NCLT INSOLVENCY DECREE &bull; LIQUIDATION
+                </span>
+              </div>
+              <h1 style={{ fontSize: '2.4rem', fontFamily: "var(--font-display, 'Cinzel', serif)", color: 'var(--color-fall, #931913)', margin: '16px 0 8px 0' }}>
                 {ticker} &mdash; {name || 'Asset Insolvent'}
               </h1>
-              <p style={{ color: '#1E232B', fontSize: '1.2rem', fontWeight: 800, margin: '0 0 16px 0' }}>
+              <p className="font-mono tabular-nums" style={{ color: 'var(--color-ink, #1E232B)', fontSize: '1.2rem', fontWeight: 800, margin: '0 0 16px 0' }}>
                 Share Value Declared Worthless (₹0.00) &bull; Floating Units Revoked
               </p>
-              <p style={{ color: '#4A5568', fontSize: '1.05rem', lineHeight: 1.5, margin: 0 }}>
+              <p style={{ color: 'var(--color-ink-muted, #4A5568)', fontSize: '1.05rem', lineHeight: 1.5, margin: 0 }}>
                 Regulatory tribunal has mandated winding up. Trading is permanently suspended and positions liquidated.
               </p>
             </div>
@@ -727,8 +839,8 @@ export default function ProjectorPage({ state, takeoverEvent }) {
             onClick={() => setActiveTakeover(null)}
             style={{
               position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-              backgroundColor: 'rgba(6, 40, 26, 0.90)',
-              backdropFilter: 'blur(6px)',
+              backgroundColor: 'rgba(6, 40, 26, 0.92)',
+              backdropFilter: 'blur(8px)',
               zIndex: 100000,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: 'pointer'
@@ -737,38 +849,41 @@ export default function ProjectorPage({ state, takeoverEvent }) {
             <div
               onClick={(e) => e.stopPropagation()}
               style={{
-                backgroundColor: '#FFFFFF',
-                border: '4px solid #065F3E',
+                backgroundColor: 'var(--color-surface, #FFFFFF)',
+                border: '4px solid var(--color-rise, #065F3E)',
                 borderRadius: '16px',
                 padding: '40px',
                 textAlign: 'center',
                 maxWidth: '700px',
                 width: '90%',
-                boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
                 position: 'relative',
                 cursor: 'default'
               }}
             >
               <button
+                type="button"
                 onClick={() => setActiveTakeover(null)}
                 style={{
                   position: 'absolute', top: '16px', right: '20px',
-                  background: '#F1F5F9', border: '1px solid #CBD5E1',
-                  borderRadius: '6px', padding: '4px 10px',
-                  fontSize: '0.75rem', fontWeight: 800, color: '#475569',
+                  background: 'var(--color-surface-sunken, #F1F5F9)', border: '1px solid var(--color-border, #CBD5E1)',
+                  borderRadius: '6px', padding: '6px 12px',
+                  fontSize: '0.78rem', fontWeight: 800, color: 'var(--color-ink, #475569)',
                   cursor: 'pointer'
                 }}
               >
                 ✕ CLOSE [ESC]
               </button>
-              <span style={{ fontSize: '5rem', display: 'inline-block', marginBottom: '14px' }}>🔔</span>
-              <h1 style={{ color: '#065F3E', fontSize: '2.6rem', fontFamily: 'Cinzel, serif', margin: '0 0 10px 0' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px' }}>
+                <IconActivity size={56} color="var(--color-rise, #065F3E)" />
+              </div>
+              <h1 style={{ color: 'var(--color-rise, #065F3E)', fontSize: '2.6rem', fontFamily: "var(--font-display, 'Cinzel', serif)", margin: '0 0 10px 0' }}>
                 SAAMX FLOOR OPEN
               </h1>
-              <p style={{ color: '#1E232B', fontSize: '1.25rem', fontWeight: 800, margin: '0 0 14px 0' }}>
+              <p style={{ color: 'var(--color-ink, #1E232B)', fontSize: '1.25rem', fontWeight: 800, margin: '0 0 14px 0' }}>
                 Continuous Institutional Trading Session is Active
               </p>
-              <p style={{ color: '#4A5568', fontSize: '1rem', margin: 0 }}>
+              <p style={{ color: 'var(--color-ink-muted, #4A5568)', fontSize: '1rem', margin: 0 }}>
                 Order matching engines, currency exchange desks, and primary IPO portals are open.
               </p>
             </div>
@@ -782,8 +897,8 @@ export default function ProjectorPage({ state, takeoverEvent }) {
             onClick={() => setActiveTakeover(null)}
             style={{
               position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-              backgroundColor: 'rgba(30, 8, 8, 0.90)',
-              backdropFilter: 'blur(6px)',
+              backgroundColor: 'rgba(30, 8, 8, 0.92)',
+              backdropFilter: 'blur(8px)',
               zIndex: 100000,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: 'pointer'
@@ -792,38 +907,41 @@ export default function ProjectorPage({ state, takeoverEvent }) {
             <div
               onClick={(e) => e.stopPropagation()}
               style={{
-                backgroundColor: '#FFFFFF',
-                border: '4px solid #931913',
+                backgroundColor: 'var(--color-surface, #FFFFFF)',
+                border: '4px solid var(--color-fall, #931913)',
                 borderRadius: '16px',
                 padding: '40px',
                 textAlign: 'center',
                 maxWidth: '700px',
                 width: '90%',
-                boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
                 position: 'relative',
                 cursor: 'default'
               }}
             >
               <button
+                type="button"
                 onClick={() => setActiveTakeover(null)}
                 style={{
                   position: 'absolute', top: '16px', right: '20px',
-                  background: '#F1F5F9', border: '1px solid #CBD5E1',
-                  borderRadius: '6px', padding: '4px 10px',
-                  fontSize: '0.75rem', fontWeight: 800, color: '#475569',
+                  background: 'var(--color-surface-sunken, #F1F5F9)', border: '1px solid var(--color-border, #CBD5E1)',
+                  borderRadius: '6px', padding: '6px 12px',
+                  fontSize: '0.78rem', fontWeight: 800, color: 'var(--color-ink, #475569)',
                   cursor: 'pointer'
                 }}
               >
                 ✕ CLOSE [ESC]
               </button>
-              <span style={{ fontSize: '5rem', display: 'inline-block', marginBottom: '14px' }}>🔕</span>
-              <h1 style={{ color: '#931913', fontSize: '2.6rem', fontFamily: 'Cinzel, serif', margin: '0 0 10px 0' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px' }}>
+                <IconClock size={56} color="var(--color-fall, #931913)" />
+              </div>
+              <h1 style={{ color: 'var(--color-fall, #931913)', fontSize: '2.6rem', fontFamily: "var(--font-display, 'Cinzel', serif)", margin: '0 0 10px 0' }}>
                 TRADING CONCLUDED
               </h1>
-              <p style={{ color: '#1E232B', fontSize: '1.25rem', fontWeight: 800, margin: '0 0 14px 0' }}>
+              <p style={{ color: 'var(--color-ink, #1E232B)', fontSize: '1.25rem', fontWeight: 800, margin: '0 0 14px 0' }}>
                 Session Closed &bull; Portfolios Locked for Reconciliation
               </p>
-              <p style={{ color: '#4A5568', fontSize: '1rem', margin: 0 }}>
+              <p style={{ color: 'var(--color-ink-muted, #4A5568)', fontSize: '1rem', margin: 0 }}>
                 Order execution is frozen. SEBI Reconciliation Desk is computing authoritative leaderboard standings.
               </p>
             </div>
@@ -832,29 +950,45 @@ export default function ProjectorPage({ state, takeoverEvent }) {
 
       case 'STOCK_SPLIT':
         return (
-          <div className="takeover-overlay" style={{
+          <div className="takeover-overlay" onClick={() => setActiveTakeover(null)} style={{
             position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(10, 15, 26, 0.88)',
+            backgroundColor: 'rgba(10, 15, 26, 0.90)',
             zIndex: 100000,
             display: 'flex', alignItems: 'center', justifyContent: 'center'
           }}>
-            <div style={{
-              backgroundColor: '#FFFFFF',
+            <div onClick={(e) => e.stopPropagation()} style={{
+              backgroundColor: 'var(--color-surface, #FFFFFF)',
               border: '4px solid #0A7A50',
               borderRadius: '16px',
               padding: '36px 44px',
               textAlign: 'center',
               maxWidth: '700px',
-              width: '90%'
+              width: '90%',
+              position: 'relative'
             }}>
-              <span style={{ fontSize: '4.5rem', display: 'inline-block', marginBottom: '12px' }}>✂️</span>
-              <h1 style={{ color: '#0A7A50', fontSize: '2.2rem', fontFamily: 'Cinzel, serif', margin: '0 0 8px 0' }}>
+              <button
+                type="button"
+                onClick={() => setActiveTakeover(null)}
+                style={{
+                  position: 'absolute', top: '16px', right: '20px',
+                  background: 'var(--color-surface-sunken, #F1F5F9)', border: '1px solid var(--color-border, #CBD5E1)',
+                  borderRadius: '6px', padding: '6px 12px',
+                  fontSize: '0.78rem', fontWeight: 800, color: 'var(--color-ink, #475569)',
+                  cursor: 'pointer'
+                }}
+              >
+                ✕ CLOSE [ESC]
+              </button>
+              <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
+                <IconLayers size={56} color="#0A7A50" />
+              </div>
+              <h1 style={{ color: '#0A7A50', fontSize: '2.2rem', fontFamily: "var(--font-display, 'Cinzel', serif)", margin: '0 0 8px 0' }}>
                 2-FOR-1 STOCK SPLIT EXECUTED
               </h1>
-              <p style={{ color: '#1E232B', fontSize: '1.2rem', fontWeight: 800, margin: '0 0 12px 0' }}>
+              <p style={{ color: 'var(--color-ink, #1E232B)', fontSize: '1.2rem', fontWeight: 800, margin: '0 0 12px 0' }}>
                 Asset: {ticker} {name ? `(${name})` : ''}
               </p>
-              <p style={{ color: '#4A5568', fontSize: '1rem', margin: 0 }}>
+              <p style={{ color: 'var(--color-ink-muted, #4A5568)', fontSize: '1rem', margin: 0 }}>
                 Share price has halved and all participant holdings have doubled.
               </p>
             </div>
@@ -864,17 +998,17 @@ export default function ProjectorPage({ state, takeoverEvent }) {
       default:
         if (!headline && !name) return null;
         return (
-          <div className="takeover-overlay" style={{
+          <div className="takeover-overlay" onClick={() => setActiveTakeover(null)} style={{
             position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(10, 13, 20, 0.90)',
+            backgroundColor: 'rgba(10, 13, 20, 0.92)',
             backdropFilter: 'blur(8px)',
             zIndex: 100000,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             padding: '24px'
           }}>
-            <div style={{
-              backgroundColor: '#FFFFFF',
-              border: `4px solid ${severity === 'CRITICAL' || category === 'CRISIS' ? '#DC2626' : '#845508'}`,
+            <div onClick={(e) => e.stopPropagation()} style={{
+              backgroundColor: 'var(--color-surface, #FFFFFF)',
+              border: `4px solid ${severity === 'CRITICAL' || category === 'CRISIS' ? 'var(--color-fall, #DC2626)' : 'var(--color-brass, #845508)'}`,
               borderRadius: '16px',
               maxWidth: '840px',
               width: '100%',
@@ -884,12 +1018,33 @@ export default function ProjectorPage({ state, takeoverEvent }) {
               textAlign: 'center',
               animation: 'slideUpModal 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
             }}>
-              <span style={{ fontSize: '4rem', display: 'inline-block', marginBottom: '10px' }}>
-                {type === 'DEBATE_SHOWDOWN' ? '⚔️' : category === 'CRISIS' ? '🚨' : category === 'IPO' ? '🚀' : '📢'}
-              </span>
+              <button
+                type="button"
+                onClick={() => setActiveTakeover(null)}
+                style={{
+                  position: 'absolute', top: '16px', right: '20px',
+                  background: 'var(--color-surface-sunken, #F1F5F9)', border: '1px solid var(--color-border, #CBD5E1)',
+                  borderRadius: '6px', padding: '6px 12px',
+                  fontSize: '0.78rem', fontWeight: 800, color: 'var(--color-ink, #475569)',
+                  cursor: 'pointer'
+                }}
+              >
+                ✕ CLOSE [ESC]
+              </button>
+              <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px' }}>
+                {type === 'DEBATE_SHOWDOWN' ? (
+                  <IconActivity size={56} color="var(--color-brass, #845508)" />
+                ) : category === 'CRISIS' ? (
+                  <IconShieldAlert size={56} color="var(--color-fall, #DC2626)" />
+                ) : category === 'IPO' ? (
+                  <IconTrendingUp size={56} color="var(--color-rise, #065F3E)" />
+                ) : (
+                  <IconMegaphone size={56} color="var(--color-brass, #845508)" />
+                )}
+              </div>
               <div style={{ marginBottom: '12px' }}>
                 <span style={{
-                  backgroundColor: severity === 'CRITICAL' || category === 'CRISIS' ? '#DC2626' : '#845508',
+                  backgroundColor: severity === 'CRITICAL' || category === 'CRISIS' ? 'var(--color-fall, #DC2626)' : 'var(--color-brass, #845508)',
                   color: '#FFFFFF',
                   padding: '4px 14px',
                   borderRadius: '6px',
@@ -902,9 +1057,9 @@ export default function ProjectorPage({ state, takeoverEvent }) {
               </div>
               <h1 style={{
                 fontSize: '2.2rem',
-                fontFamily: 'Cinzel, serif',
+                fontFamily: "var(--font-display, 'Cinzel', serif)",
                 fontWeight: 900,
-                color: '#1E232B',
+                color: 'var(--color-ink, #1E232B)',
                 lineHeight: 1.25,
                 margin: '0 0 14px 0'
               }}>
@@ -912,7 +1067,7 @@ export default function ProjectorPage({ state, takeoverEvent }) {
               </h1>
               <p style={{
                 fontSize: '1.15rem',
-                color: '#4A5568',
+                color: 'var(--color-ink-muted, #4A5568)',
                 lineHeight: 1.5,
                 margin: '0 0 20px 0'
               }}>
@@ -921,7 +1076,7 @@ export default function ProjectorPage({ state, takeoverEvent }) {
               <div style={{
                 fontSize: '0.8rem',
                 fontWeight: 800,
-                color: '#845508',
+                color: 'var(--color-brass, #845508)',
                 letterSpacing: '0.5px'
               }}>
                 SAAMX GLOBAL MARKET WIRE &bull; DISPATCHED TO ALL TRADING DESKS
@@ -932,27 +1087,51 @@ export default function ProjectorPage({ state, takeoverEvent }) {
     }
   };
 
-  // Check if session reached RESULTS stage
+  // =========================================================================
+  // RESULTS CEREMONY VIEW
+  // =========================================================================
   if (sessionState === 'RESULTS' || state?.marketState?.sessionState === 'RESULTS') {
     const isOfficial = state?.resultsLifecycle === 'PUBLISHED';
     return (
       <div style={{
         minHeight: '100vh',
-        backgroundColor: '#FAF8F3',
-        color: '#1E232B',
+        backgroundColor: 'var(--color-surface-sunken, #FAF8F3)',
+        color: 'var(--color-ink, #1E232B)',
         display: 'flex',
         flexDirection: 'column',
         padding: '24px 32px',
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        fontFamily: "var(--font-sans, 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif)"
       }}>
+        {/* Offline / Stale telemetry indicator banner */}
+        {!connected && (
+          <div style={{
+            backgroundColor: 'var(--color-fall, #931913)',
+            color: '#FFFFFF',
+            textAlign: 'center',
+            padding: '8px 16px',
+            fontWeight: 800,
+            fontSize: '0.85rem',
+            borderRadius: '6px',
+            marginBottom: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px'
+          }}>
+            <IconAlertTriangle size={16} /> CONNECTION INTERRUPTED — DISPLAYING LAST KNOWN STANDINGS
+          </div>
+        )}
+
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <div style={{ fontSize: '0.9rem', color: '#845508', fontWeight: 800, letterSpacing: '2px', textTransform: 'uppercase' }}>
+          <div style={{ fontSize: '0.9rem', color: 'var(--color-brass, #845508)', fontWeight: 800, letterSpacing: '2px', textTransform: 'uppercase' }}>
             SAAMX OFFICIAL CEREMONY &bull; "Experience the Market. Don’t Just Learn It."
           </div>
-          <h1 style={{ fontSize: '2.8rem', fontFamily: 'Cinzel, serif', color: '#1E232B', margin: '4px 0 8px 0' }}>
-            {isOfficial ? '🟢 OFFICIAL FINAL COMPETITION RESULTS' : '🟡 PROVISIONAL LEADERBOARD (PENDING FINAL AUDIT & APPROVAL)'}
+          <h1 style={{ fontSize: '2.8rem', fontFamily: "var(--font-display, 'Cinzel', serif)", color: 'var(--color-ink, #1E232B)', margin: '4px 0 8px 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+            <span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '50%', backgroundColor: isOfficial ? 'var(--color-rise, #065F3E)' : 'var(--color-warning, #D97706)' }} />
+            {isOfficial ? 'OFFICIAL FINAL COMPETITION RESULTS' : 'PROVISIONAL LEADERBOARD (PENDING FINAL AUDIT & APPROVAL)'}
           </h1>
-          <p style={{ color: '#4A5568', fontSize: '1rem', margin: 0 }}>
+          <p style={{ color: 'var(--color-ink-muted, #4A5568)', fontSize: '1rem', margin: 0 }}>
             Comprehensive 1,000-Point Rubric &bull; Risk &bull; Returns &bull; Diversification &bull; Decision-Making &bull; Future Potential
           </p>
         </div>
@@ -960,35 +1139,82 @@ export default function ProjectorPage({ state, takeoverEvent }) {
         {/* Top 3 Podium Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '24px' }}>
           {leaderboard.slice(0, 3).map((team, idx) => (
-            <div key={team.teamCode || idx} style={{
-              backgroundColor: '#FFFFFF',
-              border: `2px solid ${idx === 0 ? '#845508' : idx === 1 ? '#94a3b8' : '#cd7f32'}`,
+            <Card key={team.teamCode || idx} variant="elevated" style={{
+              backgroundColor: 'var(--color-surface, #FFFFFF)',
+              border: `2px solid ${idx === 0 ? 'var(--color-brass, #845508)' : idx === 1 ? '#94a3b8' : '#cd7f32'}`,
               borderRadius: '12px',
               padding: '24px',
               textAlign: 'center',
               boxShadow: idx === 0 ? '0 8px 30px rgba(132, 85, 8, 0.2)' : '0 4px 16px rgba(0,0,0,0.05)'
             }}>
               <span style={{ fontSize: '2.8rem' }}>{idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}</span>
-              <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#845508', marginTop: '6px', textTransform: 'uppercase' }}>
+              <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--color-brass, #845508)', marginTop: '6px', textTransform: 'uppercase' }}>
                 RANK {idx + 1}
               </div>
-              <h2 style={{ fontSize: '1.6rem', color: '#1E232B', margin: '6px 0' }}>
+              <h2 style={{ fontSize: '1.6rem', color: 'var(--color-ink, #1E232B)', margin: '6px 0' }}>
                 {team.teamCode} &bull; {team.teamName}
               </h2>
-              <div style={{ fontSize: '1.8rem', fontWeight: 900, fontFamily: 'monospace', color: '#845508' }}>
+              <div className="font-mono tabular-nums" style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--color-brass, #845508)' }}>
                 ₹{Number(team.portfolioValue || 10000000).toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </div>
-              <div style={{
+              <div className="font-mono tabular-nums" style={{
                 fontSize: '1rem',
                 fontWeight: 800,
-                color: (team.roi || 0) >= 0 ? '#065F3E' : '#931913',
+                color: (team.roi || 0) >= 0 ? 'var(--color-rise, #065F3E)' : 'var(--color-fall, #931913)',
                 marginTop: '4px'
               }}>
                 {(team.roi || 0) >= 0 ? '+' : ''}{(team.roi || 0).toFixed(2)}% ROI
               </div>
-            </div>
+            </Card>
           ))}
         </div>
+
+        {/* Full Team Standings Table */}
+        {leaderboard.length > 3 && (
+          <div style={{
+            flex: 1,
+            overflowY: 'auto',
+            backgroundColor: 'var(--color-surface, #FFFFFF)',
+            borderRadius: '10px',
+            border: '1px solid var(--color-border, #E2DBD0)',
+            padding: '16px'
+          }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: '0 0 12px 0', color: 'var(--color-ink, #1E232B)' }}>
+              Complete Institutional Directory Standings
+            </h3>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid var(--color-border, #E2DBD0)', textAlign: 'left', color: 'var(--color-ink-muted, #6B6863)' }}>
+                  <th style={{ padding: '8px 12px' }}>RANK</th>
+                  <th style={{ padding: '8px 12px' }}>TEAM CODE</th>
+                  <th style={{ padding: '8px 12px' }}>INSTITUTIONAL HOUSE</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'right' }}>VALUATION</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'right' }}>NET ROI</th>
+                </tr>
+              </thead>
+              <tbody>
+                {leaderboard.map((team, idx) => (
+                  <tr key={team.teamCode || idx} style={{ borderBottom: '1px solid var(--color-border, #FAF8F3)' }}>
+                    <td className="font-mono tabular-nums" style={{ padding: '8px 12px', fontWeight: 800 }}>#{idx + 1}</td>
+                    <td style={{ padding: '8px 12px', fontWeight: 700, color: 'var(--color-brass, #845508)' }}>{team.teamCode}</td>
+                    <td style={{ padding: '8px 12px', fontWeight: 600 }}>{team.teamName}</td>
+                    <td className="font-mono tabular-nums" style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 800 }}>
+                      ₹{Number(team.portfolioValue || 10000000).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    </td>
+                    <td className="font-mono tabular-nums" style={{
+                      padding: '8px 12px',
+                      textAlign: 'right',
+                      fontWeight: 800,
+                      color: (team.roi || 0) >= 0 ? 'var(--color-rise, #065F3E)' : 'var(--color-fall, #931913)'
+                    }}>
+                      {(team.roi || 0) >= 0 ? '+' : ''}{(team.roi || 0).toFixed(2)}%
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     );
   }
@@ -1000,23 +1226,62 @@ export default function ProjectorPage({ state, takeoverEvent }) {
     <div style={{
       width: '100vw',
       height: '100vh',
-      backgroundColor: '#FAF8F3',
-      color: '#1E232B',
+      backgroundColor: 'var(--color-surface-sunken, #FAF8F3)',
+      color: 'var(--color-ink, #1E232B)',
       display: 'flex',
       flexDirection: 'column',
       overflow: 'hidden',
-      fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+      fontFamily: "var(--font-sans, 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif)",
       boxSizing: 'border-box'
     }}>
+
+      {/* Disconnected / Stale Telemetry Notification Bar */}
+      {!connected && (
+        <div style={{
+          backgroundColor: 'var(--color-fall, #931913)',
+          color: '#FFFFFF',
+          textAlign: 'center',
+          padding: '6px 16px',
+          fontWeight: 800,
+          fontSize: '0.82rem',
+          letterSpacing: '0.5px',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px'
+        }}>
+          <IconAlertTriangle size={16} /> TELEMETRY DISCONNECTED — RECONNECTING TO EXCHANGE (DISPLAYING LAST KNOWN STATE)
+        </div>
+      )}
+
+      {isCoordinatorOffline && connected && (
+        <div style={{
+          backgroundColor: 'var(--color-warning, #D97706)',
+          color: '#FFFFFF',
+          textAlign: 'center',
+          padding: '6px 16px',
+          fontWeight: 800,
+          fontSize: '0.82rem',
+          letterSpacing: '0.5px',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px'
+        }}>
+          <IconAlertTriangle size={16} /> COORDINATOR OFFLINE — SCHEDULED NEWS & AUTOMATION SUSPENDED
+        </div>
+      )}
 
       {/* 1. TOP INSTITUTIONAL COMMAND HEADER */}
       <header style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: 'var(--color-surface, #FFFFFF)',
         padding: '8px 24px',
-        borderBottom: '2px solid #845508',
+        borderBottom: '2px solid var(--color-brass, #845508)',
         boxSizing: 'border-box',
         height: '56px',
         boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
@@ -1029,7 +1294,7 @@ export default function ProjectorPage({ state, takeoverEvent }) {
             fontSize: '1.1rem',
             padding: '4px 10px',
             borderRadius: '6px',
-            fontFamily: 'Cinzel, serif',
+            fontFamily: "var(--font-display, 'Cinzel', serif)",
             letterSpacing: '1px',
             boxShadow: '0 2px 6px rgba(132, 85, 8, 0.25)'
           }}>
@@ -1040,19 +1305,19 @@ export default function ProjectorPage({ state, takeoverEvent }) {
               <h1 style={{
                 fontSize: '1.25rem',
                 fontWeight: 900,
-                fontFamily: 'Cinzel, serif',
-                color: '#1E232B',
+                fontFamily: "var(--font-display, 'Cinzel', serif)",
+                color: 'var(--color-ink, #1E232B)',
                 margin: 0,
                 letterSpacing: '0.04em'
               }}>
                 MARKET INTELLIGENCE CENTER
               </h1>
-              <span style={{ fontSize: '0.74rem', color: '#845508', fontWeight: 800, letterSpacing: '0.04em' }}>
+              <span style={{ fontSize: '0.74rem', color: 'var(--color-brass, #845508)', fontWeight: 800, letterSpacing: '0.04em' }}>
                 &bull; "Experience the Market. Don’t Just Learn It."
               </span>
             </div>
-            <span style={{ fontSize: '0.68rem', color: '#6B6863', letterSpacing: '0.04em', textTransform: 'uppercase', fontWeight: 600 }}>
-              LIVE MARKET SNAPSHOT &bull; 1,800 CONSTITUENTS &bull; GLOBAL MULTI-CURRENCY EXCHANGE
+            <span style={{ fontSize: '0.68rem', color: 'var(--color-ink-muted, #6B6863)', letterSpacing: '0.04em', textTransform: 'uppercase', fontWeight: 600 }}>
+              LIVE MARKET SNAPSHOT &bull; 2,000+ CONSTITUENTS &bull; GLOBAL MULTI-CURRENCY EXCHANGE
             </span>
           </div>
         </div>
@@ -1072,13 +1337,13 @@ export default function ProjectorPage({ state, takeoverEvent }) {
               width: '8px',
               height: '8px',
               borderRadius: '50%',
-              backgroundColor: sessionState === 'CONTINUOUS_TRADING' || sessionState === 'OPEN' ? '#065F3E' : '#931913',
+              backgroundColor: sessionState === 'CONTINUOUS_TRADING' || sessionState === 'OPEN' ? 'var(--color-rise, #065F3E)' : 'var(--color-fall, #931913)',
               animation: 'pulseBlink 1.5s infinite'
             }} />
             <span style={{
               fontSize: '0.78rem',
               fontWeight: 800,
-              color: sessionState === 'CONTINUOUS_TRADING' || sessionState === 'OPEN' ? '#065F3E' : '#931913',
+              color: sessionState === 'CONTINUOUS_TRADING' || sessionState === 'OPEN' ? 'var(--color-rise, #065F3E)' : 'var(--color-fall, #931913)',
               letterSpacing: '0.5px'
             }}>
               {sessionState.replace('_', ' ')}
@@ -1087,16 +1352,16 @@ export default function ProjectorPage({ state, takeoverEvent }) {
         </div>
 
         {/* Right Synchronized Digital Clocks */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', fontFamily: 'monospace' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           <div style={{ textAlign: 'right' }}>
-            <span style={{ fontSize: '0.65rem', color: '#6B6863', display: 'block', textTransform: 'uppercase', fontWeight: 700 }}>MARKET CLOCK (IST)</span>
-            <span style={{ fontSize: '0.95rem', fontWeight: 800, color: '#1E232B' }}>
+            <span style={{ fontSize: '0.65rem', color: 'var(--color-ink-muted, #6B6863)', display: 'block', textTransform: 'uppercase', fontWeight: 700 }}>MARKET CLOCK (IST)</span>
+            <span className="font-mono tabular-nums" style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--color-ink, #1E232B)' }}>
               {currentTimeStr || '11:42:18 AM'}
             </span>
           </div>
-          <div style={{ borderLeft: '1.5px solid #E2DBD0', paddingLeft: '16px', textAlign: 'right' }}>
-            <span style={{ fontSize: '0.65rem', color: '#6B6863', display: 'block', textTransform: 'uppercase', fontWeight: 700 }}>TIME REMAINING</span>
-            <span style={{ fontSize: '1.15rem', fontWeight: 900, color: '#845508' }}>
+          <div style={{ borderLeft: '1.5px solid var(--color-border, #E2DBD0)', paddingLeft: '16px', textAlign: 'right' }}>
+            <span style={{ fontSize: '0.65rem', color: 'var(--color-ink-muted, #6B6863)', display: 'block', textTransform: 'uppercase', fontWeight: 700 }}>TIME REMAINING</span>
+            <span className="font-mono tabular-nums" style={{ fontSize: '1.15rem', fontWeight: 900, color: 'var(--color-brass, #845508)' }}>
               {timeLeft}
             </span>
           </div>
@@ -1109,8 +1374,8 @@ export default function ProjectorPage({ state, takeoverEvent }) {
         gridTemplateColumns: 'repeat(4, 1fr)',
         gap: '10px',
         padding: '8px 24px',
-        backgroundColor: '#FAF8F3',
-        borderBottom: '1px solid #E2DBD0',
+        backgroundColor: 'var(--color-surface-sunken, #FAF8F3)',
+        borderBottom: '1px solid var(--color-border, #E2DBD0)',
         boxSizing: 'border-box'
       }}>
         {[
@@ -1122,12 +1387,12 @@ export default function ProjectorPage({ state, takeoverEvent }) {
           const isUp = idx.chg > 0;
           const isDown = idx.chg < 0;
           const absDiff = (idx.val - idx.open).toFixed(2);
-          const color = isUp ? '#065F3E' : isDown ? '#931913' : '#6B6863';
+          const color = isUp ? 'var(--color-rise, #065F3E)' : isDown ? 'var(--color-fall, #931913)' : 'var(--color-ink-muted, #6B6863)';
 
           return (
             <div key={idx.key} style={{
-              backgroundColor: '#FFFFFF',
-              border: '1px solid #E2DBD0',
+              backgroundColor: 'var(--color-surface, #FFFFFF)',
+              border: '1px solid var(--color-border, #E2DBD0)',
               borderRadius: '8px',
               padding: '8px 14px',
               display: 'flex',
@@ -1136,13 +1401,13 @@ export default function ProjectorPage({ state, takeoverEvent }) {
               boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
             }}>
               <div>
-                <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#6B6863', letterSpacing: '0.5px', display: 'block' }}>
+                <span style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--color-ink-muted, #6B6863)', letterSpacing: '0.5px', display: 'block' }}>
                   {idx.label}
                 </span>
-                <div style={{ fontSize: '1.25rem', fontWeight: 900, fontFamily: 'monospace', color: '#1E232B', lineHeight: 1.1 }}>
+                <div className="font-mono tabular-nums" style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--color-ink, #1E232B)', lineHeight: 1.1 }}>
                   {Number(idx.val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
-                <div style={{ fontSize: '0.74rem', fontWeight: 800, color, fontFamily: 'monospace', marginTop: '2px' }}>
+                <div className="font-mono tabular-nums" style={{ fontSize: '0.74rem', fontWeight: 800, color, marginTop: '2px' }}>
                   {isUp ? '▲ +' : isDown ? '▼ ' : '— '}{Math.abs(idx.chg).toFixed(2)}% ({isUp ? '+' : ''}{absDiff})
                 </div>
               </div>
@@ -1155,7 +1420,7 @@ export default function ProjectorPage({ state, takeoverEvent }) {
       {/* 3. SPOT FX TELEMETRY STRIP */}
       <div style={{
         backgroundColor: 'rgba(132, 85, 8, 0.05)',
-        borderBottom: '1px solid #E2DBD0',
+        borderBottom: '1px solid var(--color-border, #E2DBD0)',
         padding: '5px 24px',
         display: 'flex',
         alignItems: 'center',
@@ -1163,20 +1428,20 @@ export default function ProjectorPage({ state, takeoverEvent }) {
         fontSize: '0.75rem'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-          <span style={{ color: '#845508', fontWeight: 900, letterSpacing: '0.5px' }}>
-            💱 SPOT FX DESK:
+          <span style={{ color: 'var(--color-brass, #845508)', fontWeight: 900, letterSpacing: '0.5px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <IconCurrencyExchange size={15} color="var(--color-brass, #845508)" style={{ verticalAlign: '-2px' }} /> SPOT FX DESK:
           </span>
-          <span style={{ color: '#1E232B', fontFamily: 'monospace' }}>
-            USD / INR: <strong style={{ color: '#065F3E' }}>₹{(fxRates.USDINR?.midRate || 88.20).toFixed(2)}</strong> (Spread: {fxRates.USDINR?.spreadPercent || 0.45}%)
+          <span className="font-mono tabular-nums" style={{ color: 'var(--color-ink, #1E232B)' }}>
+            USD / INR: <strong style={{ color: 'var(--color-rise, #065F3E)' }}>₹{(fxRates.USDINR?.midRate || 88.20).toFixed(2)}</strong> (Spread: {fxRates.USDINR?.spreadPercent || 0.45}%)
           </span>
-          <span style={{ color: '#1E232B', fontFamily: 'monospace' }}>
-            GBP / INR: <strong style={{ color: '#065F3E' }}>₹{(fxRates.GBPINR?.midRate || 119.40).toFixed(2)}</strong> (Spread: {fxRates.GBPINR?.spreadPercent || 0.45}%)
+          <span className="font-mono tabular-nums" style={{ color: 'var(--color-ink, #1E232B)' }}>
+            GBP / INR: <strong style={{ color: 'var(--color-rise, #065F3E)' }}>₹{(fxRates.GBPINR?.midRate || 119.40).toFixed(2)}</strong> (Spread: {fxRates.GBPINR?.spreadPercent || 0.45}%)
           </span>
-          <span style={{ color: '#1E232B', fontFamily: 'monospace' }}>
-            EUR / INR: <strong style={{ color: '#065F3E' }}>₹{(fxRates.EURINR?.midRate || 103.50).toFixed(2)}</strong> (Spread: {fxRates.EURINR?.spreadPercent || 0.45}%)
+          <span className="font-mono tabular-nums" style={{ color: 'var(--color-ink, #1E232B)' }}>
+            EUR / INR: <strong style={{ color: 'var(--color-rise, #065F3E)' }}>₹{(fxRates.EURINR?.midRate || 103.50).toFixed(2)}</strong> (Spread: {fxRates.EURINR?.spreadPercent || 0.45}%)
           </span>
         </div>
-        <div style={{ color: '#845508', fontSize: '0.7rem', fontWeight: 700 }}>
+        <div style={{ color: 'var(--color-brass, #845508)', fontSize: '0.7rem', fontWeight: 700 }}>
           ● MULTI-CURRENCY CONVERSIONS LIVE &bull; 0.45% SPREAD
         </div>
       </div>
@@ -1194,58 +1459,58 @@ export default function ProjectorPage({ state, takeoverEvent }) {
 
         {/* COLUMN 1: MARKET BREADTH, SENTIMENT PULSE & SECTORS */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minHeight: 0 }}>
-          
+
           {/* Market Breadth Card */}
-          <div style={{
-            backgroundColor: '#FFFFFF',
-            border: '1px solid #E2DBD0',
+          <Card variant="elevated" style={{
+            backgroundColor: 'var(--color-surface, #FFFFFF)',
+            border: '1px solid var(--color-border, #E2DBD0)',
             borderRadius: '10px',
             padding: '12px 16px',
             boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
             boxSizing: 'border-box'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-              <span style={{ fontSize: '0.76rem', fontWeight: 900, color: '#845508', letterSpacing: '0.5px' }}>
-                📊 MARKET BREADTH & SENTIMENT
+              <span style={{ fontSize: '0.76rem', fontWeight: 900, color: 'var(--color-brass, #845508)', letterSpacing: '0.5px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <IconBarChart size={15} color="var(--color-brass, #845508)" style={{ verticalAlign: '-2px' }} /> MARKET BREADTH & SENTIMENT
               </span>
-              <span style={{ fontSize: '0.68rem', color: '#6B6863', fontWeight: 700 }}>
+              <span className="font-mono tabular-nums" style={{ fontSize: '0.68rem', color: 'var(--color-ink-muted, #6B6863)', fontWeight: 700 }}>
                 {breadth.total} TOTAL SECURITIES
               </span>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', textAlign: 'center', marginBottom: '10px' }}>
-              <div style={{ background: '#FAF8F3', padding: '6px', borderRadius: '6px', border: '1px solid #E2DBD0' }}>
-                <span style={{ fontSize: '0.62rem', color: '#6B6863', textTransform: 'uppercase', display: 'block', fontWeight: 700 }}>ADVANCES</span>
-                <strong style={{ fontSize: '1.1rem', color: '#065F3E', fontFamily: 'monospace' }}>{breadth.adv}</strong>
+              <div style={{ background: 'var(--color-surface-sunken, #FAF8F3)', padding: '6px', borderRadius: '6px', border: '1px solid var(--color-border, #E2DBD0)' }}>
+                <span style={{ fontSize: '0.62rem', color: 'var(--color-ink-muted, #6B6863)', textTransform: 'uppercase', display: 'block', fontWeight: 700 }}>ADVANCES</span>
+                <strong className="font-mono tabular-nums" style={{ fontSize: '1.1rem', color: 'var(--color-rise, #065F3E)' }}>{breadth.adv}</strong>
               </div>
-              <div style={{ background: '#FAF8F3', padding: '6px', borderRadius: '6px', border: '1px solid #E2DBD0' }}>
-                <span style={{ fontSize: '0.62rem', color: '#6B6863', textTransform: 'uppercase', display: 'block', fontWeight: 700 }}>DECLINES</span>
-                <strong style={{ fontSize: '1.1rem', color: '#931913', fontFamily: 'monospace' }}>{breadth.dec}</strong>
+              <div style={{ background: 'var(--color-surface-sunken, #FAF8F3)', padding: '6px', borderRadius: '6px', border: '1px solid var(--color-border, #E2DBD0)' }}>
+                <span style={{ fontSize: '0.62rem', color: 'var(--color-ink-muted, #6B6863)', textTransform: 'uppercase', display: 'block', fontWeight: 700 }}>DECLINES</span>
+                <strong className="font-mono tabular-nums" style={{ fontSize: '1.1rem', color: 'var(--color-fall, #931913)' }}>{breadth.dec}</strong>
               </div>
-              <div style={{ background: '#FAF8F3', padding: '6px', borderRadius: '6px', border: '1px solid #E2DBD0' }}>
-                <span style={{ fontSize: '0.62rem', color: '#6B6863', textTransform: 'uppercase', display: 'block', fontWeight: 700 }}>UNCHANGED</span>
-                <strong style={{ fontSize: '1.1rem', color: '#4A5568', fontFamily: 'monospace' }}>{breadth.unc}</strong>
+              <div style={{ background: 'var(--color-surface-sunken, #FAF8F3)', padding: '6px', borderRadius: '6px', border: '1px solid var(--color-border, #E2DBD0)' }}>
+                <span style={{ fontSize: '0.62rem', color: 'var(--color-ink-muted, #6B6863)', textTransform: 'uppercase', display: 'block', fontWeight: 700 }}>UNCHANGED</span>
+                <strong className="font-mono tabular-nums" style={{ fontSize: '1.1rem', color: 'var(--color-ink-muted, #4A5568)' }}>{breadth.unc}</strong>
               </div>
-              <div style={{ background: '#FAF8F3', padding: '6px', borderRadius: '6px', border: '1px solid #E2DBD0' }}>
-                <span style={{ fontSize: '0.62rem', color: '#6B6863', textTransform: 'uppercase', display: 'block', fontWeight: 700 }}>A / D RATIO</span>
-                <strong style={{ fontSize: '1.1rem', color: '#845508', fontFamily: 'monospace' }}>{breadth.ratio}</strong>
+              <div style={{ background: 'var(--color-surface-sunken, #FAF8F3)', padding: '6px', borderRadius: '6px', border: '1px solid var(--color-border, #E2DBD0)' }}>
+                <span style={{ fontSize: '0.62rem', color: 'var(--color-ink-muted, #6B6863)', textTransform: 'uppercase', display: 'block', fontWeight: 700 }}>A / D RATIO</span>
+                <strong className="font-mono tabular-nums" style={{ fontSize: '1.1rem', color: 'var(--color-brass, #845508)' }}>{breadth.ratio}</strong>
               </div>
             </div>
 
-            <div style={{ height: '7px', borderRadius: '4px', overflow: 'hidden', display: 'flex', backgroundColor: '#E2DBD0', marginBottom: '12px' }}>
-              <div style={{ width: `${breadth.advPct}%`, backgroundColor: '#065F3E' }} />
-              <div style={{ width: `${breadth.decPct}%`, backgroundColor: '#931913' }} />
+            <div style={{ height: '7px', borderRadius: '4px', overflow: 'hidden', display: 'flex', backgroundColor: 'var(--color-border, #E2DBD0)', marginBottom: '12px' }}>
+              <div style={{ width: `${breadth.advPct}%`, backgroundColor: 'var(--color-rise, #065F3E)' }} />
+              <div style={{ width: `${breadth.decPct}%`, backgroundColor: 'var(--color-fall, #931913)' }} />
             </div>
 
-            <div style={{ borderTop: '1px solid #E2DBD0', paddingTop: '10px' }}>
+            <div style={{ borderTop: '1px solid var(--color-border, #E2DBD0)', paddingTop: '10px' }}>
               <MarketPulseGauge score={marketPulse.score} label={marketPulse.label} color={marketPulse.color} />
             </div>
-          </div>
+          </Card>
 
-          {/* Sector Performance Radar */}
-          <div style={{
-            backgroundColor: '#FFFFFF',
-            border: '1px solid #E2DBD0',
+          {/* Sector Performance Heatmap */}
+          <Card variant="elevated" style={{
+            backgroundColor: 'var(--color-surface, #FFFFFF)',
+            border: '1px solid var(--color-border, #E2DBD0)',
             borderRadius: '10px',
             padding: '12px 16px',
             flex: 1,
@@ -1256,32 +1521,32 @@ export default function ProjectorPage({ state, takeoverEvent }) {
             boxSizing: 'border-box'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <span style={{ fontSize: '0.76rem', fontWeight: 900, color: '#845508', letterSpacing: '0.5px' }}>
-                🗂 SECTOR PERFORMANCE HEATMAP
+              <span style={{ fontSize: '0.76rem', fontWeight: 900, color: 'var(--color-brass, #845508)', letterSpacing: '0.5px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <IconLayers size={15} color="var(--color-brass, #845508)" style={{ verticalAlign: '-2px' }} /> SECTOR PERFORMANCE HEATMAP
               </span>
-              <span style={{ fontSize: '0.65rem', color: '#6B6863', fontWeight: 600 }}>AVERAGE MOVEMENT</span>
+              <span style={{ fontSize: '0.65rem', color: 'var(--color-ink-muted, #6B6863)', fontWeight: 600 }}>AVERAGE MOVEMENT</span>
             </div>
 
             <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
               {sectorPerformance.slice(0, 7).map(s => {
                 const isUp = s.avgPct > 0;
                 const isDown = s.avgPct < 0;
-                const color = isUp ? '#065F3E' : isDown ? '#931913' : '#4A5568';
+                const color = isUp ? 'var(--color-rise, #065F3E)' : isDown ? 'var(--color-fall, #931913)' : 'var(--color-ink-muted, #4A5568)';
                 return (
                   <div key={s.name} style={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     padding: '5px 8px',
-                    background: '#FAF8F3',
-                    border: '1px solid #E2DBD0',
+                    background: 'var(--color-surface-sunken, #FAF8F3)',
+                    border: '1px solid var(--color-border, #E2DBD0)',
                     borderRadius: '5px',
                     fontSize: '0.74rem'
                   }}>
-                    <span style={{ fontWeight: 700, color: '#1E232B' }}>{s.name}</span>
+                    <span style={{ fontWeight: 700, color: 'var(--color-ink, #1E232B)' }}>{s.name}</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ color: '#6B6863', fontSize: '0.65rem' }}>{s.count} Assets</span>
-                      <strong style={{ color, fontFamily: 'monospace', minWidth: '54px', textAlign: 'right' }}>
+                      <span className="font-mono tabular-nums" style={{ color: 'var(--color-ink-muted, #6B6863)', fontSize: '0.65rem' }}>{s.count} Assets</span>
+                      <strong className="font-mono tabular-nums" style={{ color, minWidth: '54px', textAlign: 'right' }}>
                         {isUp ? '+' : ''}{s.avgPct.toFixed(2)}%
                       </strong>
                     </div>
@@ -1289,53 +1554,53 @@ export default function ProjectorPage({ state, takeoverEvent }) {
                 );
               })}
             </div>
-          </div>
+          </Card>
 
         </div>
 
         {/* COLUMN 2: CENTERPIECE — "WHAT'S MOVING THE MARKET?" & TOP LEADERS */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minHeight: 0 }}>
-          
+
           {/* CENTERPIECE: WHAT'S MOVING THE MARKET? */}
           <div style={{
-            background: 'linear-gradient(135deg, #FFFFFF 0%, #FFFDF9 100%)',
-            border: '2px solid #845508',
+            background: 'linear-gradient(135deg, var(--color-surface, #FFFFFF) 0%, var(--color-surface-sunken, #FFFDF9) 100%)',
+            border: '2px solid var(--color-brass, #845508)',
             borderRadius: '10px',
             padding: '12px 16px',
             boxShadow: '0 4px 14px rgba(132, 85, 8, 0.08)',
             boxSizing: 'border-box'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <span style={{ fontSize: '0.84rem', fontWeight: 900, color: '#845508', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span>⚡</span> WHAT'S MOVING THE MARKET?
+              <span style={{ fontSize: '0.84rem', fontWeight: 900, color: 'var(--color-brass, #845508)', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <IconZap size={16} /> WHAT'S MOVING THE MARKET?
               </span>
-              <span style={{ fontSize: '0.68rem', color: '#065F3E', fontWeight: 800, background: 'rgba(6, 95, 62, 0.08)', padding: '2px 8px', borderRadius: '12px' }}>
+              <span style={{ fontSize: '0.68rem', color: 'var(--color-rise, #065F3E)', fontWeight: 800, background: 'rgba(6, 95, 62, 0.08)', padding: '2px 8px', borderRadius: '12px' }}>
                 ● LIVE FORCES
               </span>
             </div>
 
             {latestNews ? (
-              <div style={{ background: '#FAF8F3', borderLeft: '4px solid #845508', padding: '10px 12px', borderRadius: '6px' }}>
+              <div style={{ background: 'var(--color-surface-sunken, #FAF8F3)', borderLeft: '4px solid var(--color-brass, #845508)', padding: '10px 12px', borderRadius: '6px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '4px' }}>
-                  <strong style={{ fontSize: '0.92rem', color: '#1E232B' }}>{latestNews.headline}</strong>
-                  <span style={{ fontSize: '0.68rem', color: '#845508', fontWeight: 800, textTransform: 'uppercase' }}>
+                  <strong style={{ fontSize: '0.92rem', color: 'var(--color-ink, #1E232B)' }}>{latestNews.headline}</strong>
+                  <span style={{ fontSize: '0.68rem', color: 'var(--color-brass, #845508)', fontWeight: 800, textTransform: 'uppercase' }}>
                     {latestNews.category || 'MACRO'}
                   </span>
                 </div>
-                <p style={{ margin: '0 0 6px 0', fontSize: '0.78rem', color: '#4A5568', lineHeight: 1.35 }}>
+                <p style={{ margin: '0 0 6px 0', fontSize: '0.78rem', color: 'var(--color-ink-muted, #4A5568)', lineHeight: 1.35 }}>
                   {latestNews.description}
                 </p>
-                <div style={{ display: 'flex', gap: '12px', fontSize: '0.7rem', color: '#6B6863' }}>
-                  <span>Impact: <strong style={{ color: (latestNews.impactPercent || 0) >= 0 ? '#065F3E' : '#931913' }}>{latestNews.impactPercent > 0 ? '+' : ''}{latestNews.impactPercent}%</strong></span>
-                  <span>Target: <strong style={{ color: '#1E232B' }}>{latestNews.affectedSector || 'Macro Universe'}</strong></span>
-                  <span>Time: <strong style={{ color: '#1E232B' }}>{new Date(latestNews.triggeredAt).toLocaleTimeString()}</strong></span>
+                <div style={{ display: 'flex', gap: '12px', fontSize: '0.7rem', color: 'var(--color-ink-muted, #6B6863)' }}>
+                  <span>Impact: <strong className="font-mono tabular-nums" style={{ color: (latestNews.impactPercent || 0) >= 0 ? 'var(--color-rise, #065F3E)' : 'var(--color-fall, #931913)' }}>{latestNews.impactPercent > 0 ? '+' : ''}{latestNews.impactPercent}%</strong></span>
+                  <span>Target: <strong style={{ color: 'var(--color-ink, #1E232B)' }}>{latestNews.affectedSector || 'Macro Universe'}</strong></span>
+                  <span>Time: <strong className="font-mono tabular-nums" style={{ color: 'var(--color-ink, #1E232B)' }}>{new Date(latestNews.triggeredAt).toLocaleTimeString()}</strong></span>
                 </div>
               </div>
             ) : (
-              <div style={{ background: '#FAF8F3', borderLeft: '4px solid #065F3E', padding: '10px 12px', borderRadius: '6px', fontSize: '0.78rem' }}>
-                <strong style={{ color: '#1E232B' }}>Continuous Global Order Book Matching</strong>
-                <p style={{ margin: '4px 0 0 0', color: '#4A5568' }}>
-                  Cross-asset trading flows across 1,800 constituents driving intraday valuation discovery.
+              <div style={{ background: 'var(--color-surface-sunken, #FAF8F3)', borderLeft: '4px solid var(--color-rise, #065F3E)', padding: '10px 12px', borderRadius: '6px', fontSize: '0.78rem' }}>
+                <strong style={{ color: 'var(--color-ink, #1E232B)' }}>Continuous Global Order Book Matching</strong>
+                <p style={{ margin: '4px 0 0 0', color: 'var(--color-ink-muted, #4A5568)' }}>
+                  Cross-asset trading flows across 2,000+ constituents driving intraday valuation discovery.
                 </p>
               </div>
             )}
@@ -1343,11 +1608,11 @@ export default function ProjectorPage({ state, takeoverEvent }) {
 
           {/* Top Gainers & Losers Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', flex: 1, minHeight: 0 }}>
-            
+
             {/* Top Gainers */}
-            <div style={{
-              backgroundColor: '#FFFFFF',
-              border: '1px solid #E2DBD0',
+            <Card variant="elevated" style={{
+              backgroundColor: 'var(--color-surface, #FFFFFF)',
+              border: '1px solid var(--color-border, #E2DBD0)',
               borderRadius: '10px',
               padding: '10px 12px',
               display: 'flex',
@@ -1356,33 +1621,37 @@ export default function ProjectorPage({ state, takeoverEvent }) {
               boxSizing: 'border-box'
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                <span style={{ fontSize: '0.74rem', fontWeight: 900, color: '#065F3E', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <span>🚀</span> TOP GAINERS
+                <span style={{ fontSize: '0.74rem', fontWeight: 900, color: 'var(--color-rise, #065F3E)', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <IconTrendingUp size={15} /> TOP GAINERS
                 </span>
-                <span style={{ fontSize: '0.62rem', color: '#6B6863' }}>UNIVERSE</span>
+                <span style={{ fontSize: '0.62rem', color: 'var(--color-ink-muted, #6B6863)' }}>UNIVERSE</span>
               </div>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.72rem' }}>
                 <tbody>
                   {topGainers.map(s => (
-                    <tr key={s.ticker} style={{ borderBottom: '1px solid #FAF8F3', height: '24px' }}>
-                      <td style={{ fontWeight: 900, color: '#845508', width: '50px' }}>{s.ticker}</td>
-                      <td style={{ color: '#1E232B', maxWidth: '90px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>{s.name}</td>
-                      <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 800, color: '#1E232B' }}>
+                    <tr
+                      key={s.ticker}
+                      onClick={() => onOpenProfile && onOpenProfile(s.ticker)}
+                      style={{ borderBottom: '1px solid var(--color-surface-sunken, #FAF8F3)', height: '24px', cursor: onOpenProfile ? 'pointer' : 'default' }}
+                    >
+                      <td style={{ fontWeight: 900, color: 'var(--color-brass, #845508)', width: '50px' }}>{s.ticker}</td>
+                      <td style={{ color: 'var(--color-ink, #1E232B)', maxWidth: '90px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>{s.name}</td>
+                      <td className="font-mono tabular-nums" style={{ textAlign: 'right', fontWeight: 800, color: 'var(--color-ink, #1E232B)' }}>
                         {currencySymbol(s)}{s.cur.toFixed(1)}
                       </td>
-                      <td style={{ textAlign: 'right', fontWeight: 900, color: '#065F3E', fontFamily: 'monospace', width: '52px' }}>
+                      <td className="font-mono tabular-nums" style={{ textAlign: 'right', fontWeight: 900, color: 'var(--color-rise, #065F3E)', width: '52px' }}>
                         +{s.chgPct.toFixed(1)}%
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </div>
+            </Card>
 
             {/* Top Losers */}
-            <div style={{
-              backgroundColor: '#FFFFFF',
-              border: '1px solid #E2DBD0',
+            <Card variant="elevated" style={{
+              backgroundColor: 'var(--color-surface, #FFFFFF)',
+              border: '1px solid var(--color-border, #E2DBD0)',
               borderRadius: '10px',
               padding: '10px 12px',
               display: 'flex',
@@ -1391,92 +1660,109 @@ export default function ProjectorPage({ state, takeoverEvent }) {
               boxSizing: 'border-box'
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                <span style={{ fontSize: '0.74rem', fontWeight: 900, color: '#931913', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <span>🔻</span> TOP LOSERS
+                <span style={{ fontSize: '0.74rem', fontWeight: 900, color: 'var(--color-fall, #931913)', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <IconTrendingDown size={15} /> TOP LOSERS
                 </span>
-                <span style={{ fontSize: '0.62rem', color: '#6B6863' }}>UNIVERSE</span>
+                <span style={{ fontSize: '0.62rem', color: 'var(--color-ink-muted, #6B6863)' }}>UNIVERSE</span>
               </div>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.72rem' }}>
                 <tbody>
                   {topLosers.map(s => (
-                    <tr key={s.ticker} style={{ borderBottom: '1px solid #FAF8F3', height: '24px' }}>
-                      <td style={{ fontWeight: 900, color: '#845508', width: '50px' }}>{s.ticker}</td>
-                      <td style={{ color: '#1E232B', maxWidth: '90px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>{s.name}</td>
-                      <td style={{ textAlign: 'right', fontFamily: 'monospace', fontWeight: 800, color: '#1E232B' }}>
+                    <tr
+                      key={s.ticker}
+                      onClick={() => onOpenProfile && onOpenProfile(s.ticker)}
+                      style={{ borderBottom: '1px solid var(--color-surface-sunken, #FAF8F3)', height: '24px', cursor: onOpenProfile ? 'pointer' : 'default' }}
+                    >
+                      <td style={{ fontWeight: 900, color: 'var(--color-brass, #845508)', width: '50px' }}>{s.ticker}</td>
+                      <td style={{ color: 'var(--color-ink, #1E232B)', maxWidth: '90px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>{s.name}</td>
+                      <td className="font-mono tabular-nums" style={{ textAlign: 'right', fontWeight: 800, color: 'var(--color-ink, #1E232B)' }}>
                         {currencySymbol(s)}{s.cur.toFixed(1)}
                       </td>
-                      <td style={{ textAlign: 'right', fontWeight: 900, color: '#931913', fontFamily: 'monospace', width: '52px' }}>
+                      <td className="font-mono tabular-nums" style={{ textAlign: 'right', fontWeight: 900, color: 'var(--color-fall, #931913)', width: '52px' }}>
                         {s.chgPct.toFixed(1)}%
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </div>
+            </Card>
 
           </div>
 
           {/* Most Active Leaders */}
-          <div style={{
-            backgroundColor: '#FFFFFF',
-            border: '1px solid #E2DBD0',
+          <Card variant="elevated" style={{
+            backgroundColor: 'var(--color-surface, #FFFFFF)',
+            border: '1px solid var(--color-border, #E2DBD0)',
             borderRadius: '10px',
             padding: '8px 12px',
             boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
             boxSizing: 'border-box'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-              <span style={{ fontSize: '0.72rem', fontWeight: 900, color: '#0284C7', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span>⚡</span> MOST ACTIVE VOLUME LEADERS
+              <span style={{ fontSize: '0.72rem', fontWeight: 900, color: '#0284C7', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <IconActivity size={15} /> MOST ACTIVE VOLUME LEADERS
               </span>
-              <span style={{ fontSize: '0.62rem', color: '#6B6863' }}>REAL-TIME TURNOVER</span>
+              <span style={{ fontSize: '0.62rem', color: 'var(--color-ink-muted, #6B6863)' }}>REAL-TIME TURNOVER</span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
               {mostActive.slice(0, 3).map(s => (
-                <div key={s.ticker} style={{ background: '#FAF8F3', padding: '4px 8px', borderRadius: '4px', border: '1px solid #E2DBD0', fontSize: '0.7rem' }}>
-                  <strong style={{ color: '#845508' }}>{s.ticker}</strong>
-                  <span style={{ color: '#6B6863', display: 'block', fontSize: '0.62rem' }}>{s.tradedVolume.toLocaleString()} Vol</span>
-                  <span style={{ color: s.chgPct >= 0 ? '#065F3E' : '#931913', fontWeight: 800 }}>{s.chgPct >= 0 ? '+' : ''}{s.chgPct.toFixed(1)}%</span>
+                <div
+                  key={s.ticker}
+                  onClick={() => onOpenProfile && onOpenProfile(s.ticker)}
+                  style={{
+                    background: 'var(--color-surface-sunken, #FAF8F3)',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    border: '1px solid var(--color-border, #E2DBD0)',
+                    fontSize: '0.7rem',
+                    cursor: onOpenProfile ? 'pointer' : 'default'
+                  }}
+                >
+                  <strong style={{ color: 'var(--color-brass, #845508)' }}>{s.ticker}</strong>
+                  <span className="font-mono tabular-nums" style={{ color: 'var(--color-ink-muted, #6B6863)', display: 'block', fontSize: '0.62rem' }}>{s.tradedVolume.toLocaleString()} Vol</span>
+                  <span className="font-mono tabular-nums" style={{ color: s.chgPct >= 0 ? 'var(--color-rise, #065F3E)' : 'var(--color-fall, #931913)', fontWeight: 800 }}>
+                    {s.chgPct >= 0 ? '+' : ''}{s.chgPct.toFixed(1)}%
+                  </span>
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
 
         </div>
 
         {/* COLUMN 3: LIVE MARKET NARRATIVE & STORYLINE TIMELINE */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minHeight: 0 }}>
-          
+
           {/* Live Market Narrative (Market Pulse) */}
-          <div style={{
-            backgroundColor: '#FFFFFF',
-            border: '1px solid #E2DBD0',
+          <Card variant="elevated" style={{
+            backgroundColor: 'var(--color-surface, #FFFFFF)',
+            border: '1px solid var(--color-border, #E2DBD0)',
             borderRadius: '10px',
             padding: '12px 14px',
             boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
             boxSizing: 'border-box'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <span style={{ fontSize: '0.76rem', fontWeight: 900, color: '#845508', letterSpacing: '0.5px' }}>
-                🎙️ MARKET PULSE & NARRATIVE
+              <span style={{ fontSize: '0.76rem', fontWeight: 900, color: 'var(--color-brass, #845508)', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <IconRadio size={15} /> MARKET PULSE & NARRATIVE
               </span>
-              <span style={{ fontSize: '0.62rem', color: '#065F3E', fontWeight: 800 }}>LIVE SYNTHESIS</span>
+              <span style={{ fontSize: '0.62rem', color: 'var(--color-rise, #065F3E)', fontWeight: 800 }}>LIVE SYNTHESIS</span>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               {marketNarrative.map((item, idx) => (
-                <div key={idx} style={{ display: 'flex', gap: '6px', alignItems: 'flex-start', fontSize: '0.74rem', color: '#1E232B', lineHeight: 1.35 }}>
-                  <span style={{ color: '#845508', fontWeight: 900 }}>•</span>
+                <div key={idx} style={{ display: 'flex', gap: '6px', alignItems: 'flex-start', fontSize: '0.74rem', color: 'var(--color-ink, #1E232B)', lineHeight: 1.35 }}>
+                  <span style={{ color: 'var(--color-brass, #845508)', fontWeight: 900 }}>•</span>
                   <span>{item}</span>
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
 
           {/* Today's Market Story (Timeline) */}
-          <div style={{
-            backgroundColor: '#FFFFFF',
-            border: '1px solid #E2DBD0',
+          <Card variant="elevated" style={{
+            backgroundColor: 'var(--color-surface, #FFFFFF)',
+            border: '1px solid var(--color-border, #E2DBD0)',
             borderRadius: '10px',
             padding: '12px 14px',
             flex: 1,
@@ -1487,10 +1773,10 @@ export default function ProjectorPage({ state, takeoverEvent }) {
             boxSizing: 'border-box'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <span style={{ fontSize: '0.76rem', fontWeight: 900, color: '#845508', letterSpacing: '0.5px' }}>
-                📖 TODAY'S MARKET STORY
+              <span style={{ fontSize: '0.76rem', fontWeight: 900, color: 'var(--color-brass, #845508)', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <IconFileText size={15} /> TODAY'S MARKET STORY
               </span>
-              <span style={{ fontSize: '0.62rem', color: '#6B6863' }}>SEQUENCE</span>
+              <span style={{ fontSize: '0.62rem', color: 'var(--color-ink-muted, #6B6863)' }}>SEQUENCE</span>
             </div>
 
             <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -1501,14 +1787,14 @@ export default function ProjectorPage({ state, takeoverEvent }) {
                   gap: '10px',
                   padding: '6px 8px',
                   borderRadius: '6px',
-                  background: item.status === 'ACTIVE' ? 'rgba(132, 85, 8, 0.08)' : '#FAF8F3',
-                  border: item.status === 'ACTIVE' ? '1px solid #845508' : '1px solid #E2DBD0',
+                  background: item.status === 'ACTIVE' ? 'rgba(132, 85, 8, 0.08)' : 'var(--color-surface-sunken, #FAF8F3)',
+                  border: item.status === 'ACTIVE' ? '1px solid var(--color-brass, #845508)' : '1px solid var(--color-border, #E2DBD0)',
                   opacity: item.status === 'UPCOMING' ? 0.6 : 1
                 }}>
-                  <div style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: '0.72rem', color: item.status === 'ACTIVE' ? '#845508' : '#6B6863' }}>
+                  <div className="font-mono tabular-nums" style={{ fontWeight: 800, fontSize: '0.72rem', color: item.status === 'ACTIVE' ? 'var(--color-brass, #845508)' : 'var(--color-ink-muted, #6B6863)' }}>
                     {item.time}
                   </div>
-                  <div style={{ flex: 1, fontSize: '0.73rem', fontWeight: item.status === 'ACTIVE' ? 800 : 600, color: '#1E232B' }}>
+                  <div style={{ flex: 1, fontSize: '0.73rem', fontWeight: item.status === 'ACTIVE' ? 800 : 600, color: 'var(--color-ink, #1E232B)' }}>
                     {item.title}
                   </div>
                   <span style={{
@@ -1516,15 +1802,15 @@ export default function ProjectorPage({ state, takeoverEvent }) {
                     fontWeight: 800,
                     padding: '2px 6px',
                     borderRadius: '4px',
-                    backgroundColor: item.status === 'ACTIVE' ? '#845508' : item.status === 'PAST' ? '#E2DBD0' : 'transparent',
-                    color: item.status === 'ACTIVE' ? '#FFF' : '#6B6863'
+                    backgroundColor: item.status === 'ACTIVE' ? 'var(--color-brass, #845508)' : item.status === 'PAST' ? 'var(--color-border, #E2DBD0)' : 'transparent',
+                    color: item.status === 'ACTIVE' ? '#FFF' : 'var(--color-ink-muted, #6B6863)'
                   }}>
                     {item.status}
                   </span>
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
 
         </div>
 

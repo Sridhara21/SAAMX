@@ -3,6 +3,81 @@ import { apiFetch } from '../lib/api.js';
 import { db, ref, onValue } from '../lib/firebase.js';
 import MarketStorylineTimeline from '../components/MarketStorylineTimeline.jsx';
 import { MASTER_MARKET_EVENTS } from '../lib/marketEventsDataset.js';
+import PersonnelManagementPage from './PersonnelManagementPage.jsx';
+import ResultsPage from './ResultsPage.jsx';
+import { useDensity } from '../context/DensityContext.jsx';
+import {
+  Button,
+  Input,
+  SearchInput,
+  Select,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardBody,
+  SectionHeader,
+  Badge,
+  Modal,
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+  FinancialCell,
+  Spinner,
+  Alert,
+  EmptyState,
+  CurrencyDisplay,
+  PriceDisplay,
+  QuantityDisplay
+} from '../components/ui/index.js';
+import {
+  IconBuilding,
+  IconBarChart,
+  IconTrendingUp,
+  IconTrendingDown,
+  IconCurrencyExchange,
+  IconSearch,
+  IconBriefcase,
+  IconShieldCheck,
+  IconFolderOpen,
+  IconNewspaper,
+  IconClipboardList,
+  IconSettings,
+  IconTrophy,
+  IconGlobe,
+  IconMonitor,
+  IconUser,
+  IconCrown,
+  IconLock,
+  IconShieldAlert,
+  IconCheck,
+  IconX,
+  IconPrinter,
+  IconClock,
+  IconTarget,
+  IconFilter,
+  IconRefreshCw,
+  IconZap,
+  IconFileText,
+  IconSend,
+  IconRadio,
+  IconPause,
+  IconPlay,
+  IconAlertTriangle,
+  IconUsers,
+  IconCalendar,
+  IconScale,
+  IconActivity,
+  IconFlame,
+  IconEye,
+  IconDatabase,
+  IconLayers,
+  IconMegaphone,
+  IconSlash,
+  IconDownload
+} from '../lib/icons.jsx';
 
 // SVG Sparkline drawing for indices and securities
 function Sparkline({ isUp, width = 44, height = 16 }) {
@@ -15,9 +90,26 @@ function Sparkline({ isUp, width = 44, height = 16 }) {
 }
 
 export default function AdminPage({ state, onOpenProfile, adminPassword, connected, coordinator, isCoordinatorOffline }) {
+  const { density } = useDensity();
   const [serverTimeOffset, setServerTimeOffset] = useState(0);
   const [currentTimeStr, setCurrentTimeStr] = useState('');
   const [timeLeft, setTimeLeft] = useState('60:00');
+
+  // Unified Admin Console Sub-Page Navigation
+  const [consoleSection, setConsoleSection] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash || '';
+      if (hash.includes('tab=personnel') || hash.includes('#/personnel') || hash.includes('section=personnel')) return 'personnel';
+      if (hash.includes('tab=results') || hash.includes('#/results') || hash.includes('section=results')) return 'results';
+      if (hash.includes('tab=audit') || hash.includes('#/audit') || hash.includes('section=audit')) return 'audit';
+      if (hash.includes('tab=events') || hash.includes('#/events') || hash.includes('section=events')) return 'events';
+    }
+    return 'overview';
+  });
+
+  const currentUserRole = (sessionStorage.getItem('saamx_role') || sessionStorage.getItem('fms_role') || '').toLowerCase();
+  const currentUsername = (sessionStorage.getItem('saamx_username') || sessionStorage.getItem('fms_username') || '').toLowerCase();
+  const isSuperAdmin = currentUserRole === 'super_admin' || sessionStorage.getItem('saamx_is_master') === 'true' || currentUsername === 'sridhara';
 
   // Command Center Navigation Tabs
   const [activeTab, setActiveTab] = useState('timeline'); 
@@ -68,9 +160,9 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
 
   // Polling Manager State
   const [pollQuestion, setPollQuestion] = useState('Who won the Bull vs Bear Debate Round?');
-  const [pollOpt1, setPollOpt1] = useState('🐂 Bull (Growth & Momentum)');
-  const [pollOpt2, setPollOpt2] = useState('🐻 Bear (Caution & Risk)');
-  const [pollOpt3, setPollOpt3] = useState('⚖️ Neutral / Undecided');
+  const [pollOpt1, setPollOpt1] = useState('Bull (Growth & Momentum)');
+  const [pollOpt2, setPollOpt2] = useState('Bear (Caution & Risk)');
+  const [pollOpt3, setPollOpt3] = useState('Neutral / Undecided');
   const [pollDuration, setPollDuration] = useState(180);
 
   // FX Rate Adjustment State
@@ -164,9 +256,23 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
   // Credential View Modal
   const [credentialSlipHouse, setCredentialSlipHouse] = useState(null);
 
-  // Universal Confirm Modal
   const [activeModal, setActiveModal] = useState(null);
   const [confirmConfig, setConfirmConfig] = useState({ title: '', message: '', action: null, isDangerous: false });
+
+  // Event Timer & Schedule Configuration State
+  const [timerDurationMinutes, setTimerDurationMinutes] = useState(() => state?.marketState?.simulationDurationMinutes || 360);
+  const [timerMode, setTimerMode] = useState(() => state?.marketState?.timerMode || 'SCHEDULE_SYNC');
+  const [isTimerConfigOpen, setIsTimerConfigOpen] = useState(false);
+  const [isUpdatingTimer, setIsUpdatingTimer] = useState(false);
+
+  useEffect(() => {
+    if (state?.marketState?.simulationDurationMinutes) {
+      setTimerDurationMinutes(state.marketState.simulationDurationMinutes);
+    }
+    if (state?.marketState?.timerMode) {
+      setTimerMode(state.marketState.timerMode);
+    }
+  }, [state?.marketState?.simulationDurationMinutes, state?.marketState?.timerMode]);
 
   // Sync server clock offset
   useEffect(() => {
@@ -188,22 +294,77 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
     return () => clearInterval(interval);
   }, [serverTimeOffset]);
 
-  // Session Clock countdown logic
+  // Session Clock countdown logic (Supports SCHEDULE_SYNC and COUNTDOWN)
   useEffect(() => {
     const status = state?.marketState?.status || 'NotStarted';
     const startTime = state?.marketState?.simulationStartTime;
-    const durationMins = state?.marketState?.simulationDurationMinutes || 60;
+    const durationMins = state?.marketState?.simulationDurationMinutes || 360;
+    const mode = state?.marketState?.timerMode || 'SCHEDULE_SYNC';
     const pauseOffset = state?.marketState?.pauseTimeOffset || 0;
     const pausedAt = state?.marketState?.pausedAt;
 
-    if (status === 'NotStarted' || !startTime) {
-      const minutesStr = String(durationMins).padStart(2, '0');
-      setTimeLeft(`${minutesStr}:00`);
+    if (status === 'Closed') {
+      setTimeLeft('00:00');
       return;
     }
 
-    if (status === 'Closed') {
-      setTimeLeft('00:00');
+    if (mode === 'SCHEDULE_SYNC') {
+      const updateScheduleClock = () => {
+        const currentServerTime = Date.now() + serverTimeOffset;
+        let curHours = 9, curMins = 30, curSecs = 0;
+        try {
+          const parts = new Intl.DateTimeFormat('en-GB', {
+            timeZone: 'Asia/Kolkata',
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+          }).formatToParts(new Date(currentServerTime));
+          curHours = parseInt(parts.find(p => p.type === 'hour')?.value || '9', 10);
+          curMins = parseInt(parts.find(p => p.type === 'minute')?.value || '30', 10);
+          curSecs = parseInt(parts.find(p => p.type === 'second')?.value || '0', 10);
+        } catch (e) {
+          const d = new Date(currentServerTime);
+          curHours = d.getHours();
+          curMins = d.getMinutes();
+          curSecs = d.getSeconds();
+        }
+        const curTotalMins = curHours * 60 + curMins;
+
+        if (curTotalMins >= 15 * 60 + 30) {
+          setTimeLeft('00:00');
+          return;
+        }
+
+        // Target: 15:30 (Market Close)
+        let targetMins = 15 * 60 + 30;
+        if (curTotalMins < 9 * 60 + 30) {
+          targetMins = 9 * 60 + 30; // Pre-open count to 09:30
+        } else if (curTotalMins >= 12 * 60 && curTotalMins < 13 * 60) {
+          targetMins = 13 * 60; // Lunch pause count to 13:00
+        }
+
+        const diffMins = Math.max(0, targetMins - curTotalMins);
+        const diffSecs = (60 - curSecs) % 60;
+        const displayMins = diffSecs === 0 ? diffMins : Math.max(0, diffMins - 1);
+        const displayHours = Math.floor(displayMins / 60);
+        const remMins = displayMins % 60;
+        const formatted = displayHours > 0
+          ? `${String(displayHours).padStart(2, '0')}:${String(remMins).padStart(2, '0')}:${String(diffSecs).padStart(2, '0')}`
+          : `${String(remMins).padStart(2, '0')}:${String(diffSecs).padStart(2, '0')}`;
+
+        setTimeLeft(formatted);
+      };
+
+      updateScheduleClock();
+      const interval = setInterval(updateScheduleClock, 1000);
+      return () => clearInterval(interval);
+    }
+
+    // COUNTDOWN MODE
+    if (status === 'NotStarted' || !startTime) {
+      const minutesStr = String(durationMins).padStart(2, '0');
+      setTimeLeft(`${minutesStr}:00`);
       return;
     }
 
@@ -328,9 +489,44 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
   // -------------------------------------------------------------
   // OPERATIONAL ACTION HANDLERS
   // -------------------------------------------------------------
+  const handleSaveTimerConfig = async (newDuration, newMode) => {
+    setIsUpdatingTimer(true);
+    try {
+      const dur = newDuration !== undefined ? newDuration : timerDurationMinutes;
+      const mod = newMode !== undefined ? newMode : timerMode;
+      const res = await apiFetch('/api/admin/timer-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
+        body: JSON.stringify({
+          durationMinutes: dur,
+          timerMode: mod,
+          marketOpenTime: '09:30',
+          marketCloseTime: '15:30'
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTimerDurationMinutes(dur);
+        setTimerMode(mod);
+        setIsTimerConfigOpen(false);
+      }
+    } catch (e) {
+      console.error('Failed to update timer config:', e);
+    } finally {
+      setIsUpdatingTimer(false);
+    }
+  };
+
   const handleStartSession = () => {
-    triggerConfirm('Start Market Session', 'Open the central exchange for continuous trading across all desks?', async () => {
-      await apiFetch('/api/admin/start-market', { method: 'POST', headers: { 'X-FMS-Password': adminPassword } });
+    const desc = timerMode === 'SCHEDULE_SYNC'
+      ? 'Open the central exchange for trading synchronized to the official 09:30–15:30 event schedule?'
+      : `Open the central exchange for a ${timerDurationMinutes}-minute trading countdown?`;
+    triggerConfirm('Start Market Session', desc, async () => {
+      await apiFetch('/api/admin/start-market', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
+        body: JSON.stringify({ durationMinutes: timerDurationMinutes })
+      });
     });
   };
 
@@ -341,7 +537,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
   };
 
   const handleEmergencyHalt = () => {
-    triggerConfirm('EMERGENCY MARKET HALT', '🚨 CRITICAL: Halt trading across all securities and suspend order execution immediately?', async () => {
+    triggerConfirm('EMERGENCY MARKET HALT', 'CRITICAL: Halt trading across all securities and suspend order execution immediately?', async () => {
       await apiFetch('/api/admin/market-wide-action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
@@ -397,13 +593,21 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
 
   const handleIpoAdvance = async (ticker, stageName, visible = undefined) => {
     try {
-      await apiFetch('/api/ipo/advance', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
-        body: JSON.stringify({ ticker, stageName, visibleToParticipants: visible })
-      });
+      if (stageName === 'ALLOTMENT') {
+        await apiFetch('/api/ipo/allot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
+          body: JSON.stringify({ ticker })
+        });
+      } else {
+        await apiFetch('/api/ipo/advance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
+          body: JSON.stringify({ ticker, stageName, visibleToParticipants: visible })
+        });
+      }
     } catch (e) {
-      alert('Error advancing IPO: ' + e.message);
+      alert('Error updating IPO stage: ' + e.message);
     }
   };
 
@@ -537,18 +741,22 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
   };
 
   const handleMasterReset = () => {
-    if (resetPhrase !== 'CONFIRM RESET') {
-      alert('Please type CONFIRM RESET exactly to execute disaster recovery.');
+    if (!isSuperAdmin) {
+      alert('Super-Administrator privilege required. Master database re-seed is restricted to the Master Floor Director (Sridhara).');
+      return;
+    }
+    if (resetPhrase !== 'RESET ALL') {
+      alert('Please type RESET ALL exactly to execute disaster recovery.');
       return;
     }
     triggerConfirm(
-      '🚨 MASTER STATE RESET',
+      'MASTER STATE RESET',
       `Erase active transactions and re-initialize the 2,061 security universe in ${resetMode} mode?`,
       async () => {
-        await apiFetch('/api/admin/reset-database', {
+        await apiFetch('/api/admin/reset', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
-          body: JSON.stringify({ mode: resetMode, resetPhrase })
+          body: JSON.stringify({ confirmText: resetPhrase, mode: resetMode })
         });
         setResetPhrase('');
         alert('Database state re-seeded successfully!');
@@ -559,6 +767,19 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
 
   // Event Control Handlers
   const handleSaveEventConfig = async () => {
+    const capNum = Number(cfgMaxHouses);
+    if (!Number.isInteger(capNum) || capNum < 10 || capNum > 20) {
+      alert('Configured Investment House capacity must be an integer between 10 and 20 inclusive.');
+      return;
+    }
+
+    const currentCap = currentEvent.maximumInvestmentHouses || 20;
+    if (capNum !== currentCap) {
+      if (!window.confirm(`Confirm Capacity Change:\n\nChange Investment House capacity from ${currentCap} to ${capNum}?\n\nAggregate starting virtual capital will be ₹${capNum} Crore (₹1 Crore per participating house).`)) {
+        return;
+      }
+    }
+
     try {
       const res = await apiFetch('/api/event/update', {
         method: 'POST',
@@ -568,7 +789,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
           eventName: cfgEventName,
           venue: cfgVenue,
           eventDate: cfgEventDate,
-          maximumInvestmentHouses: Number(cfgMaxHouses),
+          maximumInvestmentHouses: capNum,
           teamSize: Number(cfgTeamSize),
           startingCapital: Number(cfgCapital),
           marketOpenTime: cfgOpenTime,
@@ -631,7 +852,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
   const handleRestoreSnapshot = async (snapshotId) => {
     triggerConfirm(
       `Restore Snapshot ${snapshotId}`,
-      `⚠️ Restoring this snapshot will roll back market state, portfolios, and orders to this checkpoint. Proceed?`,
+      `Restoring this snapshot will roll back market state, portfolios, and orders to this checkpoint. Proceed?`,
       async () => {
         const res = await apiFetch('/api/event/snapshot/restore', {
           method: 'POST',
@@ -905,7 +1126,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
   // Freeze Valuation Snapshot
   const handleFreezeValuation = async () => {
     triggerConfirm(
-      '🔒 Freeze Closing Valuation Snapshot',
+      'Freeze Closing Valuation Snapshot',
       'At 15:30 Market Close, freeze an immutable closing valuation snapshot across all Investment Houses. This snapshot will be cryptographically locked for scoring. Proceed?',
       async () => {
         const res = await apiFetch('/api/event/valuation/freeze', {
@@ -926,7 +1147,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
   // Run Reconciliation
   const handleRunReconciliation = async () => {
     triggerConfirm(
-      '⚖️ Run Settlement & Reconciliation',
+      'Run Settlement & Reconciliation',
       'Execute 15:30-15:45 trade ledger and cash reconciliation. Discrepancies will be logged to the audit trail without altering the immutable valuation snapshot. Proceed?',
       async () => {
         const res = await apiFetch('/api/event/reconciliation/run', {
@@ -947,7 +1168,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
   // Approve Results
   const handleApproveResults = async () => {
     triggerConfirm(
-      '✅ Chief Judge Sign-off & Result Approval',
+      'Chief Judge Sign-off & Result Approval',
       'Confirm that judging scorecards, risk calculations, penalties, and reconciliations have been verified. Transition lifecycle to APPROVED?',
       async () => {
         const res = await apiFetch('/api/results/approve', {
@@ -967,7 +1188,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
   // Publish Results
   const handlePublishResults = async () => {
     triggerConfirm(
-      '🏆 Publish Official Competition Results',
+      'Publish Official Competition Results',
       'Publish the official final results! The leaderboard will change from PROVISIONAL to OFFICIAL FINAL RESULTS and become visible on all public screens and projector. Proceed?',
       async () => {
         const res = await apiFetch('/api/results/publish', {
@@ -1024,81 +1245,258 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
   }, [activeTab, currentEventId]);
 
   return (
-    <div style={{ maxWidth: '1600px', margin: '0 auto', padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: '20px', color: '#F8FAFC' }}>
+    <div style={{ maxWidth: '1600px', margin: '0 auto', padding: density === 'compact' ? '12px 16px 104px' : '16px 24px 104px', display: 'flex', flexDirection: 'column', gap: '20px', color: 'var(--color-text-primary)' }}>
       
+      {/* ========================================================================= */}
+      {/* UNIFIED ADMIN CONSOLE SUB-PAGES NAVIGATION BAR                            */}
+      {/* ========================================================================= */}
+      <Card variant="frosted" density={density} style={{
+        padding: density === 'compact' ? '8px 12px' : '10px 16px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '12px'
+      }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--color-warning)', letterSpacing: '0.06em', textTransform: 'uppercase', marginRight: '6px' }}>
+            ADMIN CONSOLE
+          </span>
+          {[
+            { id: 'overview', label: 'Overview', icon: IconBarChart, desc: 'Real-Time Telemetry & Radar' },
+            { id: 'events', label: 'Event Controls', icon: IconSettings, desc: 'Timeline & Narrative Triggers' },
+            { id: 'personnel', label: 'Personnel & Access', icon: IconUsers, desc: 'Staff Accounts & Permissions', superOnly: true },
+            { id: 'results', label: 'Results & Scoring', icon: IconTrophy, desc: 'Scoring, Judging & Awards' },
+            { id: 'audit', label: 'Audit Logs & State', icon: IconShieldAlert, desc: 'Security Trail & Recovery' }
+          ].map(sub => {
+            const isActive = consoleSection === sub.id;
+            const Icon = sub.icon;
+            return (
+              <button
+                key={sub.id}
+                type="button"
+                onClick={() => {
+                  setConsoleSection(sub.id);
+                  if (sub.id === 'audit') setActiveTab('audit');
+                  if (sub.id === 'events') setActiveTab('event-control');
+                }}
+                style={{
+                  padding: density === 'compact' ? '6px 12px' : '8px 16px',
+                  borderRadius: '8px',
+                  border: isActive ? '1px solid var(--color-brass, var(--color-primary))' : '1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.08))',
+                  background: isActive ? 'var(--color-brass-light, rgba(56, 189, 248, 0.12))' : 'var(--color-surface, rgba(255, 255, 255, 0.02))',
+                  color: isActive ? 'var(--color-brass, var(--color-primary))' : 'var(--color-text-secondary)',
+                  fontWeight: 700,
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <Icon size={16} />
+                <span>{sub.label}</span>
+                {sub.superOnly && (
+                  <span style={{ background: 'var(--color-warning)', color: '#000', fontSize: '0.62rem', fontWeight: 900, padding: '1px 5px', borderRadius: '3px' }}>
+                    MASTER
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+          <span>Capacity: <strong style={{ color: 'var(--color-accent)' }}>{state?.eventConfig?.maxHouses || 20} Investment Houses</strong> (₹{state?.eventConfig?.maxHouses || 20} Cr Capital)</span>
+          <span>Role: <strong style={{ color: isSuperAdmin ? 'var(--color-warning)' : 'var(--color-primary)' }}>{currentUserRole.toUpperCase() || 'ADMIN'}</strong></span>
+        </div>
+      </Card>
+
+      {/* 1. Personnel & Access Sub-page */}
+      {consoleSection === 'personnel' && (
+        isSuperAdmin ? (
+          <div style={{ marginTop: '4px' }}>
+            <PersonnelManagementPage state={state} adminPassword={adminPassword} />
+          </div>
+        ) : (
+          <Card variant="frosted" density={density} style={{ padding: '40px', textAlign: 'center', borderTop: '4px solid var(--color-fall, #DC2626)' }}>
+            <div style={{ marginBottom: '12px', display: 'flex', justifyContent: 'center' }}>
+              <IconLock size={44} color="var(--color-fall)" />
+            </div>
+            <h2 style={{ color: 'var(--color-fall, #F87171)', margin: '0 0 8px 0' }}>Super-Administrator Privilege Required</h2>
+            <p style={{ color: 'var(--color-text-secondary, #94A3B8)', maxWidth: '480px', margin: '0 auto 16px', fontSize: '0.9rem' }}>
+              Personnel provisioning, staff credential assignment, and granular permission editing are restricted to the Master Floor Director (Sridhara).
+            </p>
+            <Button variant="secondary" onClick={() => setConsoleSection('overview')} style={{ padding: '8px 18px', fontSize: '0.85rem' }}>
+              Return to Admin Overview
+            </Button>
+          </Card>
+        )
+      )}
+
+      {/* 2. Results & Scoring Sub-page */}
+      {consoleSection === 'results' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <Card variant="frosted" density={density} style={{
+            padding: density === 'compact' ? '12px 16px' : '16px 20px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '12px'
+          }}>
+            <div>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 900, margin: 0, color: 'var(--color-accent, #F59E0B)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <IconTrophy size={20} color="var(--color-accent, #F59E0B)" />
+                <span>Official Scoring, Judging & Lifecycle</span>
+              </h2>
+              <p style={{ margin: '3px 0 0', fontSize: '0.78rem', color: 'var(--color-text-secondary, #94A3B8)' }}>Valuation freeze snapshots, referee deliberation, and awards publishing.</p>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <Button size="sm" variant="secondary" onClick={handleFreezeValuation}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <IconLock size={14} />
+                  <span>Freeze Valuation Snapshot</span>
+                </span>
+              </Button>
+              <Button size="sm" variant="secondary" onClick={handleRunReconciliation}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <IconScale size={14} />
+                  <span>Reconcile Ledgers</span>
+                </span>
+              </Button>
+              <Button size="sm" variant="success" onClick={handleApproveResults}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <IconCheck size={14} />
+                  <span>Chief Judge Approval</span>
+                </span>
+              </Button>
+              <Button size="sm" variant="warning" onClick={handlePublishResults}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <IconTrophy size={14} />
+                  <span>Publish Official Podium</span>
+                </span>
+              </Button>
+            </div>
+          </Card>
+          <ResultsPage state={state} />
+        </div>
+      )}
+
+      {/* 3. Command Center Overview, Events & Audit Sub-pages */}
+      {(consoleSection === 'overview' || consoleSection === 'events' || consoleSection === 'audit') && (
+        <>
       {/* ========================================================================= */}
       {/* ZONE 1: COMMAND CENTER HEADER                                             */}
       {/* ========================================================================= */}
-      <div style={{ background: '#0F172A', border: '1px solid #334155', borderRadius: '12px', padding: '18px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+      <Card variant="frosted" density={density} style={{
+        padding: density === 'compact' ? '14px 18px' : '18px 24px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '16px'
+      }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ background: '#DC2626', color: '#FFFFFF', padding: '3px 8px', borderRadius: '4px', fontWeight: 900, fontSize: '0.72rem', letterSpacing: '0.04em' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <Badge variant="danger">
               SAAMX OPERATIONS CONTROL
-            </span>
-            <span style={{ background: connected ? '#065F3E' : '#7F1D1D', color: '#FFFFFF', padding: '3px 8px', borderRadius: '4px', fontWeight: 800, fontSize: '0.72rem' }}>
+            </Badge>
+            {(sessionStorage.getItem('saamx_is_master') === 'true' || (sessionStorage.getItem('saamx_username') || '').toLowerCase() === 'sridhara') && (
+              <Badge variant="warning" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <IconCrown size={12} />
+                <span>MASTER ADMIN: SRIDHARA</span>
+              </Badge>
+            )}
+            <Badge variant={connected ? 'success' : 'danger'}>
               {connected ? '● FIREBASE HEALTHY' : '○ DISCONNECTED'}
-            </span>
-            <span style={{ background: '#334155', color: '#E2E8F0', padding: '3px 8px', borderRadius: '4px', fontWeight: 700, fontSize: '0.72rem' }}>
+            </Badge>
+            <Badge variant="neutral">
               COORDINATOR: {coordinator?.owner?.toUpperCase() || 'STANDBY'}
-            </span>
+            </Badge>
           </div>
-          <h1 style={{ fontFamily: 'monospace', fontSize: '1.9rem', color: '#F8FAFC', margin: '6px 0 0 0', fontWeight: 900, letterSpacing: '0.5px' }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: density === 'compact' ? '1.5rem' : '1.85rem', color: 'var(--color-text-primary)', margin: '8px 0 0 0', fontWeight: 800, letterSpacing: '-0.02em' }}>
             SAAMX Market Command Center
           </h1>
-          <p style={{ margin: '3px 0 0 0', color: '#94A3B8', fontSize: '0.82rem' }}>
+          <p style={{ margin: '4px 0 0 0', color: 'var(--color-text-secondary)', fontSize: '0.82rem' }}>
             Central Executive Orchestrator &bull; Living Event Narrative &bull; Real-Time Multi-Asset Telemetry &bull; Surveillance Control
           </p>
         </div>
 
         {/* Live Telemetry Clocks & Session Controls */}
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ background: '#1E293B', border: '1px solid #334155', padding: '8px 16px', borderRadius: '8px', textAlign: 'right' }}>
-            <span style={{ fontSize: '0.65rem', color: '#94A3B8', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>SIMULATION CLOCK</span>
-            <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#38BDF8', fontFamily: 'monospace' }}>
+          <div style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.03)',
+            border: '1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.08))',
+            padding: density === 'compact' ? '6px 12px' : '8px 16px',
+            borderRadius: '8px',
+            textAlign: 'right'
+          }}>
+            <span style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', fontWeight: 800, display: 'block', letterSpacing: '0.04em' }}>SIMULATION CLOCK</span>
+            <div className="font-data tabular-nums" style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--color-primary)', fontFamily: 'var(--font-mono)' }}>
               {currentTimeStr || '10:00:00 AM'}
             </div>
-            <span style={{ fontSize: '0.68rem', color: '#34D399', fontWeight: 700 }}>
-              REMAINING: {timeLeft}
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px', marginTop: '2px' }}>
+              <span className="font-data tabular-nums" style={{ fontSize: '0.68rem', color: 'var(--color-rise)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+                REMAINING: {timeLeft}
+              </span>
+              <span style={{ fontSize: '0.62rem', padding: '1px 5px', borderRadius: '3px', background: 'rgba(56, 189, 248, 0.15)', color: 'var(--color-primary)', fontWeight: 800, border: '1px solid rgba(56, 189, 248, 0.3)' }}>
+                {timerMode === 'COUNTDOWN' ? `${timerDurationMinutes}m CD` : '09:30–15:30 SYNC'}
+              </span>
+            </div>
           </div>
 
           <div style={{ display: 'flex', gap: '6px', flexDirection: 'column' }}>
             <div style={{ display: 'flex', gap: '6px' }}>
-              <button onClick={handleStartSession} style={{ padding: '7px 12px', background: '#059669', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 900, fontSize: '0.75rem', cursor: 'pointer' }}>
-                ▶ START MARKET
-              </button>
-              <button onClick={handlePauseSession} style={{ padding: '7px 12px', background: '#D97706', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 900, fontSize: '0.75rem', cursor: 'pointer' }}>
-                ⏸ PAUSE
-              </button>
+              <Button size="sm" variant="success" onClick={handleStartSession}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <IconPlay size={12} />
+                  <span>START MARKET</span>
+                </span>
+              </Button>
+              <Button size="sm" variant="warning" onClick={handlePauseSession}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <IconPause size={12} />
+                  <span>PAUSE</span>
+                </span>
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => setIsTimerConfigOpen(true)}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <IconClock size={12} />
+                  <span>TIMER CONFIG</span>
+                </span>
+              </Button>
             </div>
-            <button onClick={handleEmergencyHalt} style={{ padding: '6px 12px', background: '#DC2626', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 900, fontSize: '0.75rem', cursor: 'pointer' }}>
-              🛑 EMERGENCY HALT
-            </button>
+            <Button size="sm" variant="danger" onClick={handleEmergencyHalt}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <IconPause size={12} />
+                <span>EMERGENCY HALT</span>
+              </span>
+            </Button>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* ========================================================================= */}
       {/* OPERATIONAL RADAR: CURRENTLY LIVE (NOW) -> NEXT EVENT -> UPCOMING (LATER) */}
       {/* ========================================================================= */}
-      <div style={{
-        background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
-        border: '1.5px solid #38BDF8',
-        borderRadius: '12px',
-        padding: '16px 20px',
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
+      <Card variant="frosted" density={density} style={{
+        border: '1px solid rgba(56, 189, 248, 0.25)',
+        background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 41, 59, 0.6) 100%)',
+        padding: density === 'compact' ? '12px 16px' : '16px 20px',
         display: 'flex',
         flexDirection: 'column',
         gap: '12px'
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '18px' }}>🎯</span>
-            <span style={{ fontSize: '0.82rem', fontWeight: 900, color: '#38BDF8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            <IconTarget size={18} color="var(--color-primary)" />
+            <span style={{ fontSize: '0.82rem', fontWeight: 900, color: 'var(--color-primary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               OPERATIONAL MISSION CONTROL — EVENT TIMELINE RADAR
             </span>
           </div>
-          <span style={{ fontSize: '0.72rem', color: '#94A3B8', fontWeight: 700 }}>
+          <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>
             Strict 3-Tier Execution &bull; Idempotent Broadcasts
           </span>
         </div>
@@ -1106,86 +1504,117 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '14px' }}>
           
           {/* 1. CURRENTLY LIVE (NOW) */}
-          <div style={{ background: '#090D16', border: '1px solid #059669', borderRadius: '8px', padding: '14px', position: 'relative', overflow: 'hidden' }}>
+          <div style={{
+            backgroundColor: 'rgba(5, 150, 105, 0.06)',
+            border: '1px solid rgba(5, 150, 105, 0.4)',
+            borderRadius: '8px',
+            padding: density === 'compact' ? '10px 12px' : '14px',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-              <span style={{ background: '#059669', color: '#FFF', padding: '2px 8px', borderRadius: '4px', fontSize: '0.68rem', fontWeight: 900, letterSpacing: '0.5px' }}>
+              <Badge variant="success">
                 ● CURRENTLY LIVE (NOW)
-              </span>
-              <span style={{ color: '#34D399', fontSize: '0.72rem', fontWeight: 800 }}>
+              </Badge>
+              <span className="font-data tabular-nums" style={{ color: 'var(--color-rise)', fontSize: '0.72rem', fontWeight: 800, fontFamily: 'var(--font-mono)' }}>
                 {eventRadar.nowEvent?.tier || 'TIER_1'}
               </span>
             </div>
-            <div style={{ fontSize: '1rem', fontWeight: 900, color: '#F8FAFC', lineHeight: '1.3', margin: '6px 0 4px 0' }}>
+            <div style={{ fontSize: '0.98rem', fontWeight: 800, color: 'var(--color-text-primary)', lineHeight: '1.3', margin: '6px 0 4px 0' }}>
               {eventRadar.nowEvent?.title}
             </div>
-            <p style={{ fontSize: '0.76rem', color: '#94A3B8', margin: '0 0 10px 0', lineHeight: '1.4' }}>
+            <p style={{ fontSize: '0.76rem', color: 'var(--color-text-secondary)', margin: '0 0 10px 0', lineHeight: '1.4' }}>
               {eventRadar.nowEvent?.description}
             </p>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid #1E293B' }}>
-              <span style={{ fontSize: '0.68rem', color: '#64748B' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.08))' }}>
+              <span style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)' }}>
                 Category: {eventRadar.nowEvent?.category || 'MARKET'}
               </span>
-              <button
+              <Button
+                size="sm"
+                variant="secondary"
                 onClick={() => handleToggleTakeover({ title: eventRadar.nowEvent?.title, description: eventRadar.nowEvent?.description, tier: eventRadar.nowEvent?.tier, category: eventRadar.nowEvent?.category })}
-                style={{ padding: '4px 10px', background: '#334155', color: '#38BDF8', border: '1px solid #475569', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer' }}
+                style={{ padding: '3px 8px', fontSize: '0.7rem' }}
               >
-                Projector Takeover ⚡
-              </button>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <span>Projector Takeover</span>
+                  <IconZap size={12} />
+                </span>
+              </Button>
             </div>
           </div>
 
           {/* 2. NEXT EVENT */}
-          <div style={{ background: '#090D16', border: '1px solid #D97706', borderRadius: '8px', padding: '14px', position: 'relative', overflow: 'hidden' }}>
+          <div style={{
+            backgroundColor: 'rgba(217, 119, 6, 0.06)',
+            border: '1px solid rgba(217, 119, 6, 0.4)',
+            borderRadius: '8px',
+            padding: density === 'compact' ? '10px 12px' : '14px',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-              <span style={{ background: '#D97706', color: '#FFF', padding: '2px 8px', borderRadius: '4px', fontSize: '0.68rem', fontWeight: 900, letterSpacing: '0.5px' }}>
-                ⚡ NEXT SCHEDULED (NEXT)
-              </span>
-              <span style={{ color: '#FCD34D', fontSize: '0.72rem', fontWeight: 800 }}>
+              <Badge variant="warning" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <IconZap size={12} />
+                <span>NEXT SCHEDULED (NEXT)</span>
+              </Badge>
+              <span className="font-data tabular-nums" style={{ color: 'var(--color-warning)', fontSize: '0.72rem', fontWeight: 800, fontFamily: 'var(--font-mono)' }}>
                 {eventRadar.nextEvent ? `Seq #${eventRadar.nextEvent.sequence || 1} • ${eventRadar.nextEvent.tier || 'TIER_1'}` : 'QUEUE COMPLETED'}
               </span>
             </div>
-            <div style={{ fontSize: '1rem', fontWeight: 900, color: '#F8FAFC', lineHeight: '1.3', margin: '6px 0 4px 0' }}>
+            <div style={{ fontSize: '0.98rem', fontWeight: 800, color: 'var(--color-text-primary)', lineHeight: '1.3', margin: '6px 0 4px 0' }}>
               {eventRadar.nextEvent?.title || 'All primary scheduled narrative events triggered'}
             </div>
-            <p style={{ fontSize: '0.76rem', color: '#94A3B8', margin: '0 0 10px 0', lineHeight: '1.4' }}>
+            <p style={{ fontSize: '0.76rem', color: 'var(--color-text-secondary)', margin: '0 0 10px 0', lineHeight: '1.4' }}>
               {eventRadar.nextEvent?.description || 'The floor has completed all master timeline sequences.'}
             </p>
             {eventRadar.nextEvent && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid #1E293B' }}>
-                <span style={{ fontSize: '0.68rem', color: '#64748B' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.08))' }}>
+                <span className="font-data tabular-nums" style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }}>
                   Scheduled: {eventRadar.nextEvent.scheduledTime || `${eventRadar.nextEvent.triggerMinute || 0}m`}
                 </span>
-                <button
+                <Button
+                  size="sm"
+                  variant="warning"
                   onClick={() => triggerConfirm(`Deploy Event #${eventRadar.nextEvent.sequence}`, `Trigger "${eventRadar.nextEvent.title}" immediately to all desks?`, () => handleTriggerEvent(eventRadar.nextEvent))}
-                  style={{ padding: '5px 12px', background: '#D97706', color: '#FFF', border: 'none', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 900, cursor: 'pointer' }}
+                  style={{ padding: '4px 10px', fontSize: '0.72rem', fontWeight: 800 }}
                 >
-                  ⚡ DEPLOY NOW →
-                </button>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <IconZap size={12} />
+                    <span>DEPLOY NOW →</span>
+                  </span>
+                </Button>
               </div>
             )}
           </div>
 
           {/* 3. UPCOMING PIPELINE (LATER) */}
-          <div style={{ background: '#090D16', border: '1px solid #334155', borderRadius: '8px', padding: '14px' }}>
+          <div style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.02)',
+            border: '1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.08))',
+            borderRadius: '8px',
+            padding: density === 'compact' ? '10px 12px' : '14px'
+          }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <span style={{ background: '#334155', color: '#E2E8F0', padding: '2px 8px', borderRadius: '4px', fontSize: '0.68rem', fontWeight: 900, letterSpacing: '0.5px' }}>
-                ⏳ UPCOMING PIPELINE (LATER)
-              </span>
-              <span style={{ fontSize: '0.68rem', color: '#64748B' }}>
+              <Badge variant="neutral" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <IconClock size={12} />
+                <span>UPCOMING PIPELINE (LATER)</span>
+              </Badge>
+              <span className="font-data tabular-nums" style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }}>
                 {eventRadar.laterEvents.length} queued
               </span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {eventRadar.laterEvents.length === 0 ? (
-                <div style={{ fontSize: '0.74rem', color: '#64748B', fontStyle: 'italic' }}>No further pending events.</div>
+                <div style={{ fontSize: '0.74rem', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>No further pending events.</div>
               ) : (
                 eventRadar.laterEvents.map((evt, idx) => (
-                  <div key={evt.id || idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#1E293B', padding: '6px 10px', borderRadius: '4px', fontSize: '0.72rem' }}>
+                  <div key={evt.id || idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.05))', padding: '6px 10px', borderRadius: '4px', fontSize: '0.72rem' }}>
                     <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '72%' }}>
-                      <span style={{ color: '#38BDF8', fontWeight: 800, marginRight: '6px' }}>#{evt.sequence || idx + 1}</span>
-                      <span style={{ color: '#E2E8F0', fontWeight: 600 }}>{evt.title}</span>
+                      <span className="font-data tabular-nums" style={{ color: 'var(--color-primary)', fontWeight: 800, marginRight: '6px', fontFamily: 'var(--font-mono)' }}>#{evt.sequence || idx + 1}</span>
+                      <span style={{ color: 'var(--color-text-primary)', fontWeight: 600 }}>{evt.title}</span>
                     </div>
-                    <span style={{ color: evt.tier === 'TIER_1' ? '#F87171' : '#FCD34D', fontWeight: 800, fontSize: '0.66rem' }}>
+                    <span className="font-data tabular-nums" style={{ color: evt.tier === 'TIER_1' ? 'var(--color-fall)' : 'var(--color-warning)', fontWeight: 800, fontSize: '0.66rem', fontFamily: 'var(--font-mono)' }}>
                       {evt.tier}
                     </span>
                   </div>
@@ -1195,7 +1624,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
           </div>
 
         </div>
-      </div>
+      </Card>
 
       {/* ========================================================================= */}
       {/* ZONE 2: LIVE MARKET OVERVIEW (INDICES + FX + BREADTH)                     */}
@@ -1203,137 +1632,153 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
         
         {/* Breadth Card */}
-        <div style={{ background: '#1E293B', border: '1px solid #334155', borderRadius: '8px', padding: '14px' }}>
-          <span style={{ fontSize: '0.68rem', color: '#94A3B8', fontWeight: 800 }}>MARKET BREADTH</span>
+        <Card variant="frosted" density={density} style={{ padding: density === 'compact' ? '10px 12px' : '14px' }}>
+          <span style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)', fontWeight: 800, letterSpacing: '0.04em' }}>MARKET BREADTH</span>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
-            <span style={{ color: '#34D399', fontWeight: 900, fontSize: '1.1rem' }}>🟢 {breadth.adv} ADV</span>
-            <span style={{ color: '#F87171', fontWeight: 900, fontSize: '1.1rem' }}>🔴 {breadth.dec} DEC</span>
+            <span style={{ color: 'var(--color-rise)', fontWeight: 900, fontSize: '1.1rem', display: 'inline-flex', alignItems: 'center', gap: '4px', fontFamily: 'var(--font-mono)' }} className="tabular-nums font-data">
+              <IconTrendingUp size={16} color="var(--color-rise)" />
+              <span>{breadth.adv} ADV</span>
+            </span>
+            <span style={{ color: 'var(--color-fall)', fontWeight: 900, fontSize: '1.1rem', display: 'inline-flex', alignItems: 'center', gap: '4px', fontFamily: 'var(--font-mono)' }} className="tabular-nums font-data">
+              <IconTrendingDown size={16} color="var(--color-fall)" />
+              <span>{breadth.dec} DEC</span>
+            </span>
           </div>
-          <div style={{ fontSize: '0.72rem', color: '#94A3B8', marginTop: '4px' }}>
+          <div className="font-data tabular-nums" style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
             Unchanged: {breadth.unc} &bull; Universe: {breadth.total}
           </div>
-        </div>
+        </Card>
 
         {/* Global 100 Index */}
-        <div style={{ background: '#1E293B', border: '1px solid #334155', borderRadius: '8px', padding: '14px' }}>
+        <Card variant="frosted" density={density} style={{ padding: density === 'compact' ? '10px 12px' : '14px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.68rem', color: '#94A3B8', fontWeight: 800 }}>SAAMX GLOBAL 100</span>
+            <span style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)', fontWeight: 800, letterSpacing: '0.04em' }}>SAAMX GLOBAL 100</span>
             <Sparkline isUp={(marketIndices.GLOBAL100?.changePercent || 0) >= 0} />
           </div>
-          <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#FFFFFF', marginTop: '4px' }}>
+          <div className="font-data tabular-nums" style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--color-text-primary)', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
             {(marketIndices.GLOBAL100?.currentValue || 1000).toFixed(1)}
           </div>
-          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: (marketIndices.GLOBAL100?.changePercent || 0) >= 0 ? '#34D399' : '#F87171' }}>
+          <span className="font-data tabular-nums" style={{ fontSize: '0.75rem', fontWeight: 800, color: (marketIndices.GLOBAL100?.changePercent || 0) >= 0 ? 'var(--color-rise)' : 'var(--color-fall)', fontFamily: 'var(--font-mono)' }}>
             {(marketIndices.GLOBAL100?.changePercent || 0) >= 0 ? '+' : ''}{(marketIndices.GLOBAL100?.changePercent || 0).toFixed(2)}%
           </span>
-        </div>
+        </Card>
 
         {/* India 50 Index */}
-        <div style={{ background: '#1E293B', border: '1px solid #334155', borderRadius: '8px', padding: '14px' }}>
+        <Card variant="frosted" density={density} style={{ padding: density === 'compact' ? '10px 12px' : '14px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.68rem', color: '#94A3B8', fontWeight: 800 }}>SAAMX INDIA 50</span>
+            <span style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)', fontWeight: 800, letterSpacing: '0.04em' }}>SAAMX INDIA 50</span>
             <Sparkline isUp={(marketIndices.INDIA50?.changePercent || 0) >= 0} />
           </div>
-          <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#FFFFFF', marginTop: '4px' }}>
+          <div className="font-data tabular-nums" style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--color-text-primary)', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
             {(marketIndices.INDIA50?.currentValue || 5000).toFixed(1)}
           </div>
-          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: (marketIndices.INDIA50?.changePercent || 0) >= 0 ? '#34D399' : '#F87171' }}>
+          <span className="font-data tabular-nums" style={{ fontSize: '0.75rem', fontWeight: 800, color: (marketIndices.INDIA50?.changePercent || 0) >= 0 ? 'var(--color-rise)' : 'var(--color-fall)', fontFamily: 'var(--font-mono)' }}>
             {(marketIndices.INDIA50?.changePercent || 0) >= 0 ? '+' : ''}{(marketIndices.INDIA50?.changePercent || 0).toFixed(2)}%
           </span>
-        </div>
+        </Card>
 
         {/* US 100 Index */}
-        <div style={{ background: '#1E293B', border: '1px solid #334155', borderRadius: '8px', padding: '14px' }}>
+        <Card variant="frosted" density={density} style={{ padding: density === 'compact' ? '10px 12px' : '14px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.68rem', color: '#94A3B8', fontWeight: 800 }}>SAAMX US 100</span>
+            <span style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)', fontWeight: 800, letterSpacing: '0.04em' }}>SAAMX US 100</span>
             <Sparkline isUp={(marketIndices.US100?.changePercent || 0) >= 0} />
           </div>
-          <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#FFFFFF', marginTop: '4px' }}>
+          <div className="font-data tabular-nums" style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--color-text-primary)', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
             {(marketIndices.US100?.currentValue || 8000).toFixed(1)}
           </div>
-          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: (marketIndices.US100?.changePercent || 0) >= 0 ? '#34D399' : '#F87171' }}>
+          <span className="font-data tabular-nums" style={{ fontSize: '0.75rem', fontWeight: 800, color: (marketIndices.US100?.changePercent || 0) >= 0 ? 'var(--color-rise)' : 'var(--color-fall)', fontFamily: 'var(--font-mono)' }}>
             {(marketIndices.US100?.changePercent || 0) >= 0 ? '+' : ''}{(marketIndices.US100?.changePercent || 0).toFixed(2)}%
           </span>
-        </div>
+        </Card>
 
         {/* USD / INR Spot */}
-        <div style={{ background: '#1E293B', border: '1px solid #334155', borderRadius: '8px', padding: '14px' }}>
-          <span style={{ fontSize: '0.68rem', color: '#94A3B8', fontWeight: 800 }}>USD / INR SPOT</span>
-          <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#38BDF8', marginTop: '4px' }}>
+        <Card variant="frosted" density={density} style={{ padding: density === 'compact' ? '10px 12px' : '14px' }}>
+          <span style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)', fontWeight: 800, letterSpacing: '0.04em' }}>USD / INR SPOT</span>
+          <div className="font-data tabular-nums" style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--color-primary)', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
             ₹{(fxRates.USDINR?.midRate || 88.20).toFixed(2)}
           </div>
-          <span style={{ fontSize: '0.72rem', color: '#94A3B8' }}>
+          <span className="font-data tabular-nums" style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }}>
             Spread: {fxRates.USDINR?.spreadPercent || 0.45}%
           </span>
-        </div>
+        </Card>
 
         {/* Total Turnover */}
-        <div style={{ background: '#1E293B', border: '1px solid #334155', borderRadius: '8px', padding: '14px' }}>
-          <span style={{ fontSize: '0.68rem', color: '#94A3B8', fontWeight: 800 }}>TOTAL FLOOR TURNOVER</span>
-          <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#FCD34D', marginTop: '4px' }}>
+        <Card variant="frosted" density={density} style={{ padding: density === 'compact' ? '10px 12px' : '14px' }}>
+          <span style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)', fontWeight: 800, letterSpacing: '0.04em' }}>TOTAL FLOOR TURNOVER</span>
+          <div className="font-data tabular-nums" style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--color-warning)', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
             ₹{(totalTurnoverINR / 10000000).toFixed(2)} Cr
           </div>
-          <span style={{ fontSize: '0.72rem', color: '#94A3B8' }}>
+          <span className="font-data tabular-nums" style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }}>
             Trades: {totalTrades} &bull; Vol: {totalVolume.toLocaleString()}
           </span>
-        </div>
+        </Card>
 
       </div>
 
       {/* ========================================================================= */}
       {/* COMMAND NAVIGATION TABS STRIP                                             */}
       {/* ========================================================================= */}
-      <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', borderBottom: '1px solid #334155' }}>
+      <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px', borderBottom: '1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.08))' }}>
         {[
-          { id: 'event-control', label: '🎛️ Event Control Centre' },
-          { id: 'registrations', label: '🏛️ Registrations & Houses' },
-          { id: 'judging', label: '⚖️ Judging Console' },
-          { id: 'penalties', label: '🛡️ Penalties & Appeals' },
-          { id: 'results-lifecycle', label: '🏆 Results & Publication' },
-          { id: 'analytics', label: '📊 Event Analytics' },
-          { id: 'timeline', label: '⏱ Master Timeline (315 Evts)' },
-          { id: 'vodafone', label: '⚠️ Vodafone Idea Crisis' },
-          { id: 'ipo', label: '🚀 IPO Command Center' },
-          { id: 'bullbear', label: '🐂 Bull & Bear Arena' },
-          { id: 'broker', label: '💼 Broker Intelligence' },
-          { id: 'newsroom', label: '📢 Breaking News Wire' },
-          { id: 'polls', label: '📊 Polling Engine' },
-          { id: 'fx', label: '💱 Forex Command' },
-          { id: 'regulatory', label: '🏛 SEBI Surveillance' },
-          { id: 'securities', label: '📈 Securities Universe' },
-          { id: 'teams', label: '👥 Teams & Portfolios' },
-          { id: 'ledger', label: '📑 Trade Ledger' },
-          { id: 'audit', label: '🛡 Audit & Reset' }
-        ].map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            style={{
-              padding: '10px 16px',
-              borderRadius: '8px 8px 0 0',
-              fontWeight: 800,
-              fontSize: '0.82rem',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              background: activeTab === tab.id ? '#1E293B' : 'transparent',
-              color: activeTab === tab.id ? '#38BDF8' : '#94A3B8',
-              border: activeTab === tab.id ? '1px solid #334155' : '1px solid transparent',
-              borderBottom: activeTab === tab.id ? '2px solid #38BDF8' : 'none',
-              transition: 'all 0.2s'
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
+          { id: 'event-control', label: 'Event Control Centre', icon: IconSettings },
+          { id: 'registrations', label: 'Registrations & Houses', icon: IconBuilding },
+          { id: 'judging', label: 'Judging Console', icon: IconScale },
+          { id: 'penalties', label: 'Penalties & Appeals', icon: IconShieldAlert },
+          { id: 'results-lifecycle', label: 'Results & Publication', icon: IconTrophy },
+          { id: 'analytics', label: 'Event Analytics', icon: IconBarChart },
+          { id: 'timeline', label: 'Master Timeline (315 Evts)', icon: IconClock },
+          { id: 'vodafone', label: 'Vodafone Idea Crisis', icon: IconAlertTriangle },
+          { id: 'ipo', label: 'IPO Command Center', icon: IconTrendingUp },
+          { id: 'bullbear', label: 'Bull & Bear Arena', icon: IconActivity },
+          { id: 'broker', label: 'Broker Intelligence', icon: IconBriefcase },
+          { id: 'newsroom', label: 'Breaking News Wire', icon: IconNewspaper },
+          { id: 'polls', label: 'Polling Engine', icon: IconBarChart },
+          { id: 'fx', label: 'Forex Command', icon: IconCurrencyExchange },
+          { id: 'regulatory', label: 'SEBI Surveillance', icon: IconShieldCheck },
+          { id: 'securities', label: 'Securities Universe', icon: IconTrendingUp },
+          { id: 'teams', label: 'Teams & Portfolios', icon: IconUsers },
+          { id: 'ledger', label: 'Trade Ledger', icon: IconFolderOpen },
+          { id: 'audit', label: 'Audit & Reset', icon: IconLock }
+        ].map(tab => {
+          const isActive = activeTab === tab.id;
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                padding: density === 'compact' ? '8px 12px' : '10px 16px',
+                borderRadius: '8px 8px 0 0',
+                fontWeight: 700,
+                fontSize: '0.8rem',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                background: isActive ? 'rgba(56, 189, 248, 0.12)' : 'transparent',
+                color: isActive ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+                border: isActive ? '1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.12))' : '1px solid transparent',
+                borderBottom: isActive ? '2px solid var(--color-primary)' : '2px solid transparent',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <Icon size={14} />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
         <a
           href="#/floor-ops"
           style={{
-            padding: '10px 16px',
+            padding: density === 'compact' ? '8px 12px' : '10px 16px',
             borderRadius: '8px 8px 0 0',
-            fontWeight: 800,
-            fontSize: '0.82rem',
-            background: '#334155',
-            color: '#FCD34D',
+            fontWeight: 700,
+            fontSize: '0.8rem',
+            background: 'rgba(245, 158, 11, 0.12)',
+            color: 'var(--color-warning)',
+            border: '1px solid rgba(245, 158, 11, 0.3)',
+            borderBottom: '2px solid transparent',
             textDecoration: 'none',
             whiteSpace: 'nowrap',
             display: 'flex',
@@ -1341,7 +1786,8 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
             gap: '6px'
           }}
         >
-          🧭 Floor Operations Desk ↗
+          <IconActivity size={14} />
+          <span>Floor Operations Desk ↗</span>
         </a>
       </div>
 
@@ -1428,9 +1874,9 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
               </p>
               <button
                 onClick={() => handleVodafoneAdvance(1)}
-                style={{ marginTop: '12px', width: '100%', padding: '6px', borderRadius: '4px', background: '#2563EB', color: '#fff', fontWeight: 800, fontSize: '0.75rem', border: 'none', cursor: 'pointer' }}
+                style={{ marginTop: '12px', width: '100%', padding: '6px', borderRadius: '4px', background: '#2563EB', color: '#fff', fontWeight: 800, fontSize: '0.75rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
               >
-                {vodafoneCrisis.activeAct >= 1 ? '✓ Deployed (Re-fire)' : 'Deploy Act 1'}
+                {vodafoneCrisis.activeAct >= 1 ? (<><IconCheck size={12} /> Deployed (Re-fire)</>) : 'Deploy Act 1'}
               </button>
             </div>
 
@@ -1446,9 +1892,9 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
               </p>
               <button
                 onClick={() => handleVodafoneAdvance(2)}
-                style={{ marginTop: '12px', width: '100%', padding: '6px', borderRadius: '4px', background: '#2563EB', color: '#fff', fontWeight: 800, fontSize: '0.75rem', border: 'none', cursor: 'pointer' }}
+                style={{ marginTop: '12px', width: '100%', padding: '6px', borderRadius: '4px', background: '#2563EB', color: '#fff', fontWeight: 800, fontSize: '0.75rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
               >
-                {vodafoneCrisis.activeAct >= 2 ? '✓ Deployed (Re-fire)' : 'Deploy Act 2'}
+                {vodafoneCrisis.activeAct >= 2 ? (<><IconCheck size={12} /> Deployed (Re-fire)</>) : 'Deploy Act 2'}
               </button>
             </div>
 
@@ -1464,9 +1910,9 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
               </p>
               <button
                 onClick={() => handleVodafoneAdvance(3)}
-                style={{ marginTop: '12px', width: '100%', padding: '6px', borderRadius: '4px', background: '#DC2626', color: '#fff', fontWeight: 800, fontSize: '0.75rem', border: 'none', cursor: 'pointer' }}
+                style={{ marginTop: '12px', width: '100%', padding: '6px', borderRadius: '4px', background: '#DC2626', color: '#fff', fontWeight: 800, fontSize: '0.75rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
               >
-                {vodafoneCrisis.activeAct >= 3 ? '✓ Deployed (Re-fire)' : 'Deploy Act 3'}
+                {vodafoneCrisis.activeAct >= 3 ? (<><IconCheck size={12} /> Deployed (Re-fire)</>) : 'Deploy Act 3'}
               </button>
             </div>
 
@@ -1482,9 +1928,9 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
               </p>
               <button
                 onClick={() => handleVodafoneAdvance(4)}
-                style={{ marginTop: '12px', width: '100%', padding: '6px', borderRadius: '4px', background: '#B91C1C', color: '#fff', fontWeight: 900, fontSize: '0.75rem', border: 'none', cursor: 'pointer' }}
+                style={{ marginTop: '12px', width: '100%', padding: '6px', borderRadius: '4px', background: '#B91C1C', color: '#fff', fontWeight: 900, fontSize: '0.75rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
               >
-                {vodafoneCrisis.activeAct >= 4 ? '✓ Deployed (Re-fire)' : 'Deploy Trading Halt'}
+                {vodafoneCrisis.activeAct >= 4 ? (<><IconCheck size={12} /> Deployed (Re-fire)</>) : 'Deploy Trading Halt'}
               </button>
             </div>
 
@@ -1500,16 +1946,16 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
             <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
               <button
                 onClick={() => handleVodafoneAdvance(5, 'RECOVERY')}
-                style={{ flex: 1, minWidth: '220px', padding: '12px', borderRadius: '6px', background: '#065F3E', color: '#D1FAE5', border: '1px solid #10B981', fontWeight: 900, fontSize: '0.85rem', cursor: 'pointer', textAlign: 'center' }}
+                style={{ flex: 1, minWidth: '220px', padding: '12px', borderRadius: '6px', background: '#065F3E', color: '#D1FAE5', border: '1px solid #10B981', fontWeight: 900, fontSize: '0.85rem', cursor: 'pointer', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
               >
-                🟢 RESOLUTION A: RESCUE & RESTRUCTURING (+35% Relief Rally)
+                <IconTrendingUp size={16} color="var(--color-rise, #10B981)" /> RESOLUTION A: RESCUE & RESTRUCTURING (+35% Relief Rally)
               </button>
 
               <button
                 onClick={() => handleVodafoneAdvance(5, 'BANKRUPTCY')}
-                style={{ flex: 1, minWidth: '220px', padding: '12px', borderRadius: '6px', background: '#7F1D1D', color: '#FEE2E2', border: '1px solid #EF4444', fontWeight: 900, fontSize: '0.85rem', cursor: 'pointer', textAlign: 'center' }}
+                style={{ flex: 1, minWidth: '220px', padding: '12px', borderRadius: '6px', background: '#7F1D1D', color: '#FEE2E2', border: '1px solid #EF4444', fontWeight: 900, fontSize: '0.85rem', cursor: 'pointer', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
               >
-                🔴 RESOLUTION B: HYPOTHETICAL INSOLVENCY (-85% Collapse)
+                <IconTrendingDown size={16} color="var(--color-fall, #EF4444)" /> RESOLUTION B: HYPOTHETICAL INSOLVENCY (-85% Collapse)
               </button>
             </div>
           </div>
@@ -1536,17 +1982,17 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
                 onClick={() => {
                   ['OAI', 'STRP', 'CNVA', 'DISC', 'POLY'].forEach(tk => handleToggleIpoVisibility(tk, false));
                 }}
-                style={{ padding: '6px 12px', background: '#334155', color: '#CBD5E1', border: '1px solid #475569', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer' }}
+                style={{ padding: '6px 12px', background: '#334155', color: '#CBD5E1', border: '1px solid #475569', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
               >
-                👁️ Hide All IPOs
+                <IconSlash size={14} /> Hide All IPOs
               </button>
               <button
                 onClick={() => {
                   ['OAI', 'STRP', 'CNVA', 'DISC', 'POLY'].forEach(tk => handleToggleIpoVisibility(tk, true));
                 }}
-                style={{ padding: '6px 12px', background: '#059669', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer' }}
+                style={{ padding: '6px 12px', background: '#059669', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
               >
-                👁️ Make All Visible
+                <IconEye size={14} /> Make All Visible
               </button>
             </div>
           </div>
@@ -1589,10 +2035,14 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
                           cursor: 'pointer',
                           background: isVisible ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
                           color: isVisible ? '#34D399' : '#F87171',
-                          border: `1.5px solid ${isVisible ? '#10B981' : '#EF4444'}`
+                          border: `1.5px solid ${isVisible ? '#10B981' : '#EF4444'}`,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px'
                         }}
                       >
-                        {isVisible ? '👁️ VISIBLE TO TEAMS' : '🚫 HIDDEN FROM TEAMS'} (Click to Toggle)
+                        {isVisible ? <IconEye size={13} /> : <IconSlash size={13} />}
+                        {isVisible ? 'VISIBLE TO TEAMS' : 'HIDDEN FROM TEAMS'} (Click to Toggle)
                       </button>
 
                       <span style={{
@@ -1623,13 +2073,13 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
                     </span>
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                       {[
-                        { key: 'HIDDEN', label: '🚫 Hidden (Offline)', bg: '#475569' },
-                        { key: 'RUMOUR', label: '1. 🤫 Rumour', bg: '#64748B' },
-                        { key: 'ANNOUNCED', label: '2. 📢 Announced', bg: '#2563EB' },
-                        { key: 'SUBSCRIPTION_OPEN', label: '3. 🔔 Subscription Open', bg: '#D97706' },
-                        { key: 'SUBSCRIPTION_CLOSED', label: '4. ⏳ Closed', bg: '#EA580C' },
-                        { key: 'ALLOTMENT', label: '5. 📊 Allotment', bg: '#7C3AED' },
-                        { key: 'LISTING', label: '6. 🚀 Floor Listing', bg: '#059669' }
+                        { key: 'HIDDEN', label: 'Hidden (Offline)', bg: '#475569' },
+                        { key: 'RUMOUR', label: '1. Rumour', bg: '#64748B' },
+                        { key: 'ANNOUNCED', label: '2. Announced', bg: '#2563EB' },
+                        { key: 'SUBSCRIPTION_OPEN', label: '3. Subscription Open', bg: '#D97706' },
+                        { key: 'SUBSCRIPTION_CLOSED', label: '4. Closed', bg: '#EA580C' },
+                        { key: 'ALLOTMENT', label: '5. Allotment', bg: '#7C3AED' },
+                        { key: 'LISTING', label: '6. Floor Listing', bg: '#059669' }
                       ].map(stg => (
                         <button
                           key={stg.key}
@@ -1666,7 +2116,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
               FLOOR SENTIMENT ORCHESTRATOR
             </span>
             <h2 style={{ fontSize: '1.6rem', fontWeight: 900, color: '#F8FAFC', margin: '8px 0 0 0' }}>
-              Bull 🐂 vs Bear 🐻 Stance & Live Debate Console
+              Bull vs Bear Stance & Live Debate Console
             </h2>
             <p style={{ color: '#94A3B8', fontSize: '0.85rem', margin: '4px 0 0 0' }}>
               Publish market viewpoints from physical floor analysts and trigger interactive live debate showdowns.
@@ -1678,7 +2128,9 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
             {/* Bull Console */}
             <div style={{ background: '#0F172A', border: '1px solid #10B981', borderRadius: '8px', padding: '18px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontWeight: 900, fontSize: '1rem', color: '#34D399' }}>🐂 BULL OPERATOR CONSOLE</span>
+                <span style={{ fontWeight: 900, fontSize: '1rem', color: '#34D399', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <IconTrendingUp size={16} color="var(--color-rise, #34D399)" /> BULL OPERATOR CONSOLE
+                </span>
                 <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#34D399' }}>Confidence: {bullConf}%</span>
               </div>
 
@@ -1714,16 +2166,18 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
 
               <button
                 onClick={() => handlePublishBullBear('bull')}
-                style={{ padding: '10px', borderRadius: '6px', background: '#059669', color: '#fff', fontWeight: 900, fontSize: '0.85rem', border: 'none', cursor: 'pointer' }}
+                style={{ padding: '10px', borderRadius: '6px', background: '#059669', color: '#fff', fontWeight: 900, fontSize: '0.85rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
               >
-                📢 Publish Bull Stance to Wire
+                <IconMegaphone size={14} /> Publish Bull Stance to Wire
               </button>
             </div>
 
             {/* Bear Console */}
             <div style={{ background: '#0F172A', border: '1px solid #EF4444', borderRadius: '8px', padding: '18px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontWeight: 900, fontSize: '1rem', color: '#F87171' }}>🐻 BEAR OPERATOR CONSOLE</span>
+                <span style={{ fontWeight: 900, fontSize: '1rem', color: '#F87171', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <IconTrendingDown size={16} color="var(--color-fall, #F87171)" /> BEAR OPERATOR CONSOLE
+                </span>
                 <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#F87171' }}>Confidence: {bearConf}%</span>
               </div>
 
@@ -1759,9 +2213,9 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
 
               <button
                 onClick={() => handlePublishBullBear('bear')}
-                style={{ padding: '10px', borderRadius: '6px', background: '#DC2626', color: '#fff', fontWeight: 900, fontSize: '0.85rem', border: 'none', cursor: 'pointer' }}
+                style={{ padding: '10px', borderRadius: '6px', background: '#DC2626', color: '#fff', fontWeight: 900, fontSize: '0.85rem', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
               >
-                📢 Publish Bear Stance to Wire
+                <IconMegaphone size={14} /> Publish Bear Stance to Wire
               </button>
             </div>
 
@@ -1780,9 +2234,9 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
             </div>
             <button
               onClick={handleTriggerDebate}
-              style={{ padding: '12px 20px', borderRadius: '6px', background: '#D97706', color: '#fff', fontWeight: 900, fontSize: '0.9rem', border: 'none', cursor: 'pointer' }}
+              style={{ padding: '12px 20px', borderRadius: '6px', background: '#D97706', color: '#fff', fontWeight: 900, fontSize: '0.9rem', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
-              ⚔️ Trigger Floor Debate Showdown
+              <IconZap size={15} /> Trigger Floor Debate Showdown
             </button>
           </div>
         </div>
@@ -1818,10 +2272,10 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
             <div>
               <label style={{ fontSize: '0.72rem', color: '#94A3B8', fontWeight: 800 }}>CALL</label>
               <select value={brokerRec} onChange={(e) => setBrokerRec(e.target.value)} style={{ width: '100%', background: '#1E293B', border: '1px solid #334155', color: '#fff', padding: '8px', borderRadius: '4px', fontSize: '0.82rem', marginTop: '4px', fontWeight: 800 }}>
-                <option value="BUY">🟢 BUY</option>
-                <option value="SELL">🔴 SELL</option>
-                <option value="HOLD">🟡 HOLD</option>
-                <option value="WATCHLIST">👀 WATCHLIST</option>
+                <option value="BUY">BUY</option>
+                <option value="SELL">SELL</option>
+                <option value="HOLD">HOLD</option>
+                <option value="WATCHLIST">WATCHLIST</option>
               </select>
             </div>
 
@@ -1925,9 +2379,9 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
 
             <button
               onClick={handlePublishCustomNews}
-              style={{ padding: '12px', borderRadius: '6px', background: '#DC2626', color: '#fff', fontWeight: 900, fontSize: '0.9rem', border: 'none', cursor: 'pointer', marginTop: '6px' }}
+              style={{ padding: '12px', borderRadius: '6px', background: '#DC2626', color: '#fff', fontWeight: 900, fontSize: '0.9rem', border: 'none', cursor: 'pointer', marginTop: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
             >
-              🚨 Broadcast Breaking News Wire
+              <IconNewspaper size={18} /> Broadcast Breaking News Wire
             </button>
           </div>
         </div>
@@ -1969,9 +2423,9 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
 
             <button
               onClick={handleCreatePoll}
-              style={{ padding: '10px', borderRadius: '6px', background: '#7C3AED', color: '#fff', fontWeight: 900, fontSize: '0.85rem', border: 'none', cursor: 'pointer', marginTop: '6px' }}
+              style={{ padding: '10px', borderRadius: '6px', background: '#7C3AED', color: '#fff', fontWeight: 900, fontSize: '0.85rem', border: 'none', cursor: 'pointer', marginTop: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
             >
-              🚀 Broadcast Live Sentiment Poll
+              <IconRadio size={16} /> Broadcast Live Sentiment Poll
             </button>
           </div>
 
@@ -2081,9 +2535,9 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
                   });
                 });
               }}
-              style={{ flex: 1, minWidth: '220px', padding: '14px', borderRadius: '8px', background: '#7F1D1D', color: '#FEE2E2', border: '1px solid #EF4444', fontWeight: 900, fontSize: '0.85rem', cursor: 'pointer' }}
+              style={{ flex: 1, minWidth: '220px', padding: '14px', borderRadius: '8px', background: '#7F1D1D', color: '#FEE2E2', border: '1px solid #EF4444', fontWeight: 900, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
             >
-              🛑 HALT ALL SECURITIES (MARKET-WIDE FREEZE)
+              <IconPause size={18} /> HALT ALL SECURITIES (MARKET-WIDE FREEZE)
             </button>
 
             <button
@@ -2096,9 +2550,9 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
                   });
                 });
               }}
-              style={{ flex: 1, minWidth: '220px', padding: '14px', borderRadius: '8px', background: '#065F3E', color: '#D1FAE5', border: '1px solid #10B981', fontWeight: 900, fontSize: '0.85rem', cursor: 'pointer' }}
+              style={{ flex: 1, minWidth: '220px', padding: '14px', borderRadius: '8px', background: '#065F3E', color: '#D1FAE5', border: '1px solid #10B981', fontWeight: 900, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
             >
-              🟢 RESUME ALL TRADING (CLEAR SURVEILLANCE HALTS)
+              <IconPlay size={18} /> RESUME ALL TRADING (CLEAR SURVEILLANCE HALTS)
             </button>
           </div>
         </div>
@@ -2161,20 +2615,30 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
         <div style={{ background: '#1E293B', border: '1px solid #334155', borderRadius: '12px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <h2 style={{ fontSize: '1.3rem', fontWeight: 900, color: '#fff' }}>Participant Desks & Portfolios (20 Teams)</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
-            {teams.map(t => (
-              <div key={t.teamCode} style={{ background: '#0F172A', border: '1px solid #334155', borderRadius: '8px', padding: '14px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontWeight: 900, color: '#38BDF8', fontSize: '1rem', fontFamily: 'monospace' }}>{t.teamCode}</span>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#34D399' }}>
-                    INR Cash: ₹{(t.cashWallets?.INR || t.cashBalance || 0).toLocaleString()}
-                  </span>
+            {teams.map(t => {
+              const deskForTeam = Object.keys(state?.orderDesks || {}).find(dId => (state?.orderDesks?.[dId]?.assignedTeams || []).includes(t.teamCode)) || t.assignedDesk || 'DESK_1';
+              const deskMeta = state?.orderDesks?.[deskForTeam];
+              return (
+                <div key={t.teamCode} style={{ background: '#0F172A', border: '1px solid #334155', borderRadius: '8px', padding: '14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 900, color: '#38BDF8', fontSize: '1rem', fontFamily: 'monospace' }}>{t.teamCode}</span>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#34D399' }}>
+                      INR Cash: ₹{(t.cashWallets?.INR || t.cashBalance || 0).toLocaleString()}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: '#CBD5E1', marginTop: '4px' }}>{t.teamName}</div>
+                  <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '6px' }}>
+                    USD: ${(t.cashWallets?.USD || 0).toFixed(2)} &bull; GBP: £{(t.cashWallets?.GBP || 0).toFixed(2)} &bull; EUR: €{(t.cashWallets?.EUR || 0).toFixed(2)}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #1E293B' }}>
+                    <span style={{ fontSize: '0.72rem', color: '#94A3B8' }}>Intake Clearance:</span>
+                    <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#FCD34D', background: 'rgba(252, 211, 77, 0.1)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(252, 211, 77, 0.2)', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                      <IconMonitor size={12} color="#FCD34D" /> {deskMeta?.name || deskForTeam.replace('_', ' ')}
+                    </span>
+                  </div>
                 </div>
-                <div style={{ fontSize: '0.8rem', color: '#CBD5E1', marginTop: '4px' }}>{t.teamName}</div>
-                <div style={{ fontSize: '0.75rem', color: '#94A3B8', marginTop: '6px' }}>
-                  USD: ${(t.cashWallets?.USD || 0).toFixed(2)} &bull; GBP: £{(t.cashWallets?.GBP || 0).toFixed(2)} &bull; EUR: €{(t.cashWallets?.EUR || 0).toFixed(2)}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -2229,34 +2693,47 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
           </div>
 
           <div style={{ background: '#0F172A', border: '1px solid #EF4444', borderRadius: '8px', padding: '18px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <span style={{ fontWeight: 900, color: '#F87171', fontSize: '0.95rem' }}>⚠️ DANGER ZONE: MASTER DATABASE RE-SEED</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontWeight: 900, color: '#F87171', fontSize: '0.95rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <IconAlertTriangle size={18} color="#F87171" /> DANGER ZONE: MASTER DATABASE RE-SEED
+              </span>
+              <span style={{ fontSize: '0.72rem', background: '#450A0A', color: '#FCA5A5', padding: '2px 8px', borderRadius: '4px', fontWeight: 800 }}>
+                SUPER-ADMIN PRIVILEGE REQUIRED
+              </span>
+            </div>
             <p style={{ fontSize: '0.82rem', color: '#94A3B8' }}>
-              Type <strong>CONFIRM RESET</strong> below to wipe all transactions and restore the full 2,061 security universe.
+              Type <strong>RESET ALL</strong> below to wipe all transactions and restore the full 2,061 security universe. This action is restricted to the Master Floor Director.
             </p>
 
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-              <input
-                type="text"
-                placeholder="Type CONFIRM RESET"
-                value={resetPhrase}
-                onChange={(e) => setResetPhrase(e.target.value)}
-                style={{ flex: 1, background: '#1E293B', border: '1px solid #EF4444', color: '#fff', padding: '8px 12px', borderRadius: '4px', fontFamily: 'monospace' }}
-              />
-              <select
-                value={resetMode}
-                onChange={(e) => setResetMode(e.target.value)}
-                style={{ background: '#1E293B', border: '1px solid #334155', color: '#fff', padding: '8px 12px', borderRadius: '4px', fontWeight: 800 }}
-              >
-                <option value="EVENT">EVENT MODE (Full Day)</option>
-                <option value="TEST">TEST / DEMO MODE</option>
-              </select>
-              <button
-                onClick={handleMasterReset}
-                style={{ padding: '8px 16px', background: '#DC2626', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 900, cursor: 'pointer' }}
-              >
-                EXECUTE RESET
-              </button>
-            </div>
+            {isSuperAdmin ? (
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <input
+                  type="text"
+                  placeholder="Type RESET ALL"
+                  value={resetPhrase}
+                  onChange={(e) => setResetPhrase(e.target.value)}
+                  style={{ flex: 1, background: '#1E293B', border: '1px solid #EF4444', color: '#fff', padding: '8px 12px', borderRadius: '4px', fontFamily: 'monospace' }}
+                />
+                <select
+                  value={resetMode}
+                  onChange={(e) => setResetMode(e.target.value)}
+                  style={{ background: '#1E293B', border: '1px solid #334155', color: '#fff', padding: '8px 12px', borderRadius: '4px', fontWeight: 800 }}
+                >
+                  <option value="EVENT">EVENT MODE (Full Day)</option>
+                  <option value="TEST">TEST / DEMO MODE</option>
+                </select>
+                <button
+                  onClick={handleMasterReset}
+                  style={{ padding: '8px 16px', background: '#DC2626', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 900, cursor: 'pointer' }}
+                >
+                  EXECUTE RESET
+                </button>
+              </div>
+            ) : (
+              <div style={{ background: '#1E293B', border: '1px solid #334155', borderRadius: '6px', padding: '10px 14px', color: '#FCA5A5', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <IconLock size={14} color="#FCA5A5" /> Master database reset locked. Log in as Super-Administrator (Sridhara) to execute disaster recovery procedures.
+              </div>
+            )}
           </div>
 
           <div>
@@ -2294,7 +2771,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
                   onClick={() => handleSetEventMode(currentEvent.eventMode === 'LIVE' ? 'REHEARSAL' : 'LIVE')}
                   style={{ padding: '6px 12px', background: currentEvent.eventMode === 'LIVE' ? '#059669' : '#D97706', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 800, fontSize: '0.75rem', cursor: 'pointer' }}
                 >
-                  Switch to {currentEvent.eventMode === 'LIVE' ? 'REHEARSAL' : 'LIVE'} Mode ➔
+                  Switch to {currentEvent.eventMode === 'LIVE' ? 'REHEARSAL' : 'LIVE'} Mode
                 </button>
               </div>
             </div>
@@ -2339,8 +2816,8 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
           {/* Section 2: Event Configuration & Schedule Settings */}
           <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px' }}>
             <div style={{ background: '#1E293B', border: '1px solid #334155', borderRadius: '12px', padding: '20px' }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#fff', margin: '0 0 14px' }}>
-                ⚙️ Event Configuration Settings
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#fff', margin: '0 0 14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <IconSettings size={18} color="var(--color-primary, #38BDF8)" /> Event Configuration Settings
               </h3>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '0.8rem' }}>
                 <div style={{ gridColumn: '1 / -1' }}>
@@ -2371,13 +2848,21 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', color: '#94A3B8', marginBottom: '4px' }}>Max Investment Houses</label>
+                  <label style={{ display: 'block', color: 'var(--color-text-secondary, #94A3B8)', marginBottom: '4px' }}>
+                    Configured Investment House Capacity (10–20)
+                  </label>
                   <input
                     type="number"
+                    min="10"
+                    max="20"
+                    step="1"
                     value={cfgMaxHouses}
                     onChange={(e) => setCfgMaxHouses(e.target.value)}
-                    style={{ width: '100%', background: '#0F172A', border: '1px solid #334155', color: '#fff', padding: '8px 10px', borderRadius: '6px' }}
+                    style={{ width: '100%', background: 'var(--color-surface, #0F172A)', border: '1px solid var(--color-border, #334155)', color: 'var(--color-text-primary, #fff)', padding: '8px 10px', borderRadius: '6px' }}
                   />
+                  <div style={{ fontSize: '0.72rem', color: 'var(--color-text-secondary, #94A3B8)', marginTop: '4px' }}>
+                    Registered: {(state?.investmentHouses || []).length} | Active: {(state?.teams || []).filter(t => t.isActive !== false).length} | Aggregate: ₹{((Number(cfgMaxHouses) || 20) * 1).toFixed(0)} Cr
+                  </div>
                 </div>
                 <div>
                   <label style={{ display: 'block', color: '#94A3B8', marginBottom: '4px' }}>Team Size (Members)</label>
@@ -2430,8 +2915,8 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
 
             {/* Risk Controls Configurator */}
             <div style={{ background: '#1E293B', border: '1px solid #334155', borderRadius: '12px', padding: '20px' }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#fff', margin: '0 0 14px' }}>
-                🛡️ Simulation Risk & Circuit Controls
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#fff', margin: '0 0 14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <IconShieldCheck size={18} color="var(--color-rise, #059669)" /> Simulation Risk & Circuit Controls
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.8rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -2506,8 +2991,8 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
             {/* Rehearsal Sandbox */}
             <div style={{ background: '#1E293B', border: '1px solid #334155', borderRadius: '12px', padding: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#FCD34D', margin: 0 }}>
-                  🎭 Rehearsal Mode Test Environment
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#FCD34D', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <IconActivity size={18} color="#FCD34D" /> Rehearsal Mode Test Environment
                 </h3>
                 <span style={{ fontSize: '0.72rem', background: 'rgba(252, 211, 77, 0.1)', color: '#FCD34D', padding: '3px 8px', borderRadius: '4px', fontWeight: 800 }}>
                   ZERO CONTAMINATION GUARANTEE
@@ -2519,23 +3004,23 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button
                   onClick={handleSeedRehearsal}
-                  style={{ padding: '8px 14px', background: '#334155', color: '#fff', border: '1px solid #475569', borderRadius: '6px', fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer' }}
+                  style={{ padding: '8px 14px', background: '#334155', color: '#fff', border: '1px solid #475569', borderRadius: '6px', fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
-                  🌱 Seed 5 Rehearsal Houses
+                  <IconUsers size={14} /> Seed 5 Rehearsal Houses
                 </button>
                 <button
                   onClick={handleResetRehearsal}
-                  style={{ padding: '8px 14px', background: '#7F1D1D', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer' }}
+                  style={{ padding: '8px 14px', background: '#7F1D1D', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
-                  🧹 Wipe Rehearsal Data Only
+                  <IconSlash size={14} /> Wipe Rehearsal Data Only
                 </button>
               </div>
             </div>
 
             {/* Snapshot & Recovery Architecture */}
             <div style={{ background: '#1E293B', border: '1px solid #334155', borderRadius: '12px', padding: '20px' }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#38BDF8', margin: '0 0 10px' }}>
-                📸 Event Snapshots & Checkpoints
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#38BDF8', margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <IconDatabase size={18} color="#38BDF8" /> Event Snapshots & Checkpoints
               </h3>
               <p style={{ fontSize: '0.82rem', color: '#94A3B8', margin: '0 0 12px' }}>
                 Create pre-market, mid-market, or pre-settlement recovery checkpoints for zero data loss.
@@ -2677,7 +3162,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
                             background: isVerified ? 'rgba(52, 211, 153, 0.1)' : 'rgba(217, 119, 6, 0.1)',
                             color: isVerified ? '#34D399' : '#FCD34D'
                           }}>
-                            {isVerified ? '✓ VERIFIED' : '⏳ PENDING REVIEW'}
+                            {isVerified ? 'VERIFIED' : 'PENDING REVIEW'}
                           </span>
                         </td>
                         <td style={{ padding: '10px' }}>
@@ -2717,9 +3202,9 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
                             )}
                             <button
                               onClick={() => setCredentialSlipHouse(house)}
-                              style={{ padding: '4px 10px', background: '#334155', color: '#38BDF8', border: '1px solid #475569', borderRadius: '4px', fontWeight: 800, fontSize: '0.72rem', cursor: 'pointer' }}
+                              style={{ padding: '4px 10px', background: '#334155', color: '#38BDF8', border: '1px solid #475569', borderRadius: '4px', fontWeight: 800, fontSize: '0.72rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
                             >
-                              Credential Slip 🖨️
+                              Credential Slip <IconPrinter size={13} />
                             </button>
                           </div>
                         </td>
@@ -2744,8 +3229,8 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
                 <span style={{ background: '#8B5CF6', color: '#fff', padding: '3px 8px', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 900 }}>
                   RUBRIC CRITERIA
                 </span>
-                <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#fff', margin: 0 }}>
-                  ⚖️ Chief Judge & Adjudication Console
+                <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <IconScale size={18} color="var(--color-primary, #8B5CF6)" /> Chief Judge & Adjudication Console
                 </h2>
               </div>
               <p style={{ margin: '4px 0 0 0', color: '#94A3B8', fontSize: '0.8rem' }}>
@@ -2755,9 +3240,9 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
             <div style={{ display: 'flex', gap: '10px' }}>
               <button
                 onClick={loadJudgingScorecards}
-                style={{ padding: '8px 14px', background: '#334155', color: '#38BDF8', border: '1px solid #475569', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer' }}
+                style={{ padding: '8px 14px', background: '#334155', color: '#38BDF8', border: '1px solid #475569', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
               >
-                🔄 Refresh Scorecards
+                <IconRefreshCw size={13} /> Refresh Scorecards
               </button>
             </div>
           </div>
@@ -2949,7 +3434,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
                 onClick={() => handleSaveJudgeCard('SUBMITTED')}
                 style={{ padding: '8px 20px', background: '#059669', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 900, cursor: 'pointer' }}
               >
-                Submit Scorecard for {selectedHouseCode} ✓
+                Submit Scorecard for {selectedHouseCode}
               </button>
             </div>
           </div>
@@ -2992,8 +3477,8 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
                       </td>
                       <td style={{ padding: '8px' }}>
                         {isDiscrepant ? (
-                          <span style={{ background: '#7F1D1D', color: '#FECACA', padding: '2px 8px', borderRadius: '4px', fontWeight: 900, fontSize: '0.7rem' }}>
-                            ⚠️ DISCREPANCY &gt; 20% ({diff} pts)
+                          <span style={{ background: '#7F1D1D', color: '#FECACA', padding: '2px 8px', borderRadius: '4px', fontWeight: 900, fontSize: '0.7rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <IconAlertTriangle size={12} color="#FECACA" /> DISCREPANCY &gt; 20% ({diff} pts)
                           </span>
                         ) : diff !== null ? (
                           <span style={{ color: '#34D399', fontWeight: 800 }}>Aligned (Δ {diff} pts)</span>
@@ -3007,9 +3492,9 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
                       <td style={{ padding: '8px', textAlign: 'right' }}>
                         <button
                           onClick={() => handleModerateScorecard(h.code)}
-                          style={{ padding: '4px 10px', background: '#334155', color: '#FCD34D', border: '1px solid #475569', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 800, cursor: 'pointer' }}
+                          style={{ padding: '4px 10px', background: '#334155', color: '#FCD34D', border: '1px solid #475569', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                         >
-                          Moderate ⚖️
+                          Moderate <IconScale size={12} />
                         </button>
                       </td>
                     </tr>
@@ -3033,8 +3518,8 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
                 <span style={{ background: '#DC2626', color: '#fff', padding: '3px 8px', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 900 }}>
                   GOVERNANCE
                 </span>
-                <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#fff', margin: 0 }}>
-                  🛡️ Competition Penalties & Appeals Adjudication
+                <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <IconShieldAlert size={18} color="var(--color-fall, #DC2626)" /> Competition Penalties & Appeals Adjudication
                 </h2>
               </div>
               <p style={{ margin: '4px 0 0 0', color: '#94A3B8', fontSize: '0.8rem' }}>
@@ -3043,9 +3528,9 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
             </div>
             <button
               onClick={loadPenalties}
-              style={{ padding: '8px 14px', background: '#334155', color: '#38BDF8', border: '1px solid #475569', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer' }}
+              style={{ padding: '8px 14px', background: '#334155', color: '#38BDF8', border: '1px solid #475569', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
             >
-              🔄 Refresh Penalties
+              <IconRefreshCw size={13} /> Refresh Penalties
             </button>
           </div>
 
@@ -3140,7 +3625,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
                 onClick={handleApplyPenalty}
                 style={{ padding: '8px 20px', background: '#DC2626', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '0.82rem', fontWeight: 900, cursor: 'pointer' }}
               >
-                Apply Penalty of -{penPoints} Points 🛑
+                Apply Penalty of -{penPoints} Points
               </button>
             </div>
           </div>
@@ -3205,13 +3690,13 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
                               onClick={() => handleResolvePenaltyAppeal(p.id || p.penaltyId, 'APPROVE_APPEAL')}
                               style={{ padding: '3px 8px', background: '#059669', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer' }}
                             >
-                              Waive ✓
+                              Waive
                             </button>
                             <button
                               onClick={() => handleResolvePenaltyAppeal(p.id || p.penaltyId, 'REJECT_APPEAL')}
                               style={{ padding: '3px 8px', background: '#DC2626', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer' }}
                             >
-                              Uphold ✗
+                              Uphold
                             </button>
                           </div>
                         ) : (
@@ -3239,12 +3724,12 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
                 <span style={{ background: '#059669', color: '#fff', padding: '3px 8px', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 900 }}>
                   STAGE {lifecycleState}
                 </span>
-                <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#fff', margin: 0 }}>
-                  🏆 Results Lifecycle & Official Publication
+                <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <IconTrophy size={18} color="var(--color-rise, #059669)" /> Results Lifecycle & Official Publication
                 </h2>
               </div>
               <p style={{ margin: '4px 0 0 0', color: '#94A3B8', fontSize: '0.8rem' }}>
-                Strict 8-Stage Publication Protocol: CONFIGURED ➔ LIVE_SCORING ➔ MARKET_CLOSED ➔ VALUATION_FROZEN ➔ JUDGING_COMPLETE ➔ RECONCILIATION ➔ APPROVED ➔ PUBLISHED
+                {"Strict 8-Stage Publication Protocol: CONFIGURED -> LIVE_SCORING -> MARKET_CLOSED -> VALUATION_FROZEN -> JUDGING_COMPLETE -> RECONCILIATION -> APPROVED -> PUBLISHED"}
               </p>
             </div>
             <a
@@ -3307,23 +3792,23 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
             <div style={{ background: '#0F172A', border: '1px solid #334155', borderRadius: '8px', padding: '18px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '12px' }}>
               <div>
                 <span style={{ fontSize: '0.7rem', color: '#38BDF8', fontWeight: 900 }}>STAGE 4 CONTROL</span>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#fff', margin: '4px 0' }}>
-                  🔒 15:30 Freeze Valuation Snapshot
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#fff', margin: '4px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <IconLock size={16} color="#38BDF8" /> 15:30 Freeze Valuation Snapshot
                 </h3>
                 <p style={{ fontSize: '0.76rem', color: '#94A3B8', margin: 0, lineHeight: '1.4' }}>
                   At 15:30, take an immutable snapshot of all Investment House portfolio equities (cash balances, foreign exchange conversions, and marked-to-market positions). Frozen snapshot will be cryptographically locked for final scoring.
                 </p>
                 {latestFrozenSnapshot && (
-                  <div style={{ marginTop: '10px', padding: '8px', background: '#065F3E', borderRadius: '4px', fontSize: '0.72rem', color: '#D1FAE5' }}>
-                    ✓ Snapshot Locked: {new Date(latestFrozenSnapshot.frozenAt).toLocaleTimeString()} &bull; Hash: {latestFrozenSnapshot.snapshotHash?.slice(0, 10)}...
+                  <div style={{ marginTop: '10px', padding: '8px', background: '#065F3E', borderRadius: '4px', fontSize: '0.72rem', color: '#D1FAE5', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <IconCheck size={12} /> Snapshot Locked: {new Date(latestFrozenSnapshot.frozenAt).toLocaleTimeString()} &bull; Hash: {latestFrozenSnapshot.snapshotHash?.slice(0, 10)}...
                   </div>
                 )}
               </div>
               <button
                 onClick={handleFreezeValuation}
-                style={{ padding: '10px', background: '#0284C7', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 900, fontSize: '0.8rem', cursor: 'pointer' }}
+                style={{ padding: '10px', background: '#0284C7', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 900, fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
               >
-                Execute 15:30 Closing Freeze 🔒
+                <IconLock size={14} /> Execute 15:30 Closing Freeze
               </button>
             </div>
 
@@ -3331,8 +3816,8 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
             <div style={{ background: '#0F172A', border: '1px solid #334155', borderRadius: '8px', padding: '18px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '12px' }}>
               <div>
                 <span style={{ fontSize: '0.7rem', color: '#D97706', fontWeight: 900 }}>STAGE 6 CONTROL</span>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#fff', margin: '4px 0' }}>
-                  ⚖️ Settlement & Reconciliation
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#fff', margin: '4px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <IconScale size={16} color="#D97706" /> Settlement & Reconciliation
                 </h3>
                 <p style={{ fontSize: '0.76rem', color: '#94A3B8', margin: 0, lineHeight: '1.4' }}>
                   Reconcile executed trade tickets against desk logs, pending settlement obligations, and foreign exchange conversions. Generates an immutable audit trail without rewriting the frozen closing valuation.
@@ -3345,9 +3830,9 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
               </div>
               <button
                 onClick={handleRunReconciliation}
-                style={{ padding: '10px', background: '#D97706', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 900, fontSize: '0.8rem', cursor: 'pointer' }}
+                style={{ padding: '10px', background: '#D97706', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 900, fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
               >
-                Run Reconciliation (15:30–15:45) ⚖️
+                <IconScale size={14} /> Run Reconciliation (15:30–15:45)
               </button>
             </div>
 
@@ -3355,8 +3840,8 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
             <div style={{ background: '#0F172A', border: '1px solid #334155', borderRadius: '8px', padding: '18px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '12px' }}>
               <div>
                 <span style={{ fontSize: '0.7rem', color: '#8B5CF6', fontWeight: 900 }}>STAGE 7 CONTROL</span>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#fff', margin: '4px 0' }}>
-                  ✅ Chief Judge Sign-off & Approval
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#fff', margin: '4px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <IconShieldCheck size={16} color="#8B5CF6" /> Chief Judge Sign-off & Approval
                 </h3>
                 <p style={{ fontSize: '0.76rem', color: '#94A3B8', margin: 0, lineHeight: '1.4' }}>
                   Authorize the computed results. Validates that objective scoring (750 pts) matches formula rules, subjective scorecards (250 pts) are harmonized, and penalties are correctly factored.
@@ -3364,9 +3849,9 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
               </div>
               <button
                 onClick={handleApproveResults}
-                style={{ padding: '10px', background: '#8B5CF6', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 900, fontSize: '0.8rem', cursor: 'pointer' }}
+                style={{ padding: '10px', background: '#8B5CF6', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 900, fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
               >
-                Approve Competition Results ✓
+                <IconCheck size={14} /> Approve Competition Results
               </button>
             </div>
 
@@ -3374,8 +3859,8 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
             <div style={{ background: '#0F172A', border: '1px solid #059669', borderRadius: '8px', padding: '18px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '12px' }}>
               <div>
                 <span style={{ fontSize: '0.7rem', color: '#34D399', fontWeight: 900 }}>STAGE 8 FINALE</span>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#34D399', margin: '4px 0' }}>
-                  🏆 Publish Official Final Results
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#34D399', margin: '4px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <IconTrophy size={16} color="#34D399" /> Publish Official Final Results
                 </h3>
                 <p style={{ fontSize: '0.76rem', color: '#94A3B8', margin: 0, lineHeight: '1.4' }}>
                   Publish final standings to all auditoriums, live projector, and participant screens. Transitions leaderboard from PROVISIONAL to OFFICIAL FINAL RESULTS.
@@ -3384,15 +3869,15 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button
                   onClick={handlePublishResults}
-                  style={{ flex: 1, padding: '10px', background: '#059669', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 900, fontSize: '0.8rem', cursor: 'pointer' }}
+                  style={{ flex: 1, padding: '10px', background: '#059669', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 900, fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                 >
-                  Publish Official Results 🏆
+                  <IconTrophy size={14} /> Publish Official Results
                 </button>
                 <button
                   onClick={handleReopenResults}
-                  style={{ padding: '10px 14px', background: '#334155', color: '#F87171', border: '1px solid #EF4444', borderRadius: '6px', fontWeight: 800, fontSize: '0.76rem', cursor: 'pointer' }}
+                  style={{ padding: '10px 14px', background: '#334155', color: '#F87171', border: '1px solid #EF4444', borderRadius: '6px', fontWeight: 800, fontSize: '0.76rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
                 >
-                  Reopen 🚨
+                  <IconAlertTriangle size={13} /> Reopen
                 </button>
               </div>
             </div>
@@ -3413,8 +3898,8 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
                 <span style={{ background: '#38BDF8', color: '#0F172A', padding: '3px 8px', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 900 }}>
                   TELEMETRY
                 </span>
-                <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#fff', margin: 0 }}>
-                  📊 SAAMX Event Telemetry & Analytics Report
+                <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <IconBarChart size={18} color="#38BDF8" /> SAAMX Event Telemetry & Analytics Report
                 </h2>
               </div>
               <p style={{ margin: '4px 0 0 0', color: '#94A3B8', fontSize: '0.8rem' }}>
@@ -3423,9 +3908,9 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
             </div>
             <button
               onClick={loadEventAnalytics}
-              style={{ padding: '8px 14px', background: '#334155', color: '#38BDF8', border: '1px solid #475569', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer' }}
+              style={{ padding: '8px 14px', background: '#334155', color: '#38BDF8', border: '1px solid #475569', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
             >
-              🔄 Refresh Analytics
+              <IconRefreshCw size={13} /> Refresh Analytics
             </button>
           </div>
 
@@ -3513,82 +3998,210 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
       )}
 
       {/* CREDENTIAL SLIP MODAL */}
-      {credentialSlipHouse && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000 }}>
-          <div style={{ background: '#fff', color: '#0F172A', borderRadius: '12px', padding: '28px', maxWidth: '440px', width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.3)' }}>
-            <div style={{ textAlign: 'center', borderBottom: '2px dashed #CBD5E1', paddingBottom: '16px', marginBottom: '16px' }}>
-              <span style={{ fontSize: '11px', fontWeight: 800, color: '#845508', letterSpacing: '0.08em' }}>SAAMX OFFICIAL CREDENTIAL SLIP</span>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 900, margin: '4px 0 0', color: '#0F172A' }}>
+      <Modal
+        isOpen={!!credentialSlipHouse}
+        onClose={() => setCredentialSlipHouse(null)}
+        title={credentialSlipHouse?.investmentHouseName || credentialSlipHouse?.teamName || "SAAMX Official Credential Slip"}
+        subtitle={credentialSlipHouse?.schoolName || "Floor Execution Pass"}
+        size="sm"
+        footer={
+          <Button
+            variant="primary"
+            onClick={() => setCredentialSlipHouse(null)}
+            style={{ width: '100%' }}
+          >
+            Close Credential Slip
+          </Button>
+        }
+      >
+        {credentialSlipHouse && (
+          <div>
+            <div style={{ textAlign: 'center', borderBottom: '2px dashed var(--color-border, #CBD5E1)', paddingBottom: '16px', marginBottom: '16px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--color-accent, #F59E0B)', letterSpacing: '0.08em' }}>SAAMX OFFICIAL CREDENTIAL SLIP</span>
+              <h2 style={{ fontSize: '1.4rem', fontWeight: 900, margin: '4px 0 0', color: 'var(--color-text-primary)' }}>
                 {credentialSlipHouse.investmentHouseName || credentialSlipHouse.teamName}
               </h2>
-              <div style={{ fontSize: '0.8rem', color: '#64748B', marginTop: '2px' }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
                 {credentialSlipHouse.schoolName}
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', background: '#F8FAFC', padding: '16px', borderRadius: '8px', border: '1px solid #E2E8F0', marginBottom: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', background: 'var(--color-surface-subtle)', padding: '16px', borderRadius: '8px', border: '1px solid var(--color-border)', marginBottom: '16px' }}>
               <div>
-                <span style={{ fontSize: '0.7rem', color: '#64748B', fontWeight: 800 }}>ASSIGNED TEAM CODE</span>
-                <div style={{ fontSize: '1.3rem', fontWeight: 900, fontFamily: 'monospace', color: '#845508' }}>
+                <span style={{ fontSize: '0.7rem', color: 'var(--color-text-secondary)', fontWeight: 800 }}>ASSIGNED TEAM CODE</span>
+                <div className="font-mono tabular-nums" style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--color-accent, #F59E0B)' }}>
                   {credentialSlipHouse.teamCode}
                 </div>
               </div>
               <div>
-                <span style={{ fontSize: '0.7rem', color: '#64748B', fontWeight: 800 }}>AUTHENTICATION PIN</span>
-                <div style={{ fontSize: '1.3rem', fontWeight: 900, fontFamily: 'monospace', color: '#059669' }}>
+                <span style={{ fontSize: '0.7rem', color: 'var(--color-text-secondary)', fontWeight: 800 }}>AUTHENTICATION PIN</span>
+                <div className="font-mono tabular-nums" style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--color-rise, #059669)' }}>
                   {credentialSlipHouse.credentials?.tempPin || credentialSlipHouse.tempPin || '9482'}
                 </div>
               </div>
             </div>
 
-            <p style={{ fontSize: '0.74rem', color: '#64748B', textAlign: 'center', margin: '0 0 16px' }}>
+            <p style={{ fontSize: '0.74rem', color: 'var(--color-text-secondary)', textAlign: 'center', margin: '0 0 16px' }}>
               Present this physical slip to the Order Desk operator to claim execution tickets. Keep credentials confidential.
             </p>
-
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => setCredentialSlipHouse(null)}
-                style={{ padding: '8px 16px', background: '#0F172A', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 800, cursor: 'pointer', width: '100%' }}
-              >
-                Close Credential Slip
-              </button>
-            </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
       {/* ========================================================================= */}
       {/* UNIVERSAL CONFIRM MODAL                                                   */}
       {/* ========================================================================= */}
-      {activeModal === 'CONFIRM_MODAL' && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
-          <div style={{ background: '#1E293B', border: confirmConfig.isDangerous ? '2px solid #EF4444' : '1px solid #38BDF8', borderRadius: '12px', padding: '24px', maxWidth: '480px', width: '90%' }}>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: confirmConfig.isDangerous ? '#F87171' : '#38BDF8', margin: '0 0 8px 0' }}>
-              {confirmConfig.title}
-            </h3>
-            <p style={{ fontSize: '0.85rem', color: '#CBD5E1', lineHeight: '1.5', margin: '0 0 20px 0' }}>
-              {confirmConfig.message}
-            </p>
+      <Modal
+        isOpen={activeModal === 'CONFIRM_MODAL'}
+        onClose={() => setActiveModal(null)}
+        title={confirmConfig.title}
+        size="sm"
+        footer={
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', width: '100%' }}>
+            <Button
+              variant="secondary"
+              onClick={() => setActiveModal(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant={confirmConfig.isDangerous ? 'danger' : 'primary'}
+              onClick={async () => {
+                setActiveModal(null);
+                if (confirmConfig.action) await confirmConfig.action();
+              }}
+            >
+              Confirm & Execute
+            </Button>
+          </div>
+        }
+      >
+        <p style={{ fontSize: '0.88rem', color: 'var(--color-text-primary, #CBD5E1)', lineHeight: '1.5', margin: 0 }}>
+          {confirmConfig.message}
+        </p>
+      </Modal>
 
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+      {/* ========================================================================= */}
+      {/* EVENT TIMER & DURATION CONFIGURATION MODAL                                */}
+      {/* ========================================================================= */}
+      <Modal
+        isOpen={isTimerConfigOpen}
+        onClose={() => setIsTimerConfigOpen(false)}
+        title="Event Clock & Duration Configuration"
+        subtitle="Synchronize event timetable or configure custom simulation duration"
+        size="md"
+        footer={
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', width: '100%' }}>
+            <Button variant="secondary" onClick={() => setIsTimerConfigOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              loading={isUpdatingTimer}
+              onClick={() => handleSaveTimerConfig(timerDurationMinutes, timerMode)}
+            >
+              Apply & Synchronize Clock
+            </Button>
+          </div>
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div>
+            <label className="saamx-label" style={{ fontWeight: 800, marginBottom: '6px', display: 'block' }}>
+              Timer Operating Mode
+            </label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
               <button
-                onClick={() => setActiveModal(null)}
-                style={{ padding: '8px 16px', background: '#334155', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 700, cursor: 'pointer' }}
+                type="button"
+                onClick={() => setTimerMode('SCHEDULE_SYNC')}
+                style={{
+                  padding: '12px 14px',
+                  borderRadius: '8px',
+                  border: timerMode === 'SCHEDULE_SYNC' ? '2px solid var(--color-accent, #2563EB)' : '1px solid var(--color-border)',
+                  backgroundColor: timerMode === 'SCHEDULE_SYNC' ? 'var(--color-accent-light, rgba(37, 99, 235, 0.08))' : 'var(--color-surface)',
+                  fontWeight: 700,
+                  fontSize: '0.84rem',
+                  cursor: 'pointer',
+                  textAlign: 'left'
+                }}
               >
-                Cancel
+                <div style={{ color: 'var(--color-accent, #2563EB)', marginBottom: '3px', fontWeight: 800 }}>Event Schedule Sync</div>
+                <div style={{ fontSize: '0.74rem', color: 'var(--color-text-secondary)', fontWeight: 500 }}>
+                  9:30 AM – 3:30 PM (Real wall-clock event timetable)
+                </div>
               </button>
               <button
-                onClick={async () => {
-                  setActiveModal(null);
-                  if (confirmConfig.action) await confirmConfig.action();
+                type="button"
+                onClick={() => setTimerMode('COUNTDOWN')}
+                style={{
+                  padding: '12px 14px',
+                  borderRadius: '8px',
+                  border: timerMode === 'COUNTDOWN' ? '2px solid var(--color-accent, #2563EB)' : '1px solid var(--color-border)',
+                  backgroundColor: timerMode === 'COUNTDOWN' ? 'var(--color-accent-light, rgba(37, 99, 235, 0.08))' : 'var(--color-surface)',
+                  fontWeight: 700,
+                  fontSize: '0.84rem',
+                  cursor: 'pointer',
+                  textAlign: 'left'
                 }}
-                style={{ padding: '8px 16px', background: confirmConfig.isDangerous ? '#DC2626' : '#2563EB', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 900, cursor: 'pointer' }}
               >
-                Confirm & Execute
+                <div style={{ color: 'var(--color-accent, #2563EB)', marginBottom: '3px', fontWeight: 800 }}>Simulation Countdown</div>
+                <div style={{ fontSize: '0.74rem', color: 'var(--color-text-secondary)', fontWeight: 500 }}>
+                  Fixed duration timer (60m–360m countdown)
+                </div>
               </button>
             </div>
           </div>
+
+          <div>
+            <label className="saamx-label" style={{ fontWeight: 800, marginBottom: '6px', display: 'block' }}>
+              Duration Presets
+            </label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+              {[
+                { mins: 60, label: '60 Min', desc: 'Rapid Drill' },
+                { mins: 120, label: '120 Min', desc: 'Morning' },
+                { mins: 300, label: '300 Min', desc: '5h Trading' },
+                { mins: 360, label: '360 Min', desc: 'Full Day' }
+              ].map(preset => (
+                <button
+                  key={preset.mins}
+                  type="button"
+                  onClick={() => setTimerDurationMinutes(preset.mins)}
+                  style={{
+                    padding: '8px 4px',
+                    borderRadius: '6px',
+                    border: timerDurationMinutes === preset.mins ? '2px solid var(--color-accent, #2563EB)' : '1px solid var(--color-border)',
+                    backgroundColor: timerDurationMinutes === preset.mins ? 'var(--color-accent-light, rgba(37, 99, 235, 0.08))' : 'var(--color-surface)',
+                    fontWeight: 700,
+                    fontSize: '0.82rem',
+                    cursor: 'pointer',
+                    textAlign: 'center'
+                  }}
+                >
+                  <div style={{ fontWeight: 800 }}>{preset.label}</div>
+                  <div style={{ fontSize: '0.68rem', color: 'var(--color-text-secondary)', fontWeight: 500 }}>{preset.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="saamx-label" style={{ fontWeight: 800, marginBottom: '6px', display: 'block' }}>
+              Custom Simulation Minutes
+            </label>
+            <input
+              type="number"
+              min="10"
+              max="1440"
+              value={timerDurationMinutes}
+              onChange={e => setTimerDurationMinutes(Math.max(10, Math.min(1440, Number(e.target.value) || 60)))}
+              className="saamx-input-control"
+              style={{ width: '100%', fontFamily: 'var(--font-mono)' }}
+            />
+          </div>
         </div>
+      </Modal>
+      </>
       )}
 
     </div>

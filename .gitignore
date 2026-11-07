@@ -11,5 +11,10 @@ backups/
 *.log
 fetch-live-state.js
 *.mjs
+*.tmp
+*.tmp.*
+*disposable*
+state.local-demo.json
+scratch/
 
 

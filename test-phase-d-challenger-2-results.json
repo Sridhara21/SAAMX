@@ -1,0 +1,800 @@
+[
+  {
+    "id": "CHALLENGER-2-PREFLIGHT",
+    "title": "Baseline state.json SHA-256 Pre-flight Verification",
+    "section": "Preflight",
+    "scenario": "Confirm authoritative state.json matches baseline hash before tests",
+    "expected": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "actual": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "evidence": {
+      "sha256": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "CHALLENGER-2-SCARCITY-DISCRETE",
+    "title": "Scarcity Pricing Curve at Specified Utilization Levels [0.0, 0.25, 0.50, 0.75, 0.90, 0.99, 1.00]",
+    "section": "Scarcity Pricing",
+    "scenario": "Verify spread stays at 0.45% for u <= 0.50, reaches 25.00% at u = 1.00, and is strictly bounded",
+    "expected": "u <= 0.50 -> 0.45%, u = 0.75 -> 12.725%, u = 0.90 -> 20.09%, u = 0.99 -> 24.509%, u = 1.00 -> 25.00%",
+    "actual": "[{\"u\":0,\"spread\":\"0.45%\",\"pass\":true},{\"u\":0.25,\"spread\":\"0.45%\",\"pass\":true},{\"u\":0.5,\"spread\":\"0.45%\",\"pass\":true},{\"u\":0.75,\"spread\":\"12.725%\",\"pass\":true},{\"u\":0.9,\"spread\":\"20.09%\",\"pass\":true},{\"u\":0.99,\"spread\":\"24.509%\",\"pass\":true},{\"u\":1,\"spread\":\"25%\",\"pass\":true}]",
+    "evidence": [
+      {
+        "u": 0,
+        "avail": 10000000,
+        "spread": 0.45,
+        "midRateMultiplier": 1,
+        "scarcityImpact": 0,
+        "pass": true
+      },
+      {
+        "u": 0.25,
+        "avail": 7500000,
+        "spread": 0.45,
+        "midRateMultiplier": 1,
+        "scarcityImpact": 0,
+        "pass": true
+      },
+      {
+        "u": 0.5,
+        "avail": 5000000,
+        "spread": 0.45,
+        "midRateMultiplier": 1,
+        "scarcityImpact": 0,
+        "pass": true
+      },
+      {
+        "u": 0.75,
+        "avail": 2500000,
+        "spread": 12.725,
+        "midRateMultiplier": 1.025,
+        "scarcityImpact": 2.5,
+        "pass": true
+      },
+      {
+        "u": 0.9,
+        "avail": 1000000,
+        "spread": 20.09,
+        "midRateMultiplier": 1.064,
+        "scarcityImpact": 6.4,
+        "pass": true
+      },
+      {
+        "u": 0.99,
+        "avail": 100000,
+        "spread": 24.509,
+        "midRateMultiplier": 1.09604,
+        "scarcityImpact": 9.6,
+        "pass": true
+      },
+      {
+        "u": 1,
+        "avail": 0,
+        "spread": 25,
+        "midRateMultiplier": 1.1,
+        "scarcityImpact": 10,
+        "pass": true
+      }
+    ],
+    "status": "PASSED"
+  },
+  {
+    "id": "CHALLENGER-2-SCARCITY-CONTINUOUS-1000",
+    "title": "Scarcity Pricing Continuous 1,000-Point Sweep & Clamping Boundary Stress",
+    "section": "Scarcity Pricing",
+    "scenario": "Sweep 1,000 points u in [0, 1] + test u < 0 and u > 1; verify monotonic bounds [0.45%, 25.00%]",
+    "expected": "Min spread = 0.45%, Max spread = 25.00%, monotonic non-decreasing, clamped at boundaries",
+    "actual": "Min observed: 0.45%, Max observed: 25%, Boundary over: 0.45%, Boundary neg: 25%, Violations: 0",
+    "evidence": {
+      "minObservedSpread": 0.45,
+      "maxObservedSpread": 25,
+      "metricsOver": {
+        "utilization": 0,
+        "spreadPercent": 0.45,
+        "midRateMultiplier": 1,
+        "scarcityImpact": 0,
+        "availableReserve": 15000000
+      },
+      "metricsNegative": {
+        "utilization": 1,
+        "spreadPercent": 25,
+        "midRateMultiplier": 1.1,
+        "scarcityImpact": 10,
+        "availableReserve": 0
+      },
+      "violationCount": 0
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "CHALLENGER-2-SOLVENCY-BASELINE-9",
+    "title": "Baseline Solvency Invariant A + Res = I Across All 9 Currencies",
+    "section": "Reserve Solvency",
+    "scenario": "Inspect initial reserves for all 9 foreign currencies to verify A + Res = I",
+    "expected": "Diff < 0.0001 with A >= 0, Res >= 0, I >= 0 for all 9 currencies",
+    "actual": "All 9 passed: true",
+    "evidence": {
+      "USD": {
+        "A": 204368892.83,
+        "Res": 15350.44,
+        "I": 204384243.27,
+        "diff": 0,
+        "pass": true
+      },
+      "GBP": {
+        "A": 7939794.149999999,
+        "Res": 11839.53,
+        "I": 7951633.68,
+        "diff": 0,
+        "pass": true
+      },
+      "EUR": {
+        "A": 8938187.2,
+        "Res": 14331.63,
+        "I": 8952518.83,
+        "diff": 0,
+        "pass": true
+      },
+      "JPY": {
+        "A": 3266709610,
+        "Res": 4599989,
+        "I": 3271309599,
+        "diff": 0,
+        "pass": true
+      },
+      "AED": {
+        "A": 35644579.35,
+        "Res": 56182,
+        "I": 35700761.35,
+        "diff": 0,
+        "pass": true
+      },
+      "SGD": {
+        "A": 12945380.58,
+        "Res": 20417.08,
+        "I": 12965797.66,
+        "diff": 0,
+        "pass": true
+      },
+      "CNY": {
+        "A": 69783230.81,
+        "Res": 114586.39,
+        "I": 69897817.2,
+        "diff": 0,
+        "pass": true
+      },
+      "AUD": {
+        "A": 14949865.22,
+        "Res": 26009.09,
+        "I": 14975874.31,
+        "diff": 0,
+        "pass": true
+      },
+      "KRW": {
+        "A": 12728315781,
+        "Res": 49454875,
+        "I": 12777770656,
+        "diff": 0,
+        "pass": true
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "CHALLENGER-2-SOLVENCY-LIFECYCLE-9",
+    "title": "Lifecycle Stress (Request, Hold, Cancel, Settle) Across All 9 Currencies",
+    "section": "Reserve Solvency",
+    "scenario": "Execute full request -> hold -> cancel -> settle sequence across all 9 currencies; check A + Res = I at every step",
+    "expected": "A + Res = I strictly maintained at all 5 lifecycle steps across all 9 currencies",
+    "actual": "All 9 currencies passed: true",
+    "evidence": {
+      "USD": {
+        "r1Pass": true,
+        "r2Pass": true,
+        "holdPass": true,
+        "cancelPass": true,
+        "approvePass": true,
+        "finalReserve": {
+          "currency": "USD",
+          "openingReserve": 10000000,
+          "replenishments": 195000000,
+          "completedPurchases": 5250,
+          "completedSales": 622135.44,
+          "reservedInventory": 15350.44,
+          "availableReserve": 204367764.12,
+          "currentInventory": 204383114.56,
+          "deskInrCash": 5055264826.55,
+          "minReserveThreshold": 1000000,
+          "maxCapacity": 1000000000,
+          "updatedAt": "2026-11-07T08:52:57.077Z"
+        },
+        "diffFinal": 0
+      },
+      "GBP": {
+        "r1Pass": true,
+        "r2Pass": true,
+        "holdPass": true,
+        "cancelPass": true,
+        "approvePass": true,
+        "finalReserve": {
+          "currency": "GBP",
+          "openingReserve": 8000000,
+          "replenishments": 0,
+          "completedPurchases": 0,
+          "completedSales": 49200.09,
+          "reservedInventory": 11839.53,
+          "availableReserve": 7938960.38,
+          "currentInventory": 7950799.91,
+          "deskInrCash": 5005900900,
+          "minReserveThreshold": 800000,
+          "maxCapacity": 1000000000,
+          "updatedAt": "2026-11-07T08:52:54.313Z"
+        },
+        "diffFinal": 0
+      },
+      "EUR": {
+        "r1Pass": true,
+        "r2Pass": true,
+        "holdPass": true,
+        "cancelPass": true,
+        "approvePass": true,
+        "finalReserve": {
+          "currency": "EUR",
+          "openingReserve": 9000000,
+          "replenishments": 0,
+          "completedPurchases": 0,
+          "completedSales": 48443.03,
+          "reservedInventory": 14331.63,
+          "availableReserve": 8937225.34,
+          "currentInventory": 8951556.97,
+          "deskInrCash": 5004059900,
+          "minReserveThreshold": 900000,
+          "maxCapacity": 1000000000,
+          "updatedAt": "2026-11-07T08:52:55.004Z"
+        },
+        "diffFinal": 0
+      },
+      "JPY": {
+        "r1Pass": true,
+        "r2Pass": true,
+        "holdPass": true,
+        "cancelPass": true,
+        "approvePass": true,
+        "finalReserve": {
+          "currency": "JPY",
+          "openingReserve": 1500000000,
+          "replenishments": 1800000000,
+          "completedPurchases": 0,
+          "completedSales": 29548608,
+          "reservedInventory": 4599989,
+          "availableReserve": 3265851403,
+          "currentInventory": 3270451392,
+          "deskInrCash": 5016935459.48,
+          "minReserveThreshold": 150000000,
+          "maxCapacity": 100000000000,
+          "updatedAt": "2026-11-07T08:52:48.864Z"
+        },
+        "diffFinal": 0
+      },
+      "AED": {
+        "r1Pass": true,
+        "r2Pass": true,
+        "holdPass": true,
+        "cancelPass": true,
+        "approvePass": true,
+        "finalReserve": {
+          "currency": "AED",
+          "openingReserve": 36000000,
+          "replenishments": 0,
+          "completedPurchases": 25000,
+          "completedSales": 328384.92,
+          "reservedInventory": 56182,
+          "availableReserve": 35640433.08,
+          "currentInventory": 35696615.08,
+          "deskInrCash": 5007911094.75,
+          "minReserveThreshold": 3600000,
+          "maxCapacity": 1000000000,
+          "updatedAt": "2026-11-07T08:52:56.463Z"
+        },
+        "diffFinal": 0
+      },
+      "SGD": {
+        "r1Pass": true,
+        "r2Pass": true,
+        "holdPass": true,
+        "cancelPass": true,
+        "approvePass": true,
+        "finalReserve": {
+          "currency": "SGD",
+          "openingReserve": 13000000,
+          "replenishments": 0,
+          "completedPurchases": 0,
+          "completedSales": 35692.64,
+          "reservedInventory": 20417.08,
+          "availableReserve": 12943890.28,
+          "currentInventory": 12964307.36,
+          "deskInrCash": 5640676082.97,
+          "minReserveThreshold": 1300000,
+          "maxCapacity": 1000000000,
+          "updatedAt": "2026-11-07T08:52:55.594Z"
+        },
+        "diffFinal": 0
+      },
+      "CNY": {
+        "r1Pass": true,
+        "r2Pass": true,
+        "holdPass": true,
+        "cancelPass": true,
+        "approvePass": true,
+        "finalReserve": {
+          "currency": "CNY",
+          "openingReserve": 70000000,
+          "replenishments": 0,
+          "completedPurchases": 25000,
+          "completedSales": 135309.5,
+          "reservedInventory": 114586.39,
+          "availableReserve": 69775104.11,
+          "currentInventory": 69889690.5,
+          "deskInrCash": 5001141715,
+          "minReserveThreshold": 7000000,
+          "maxCapacity": 1000000000,
+          "updatedAt": "2026-11-07T08:36:23.341Z"
+        },
+        "diffFinal": 0
+      },
+      "AUD": {
+        "r1Pass": true,
+        "r2Pass": true,
+        "holdPass": true,
+        "cancelPass": true,
+        "approvePass": true,
+        "finalReserve": {
+          "currency": "AUD",
+          "openingReserve": 15000000,
+          "replenishments": 0,
+          "completedPurchases": 0,
+          "completedSales": 25919.42,
+          "reservedInventory": 26009.09,
+          "availableReserve": 14948071.49,
+          "currentInventory": 14974080.58,
+          "deskInrCash": 5002664309.89,
+          "minReserveThreshold": 1500000,
+          "maxCapacity": 1000000000,
+          "updatedAt": "2026-11-07T08:36:24.290Z"
+        },
+        "diffFinal": 0
+      },
+      "KRW": {
+        "r1Pass": true,
+        "r2Pass": true,
+        "holdPass": true,
+        "cancelPass": true,
+        "approvePass": true,
+        "finalReserve": {
+          "currency": "KRW",
+          "openingReserve": 13000000000,
+          "replenishments": 0,
+          "completedPurchases": 0,
+          "completedSales": 230257732,
+          "reservedInventory": 49454875,
+          "availableReserve": 12720287393,
+          "currentInventory": 12769742268,
+          "deskInrCash": 5014340220.36,
+          "minReserveThreshold": 1300000000,
+          "maxCapacity": 100000000000,
+          "updatedAt": "2026-11-07T08:52:50.108Z"
+        },
+        "diffFinal": 0
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "CHALLENGER-2-SOLVENCY-STORM-45",
+    "title": "Solvency Invariant After 45-Conversion Multi-Currency Storm",
+    "section": "Reserve Solvency",
+    "scenario": "Dispatch 45 rapid conversions with interleaved Approvals, Rejections, Corrections, and Cancellations",
+    "expected": "A + Res = I strictly holds for all 9 currencies with zero leakage",
+    "actual": "All 9 currencies passed: true",
+    "evidence": {
+      "USD": {
+        "A": 204367651.24,
+        "Res": 15350.44,
+        "I": 204383001.68,
+        "diff": 0,
+        "pass": true
+      },
+      "GBP": {
+        "A": 7938877,
+        "Res": 11839.53,
+        "I": 7950716.53,
+        "diff": 0,
+        "pass": true
+      },
+      "EUR": {
+        "A": 8937129.159999998,
+        "Res": 14331.63,
+        "I": 8951460.79,
+        "diff": 0,
+        "pass": true
+      },
+      "JPY": {
+        "A": 3265817075,
+        "Res": 4599989,
+        "I": 3270417064,
+        "diff": 0,
+        "pass": true
+      },
+      "AED": {
+        "A": 35640018.46,
+        "Res": 56182,
+        "I": 35696200.46,
+        "diff": 0,
+        "pass": true
+      },
+      "SGD": {
+        "A": 12943741.26,
+        "Res": 20417.08,
+        "I": 12964158.34,
+        "diff": 0,
+        "pass": true
+      },
+      "CNY": {
+        "A": 69774291.45,
+        "Res": 114586.39,
+        "I": 69888877.84,
+        "diff": 0,
+        "pass": true
+      },
+      "AUD": {
+        "A": 14947892.11,
+        "Res": 26009.09,
+        "I": 14973901.2,
+        "diff": 0,
+        "pass": true
+      },
+      "KRW": {
+        "A": 12719966257,
+        "Res": 49454875,
+        "I": 12769421132,
+        "diff": 0,
+        "pass": true
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "CHALLENGER-2-LEGACY-ISOLATION-STRESS",
+    "title": "Legacy Currency (CAD/CHF) Isolation Across Endpoints & Payload Variations",
+    "section": "Legacy Isolation",
+    "scenario": "Submit 20 diverse CAD/CHF payloads across /request, /exchange, /convert, /replenish",
+    "expected": "100% rejection with HTTP 400 (20/20 rejected)",
+    "actual": "20/20 rejected with HTTP 400",
+    "evidence": [
+      {
+        "desc": "Request from CAD to INR",
+        "endpoint": "/api/fx/request",
+        "status": 400,
+        "error": "CAD and CHF are legacy currencies and not available for new exchange transactions.",
+        "rejectedAsExpected": true
+      },
+      {
+        "desc": "Request from INR to CAD",
+        "endpoint": "/api/fx/request",
+        "status": 400,
+        "error": "CAD and CHF are legacy currencies and not available for new exchange transactions.",
+        "rejectedAsExpected": true
+      },
+      {
+        "desc": "Request from CHF to INR",
+        "endpoint": "/api/fx/request",
+        "status": 400,
+        "error": "CAD and CHF are legacy currencies and not available for new exchange transactions.",
+        "rejectedAsExpected": true
+      },
+      {
+        "desc": "Request from INR to CHF",
+        "endpoint": "/api/fx/request",
+        "status": 400,
+        "error": "CAD and CHF are legacy currencies and not available for new exchange transactions.",
+        "rejectedAsExpected": true
+      },
+      {
+        "desc": "Request cross CAD to CHF",
+        "endpoint": "/api/fx/request",
+        "status": 400,
+        "error": "CAD and CHF are legacy currencies and not available for new exchange transactions.",
+        "rejectedAsExpected": true
+      },
+      {
+        "desc": "Exchange from CAD to INR",
+        "endpoint": "/api/fx/exchange",
+        "status": 400,
+        "error": "CAD and CHF are legacy currencies and not available for new exchange transactions.",
+        "rejectedAsExpected": true
+      },
+      {
+        "desc": "Exchange from INR to CAD",
+        "endpoint": "/api/fx/exchange",
+        "status": 400,
+        "error": "CAD and CHF are legacy currencies and not available for new exchange transactions.",
+        "rejectedAsExpected": true
+      },
+      {
+        "desc": "Exchange from CHF to INR",
+        "endpoint": "/api/fx/exchange",
+        "status": 400,
+        "error": "CAD and CHF are legacy currencies and not available for new exchange transactions.",
+        "rejectedAsExpected": true
+      },
+      {
+        "desc": "Exchange from INR to CHF",
+        "endpoint": "/api/fx/exchange",
+        "status": 400,
+        "error": "CAD and CHF are legacy currencies and not available for new exchange transactions.",
+        "rejectedAsExpected": true
+      },
+      {
+        "desc": "Convert from CAD to INR",
+        "endpoint": "/api/fx/convert",
+        "status": 400,
+        "error": "CAD and CHF are legacy currencies and not available for new exchange transactions.",
+        "rejectedAsExpected": true
+      },
+      {
+        "desc": "Convert from INR to CAD",
+        "endpoint": "/api/fx/convert",
+        "status": 400,
+        "error": "CAD and CHF are legacy currencies and not available for new exchange transactions.",
+        "rejectedAsExpected": true
+      },
+      {
+        "desc": "Convert from CHF to INR",
+        "endpoint": "/api/fx/convert",
+        "status": 400,
+        "error": "CAD and CHF are legacy currencies and not available for new exchange transactions.",
+        "rejectedAsExpected": true
+      },
+      {
+        "desc": "Convert from INR to CHF",
+        "endpoint": "/api/fx/convert",
+        "status": 400,
+        "error": "CAD and CHF are legacy currencies and not available for new exchange transactions.",
+        "rejectedAsExpected": true
+      },
+      {
+        "desc": "Lowercase cad request",
+        "endpoint": "/api/fx/request",
+        "status": 400,
+        "error": "Unsupported currency. Active: INR, USD, GBP, EUR, JPY, AED, SGD, CNY, AUD, KRW",
+        "rejectedAsExpected": true
+      },
+      {
+        "desc": "Lowercase chf request",
+        "endpoint": "/api/fx/request",
+        "status": 400,
+        "error": "Unsupported currency. Active: INR, USD, GBP, EUR, JPY, AED, SGD, CNY, AUD, KRW",
+        "rejectedAsExpected": true
+      },
+      {
+        "desc": "Mixed-case Cad request",
+        "endpoint": "/api/fx/request",
+        "status": 400,
+        "error": "Unsupported currency. Active: INR, USD, GBP, EUR, JPY, AED, SGD, CNY, AUD, KRW",
+        "rejectedAsExpected": true
+      },
+      {
+        "desc": "Whitespace padded CAD",
+        "endpoint": "/api/fx/request",
+        "status": 400,
+        "error": "Unsupported currency. Active: INR, USD, GBP, EUR, JPY, AED, SGD, CNY, AUD, KRW",
+        "rejectedAsExpected": true
+      },
+      {
+        "desc": "Null-byte terminated CHF",
+        "endpoint": "/api/fx/request",
+        "status": 400,
+        "error": "Unsupported currency. Active: INR, USD, GBP, EUR, JPY, AED, SGD, CNY, AUD, KRW",
+        "rejectedAsExpected": true
+      },
+      {
+        "desc": "Replenish legacy CAD",
+        "endpoint": "/api/fx/replenish",
+        "status": 400,
+        "error": "Cannot replenish legacy non-tradable currencies (CAD, CHF).",
+        "rejectedAsExpected": true
+      },
+      {
+        "desc": "Replenish legacy CHF",
+        "endpoint": "/api/fx/replenish",
+        "status": 400,
+        "error": "Cannot replenish legacy non-tradable currencies (CAD, CHF).",
+        "rejectedAsExpected": true
+      }
+    ],
+    "status": "PASSED"
+  },
+  {
+    "id": "CHALLENGER-2-INTEGER-ROUNDING-4000-VECTORS",
+    "title": "Integer Rounding Invariant: 4,000 Randomized JPY and KRW Conversion Vectors",
+    "section": "Integer Precision",
+    "scenario": "Test 4,000 randomized conversions (INR->JPY, INR->KRW, USD->JPY, EUR->KRW); assert Number.isInteger === true",
+    "expected": "100% of conversion outputs strictly whole integers (0 non-integer outputs)",
+    "actual": "Non-integer outputs: 0",
+    "evidence": {
+      "testedVectors": 4000,
+      "nonIntegerCount": 0,
+      "sampleIntegerConversions": [
+        {
+          "randomInr": 2953714.7462,
+          "jpyToAmount": 5069798,
+          "isJPYInteger": true,
+          "krwToAmount": 47427138,
+          "isKRWInteger": true,
+          "convUSD_JPY": 2695339,
+          "convEUR_KRW": 29588394
+        },
+        {
+          "randomInr": 1422781.4645,
+          "jpyToAmount": 2442082,
+          "isJPYInteger": true,
+          "krwToAmount": 22845284,
+          "isKRWInteger": true,
+          "convUSD_JPY": 195949,
+          "convEUR_KRW": 2151048
+        },
+        {
+          "randomInr": 1952273.1636,
+          "jpyToAmount": 3350909,
+          "isJPYInteger": true,
+          "krwToAmount": 31347214,
+          "isKRWInteger": true,
+          "convUSD_JPY": 5570104,
+          "convEUR_KRW": 61146466
+        },
+        {
+          "randomInr": 1102387.0582,
+          "jpyToAmount": 1892153,
+          "isJPYInteger": true,
+          "krwToAmount": 17700783,
+          "isKRWInteger": true,
+          "convUSD_JPY": 1449126,
+          "convEUR_KRW": 15907946
+        },
+        {
+          "randomInr": 2018068.4971,
+          "jpyToAmount": 3463841,
+          "isJPYInteger": true,
+          "krwToAmount": 32403675,
+          "isKRWInteger": true,
+          "convUSD_JPY": 6079657,
+          "convEUR_KRW": 66740150
+        }
+      ]
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "CHALLENGER-2-INTEGER-LIVE-API",
+    "title": "Live API JPY & KRW Conversion and Settled Wallet Balance Integer Verification",
+    "section": "Integer Precision",
+    "scenario": "Execute 10 live API conversions and queue settlements; verify all toAmounts and resulting wallet balances are whole integers",
+    "expected": "Number.isInteger === true across all API outputs and settled wallet balances",
+    "actual": "All live JPY/KRW integer checks passed: true",
+    "evidence": [
+      {
+        "cur": "JPY",
+        "randomInrAmt": 28288.64,
+        "toAmount": 48555,
+        "isInteger": true,
+        "reqToAmount": 48555,
+        "isReqInteger": true,
+        "settledWalletBal": 2144122,
+        "isWalletInteger": true
+      },
+      {
+        "cur": "KRW",
+        "randomInrAmt": 32978.55,
+        "toAmount": 529529,
+        "isInteger": true,
+        "reqToAmount": 529529,
+        "isReqInteger": true,
+        "settledWalletBal": 20853692,
+        "isWalletInteger": true
+      },
+      {
+        "cur": "JPY",
+        "randomInrAmt": 39046.53,
+        "toAmount": 67020,
+        "isInteger": true,
+        "reqToAmount": 67020,
+        "isReqInteger": true,
+        "settledWalletBal": 2278162,
+        "isWalletInteger": true
+      },
+      {
+        "cur": "KRW",
+        "randomInrAmt": 50043.71,
+        "toAmount": 803541,
+        "isInteger": true,
+        "reqToAmount": 803541,
+        "isReqInteger": true,
+        "settledWalletBal": 22460774,
+        "isWalletInteger": true
+      },
+      {
+        "cur": "JPY",
+        "randomInrAmt": 42469.63,
+        "toAmount": 72895,
+        "isInteger": true,
+        "reqToAmount": 72895,
+        "isReqInteger": true,
+        "settledWalletBal": 2423952,
+        "isWalletInteger": true
+      },
+      {
+        "cur": "KRW",
+        "randomInrAmt": 27049.84,
+        "toAmount": 434333,
+        "isInteger": true,
+        "reqToAmount": 434333,
+        "isReqInteger": true,
+        "settledWalletBal": 23329440,
+        "isWalletInteger": true
+      },
+      {
+        "cur": "JPY",
+        "randomInrAmt": 21255.94,
+        "toAmount": 36484,
+        "isInteger": true,
+        "reqToAmount": 36484,
+        "isReqInteger": true,
+        "settledWalletBal": 2496920,
+        "isWalletInteger": true
+      },
+      {
+        "cur": "KRW",
+        "randomInrAmt": 3414.37,
+        "toAmount": 54824,
+        "isInteger": true,
+        "reqToAmount": 54824,
+        "isReqInteger": true,
+        "settledWalletBal": 23439088,
+        "isWalletInteger": true
+      },
+      {
+        "cur": "JPY",
+        "randomInrAmt": 17683.46,
+        "toAmount": 30352,
+        "isInteger": true,
+        "reqToAmount": 30352,
+        "isReqInteger": true,
+        "settledWalletBal": 2557624,
+        "isWalletInteger": true
+      },
+      {
+        "cur": "KRW",
+        "randomInrAmt": 35357.44,
+        "toAmount": 567727,
+        "isInteger": true,
+        "reqToAmount": 567727,
+        "isReqInteger": true,
+        "settledWalletBal": 24574542,
+        "isWalletInteger": true
+      }
+    ],
+    "status": "PASSED"
+  },
+  {
+    "id": "CHALLENGER-2-POSTFLIGHT",
+    "title": "Post-flight Authoritative Baseline Hash Verification",
+    "section": "Postflight",
+    "scenario": "Confirm authoritative state.json was 100% bit-for-bit untouched throughout all stress tests",
+    "expected": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "actual": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "evidence": {
+      "sha256": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca"
+    },
+    "status": "PASSED"
+  }
+]

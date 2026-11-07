@@ -1,4 +1,16 @@
 import React, { useState, useMemo } from 'react';
+import { Card, Badge, Button } from '../components/ui/index.js';
+import {
+  IconRadio,
+  IconSun,
+  IconMoon,
+  IconChevronLeft,
+  IconChevronRight,
+  IconCheck,
+  IconBuilding,
+  IconFileText,
+  IconLayers
+} from '../lib/icons.jsx';
 
 export default function NewsAnchorConsole({ state }) {
   const [activeRundown, setActiveRundown] = useState('OPENING'); // 'OPENING' (10 AM) or 'CLOSING' (3 PM)
@@ -167,41 +179,54 @@ export default function NewsAnchorConsole({ state }) {
   return (
     <div style={{
       minHeight: '100vh',
-      backgroundColor: '#0F131C',
-      color: '#FFFFFF',
+      backgroundColor: 'var(--color-bg, #FAF8F5)',
+      color: 'var(--color-ink, #1E232B)',
       display: 'flex',
       flexDirection: 'column',
-      fontFamily: 'Inter, system-ui, sans-serif',
+      fontFamily: "var(--font-body, 'Inter', system-ui, sans-serif)",
       boxSizing: 'border-box'
     }}>
-      
+
       {/* 1. Newsroom Header */}
       <header style={{
-        backgroundColor: '#161C28',
-        borderBottom: '2px solid #D4AF37',
-        padding: '12px 28px',
+        backgroundColor: 'var(--color-surface, #FFFFFF)',
+        borderBottom: '2px solid var(--color-brass, #845508)',
+        padding: '14px 28px',
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '12px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div style={{
-            background: 'linear-gradient(135deg, #D4AF37, #845508)',
-            color: '#000',
+            background: 'linear-gradient(135deg, var(--color-brass, #845508), #b27a1b)',
+            color: '#FFFFFF',
             fontWeight: 900,
             fontSize: '1rem',
             padding: '4px 10px',
-            borderRadius: '4px',
-            fontFamily: 'Cinzel, serif'
+            borderRadius: '6px',
+            fontFamily: "var(--font-display, 'Cinzel', serif)",
+            letterSpacing: '1px'
           }}>
-            SAAMX NEWSROOM
+            SAAMX
           </div>
           <div>
-            <h1 style={{ fontSize: '1.3rem', margin: 0, fontFamily: 'Cinzel, serif', color: '#FFF' }}>
-              🎙️ News Anchor & Broadcast Teleprompter
+            <h1 style={{
+              fontSize: '1.3rem',
+              margin: 0,
+              fontFamily: "var(--font-display, 'Cinzel', serif)",
+              color: 'var(--color-ink, #1E232B)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <IconRadio size={20} color="var(--color-brass, #845508)" />
+              Live Stage Teleprompter & Rundown Console
             </h1>
-            <span style={{ fontSize: '0.7rem', color: '#D4AF37', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>
-              "Experience the Market. Don’t Just Learn It." &bull; OFFICIAL BROADCAST RUNDOWN &bull; LIVE TELEPROMPTER CONSOLE
+            <span style={{ fontSize: '0.72rem', color: 'var(--color-brass, #845508)', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 800 }}>
+              "Experience the market, don't just plan it." &bull; OFFICIAL SIMULATION BROADCAST RUNDOWN &bull; LIVE STAGE TELEPROMPTER
             </span>
           </div>
         </div>
@@ -209,34 +234,44 @@ export default function NewsAnchorConsole({ state }) {
         {/* Rundown Switcher Tabs */}
         <div style={{ display: 'flex', gap: '8px' }}>
           <button
+            type="button"
             onClick={() => { setActiveRundown('OPENING'); setCurrentIndex(0); }}
             style={{
               padding: '8px 16px',
               borderRadius: '6px',
-              border: activeRundown === 'OPENING' ? '2px solid #D4AF37' : '1px solid #2A3547',
-              backgroundColor: activeRundown === 'OPENING' ? '#D4AF37' : '#1A2232',
-              color: activeRundown === 'OPENING' ? '#000' : '#FFF',
+              border: activeRundown === 'OPENING' ? '2px solid var(--color-brass, #845508)' : '1px solid var(--color-border, #E2DBD0)',
+              backgroundColor: activeRundown === 'OPENING' ? 'var(--color-brass, #845508)' : 'var(--color-surface, #FFFFFF)',
+              color: activeRundown === 'OPENING' ? '#FFFFFF' : 'var(--color-ink, #1E232B)',
               fontWeight: 800,
               fontSize: '0.8rem',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'all 0.15s ease'
             }}
           >
-            🌅 10:00 AM Opening Rundown
+            <IconSun size={15} /> 10:00 AM Opening Rundown
           </button>
           <button
+            type="button"
             onClick={() => { setActiveRundown('CLOSING'); setCurrentIndex(0); }}
             style={{
               padding: '8px 16px',
               borderRadius: '6px',
-              border: activeRundown === 'CLOSING' ? '2px solid #D4AF37' : '1px solid #2A3547',
-              backgroundColor: activeRundown === 'CLOSING' ? '#D4AF37' : '#1A2232',
-              color: activeRundown === 'CLOSING' ? '#000' : '#FFF',
+              border: activeRundown === 'CLOSING' ? '2px solid var(--color-brass, #845508)' : '1px solid var(--color-border, #E2DBD0)',
+              backgroundColor: activeRundown === 'CLOSING' ? 'var(--color-brass, #845508)' : 'var(--color-surface, #FFFFFF)',
+              color: activeRundown === 'CLOSING' ? '#FFFFFF' : 'var(--color-ink, #1E232B)',
               fontWeight: 800,
               fontSize: '0.8rem',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'all 0.15s ease'
             }}
           >
-            🌇 3:00 PM Closing Rundown
+            <IconMoon size={15} /> 3:00 PM Closing Rundown
           </button>
         </div>
       </header>
@@ -251,22 +286,23 @@ export default function NewsAnchorConsole({ state }) {
         boxSizing: 'border-box',
         overflow: 'hidden'
       }}>
-        
+
         {/* Left: Rundown Item List */}
-        <div style={{
-          backgroundColor: '#161C28',
-          border: '1px solid #2A3547',
+        <Card variant="elevated" style={{
+          backgroundColor: 'var(--color-surface, #FFFFFF)',
+          border: '1px solid var(--color-border, #E2DBD0)',
           borderRadius: '12px',
           padding: '16px',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden'
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid #2A3547', paddingBottom: '8px' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#D4AF37', textTransform: 'uppercase' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid var(--color-border, #E2DBD0)', paddingBottom: '8px' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--color-brass, #845508)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <IconLayers size={14} />
               {activeRundown} RUNDOWN ({currentRundown.length} ITEMS)
             </span>
-            <span style={{ fontSize: '0.75rem', color: '#848E9C' }}>
+            <span className="font-mono tabular-nums" style={{ fontSize: '0.75rem', color: 'var(--color-ink-muted, #4A5568)' }}>
               Item {currentIndex + 1} of {currentRundown.length}
             </span>
           </div>
@@ -282,45 +318,59 @@ export default function NewsAnchorConsole({ state }) {
                   style={{
                     padding: '10px 12px',
                     borderRadius: '8px',
-                    backgroundColor: isSelected ? 'rgba(212, 175, 55, 0.15)' : isDone ? 'rgba(16, 185, 129, 0.08)' : '#1E2638',
-                    border: `1px solid ${isSelected ? '#D4AF37' : isDone ? '#10B981' : '#2A3547'}`,
+                    backgroundColor: isSelected
+                      ? 'rgba(132, 85, 8, 0.10)'
+                      : isDone
+                        ? 'rgba(6, 95, 62, 0.08)'
+                        : 'var(--color-surface-sunken, #FAF8F3)',
+                    border: `1px solid ${
+                      isSelected
+                        ? 'var(--color-brass, #845508)'
+                        : isDone
+                          ? 'var(--color-rise, #065F3E)'
+                          : 'var(--color-border, #E2DBD0)'
+                    }`,
                     cursor: 'pointer',
                     transition: 'all 0.15s ease'
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                    <span style={{ fontSize: '0.68rem', fontWeight: 800, color: isSelected ? '#D4AF37' : '#848E9C' }}>
+                    <span className="font-mono tabular-nums" style={{ fontSize: '0.68rem', fontWeight: 800, color: isSelected ? 'var(--color-brass, #845508)' : 'var(--color-ink-muted, #4A5568)' }}>
                       #{idx + 1} &bull; {item.category}
                     </span>
-                    {isDone && <span style={{ fontSize: '0.7rem', color: '#10B981' }}>✓ AIRED</span>}
+                    {isDone && (
+                      <span style={{ fontSize: '0.7rem', color: 'var(--color-rise, #065F3E)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '3px' }}>
+                        <IconCheck size={12} /> AIRED
+                      </span>
+                    )}
                   </div>
-                  <div style={{ fontSize: '0.82rem', fontWeight: 700, color: isSelected ? '#FFF' : '#C5C9D3', lineHeight: 1.3 }}>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 700, color: isSelected ? 'var(--color-ink, #1E232B)' : 'var(--color-ink-muted, #4A5568)', lineHeight: 1.3 }}>
                     {item.headline}
                   </div>
                 </div>
               );
             })}
           </div>
-        </div>
+        </Card>
 
         {/* Right: Teleprompter Reader Pane */}
-        <div style={{
-          backgroundColor: '#161C28',
-          border: '1px solid #2A3547',
+        <Card variant="elevated" style={{
+          backgroundColor: 'var(--color-surface, #FFFFFF)',
+          border: '1px solid var(--color-border, #E2DBD0)',
           borderRadius: '12px',
           padding: '32px 40px',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
-          boxShadow: '0 8px 30px rgba(0,0,0,0.3)'
+          boxShadow: '0 8px 30px rgba(0,0,0,0.06)'
         }}>
-          
+
           <div>
             {/* Top Teleprompter Badges */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-              <span style={{
-                backgroundColor: '#D4AF37',
-                color: '#000',
+              <Badge variant="warning" style={{
+                backgroundColor: 'var(--color-brass, #845508)',
+                color: '#FFFFFF',
                 padding: '4px 12px',
                 borderRadius: '4px',
                 fontWeight: 900,
@@ -328,18 +378,18 @@ export default function NewsAnchorConsole({ state }) {
                 letterSpacing: '1px'
               }}>
                 HEADLINE #{currentIndex + 1} &mdash; {currentItem.category}
-              </span>
-              <span style={{ color: '#848E9C', fontSize: '0.82rem' }}>
-                Relevance: <strong style={{ color: '#FFF' }}>{currentItem.relevance}</strong>
+              </Badge>
+              <span style={{ color: 'var(--color-ink-muted, #4A5568)', fontSize: '0.82rem' }}>
+                Relevance: <strong style={{ color: 'var(--color-ink, #1E232B)' }}>{currentItem.relevance}</strong>
               </span>
             </div>
 
-            {/* Giant Prompter Headline */}
+            {/* Prompter Headline */}
             <h2 style={{
               fontSize: '2rem',
-              fontFamily: 'Cinzel, serif',
+              fontFamily: "var(--font-display, 'Cinzel', serif)",
               fontWeight: 900,
-              color: '#FFFFFF',
+              color: 'var(--color-ink, #1E232B)',
               lineHeight: 1.3,
               margin: '0 0 24px 0',
               letterSpacing: '0.02em'
@@ -348,19 +398,19 @@ export default function NewsAnchorConsole({ state }) {
             </h2>
 
             {/* Large Prompter Reading Text */}
-            <p style={{
+            <div style={{
               fontSize: '1.45rem',
-              color: '#E1E4EA',
-              lineHeight: 1.6,
+              color: 'var(--color-ink, #1E232B)',
+              lineHeight: 1.65,
               margin: 0,
               fontWeight: 500,
-              backgroundColor: '#0F131C',
+              backgroundColor: 'var(--color-surface-sunken, #FAF8F3)',
               padding: '24px',
               borderRadius: '10px',
-              border: '1px solid #2A3547'
+              border: '1px solid var(--color-border, #E2DBD0)'
             }}>
               "{currentItem.body}"
-            </p>
+            </div>
           </div>
 
           {/* Teleprompter Navigation Controls */}
@@ -370,60 +420,86 @@ export default function NewsAnchorConsole({ state }) {
             alignItems: 'center',
             marginTop: '28px',
             paddingTop: '20px',
-            borderTop: '1px solid #2A3547'
+            borderTop: '1px solid var(--color-border, #E2DBD0)',
+            flexWrap: 'wrap',
+            gap: '12px'
           }}>
             <button
+              type="button"
               onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
               disabled={currentIndex === 0}
               style={{
                 padding: '12px 24px',
                 borderRadius: '8px',
-                backgroundColor: currentIndex === 0 ? '#1E2638' : '#2A3547',
-                color: currentIndex === 0 ? '#5A6376' : '#FFF',
-                border: 'none',
+                backgroundColor: currentIndex === 0 ? 'var(--color-surface-sunken, #FAF8F3)' : 'var(--color-surface, #FFFFFF)',
+                color: currentIndex === 0 ? 'var(--color-border, #A0AEC0)' : 'var(--color-ink, #1E232B)',
+                border: '1px solid var(--color-border, #E2DBD0)',
                 fontWeight: 800,
                 fontSize: '0.9rem',
-                cursor: currentIndex === 0 ? 'not-allowed' : 'pointer'
+                cursor: currentIndex === 0 ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'all 0.15s ease'
               }}
             >
-              ⬅️ PREVIOUS STORY
+              <IconChevronLeft size={16} /> PREVIOUS STORY
             </button>
 
             <button
+              type="button"
               onClick={() => toggleComplete(currentItem.id)}
               style={{
                 padding: '12px 28px',
                 borderRadius: '8px',
-                backgroundColor: completedItems[currentItem.id] ? '#10B981' : '#D4AF37',
-                color: '#000',
+                backgroundColor: completedItems[currentItem.id] ? 'var(--color-rise, #065F3E)' : 'var(--color-brass, #845508)',
+                color: '#FFFFFF',
                 border: 'none',
                 fontWeight: 900,
                 fontSize: '0.9rem',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: completedItems[currentItem.id] ? '0 4px 12px rgba(6, 95, 62, 0.25)' : '0 4px 12px rgba(132, 85, 8, 0.25)',
+                transition: 'all 0.15s ease'
               }}
             >
-              {completedItems[currentItem.id] ? '✓ STORY AIRED (COMPLETED)' : '🎙️ MARK STORY AS AIRED'}
+              {completedItems[currentItem.id] ? (
+                <>
+                  <IconCheck size={16} /> STORY AIRED (COMPLETED)
+                </>
+              ) : (
+                <>
+                  <IconRadio size={16} /> MARK STORY AS AIRED
+                </>
+              )}
             </button>
 
             <button
+              type="button"
               onClick={() => setCurrentIndex(Math.min(currentRundown.length - 1, currentIndex + 1))}
               disabled={currentIndex === currentRundown.length - 1}
               style={{
                 padding: '12px 24px',
                 borderRadius: '8px',
-                backgroundColor: currentIndex === currentRundown.length - 1 ? '#1E2638' : '#2A3547',
-                color: currentIndex === currentRundown.length - 1 ? '#5A6376' : '#FFF',
-                border: 'none',
+                backgroundColor: currentIndex === currentRundown.length - 1 ? 'var(--color-surface-sunken, #FAF8F3)' : 'var(--color-surface, #FFFFFF)',
+                color: currentIndex === currentRundown.length - 1 ? 'var(--color-border, #A0AEC0)' : 'var(--color-ink, #1E232B)',
+                border: '1px solid var(--color-border, #E2DBD0)',
                 fontWeight: 800,
                 fontSize: '0.9rem',
-                cursor: currentIndex === currentRundown.length - 1 ? 'not-allowed' : 'pointer'
+                cursor: currentIndex === currentRundown.length - 1 ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'all 0.15s ease'
               }}
             >
-              NEXT STORY ➡️
+              NEXT STORY <IconChevronRight size={16} />
             </button>
           </div>
 
-        </div>
+        </Card>
 
       </div>
 

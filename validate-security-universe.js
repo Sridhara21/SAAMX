@@ -24,26 +24,27 @@ if (universe.length < 1900) {
   console.log(`✅ [1/8] Total Count: Exactly ${universe.length} securities loaded and verified.`);
 }
 
-// 2. ID & Ticker Uniqueness
+// 2. ID Uniqueness & Multi-Exchange Scoping
 const idMap = new Map();
-const tickerMap = new Map();
+const scopedTickerMap = new Map();
 
 universe.forEach((s, idx) => {
   if (!s.id) reportError(`Index ${idx}: Missing ID`);
   else if (idMap.has(s.id)) reportError(`Duplicate ID: ${s.id} (first at ${idMap.get(s.id)})`);
   else idMap.set(s.id, idx);
 
+  const scopedKey = `${s.ticker}::${s.exchange}`;
   if (!s.ticker) reportError(`Index ${idx}: Missing Ticker`);
-  else if (tickerMap.has(s.ticker)) reportError(`Duplicate Ticker: ${s.ticker} (first at ${tickerMap.get(s.ticker)})`);
-  else tickerMap.set(s.ticker, idx);
+  else if (scopedTickerMap.has(scopedKey)) reportError(`Duplicate Scoped Ticker on ${s.exchange}: ${s.ticker} (first at ${scopedTickerMap.get(scopedKey)})`);
+  else scopedTickerMap.set(scopedKey, idx);
 });
 
-if (idMap.size === universe.length && tickerMap.size === universe.length) {
-  console.log(`✅ [2/8] Uniqueness: ${universe.length} unique IDs and ${universe.length} unique tickers verified.`);
+if (idMap.size === universe.length) {
+  console.log(`✅ [2/8] Uniqueness: ${universe.length} unique canonical IDs and ${scopedTickerMap.size} unique scoped (ticker::exchange) pairs verified.`);
 }
 
-// 3. Supported Currencies
-const VALID_CURRENCIES = new Set(['INR', 'USD', 'GBP', 'EUR']);
+// 3. Supported Currencies (10 Native Currencies)
+const VALID_CURRENCIES = new Set(['INR', 'USD', 'GBP', 'EUR', 'JPY', 'CNY', 'AED', 'AUD', 'SGD', 'KRW']);
 const currencyCounts = {};
 
 universe.forEach(s => {

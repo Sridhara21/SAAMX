@@ -1,11 +1,44 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Card, Badge, Button } from '../components/ui/index.js';
+import {
+  IconTrendingUp,
+  IconTrendingDown,
+  IconClock,
+  IconSettings,
+  IconCheck,
+  IconFileText,
+  IconActivity,
+  IconScale,
+  IconBuilding,
+  IconZap,
+  IconShieldAlert
+} from '../lib/icons.jsx';
 
 export default function BullBearDebatePage({ state }) {
   const [selectedTicker, setSelectedTicker] = useState('INFY');
-  
-  const securities = useMemo(() => Object.values(state?.securities || {}), [state?.securities]);
+  const [userVote, setUserVote] = useState(null);
+  const [localTimer, setLocalTimer] = useState(300);
+
+  const securities = useMemo(() => {
+    const list = Object.values(state?.securities || {});
+    return list.filter(s => s.status === 'Active');
+  }, [state?.securities]);
+
   const marketIndices = state?.marketIndices || {};
-  const newsEvents = useMemo(() => Object.values(state?.newsEvents || []).filter(n => n.triggeredAt).sort((a, b) => b.triggeredAt - a.triggeredAt), [state?.newsEvents]);
+  const debateState = state?.bullBearDebate || {
+    activeRound: 1,
+    topic: 'Global Tech Equity Valuations & AI Monetization Models',
+    status: 'ACTIVE DEBATE',
+    timerSeconds: 300
+  };
+
+  // Timer countdown simulation
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLocalTimer(prev => (prev > 0 ? prev - 1 : 300));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const selectedSecurity = useMemo(() => {
     return securities.find(s => s.ticker === selectedTicker) || securities[0] || null;
@@ -15,128 +48,301 @@ export default function BullBearDebatePage({ state }) {
   const openPrice = selectedSecurity?.openingPrice || selectedSecurity?.basePrice || curPrice;
   const pctChange = openPrice > 0 ? ((curPrice - openPrice) / openPrice) * 100 : 0;
 
+  const timerMin = Math.floor(localTimer / 60);
+  const timerSec = String(localTimer % 60).padStart(2, '0');
+
   return (
     <div style={{
       minHeight: '100vh',
-      backgroundColor: '#FAF8F3',
-      color: '#1E232B',
-      padding: '24px 36px',
+      backgroundColor: 'var(--color-bg, #070A0F)',
+      color: 'var(--color-ink, #EDE7DB)',
+      padding: '24px 32px',
       boxSizing: 'border-box',
       display: 'flex',
       flexDirection: 'column',
       gap: '24px',
-      fontFamily: 'Inter, system-ui, sans-serif'
+      fontFamily: "var(--font-body, 'Inter', system-ui, sans-serif)"
     }}>
-      
-      {/* Top Banner */}
+
+      {/* 1. Top Banner */}
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        borderBottom: '2px solid #845508',
-        paddingBottom: '16px'
+        borderBottom: '2px solid var(--color-border, rgba(132, 85, 8, 0.25))',
+        paddingBottom: '18px',
+        flexWrap: 'wrap',
+        gap: '16px'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div style={{
-            background: 'linear-gradient(135deg, #065F3E, #931913)',
+            background: 'linear-gradient(135deg, var(--color-rise, #065F3E) 0%, var(--color-brass, #845508) 50%, var(--color-fall, #931913) 100%)',
             color: '#FFFFFF',
             fontWeight: 900,
-            fontSize: '1.2rem',
-            padding: '6px 14px',
-            borderRadius: '6px',
-            fontFamily: 'Cinzel, serif',
-            letterSpacing: '1px'
+            fontSize: '1.25rem',
+            padding: '8px 16px',
+            borderRadius: '8px',
+            letterSpacing: '1px',
+            fontFamily: "var(--font-display, 'Cinzel', serif)",
+            boxShadow: '0 4px 14px rgba(132, 85, 8, 0.2)'
           }}>
             SAAMX ARENA
           </div>
           <div>
-            <h1 style={{ fontFamily: 'Cinzel, serif', fontSize: '2rem', margin: 0, color: '#1E232B', fontWeight: 900 }}>
-              BULL VS. BEAR &bull; MARKET DEBATE SCREEN
-            </h1>
-            <span style={{ fontSize: '0.8rem', color: '#845508', letterSpacing: '0.04em', textTransform: 'uppercase', fontWeight: 800 }}>
-              "Experience the Market. Don’t Just Learn It." &bull; THESIS VS. ANTITHESIS
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <h1 style={{
+                fontSize: '1.85rem',
+                margin: 0,
+                color: 'var(--color-ink, #FAF8F5)',
+                fontWeight: 900,
+                letterSpacing: '0.5px',
+                fontFamily: "var(--font-display, 'Cinzel', serif)",
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px'
+              }}>
+                <IconScale size={26} color="var(--color-brass, #845508)" />
+                BULL VS. BEAR &bull; AUDITORIUM DEBATE SCREEN
+              </h1>
+              <Badge
+                variant={debateState.status === 'ACTIVE' || debateState.status === 'ACTIVE DEBATE' ? 'success' : 'warning'}
+                style={{ padding: '3px 10px', fontSize: '0.72rem', fontWeight: 800 }}
+              >
+                ● {debateState.status || 'ACTIVE DEBATE'}
+              </Badge>
+            </div>
+            <span style={{ fontSize: '0.8rem', color: 'var(--color-brass, #845508)', letterSpacing: '0.06em', textTransform: 'none', fontWeight: 700 }}>
+              Bull vs Bear Debate Arena &bull; Debate Timer &bull; Bull Stance &amp; Bear Stance &bull; "Experience the market, don't just plan it."
             </span>
           </div>
         </div>
 
-        {/* Quick Back Navigation */}
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <a href="#/bull" className="btn btn-secondary" style={{ color: '#065F3E', fontWeight: 800 }}>🐂 Bull Terminal</a>
-          <a href="#/bear" className="btn btn-secondary" style={{ color: '#931913', fontWeight: 800 }}>🐻 Bear Terminal</a>
+        {/* Quick Navigation & Round Clock */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+          <div style={{
+            background: 'var(--color-surface, #0F172A)',
+            border: '1px solid var(--color-border, rgba(132, 85, 8, 0.3))',
+            borderRadius: '8px',
+            padding: '6px 14px',
+            textAlign: 'center'
+          }}>
+            <span style={{ fontSize: '0.65rem', color: 'var(--color-ink-muted, #94A3B8)', fontWeight: 800, textTransform: 'uppercase', display: 'block' }}>
+              ROUND TIMER
+            </span>
+            <div className="font-mono tabular-nums" style={{ fontSize: '1.3rem', fontWeight: 900, color: '#38BDF8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+              <IconClock size={16} /> {timerMin}:{timerSec}
+            </div>
+          </div>
+          <a
+            href="#/bull"
+            style={{
+              padding: '8px 16px',
+              borderRadius: '6px',
+              background: 'rgba(6, 95, 62, 0.15)',
+              border: '1px solid var(--color-rise, #065F3E)',
+              color: 'var(--color-rise, #065F3E)',
+              fontWeight: 800,
+              textDecoration: 'none',
+              fontSize: '0.85rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <IconTrendingUp size={16} /> Bull Terminal →
+          </a>
+          <a
+            href="#/bear"
+            style={{
+              padding: '8px 16px',
+              borderRadius: '6px',
+              background: 'rgba(147, 25, 19, 0.15)',
+              border: '1px solid var(--color-fall, #931913)',
+              color: 'var(--color-fall, #931913)',
+              fontWeight: 800,
+              textDecoration: 'none',
+              fontSize: '0.85rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <IconTrendingDown size={16} /> Bear Terminal →
+          </a>
+          <a
+            href="#/admin"
+            style={{
+              padding: '8px 16px',
+              borderRadius: '6px',
+              background: 'var(--color-surface-sunken, #1E293B)',
+              border: '1px solid var(--color-border, #334155)',
+              color: 'var(--color-ink-muted, #CBD5E1)',
+              fontWeight: 700,
+              textDecoration: 'none',
+              fontSize: '0.85rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <IconSettings size={16} /> Admin Control
+          </a>
         </div>
       </div>
 
-      {/* Indices Bar */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px' }}>
+      {/* 2. Global Indices Bar */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
         {[
           { label: 'SAAMX GLOBAL 100', val: marketIndices.GLOBAL100?.currentValue || 1000, chg: marketIndices.GLOBAL100?.changePercent || 0 },
           { label: 'SAAMX INDIA 50', val: marketIndices.INDIA50?.currentValue || 5000, chg: marketIndices.INDIA50?.changePercent || 0 },
           { label: 'SAAMX US 100', val: marketIndices.US100?.currentValue || 8000, chg: marketIndices.US100?.changePercent || 0 },
           { label: 'SAAMX UK 100', val: marketIndices.UK100?.currentValue || 4000, chg: marketIndices.UK100?.changePercent || 0 }
         ].map((idx, i) => (
-          <div key={i} style={{ backgroundColor: '#FFFFFF', border: '1px solid #E2DBD0', borderRadius: '8px', padding: '10px 16px', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
-            <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#6B6863', display: 'block' }}>{idx.label}</span>
-            <div style={{ fontSize: '1.3rem', fontWeight: 900, fontFamily: 'monospace', color: '#1E232B' }}>
+          <Card key={i} variant="elevated" style={{
+            backgroundColor: 'var(--color-surface, #0F172A)',
+            border: '1px solid var(--color-border, #334155)',
+            borderRadius: '8px',
+            padding: '12px 18px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+          }}>
+            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--color-ink-muted, #94A3B8)', display: 'block', textTransform: 'uppercase' }}>
+              {idx.label}
+            </span>
+            <div className="font-mono tabular-nums" style={{ fontSize: '1.35rem', fontWeight: 900, color: 'var(--color-ink, #FAF8F5)', margin: '4px 0' }}>
               {Number(idx.val).toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </div>
-            <span style={{ fontSize: '0.78rem', fontWeight: 900, color: idx.chg >= 0 ? '#065F3E' : '#931913' }}>
+            <span className="font-mono tabular-nums" style={{ fontSize: '0.8rem', fontWeight: 900, color: idx.chg >= 0 ? 'var(--color-rise, #065F3E)' : 'var(--color-fall, #931913)' }}>
               {idx.chg >= 0 ? '▲ +' : '▼ '}{Math.abs(idx.chg).toFixed(2)}%
             </span>
-          </div>
+          </Card>
         ))}
       </div>
 
-      {/* Active Debate Round & Common Facts Pack */}
-      <div style={{
-        backgroundColor: '#FFFFFF',
-        border: '1.5px solid #845508',
+      {/* 3. Active Debate Topic & Common Facts Pack */}
+      <Card variant="elevated" style={{
+        backgroundColor: 'var(--color-surface, #0F172A)',
+        border: '1.5px solid var(--color-brass, rgba(132, 85, 8, 0.35))',
         borderRadius: '12px',
-        padding: '16px 24px',
+        padding: '18px 24px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '12px',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.04)'
+        gap: '14px',
+        boxShadow: '0 4px 16px rgba(0,0,0,0.08)'
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ background: '#845508', color: '#fff', padding: '3px 8px', borderRadius: '4px', fontWeight: 900, fontSize: '0.72rem' }}>
-              ROUND {state?.bullBearDebate?.activeRound || 1}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{
+              background: 'var(--color-brass, #845508)',
+              color: '#FFFFFF',
+              padding: '4px 10px',
+              borderRadius: '4px',
+              fontWeight: 900,
+              fontSize: '0.75rem',
+              letterSpacing: '0.5px'
+            }}>
+              ROUND {debateState.activeRound || 1}
             </span>
-            <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 900, color: '#1E232B' }}>
-              Topic: {state?.bullBearDebate?.topic || 'AI Megacap Valuations vs Debt Sustainability'}
-            </h3>
+            <h2 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 900, color: 'var(--color-ink, #FAF8F5)' }}>
+              Topic: {debateState.topic || 'Global Tech Equity Valuations & AI Monetization Models'}
+            </h2>
           </div>
-          <span style={{ background: state?.bullBearDebate?.status === 'ACTIVE' ? '#065F3E' : '#854D0E', color: '#fff', padding: '3px 10px', borderRadius: '4px', fontWeight: 900, fontSize: '0.72rem' }}>
-            ● {state?.bullBearDebate?.status || 'ACTIVE DEBATE'}
-          </span>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.78rem', color: 'var(--color-ink-muted, #94A3B8)' }}>Floor Stance:</span>
+            <button
+              onClick={() => setUserVote('BULL')}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '6px',
+                background: userVote === 'BULL' ? 'var(--color-rise, #065F3E)' : 'rgba(6, 95, 62, 0.15)',
+                border: '1px solid var(--color-rise, #065F3E)',
+                color: userVote === 'BULL' ? '#FFFFFF' : 'var(--color-rise, #065F3E)',
+                fontSize: '0.78rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <IconTrendingUp size={14} /> Vote Bull
+            </button>
+            <button
+              onClick={() => setUserVote('BEAR')}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '6px',
+                background: userVote === 'BEAR' ? 'var(--color-fall, #931913)' : 'rgba(147, 25, 19, 0.15)',
+                border: '1px solid var(--color-fall, #931913)',
+                color: userVote === 'BEAR' ? '#FFFFFF' : 'var(--color-fall, #931913)',
+                fontSize: '0.78rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <IconTrendingDown size={14} /> Vote Bear
+            </button>
+            {userVote && (
+              <span style={{ fontSize: '0.75rem', color: '#38BDF8', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <IconCheck size={14} /> Voted {userVote}
+              </span>
+            )}
+          </div>
         </div>
 
         <div>
-          <span style={{ fontSize: '0.72rem', fontWeight: 900, color: '#6B6863', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+          <span style={{
+            fontSize: '0.72rem',
+            fontWeight: 900,
+            color: 'var(--color-brass, #845508)',
+            textTransform: 'uppercase',
+            display: 'block',
+            marginBottom: '6px',
+            letterSpacing: '0.04em'
+          }}>
             ESTABLISHED COMMON FACTS PACK (AUDITORIUM FOUNDATION):
           </span>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '8px' }}>
-            {(state?.bullBearDebate?.commonFacts || [
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '10px' }}>
+            {(debateState.commonFacts || [
               'Global hyperscaler capex grew 48% YoY in current fiscal year.',
               'Aggregate corporate debt refinancing obligations reach 5-year highs this quarter.',
               'Benchmark 10-year sovereign yields sit at 4.25% with sticky core inflation metrics.'
             ]).map((fact, idx) => (
-              <div key={idx} style={{ background: '#FAF8F3', border: '1px solid #E2DBD0', borderRadius: '6px', padding: '8px 12px', fontSize: '0.78rem', color: '#4A5568' }}>
-                <strong style={{ color: '#845508' }}>Fact #{idx + 1}:</strong> {fact}
+              <div
+                key={idx}
+                style={{
+                  background: 'var(--color-surface-sunken, #1E293B)',
+                  border: '1px solid var(--color-border, #334155)',
+                  borderRadius: '8px',
+                  padding: '10px 14px',
+                  fontSize: '0.82rem',
+                  color: 'var(--color-ink-muted, #CBD5E1)',
+                  lineHeight: 1.4,
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '8px'
+                }}
+              >
+                <IconFileText size={16} color="var(--color-brass, #845508)" style={{ flexShrink: 0, marginTop: '2px' }} />
+                <div>
+                  <strong style={{ color: 'var(--color-brass, #845508)' }}>Fact #{idx + 1}:</strong> {fact}
+                </div>
               </div>
             ))}
           </div>
         </div>
-      </div>
+      </Card>
 
-      {/* Centerpiece: Asset Spotlight & Ticker Selector */}
+      {/* 4. Asset Spotlight & Ticker Selector */}
       {selectedSecurity && (
-        <div style={{
-          backgroundColor: '#FFFFFF',
-          border: '2px solid #845508',
+        <Card variant="elevated" style={{
+          backgroundColor: 'var(--color-surface, #0F172A)',
+          border: '1px solid var(--color-border, rgba(132, 85, 8, 0.4))',
           borderRadius: '12px',
-          padding: '20px 28px',
-          boxShadow: '0 4px 18px rgba(132, 85, 8, 0.08)',
+          padding: '18px 24px',
+          boxShadow: '0 4px 18px rgba(0, 0, 0, 0.1)',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -144,125 +350,147 @@ export default function BullBearDebatePage({ state }) {
           gap: '16px'
         }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
-              <span style={{ backgroundColor: '#845508', color: '#FFF', padding: '2px 8px', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 900 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+              <span style={{
+                backgroundColor: 'var(--color-brass, #845508)',
+                color: '#FFFFFF',
+                padding: '3px 8px',
+                borderRadius: '4px',
+                fontSize: '0.72rem',
+                fontWeight: 900,
+                letterSpacing: '0.5px'
+              }}>
                 SPOTLIGHT ASSET
               </span>
               <select
                 value={selectedTicker}
                 onChange={e => setSelectedTicker(e.target.value)}
-                style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #E2DBD0', fontSize: '0.9rem', fontWeight: 800, backgroundColor: '#FAF8F3' }}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid var(--color-border, #334155)',
+                  fontSize: '0.9rem',
+                  fontWeight: 800,
+                  backgroundColor: 'var(--color-surface-sunken, #1E293B)',
+                  color: 'var(--color-ink, #FAF8F5)',
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
               >
-                {securities.slice(0, 30).map(s => (
-                  <option key={s.ticker} value={s.ticker}>{s.ticker} &mdash; {s.name}</option>
+                {securities.slice(0, 50).map(s => (
+                  <option key={s.ticker} value={s.ticker}>{s.ticker} &mdash; {s.name} ({s.sector || 'Equities'})</option>
                 ))}
               </select>
             </div>
-            <h2 style={{ fontFamily: 'Cinzel, serif', fontSize: '1.8rem', color: '#1E232B', margin: 0 }}>
+            <h2 style={{ fontSize: '1.75rem', color: 'var(--color-ink, #FAF8F5)', margin: 0, fontWeight: 900 }}>
               {selectedSecurity.name} ({selectedSecurity.ticker})
             </h2>
-            <span style={{ fontSize: '0.85rem', color: '#6B6863' }}>Sector: {selectedSecurity.sector || 'Equities'} &bull; Exchange: {selectedSecurity.exchange || 'NSE'}</span>
+            <span style={{ fontSize: '0.82rem', color: 'var(--color-ink-muted, #94A3B8)' }}>
+              Sector: {selectedSecurity.sector || 'Equities'} &bull; Exchange: {selectedSecurity.exchange || 'NSE'} &bull; Base Currency: {selectedSecurity.currency || 'INR'}
+            </span>
           </div>
 
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '2.2rem', fontWeight: 900, fontFamily: 'monospace', color: '#1E232B' }}>
-              ₹{curPrice}
+            <div className="font-mono tabular-nums" style={{ fontSize: '2.2rem', fontWeight: 900, color: 'var(--color-ink, #FAF8F5)' }}>
+              ₹{curPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
-            <div style={{ fontSize: '1rem', fontWeight: 900, color: pctChange >= 0 ? '#065F3E' : '#931913' }}>
+            <div className="font-mono tabular-nums" style={{ fontSize: '1rem', fontWeight: 900, color: pctChange >= 0 ? 'var(--color-rise, #065F3E)' : 'var(--color-fall, #931913)' }}>
               {pctChange >= 0 ? '▲ +' : '▼ '}{Math.abs(pctChange).toFixed(2)}% Intraday
             </div>
           </div>
-        </div>
+        </Card>
       )}
 
-      {/* Arena Split: BULL CASE vs. BEAR CASE */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', flex: 1 }}>
-        
+      {/* 5. Arena Split: BULL CASE vs. BEAR CASE */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '24px', flex: 1 }}>
+
         {/* BULL CORNER */}
-        <div style={{
-          backgroundColor: '#FFFFFF',
-          border: '3px solid #065F3E',
-          borderRadius: '14px',
+        <Card variant="elevated" style={{
+          backgroundColor: 'var(--color-surface, #0F172A)',
+          border: '2px solid var(--color-rise, #065F3E)',
+          borderRadius: '12px',
           padding: '24px',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '0 8px 24px rgba(6, 95, 62, 0.08)'
+          boxShadow: '0 8px 24px rgba(6, 95, 62, 0.12)'
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '2px solid rgba(6, 95, 62, 0.2)', paddingBottom: '10px' }}>
-            <h2 style={{ margin: 0, fontFamily: 'Cinzel, serif', fontSize: '1.6rem', color: '#065F3E', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>🐂</span> BULL ARGUMENTS & CATALYSTS
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid rgba(6, 95, 62, 0.3)', paddingBottom: '12px' }}>
+            <h2 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--color-rise, #065F3E)', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 900 }}>
+              <IconTrendingUp size={22} color="var(--color-rise, #065F3E)" />
+              BULL ARGUMENTS & CATALYSTS
             </h2>
-            <span style={{ backgroundColor: '#065F3E', color: '#FFF', padding: '4px 10px', borderRadius: '20px', fontSize: '0.72rem', fontWeight: 900 }}>
+            <Badge variant="success" style={{ padding: '4px 10px', fontSize: '0.72rem', fontWeight: 900 }}>
               GROWTH THESIS
-            </span>
+            </Badge>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.92rem', lineHeight: 1.5, color: '#1E232B' }}>
-            <div style={{ backgroundColor: 'rgba(6, 95, 62, 0.05)', padding: '12px 16px', borderRadius: '8px', borderLeft: '4px solid #065F3E' }}>
-              <strong>1. Strong Demand & Institutional Order Flow:</strong>
-              <p style={{ margin: '4px 0 0 0', color: '#4A5568' }}>
-                Floor trade velocity reflects aggressive long accumulation from top-performing teams. High liquidity depth protects price floors.
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '0.9rem', lineHeight: 1.5, color: 'var(--color-ink, #E2E8F0)' }}>
+            <div style={{ backgroundColor: 'rgba(6, 95, 62, 0.08)', padding: '14px 18px', borderRadius: '8px', borderLeft: '4px solid var(--color-rise, #065F3E)' }}>
+              <strong style={{ color: 'var(--color-rise, #065F3E)' }}>1. Strong Demand & Institutional Order Flow:</strong>
+              <p style={{ margin: '6px 0 0 0', color: 'var(--color-ink-muted, #CBD5E1)' }}>
+                Floor trade velocity reflects sustained long accumulation from top collegiate investment houses. High liquidity depth provides a solid floor against short-term pullbacks.
               </p>
             </div>
 
-            <div style={{ backgroundColor: 'rgba(6, 95, 62, 0.05)', padding: '12px 16px', borderRadius: '8px', borderLeft: '4px solid #065F3E' }}>
-              <strong>2. Sector Outperformance & Macro Tailwind:</strong>
-              <p style={{ margin: '4px 0 0 0', color: '#4A5568' }}>
-                {selectedSecurity?.sector || 'Technology'} constituents are benefiting from positive global headline momentum and multi-currency capital inflows.
+            <div style={{ backgroundColor: 'rgba(6, 95, 62, 0.08)', padding: '14px 18px', borderRadius: '8px', borderLeft: '4px solid var(--color-rise, #065F3E)' }}>
+              <strong style={{ color: 'var(--color-rise, #065F3E)' }}>2. Sector Outperformance & Macro Tailwind:</strong>
+              <p style={{ margin: '6px 0 0 0', color: 'var(--color-ink-muted, #CBD5E1)' }}>
+                {selectedSecurity?.sector || 'Technology'} constituents are capitalizing on structural global tailwinds, favorable currency exchange rates, and accelerating capital deployment.
               </p>
             </div>
 
-            <div style={{ backgroundColor: 'rgba(6, 95, 62, 0.05)', padding: '12px 16px', borderRadius: '8px', borderLeft: '4px solid #065F3E' }}>
-              <strong>3. Favorable Risk/Reward Horizon:</strong>
-              <p style={{ margin: '4px 0 0 0', color: '#4A5568' }}>
-                Upside potential outweighs intraday pullbacks. Positioning early ahead of closing session reconciliation maximizes tournament ROI.
+            <div style={{ backgroundColor: 'rgba(6, 95, 62, 0.08)', padding: '14px 18px', borderRadius: '8px', borderLeft: '4px solid var(--color-rise, #065F3E)' }}>
+              <strong style={{ color: 'var(--color-rise, #065F3E)' }}>3. Asymmetric Risk/Reward Upside:</strong>
+              <p style={{ margin: '6px 0 0 0', color: 'var(--color-ink-muted, #CBD5E1)' }}>
+                Long exposures offer superior expected value leading into official closing reconciliation. Capitalizing on intraday momentum positions funds for tournament championship honors.
               </p>
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* BEAR CORNER */}
-        <div style={{
-          backgroundColor: '#FFFFFF',
-          border: '3px solid #931913',
-          borderRadius: '14px',
+        <Card variant="elevated" style={{
+          backgroundColor: 'var(--color-surface, #0F172A)',
+          border: '2px solid var(--color-fall, #931913)',
+          borderRadius: '12px',
           padding: '24px',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '0 8px 24px rgba(147, 25, 19, 0.08)'
+          boxShadow: '0 8px 24px rgba(147, 25, 19, 0.12)'
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '2px solid rgba(147, 25, 19, 0.2)', paddingBottom: '10px' }}>
-            <h2 style={{ margin: 0, fontFamily: 'Cinzel, serif', fontSize: '1.6rem', color: '#931913', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>🐻</span> BEAR ARGUMENTS & RISKS
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid rgba(147, 25, 19, 0.3)', paddingBottom: '12px' }}>
+            <h2 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--color-fall, #931913)', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 900 }}>
+              <IconTrendingDown size={22} color="var(--color-fall, #931913)" />
+              BEAR ARGUMENTS & RISKS
             </h2>
-            <span style={{ backgroundColor: '#931913', color: '#FFF', padding: '4px 10px', borderRadius: '20px', fontSize: '0.72rem', fontWeight: 900 }}>
+            <Badge variant="destructive" style={{ padding: '4px 10px', fontSize: '0.72rem', fontWeight: 900 }}>
               DOWNSIDE ANTITHESIS
-            </span>
+            </Badge>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.92rem', lineHeight: 1.5, color: '#1E232B' }}>
-            <div style={{ backgroundColor: 'rgba(147, 25, 19, 0.05)', padding: '12px 16px', borderRadius: '8px', borderLeft: '4px solid #931913' }}>
-              <strong>1. Overextended Valuations & Bubble Risk:</strong>
-              <p style={{ margin: '4px 0 0 0', color: '#4A5568' }}>
-                Asset has experienced rapid intraday inflation without fundamental earnings expansion. Reversion to mean price is imminent upon institutional profit taking.
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '0.9rem', lineHeight: 1.5, color: 'var(--color-ink, #E2E8F0)' }}>
+            <div style={{ backgroundColor: 'rgba(147, 25, 19, 0.08)', padding: '14px 18px', borderRadius: '8px', borderLeft: '4px solid var(--color-fall, #931913)' }}>
+              <strong style={{ color: 'var(--color-fall, #931913)' }}>1. Overextended Valuations & Bubble Risk:</strong>
+              <p style={{ margin: '6px 0 0 0', color: 'var(--color-ink-muted, #CBD5E1)' }}>
+                Asset has experienced rapid intraday inflation without fundamental corporate earnings justification. Reversion to fundamental mean is imminent once institutional profit-taking initiates.
               </p>
             </div>
 
-            <div style={{ backgroundColor: 'rgba(147, 25, 19, 0.05)', padding: '12px 16px', borderRadius: '8px', borderLeft: '4px solid #931913' }}>
-              <strong>2. Volatility & Circuit Breaker Exposure:</strong>
-              <p style={{ margin: '4px 0 0 0', color: '#4A5568' }}>
-                High-beta order clusters expose holding teams to sudden SEBI circuit breaker suspensions and liquidity locks.
+            <div style={{ backgroundColor: 'rgba(147, 25, 19, 0.08)', padding: '14px 18px', borderRadius: '8px', borderLeft: '4px solid var(--color-fall, #931913)' }}>
+              <strong style={{ color: 'var(--color-fall, #931913)' }}>2. Volatility & Circuit Breaker Vulnerability:</strong>
+              <p style={{ margin: '6px 0 0 0', color: 'var(--color-ink-muted, #CBD5E1)' }}>
+                High-beta order clusters expose holding houses to abrupt SEBI circuit limits, freezing exit liquidity and creating immediate portfolio drawdown penalties.
               </p>
             </div>
 
-            <div style={{ backgroundColor: 'rgba(147, 25, 19, 0.05)', padding: '12px 16px', borderRadius: '8px', borderLeft: '4px solid #931913' }}>
-              <strong>3. Foreign Exchange & Concentration Drag:</strong>
-              <p style={{ margin: '4px 0 0 0', color: '#4A5568' }}>
-                Foreign asset holdings face currency conversion friction and spread drag upon final tournament portfolio reconciliation.
+            <div style={{ backgroundColor: 'rgba(147, 25, 19, 0.08)', padding: '14px 18px', borderRadius: '8px', borderLeft: '4px solid var(--color-fall, #931913)' }}>
+              <strong style={{ color: 'var(--color-fall, #931913)' }}>3. Foreign Exchange Friction & Concentration Drag:</strong>
+              <p style={{ margin: '6px 0 0 0', color: 'var(--color-ink-muted, #CBD5E1)' }}>
+                Unhedged cross-border holdings face FX spread drag upon final 15:30 closing valuation freeze, eroding nominal paper gains during certified judge auditing.
               </p>
             </div>
           </div>
-        </div>
+        </Card>
 
       </div>
 

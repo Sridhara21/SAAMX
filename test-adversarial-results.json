@@ -1,0 +1,557 @@
+[
+  {
+    "id": "ADV-RBAC-01",
+    "domain": "RBAC Security",
+    "title": "Unauthenticated POST /api/news/publish Rejection",
+    "endpoint": "POST /api/news/publish",
+    "scenario": "Anonymous request attempts to trigger news publication without token",
+    "expected": "HTTP 401 Unauthorized",
+    "actual": "HTTP 401",
+    "evidence": {
+      "error": "401 Unauthorized: Valid session authentication required."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-RBAC-02",
+    "domain": "RBAC Security",
+    "title": "Participant POST /api/news/publish Forbidden",
+    "endpoint": "POST /api/news/publish",
+    "scenario": "Team participant token attempts to trigger news publication",
+    "expected": "HTTP 403 Forbidden",
+    "actual": "HTTP 403",
+    "evidence": {
+      "error": "Forbidden: Publishing news requires News Controller or Administrator authorization."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-RBAC-03",
+    "domain": "RBAC Security",
+    "title": "Journalist POST /api/news/publish Forbidden",
+    "endpoint": "POST /api/news/publish",
+    "scenario": "Journalist role attempts direct news publishing bypassing News Controller",
+    "expected": "HTTP 403 Forbidden",
+    "actual": "HTTP 403",
+    "evidence": {
+      "error": "Forbidden: Publishing news requires News Controller or Administrator authorization."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-RBAC-04",
+    "domain": "RBAC Security",
+    "title": "Unauthenticated POST /api/news Rejection",
+    "endpoint": "POST /api/news",
+    "scenario": "Anonymous request attempts to broadcast direct news bulletin",
+    "expected": "HTTP 401 Unauthorized",
+    "actual": "HTTP 401",
+    "evidence": {
+      "error": "401 Unauthorized: Valid session authentication required."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-RBAC-05",
+    "domain": "RBAC Security",
+    "title": "Participant POST /api/news Forbidden",
+    "endpoint": "POST /api/news",
+    "scenario": "Team participant token attempts direct news bulletin broadcast",
+    "expected": "HTTP 403 Forbidden",
+    "actual": "HTTP 403",
+    "evidence": {
+      "error": "Forbidden: Direct news publishing requires News Controller or Administrator authorization."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-RBAC-06",
+    "domain": "RBAC Security",
+    "title": "Journalist POST /api/news Direct Publish Prevention",
+    "endpoint": "POST /api/news",
+    "scenario": "Journalist attempts direct news broadcast without News Controller review",
+    "expected": "HTTP 403 Forbidden (Journalist demoted from news.publish)",
+    "actual": "HTTP 403",
+    "evidence": {
+      "error": "Forbidden: Direct news publishing requires News Controller or Administrator authorization."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-RBAC-07",
+    "domain": "RBAC Security",
+    "title": "Journalist POST /api/news/review Forbidden",
+    "endpoint": "POST /api/news/review",
+    "scenario": "Journalist attempts self-approval of news drafts",
+    "expected": "HTTP 403 Forbidden",
+    "actual": "HTTP 403",
+    "evidence": {
+      "error": "Forbidden: Editorial review requires News Controller or Administrator authorization."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-RBAC-08",
+    "domain": "RBAC Security",
+    "title": "Participant POST /api/news/correct Forbidden",
+    "endpoint": "POST /api/news/correct",
+    "scenario": "Participant attempts to issue regulatory market correction",
+    "expected": "HTTP 403 Forbidden",
+    "actual": "HTTP 403",
+    "evidence": {
+      "error": "Forbidden: News correction requires News Controller or Administrator authorization."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-VAL-01",
+    "domain": "Malformed Payloads",
+    "title": "Empty Draft Payload Rejection",
+    "endpoint": "POST /api/news/draft",
+    "scenario": "Journalist submits empty JSON object",
+    "expected": "HTTP 400 Bad Request",
+    "actual": "HTTP 400",
+    "evidence": {
+      "error": "Headline and description are required for news drafts."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-VAL-02",
+    "domain": "Malformed Payloads",
+    "title": "Empty Headline Draft Rejection",
+    "endpoint": "POST /api/news/draft",
+    "scenario": "Journalist submits draft with empty headline string",
+    "expected": "HTTP 400 Bad Request",
+    "actual": "HTTP 400",
+    "evidence": {
+      "error": "Headline and description are required for news drafts."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-VAL-03",
+    "domain": "Malformed Payloads",
+    "title": "Missing Description Draft Rejection",
+    "endpoint": "POST /api/news/draft",
+    "scenario": "Journalist submits draft with empty description",
+    "expected": "HTTP 400 Bad Request",
+    "actual": "HTTP 400",
+    "evidence": {
+      "error": "Headline and description are required for news drafts."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-VAL-04",
+    "domain": "Malformed Payloads",
+    "title": "Non-existent Category in News Draft Rejection",
+    "endpoint": "POST /api/news/draft",
+    "scenario": "Draft submitted with category outside the 9 approved domains",
+    "expected": "HTTP 400 Bad Request rejection",
+    "actual": "HTTP 400 (Category accepted: undefined)",
+    "evidence": {
+      "error": "Invalid category: 'Cryptocurrency / DeFi / Web3'. Must be one of the 9 official domains.",
+      "allowedCategories": [
+        "Corporate earnings",
+        "M&A / leadership",
+        "IPOs / new listings",
+        "Speculation / rumours",
+        "Macroeconomics / RBI",
+        "Sector developments",
+        "Global / geopolitical",
+        "Regulatory / SEBI",
+        "Commodities / forex / rates"
+      ]
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-VAL-04B",
+    "domain": "Malformed Payloads",
+    "title": "Out-of-Range Magnitude in News Draft Rejection",
+    "endpoint": "POST /api/news/draft",
+    "scenario": "Draft submitted with impact magnitude 99999% far outside reasonable 1-25% limits",
+    "expected": "HTTP 400 Bad Request rejection",
+    "actual": "HTTP 400 (Magnitude accepted: undefined)",
+    "evidence": {
+      "error": "impactMagnitude must be a finite number between 0 and 50%."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-VAL-05",
+    "domain": "Malformed Payloads",
+    "title": "Empty Publication Request Rejection",
+    "endpoint": "POST /api/news/publish",
+    "scenario": "News Controller submits empty publish request without draftId, presetId, or customPayload",
+    "expected": "HTTP 400 Bad Request",
+    "actual": "HTTP 400",
+    "evidence": {
+      "error": "Must provide draftId, triggerPresetId, or customPayload."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-VAL-06",
+    "domain": "Malformed Payloads",
+    "title": "Non-existent Preset ID Rejection",
+    "endpoint": "POST /api/news/publish",
+    "scenario": "News Controller attempts to trigger invalid preset ID",
+    "expected": "HTTP 404 Not Found",
+    "actual": "HTTP 404",
+    "evidence": {
+      "error": "Preset NEWS_NONEXISTENT_9999 not found in library."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-VAL-07",
+    "domain": "Malformed Payloads",
+    "title": "Malformed Custom News Rejection with Validation Details",
+    "endpoint": "POST /api/news/publish",
+    "scenario": "Publish custom news with missing required schema fields, short headline, and invalid sentiment",
+    "expected": "HTTP 400 Bad Request with details error array",
+    "actual": "HTTP 400 (Details count: 16)",
+    "evidence": {
+      "error": "Custom news schema validation failed.",
+      "details": [
+        "Missing required field: id",
+        "Missing required field: subcategory",
+        "Missing required field: priority",
+        "Missing required field: impactMagnitude",
+        "Missing required field: affectedAssets",
+        "Missing required field: eventType",
+        "Missing required field: classification",
+        "Missing required field: impactParameters",
+        "Missing required field: duration",
+        "Missing required field: expiryRules",
+        "Missing required field: correctionRules",
+        "Missing required field: trainingEligibility",
+        "Headline must be between 10 and 200 characters",
+        "Description must be between 20 and 1000 characters",
+        "Invalid category: Fake Domain",
+        "Invalid sentiment: SuperBullish"
+      ]
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-IPO-01",
+    "domain": "8-Stage IPO Lifecycle",
+    "title": "Stage 1: HIDDEN Verification & Trading Prohibition",
+    "endpoint": "POST /api/ipo/stage (HIDDEN)",
+    "scenario": "IPO is HIDDEN; verify visibility false and trading prohibited",
+    "expected": "visibleToParticipants === false and HTTP 400 for secondary trade",
+    "actual": "visible: false, trade status: 400",
+    "evidence": {
+      "stage": "HIDDEN",
+      "tradeError": "OAI is currently IPO_STAGED — trading not permitted."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-IPO-02",
+    "domain": "8-Stage IPO Lifecycle",
+    "title": "Stage 2: RUMOUR Verification & Trading Prohibition",
+    "endpoint": "POST /api/ipo/stage (RUMOUR)",
+    "scenario": "IPO moves to RUMOUR stage; secondary trading must remain blocked",
+    "expected": "status === IPO_STAGED and secondary trade rejected (HTTP 400)",
+    "actual": "status: IPO_STAGED, trade status: 400",
+    "evidence": {
+      "stage": "RUMOUR",
+      "tradeError": "OAI is currently IPO_STAGED — trading not permitted."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-IPO-03",
+    "domain": "8-Stage IPO Lifecycle",
+    "title": "Stage 3: SPECULATION Verification & Trading Prohibition",
+    "endpoint": "POST /api/ipo/stage (SPECULATION)",
+    "scenario": "IPO moves to SPECULATION stage; trading must remain blocked",
+    "expected": "status === IPO_STAGED and secondary trade rejected (HTTP 400)",
+    "actual": "status: IPO_STAGED, trade status: 400",
+    "evidence": {
+      "stage": "SPECULATION",
+      "tradeError": "OAI is currently IPO_STAGED — trading not permitted."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-IPO-04",
+    "domain": "8-Stage IPO Lifecycle",
+    "title": "Stage 4: ANNOUNCED Verification",
+    "endpoint": "POST /api/ipo/stage (ANNOUNCED)",
+    "scenario": "IPO moves to ANNOUNCED stage; status becomes IPO_PENDING with ipoStage set",
+    "expected": "status === IPO_PENDING and ipoStage === ANNOUNCED",
+    "actual": "status: IPO_PENDING, stage: ANNOUNCED",
+    "evidence": {
+      "success": true,
+      "ticker": "OAI",
+      "stage": "ANNOUNCED",
+      "status": "IPO_PENDING",
+      "ipoStatus": "ANNOUNCED",
+      "visibleToParticipants": true,
+      "security": {
+        "id": "IPO_OAI_001",
+        "ticker": "OAI",
+        "name": "OpenAI Global Hyperscale IPO",
+        "companyName": "OpenAI Inc",
+        "sector": "Technology",
+        "industry": "Generative AI & Large Frontier Models",
+        "currentPrice": 237.6,
+        "basePrice": 180,
+        "openingPrice": 237.6,
+        "dayHigh": 180,
+        "dayLow": 180,
+        "lotSize": 1,
+        "totalUnits": 1000,
+        "availableUnits": 0,
+        "tradingVolume": 0,
+        "volatility": 0.88,
+        "exchange": "NASDAQ",
+        "country": "United States",
+        "currency": "USD",
+        "status": "IPO_PENDING",
+        "ipoStatus": "ANNOUNCED",
+        "ipoStage": "ANNOUNCED",
+        "visibleToParticipants": true,
+        "bids": {},
+        "availableFloat": 1000,
+        "offerPrice": 180,
+        "priceHistory": [
+          {
+            "price": 180,
+            "timestamp": 1793498918833
+          }
+        ]
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-IPO-05",
+    "domain": "8-Stage IPO Lifecycle",
+    "title": "30-Second Legacy Loop Guard Against Premature Listing",
+    "endpoint": "Background setInterval Loop",
+    "scenario": "Staged IPO (ANNOUNCED) has timestamp > 30s in the past; loop must not auto-activate",
+    "expected": "status === IPO_PENDING (NOT Active)",
+    "actual": "status: IPO_PENDING",
+    "evidence": {
+      "ticker": "OAI",
+      "status": "IPO_PENDING",
+      "ipoStage": "ANNOUNCED"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-IPO-06",
+    "domain": "8-Stage IPO Lifecycle",
+    "title": "Stage 5: SUBSCRIPTION_OPEN Verification",
+    "endpoint": "POST /api/ipo/stage (SUBSCRIPTION_OPEN)",
+    "scenario": "Subscription window opens for primary bidding",
+    "expected": "status === IPO_OPEN and ipoStage === SUBSCRIPTION_OPEN",
+    "actual": "status: IPO_OPEN, stage: SUBSCRIPTION_OPEN",
+    "evidence": {
+      "success": true,
+      "ticker": "OAI",
+      "stage": "SUBSCRIPTION_OPEN",
+      "status": "IPO_OPEN",
+      "ipoStatus": "SUBSCRIPTION_OPEN",
+      "visibleToParticipants": true,
+      "security": {
+        "id": "IPO_OAI_001",
+        "ticker": "OAI",
+        "name": "OpenAI Global Hyperscale IPO",
+        "companyName": "OpenAI Inc",
+        "sector": "Technology",
+        "industry": "Generative AI & Large Frontier Models",
+        "currentPrice": 237.6,
+        "basePrice": 180,
+        "openingPrice": 237.6,
+        "dayHigh": 180,
+        "dayLow": 180,
+        "lotSize": 1,
+        "totalUnits": 1000,
+        "availableUnits": 0,
+        "tradingVolume": 0,
+        "volatility": 0.88,
+        "exchange": "NASDAQ",
+        "country": "United States",
+        "currency": "USD",
+        "status": "IPO_OPEN",
+        "ipoStatus": "SUBSCRIPTION_OPEN",
+        "ipoStage": "SUBSCRIPTION_OPEN",
+        "visibleToParticipants": true,
+        "bids": {},
+        "availableFloat": 1000,
+        "offerPrice": 180,
+        "priceHistory": [
+          {
+            "price": 180,
+            "timestamp": 1793498918833
+          }
+        ]
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-IPO-07",
+    "domain": "8-Stage IPO Lifecycle",
+    "title": "Competing Team Bids & Demand Calculation",
+    "endpoint": "POST /api/ipo/bid",
+    "scenario": "Teams T01 (600) and T02 (400) place competing bids on 500-unit float",
+    "expected": "Total demand: 1000, Subscription multiple: 2.0x",
+    "actual": "Total demand: 1000, Multiple: 2x",
+    "evidence": {
+      "bids": {
+        "T01": {
+          "quantity": 600,
+          "capitalReserved": 108000,
+          "timestamp": 1793669847784
+        },
+        "T02": {
+          "quantity": 400,
+          "capitalReserved": 72000,
+          "timestamp": 1793669847978
+        }
+      },
+      "total": 1000
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-IPO-08",
+    "domain": "8-Stage IPO Lifecycle",
+    "title": "Stage 6: SUBSCRIPTION_CLOSED & Late Bid Rejection",
+    "endpoint": "POST /api/ipo/stage (SUBSCRIPTION_CLOSED)",
+    "scenario": "Subscription window closes; late bids rejected",
+    "expected": "status === IPO_CLOSED and late bid rejected (HTTP 400)",
+    "actual": "status: IPO_CLOSED, late bid status: 400",
+    "evidence": {
+      "stage": "SUBSCRIPTION_CLOSED",
+      "lateBidError": "OAI is not currently accepting primary IPO subscriptions (Status: IPO_CLOSED)."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-IPO-09",
+    "domain": "8-Stage IPO Lifecycle",
+    "title": "Stage 7: Pro-Rata Allotment & Refund Execution",
+    "endpoint": "POST /api/ipo/stage (ALLOTMENT)",
+    "scenario": "Execute pro-rata allotment across T01 (600 bid) and T02 (400 bid) for 500 float",
+    "expected": "T01 allotted 300 units, T02 allotted 200 units, excess capital refunded",
+    "actual": "T01: 300 units (Refund: $54000), T02: 200 units (Refund: $36000)",
+    "evidence": {
+      "T01": {
+        "bidQuantity": 600,
+        "allottedQuantity": 300,
+        "refundAmount": 54000,
+        "actualCost": 54000
+      },
+      "T02": {
+        "bidQuantity": 400,
+        "allottedQuantity": 200,
+        "refundAmount": 36000,
+        "actualCost": 36000
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-IPO-10",
+    "domain": "8-Stage IPO Lifecycle",
+    "title": "Stage 8: LISTING & Secondary Market Activation",
+    "endpoint": "POST /api/ipo/stage (LISTING)",
+    "scenario": "IPO completes listing with market opening price pop",
+    "expected": "status === Active and ipoStatus === LISTED",
+    "actual": "status: Active, ipoStatus: LISTED, price: $237.6",
+    "evidence": {
+      "status": "Active",
+      "ipoStatus": "LISTED",
+      "currentPrice": 237.6
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-IPO-11",
+    "domain": "8-Stage IPO Lifecycle",
+    "title": "Post-Listing Secondary Trading Intake Enabled",
+    "endpoint": "POST /api/orders/submit",
+    "scenario": "Team submits secondary market order slip (SELL 10 units) from allotted holdings on newly listed security",
+    "expected": "HTTP 200 OK and order queued successfully",
+    "actual": "HTTP 200",
+    "evidence": {
+      "orderId": "ORD-1793669850455-7167",
+      "status": "AWAITING_PHYSICAL_SLIP"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-CONC-01",
+    "domain": "Concurrency Stress",
+    "title": "Simultaneous Draft Submissions (20 concurrent)",
+    "endpoint": "POST /api/news/draft",
+    "scenario": "20 concurrent journalist draft submissions dispatched simultaneously via Promise.all",
+    "expected": "20/20 successful (201) with 20 distinct unique draft IDs",
+    "actual": "20/20 successful, 20 unique IDs",
+    "evidence": {
+      "total": 20,
+      "uniqueCount": 20
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-CONC-02",
+    "domain": "Concurrency Stress",
+    "title": "Simultaneous Draft Review Approvals (10 concurrent)",
+    "endpoint": "POST /api/news/review",
+    "scenario": "10 concurrent draft review approvals dispatched simultaneously via Promise.all",
+    "expected": "10/10 successfully approved (200) without race collision",
+    "actual": "10/10 successful approvals",
+    "evidence": {
+      "approvedCount": 10
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-CONC-03",
+    "domain": "Concurrency Stress",
+    "title": "Concurrent Multi-Team Primary IPO Bidding",
+    "endpoint": "POST /api/ipo/bid",
+    "scenario": "4 concurrent bids dispatched from T01 and T02 simultaneously",
+    "expected": "All 4 bids succeed with exact total demand sum 750",
+    "actual": "All succeed: true, total demand: 750",
+    "evidence": {
+      "totalDemand": 750,
+      "bids": {
+        "T01": {
+          "quantity": 400,
+          "capitalReserved": 38000,
+          "timestamp": 1793669854524
+        },
+        "T02": {
+          "quantity": 350,
+          "capitalReserved": 33250,
+          "timestamp": 1793669854605
+        }
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-BASE-01",
+    "domain": "Baseline Integrity",
+    "title": "Authoritative state.json Immutability Verification",
+    "endpoint": "Local File System (SAAMX/state.json)",
+    "scenario": "Verify SHA-256 hash of state.json after intense adversarial stress testing",
+    "expected": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "actual": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "evidence": {
+      "byteForByteIdentical": true
+    },
+    "status": "PASSED"
+  }
+]

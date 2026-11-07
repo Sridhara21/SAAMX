@@ -1,0 +1,362 @@
+[
+  {
+    "id": "SEC-01.1",
+    "title": "Unauthenticated Security Creation via POST /api/securities",
+    "scenario": "Calling POST /api/securities with no authentication headers",
+    "expected": "401 Unauthorized or 403 Forbidden",
+    "actual": "HTTP 200 (Security created with id S2064)",
+    "evidence": {
+      "status": 200,
+      "security": "UNAUTH"
+    },
+    "status": "REPRODUCED"
+  },
+  {
+    "id": "SEC-01.2",
+    "title": "Unauthenticated Security Modification via PUT /api/securities/:id",
+    "scenario": "Calling PUT /api/securities/S2064 with no authentication headers",
+    "expected": "401 Unauthorized or 403 Forbidden",
+    "actual": "HTTP 200 (Security currentPrice set to 9999.55)",
+    "evidence": {
+      "status": 200,
+      "modifiedPrice": 9999.55
+    },
+    "status": "REPRODUCED"
+  },
+  {
+    "id": "SEC-01.3",
+    "title": "Unauthenticated Security Deletion via DELETE /api/securities/:id",
+    "scenario": "Calling DELETE /api/securities/S2064 with no authentication headers",
+    "expected": "401 Unauthorized or 403 Forbidden",
+    "actual": "HTTP 200 (Success: true)",
+    "evidence": {
+      "status": 200,
+      "data": {
+        "success": true
+      }
+    },
+    "status": "REPRODUCED"
+  },
+  {
+    "id": "SEC-01.4",
+    "title": "Unauthenticated Global FX Rate Manipulation via POST /api/fx/rates",
+    "scenario": "Calling POST /api/fx/rates with no authentication headers",
+    "expected": "401 Unauthorized or 403 Forbidden",
+    "actual": "HTTP 200 (USDINR midRate altered to 155)",
+    "evidence": {
+      "status": 200,
+      "updatedPair": {
+        "pair": "USD/INR",
+        "base": "USD",
+        "quote": "INR",
+        "midRate": 155,
+        "buyRate": 155.7,
+        "sellRate": 154.3,
+        "spreadPercent": 0.45,
+        "lastUpdated": 1792293612182
+      }
+    },
+    "status": "REPRODUCED"
+  },
+  {
+    "id": "SEC-02.1",
+    "title": "Trailing Slash Middleware Bypass on /api/orders/resubmit/",
+    "scenario": "Team T02 resubmitting Team T01 returned order via /api/orders/resubmit/",
+    "expected": "403 Forbidden",
+    "actual": "HTTP 200 (Resubmitted successfully)",
+    "evidence": {
+      "status": 200,
+      "order": "ORD_TEST_T01_RET_SEC02",
+      "newQty": 120
+    },
+    "status": "REPRODUCED"
+  },
+  {
+    "id": "SEC-02.2",
+    "title": "Trailing Slash Middleware Bypass on /api/orders/cancel/",
+    "scenario": "Team T02 cancelling Team T01 pending order via /api/orders/cancel/",
+    "expected": "403 Forbidden",
+    "actual": "HTTP 200 (Cancelled successfully)",
+    "evidence": {
+      "status": 200,
+      "order": "ORD_TEST_T01_PEND",
+      "orderStatus": "CANCELLED"
+    },
+    "status": "REPRODUCED"
+  },
+  {
+    "id": "FIN-01",
+    "title": "Arbitrary Transaction Voiding Without Authorization via POST /api/transactions/void",
+    "scenario": "Team T02 calling POST /api/transactions/void to void Team T01 transaction",
+    "expected": "403 Forbidden (Requires Admin/SEBI role)",
+    "actual": "HTTP 200 (Transaction voided: true)",
+    "evidence": {
+      "status": 200,
+      "transactionId": "TX_PHASE7_TEST",
+      "voided": true
+    },
+    "status": "REPRODUCED"
+  },
+  {
+    "id": "FIN-02.1",
+    "title": "Unprivileged Stock Bankruptcy via POST /api/corporate-action",
+    "scenario": "Team T01 triggering Bankruptcy on Security INFY",
+    "expected": "403 Forbidden (Requires Admin role)",
+    "actual": "HTTP 200 (Success: true)",
+    "evidence": {
+      "status": 200,
+      "data": {
+        "success": true
+      }
+    },
+    "status": "REPRODUCED"
+  },
+  {
+    "id": "FIN-02.2",
+    "title": "Unprivileged Dividend Distribution via POST /api/corporate-action",
+    "scenario": "Team T01 triggering Dividend payout on Security TCS",
+    "expected": "403 Forbidden (Requires Admin role)",
+    "actual": "HTTP 200 (Success: true)",
+    "evidence": {
+      "status": 200,
+      "data": {
+        "success": true
+      }
+    },
+    "status": "REPRODUCED"
+  },
+  {
+    "id": "AUD-D31-01.1",
+    "title": "Cross-Role / Omitted teamCode Resubmit Bypass",
+    "scenario": "Journalist session resubmitting Team T01 order with teamCode omitted in body",
+    "expected": "403 Forbidden (Non-owner role cannot resubmit orders)",
+    "actual": "HTTP 200 (Resubmitted successfully)",
+    "evidence": {
+      "status": 200,
+      "order": "ORD_TEST_T01_RET_AUD31",
+      "newQty": 88
+    },
+    "status": "REPRODUCED"
+  },
+  {
+    "id": "AUD-D31-01.2",
+    "title": "Cross-Role / Spoofed teamCode Cancellation Bypass",
+    "scenario": "Advisor session cancelling Team T01 order with spoofed teamCode: T01 in body",
+    "expected": "403 Forbidden (Advisor cannot cancel participant orders)",
+    "actual": "HTTP 200 (Cancelled successfully)",
+    "evidence": {
+      "status": 200,
+      "order": "ORD_1792293612599_6ko2"
+    },
+    "status": "REPRODUCED"
+  },
+  {
+    "id": "SEC-03",
+    "title": "Missing Route Guard for /api/order/submit Alias",
+    "scenario": "Team T02 injecting order on behalf of Team T01 via /api/order/submit (singular alias)",
+    "expected": "403 Forbidden (Team T02 cannot submit orders on behalf of T01)",
+    "actual": "HTTP 200 (Order ID: ORD_1792293612663_ztnn, Assigned Team: T01)",
+    "evidence": {
+      "status": 200,
+      "orderId": "ORD_1792293612663_ztnn",
+      "teamCode": "T01"
+    },
+    "status": "REPRODUCED"
+  },
+  {
+    "id": "FIN-03",
+    "title": "Institutional Clearance Bypass via Direct Execution POST /api/trade",
+    "scenario": "Participant Team T01 calling POST /api/trade to instantly execute trade without clearance desk",
+    "expected": "403 Forbidden (Participants must submit slips, not execute trades directly)",
+    "actual": "HTTP 200 (Transaction created: TX0002)",
+    "evidence": {
+      "status": 200,
+      "tx": "TX0002"
+    },
+    "status": "REPRODUCED"
+  },
+  {
+    "id": "FIN-04.1",
+    "title": "Unauthorized Cross-Team IPO Bid & Fund Reservation via /api/ipo/bid",
+    "scenario": "Team T02 placing IPO bid on behalf of Team T01 reserving T01 cash",
+    "expected": "403 Forbidden",
+    "actual": "HTTP 200 (Successfully placed subscription for 10 units of DTAI ($1,000 reserved).)",
+    "evidence": {
+      "status": 200,
+      "teamBid": {
+        "quantity": 10,
+        "capitalReserved": 1000,
+        "timestamp": 1792293612796
+      }
+    },
+    "status": "REPRODUCED"
+  },
+  {
+    "id": "FIN-04.2",
+    "title": "Unprivileged IPO Allotment Trigger via /api/ipo/allot",
+    "scenario": "Team T01 calling POST /api/ipo/allot",
+    "expected": "403 Forbidden (Requires Admin)",
+    "actual": "HTTP 200 (Allotment proceeded)",
+    "evidence": {
+      "status": 200,
+      "data": {
+        "success": true,
+        "ticker": "DTAI",
+        "offerPrice": 100,
+        "listingPrice": 115,
+        "totalAllotted": 10,
+        "allotments": {
+          "T01": {
+            "bidQuantity": 10,
+            "allottedQuantity": 10,
+            "refundAmount": 0,
+            "actualCost": 1000
+          }
+        }
+      }
+    },
+    "status": "REPRODUCED"
+  },
+  {
+    "id": "SEC-04.1",
+    "title": "Unprivileged Competitor Penalty Injection via /api/penalties/create",
+    "scenario": "Team T01 submitting penalty against competing Team T02",
+    "expected": "403 Forbidden (Requires Admin/SEBI role)",
+    "actual": "HTTP 200 (Penalty ID: PEN_1792293612903_nf2h)",
+    "evidence": {
+      "status": 200,
+      "penalty": {
+        "id": "PEN_1792293612903_nf2h",
+        "teamCode": "T02",
+        "ruleViolation": "CODE_OF_CONDUCT",
+        "pointsDeducted": 15,
+        "reason": "Malicious competitor penalty injection",
+        "evidenceReference": "",
+        "reviewer": "Exchange Compliance",
+        "status": "APPLIED",
+        "createdAt": 1792293612903,
+        "appeal": null
+      }
+    },
+    "status": "REPRODUCED"
+  },
+  {
+    "id": "SEC-04.2",
+    "title": "Self-Service Penalty Overturn via /api/penalties/resolve-appeal",
+    "scenario": "Team T02 overturning its own penalty points deduction",
+    "expected": "403 Forbidden (Requires Admin/Arbitration role)",
+    "actual": "HTTP 200 (Points Deducted: 0, Status: OVERTURNED)",
+    "evidence": {
+      "status": 200,
+      "penalty": {
+        "id": "PEN_1792293612903_nf2h",
+        "teamCode": "T02",
+        "ruleViolation": "CODE_OF_CONDUCT",
+        "pointsDeducted": 0,
+        "reason": "Malicious competitor penalty injection",
+        "evidenceReference": "",
+        "reviewer": "Exchange Compliance",
+        "status": "OVERTURNED",
+        "createdAt": 1792293612903,
+        "appeal": null,
+        "originalPointsDeducted": 15
+      }
+    },
+    "status": "REPRODUCED"
+  },
+  {
+    "id": "PRIV-01",
+    "title": "Cross-Team Order Slip Leak via WebSocket Delta Broadcasts",
+    "scenario": "Client T02 observing WebSocket broadcast when Team T01 creates an order slip",
+    "expected": "Client T02 receives zero details of Team T01 orders (redacted/filtered)",
+    "actual": "Client T02 received full ORDER_CREATED event with Team T01 details and raw state.orders array",
+    "evidence": {
+      "eventType": "ORDER_CREATED",
+      "leakedOrderTeam": "T01",
+      "leakedOrdersCountInState": 8,
+      "confidentialNotes": "CONFIDENTIAL STRATEGY ORDER"
+    },
+    "status": "REPRODUCED"
+  },
+  {
+    "id": "AUD-RTDB-01",
+    "title": "Asymmetric State Synchronization: Server-Only Collections Dropped by RTDB Sync",
+    "scenario": "Comparing authoritative REST state vs state constructed by useFirebaseState.js onValue listener",
+    "expected": "All authoritative server collections preserved across remote state updates",
+    "actual": "10 authoritative collections dropped: investmentHouses, schools, registrations, events, currentEventId, scoringConfig, resultsLifecycle, judgeScorecards, bullBearDebate, riskControls",
+    "evidence": {
+      "serverOnlyCollectionsPresentInREST": [
+        "investmentHouses",
+        "schools",
+        "registrations",
+        "events",
+        "currentEventId",
+        "scoringConfig",
+        "resultsLifecycle",
+        "judgeScorecards",
+        "bullBearDebate",
+        "riskControls"
+      ],
+      "droppedCollectionsAfterRTDBSync": [
+        "investmentHouses",
+        "schools",
+        "registrations",
+        "events",
+        "currentEventId",
+        "scoringConfig",
+        "resultsLifecycle",
+        "judgeScorecards",
+        "bullBearDebate",
+        "riskControls"
+      ],
+      "subKeysCount": 12,
+      "authoritativeSource": "server.js (memory + state.json)",
+      "replicaSource": "Firebase RTDB (downstream cache)"
+    },
+    "status": "REPRODUCED"
+  },
+  {
+    "id": "LEG-01",
+    "title": "Legitimate Order Submission by Authenticated Team",
+    "scenario": "Team T01 submitting valid BUY order for TCS with correct session credentials",
+    "expected": "HTTP 200 with status PENDING",
+    "actual": "HTTP 200 (Order ORD_1792293613861_ym19, status: PENDING)",
+    "evidence": {
+      "status": 200,
+      "orderId": "ORD_1792293613861_ym19",
+      "orderStatus": "PENDING"
+    },
+    "status": "NOT REPRODUCED"
+  },
+  {
+    "id": "LEG-02",
+    "title": "Legitimate Clearance Desk Verification",
+    "scenario": "DESK_1 operator claiming and verifying order slip",
+    "expected": "HTTP 200 with status VERIFIED_AWAITING_EXCHANGE",
+    "actual": "HTTP 200 (Order status: VERIFIED_AWAITING_EXCHANGE)",
+    "evidence": {
+      "claimStatus": 200,
+      "verifyStatus": 200,
+      "orderStatus": "VERIFIED_AWAITING_EXCHANGE"
+    },
+    "status": "NOT REPRODUCED"
+  },
+  {
+    "id": "LEG-03",
+    "title": "Legitimate Trade Execution & Multi-Currency Financial Ledger Invariants",
+    "scenario": "Exchange Operator executing verified order; verifying cash wallet and holdings accounting",
+    "expected": "HTTP 200, status EXECUTED, exact INR wallet reduction, exact holdings increment",
+    "actual": "HTTP 200 (Cash delta: ₹64000, Holdings delta: +20)",
+    "evidence": {
+      "execStatus": 200,
+      "orderStatus": "EXECUTED",
+      "transactionId": "TX0003",
+      "preCashINR": 9991482.4,
+      "postCashINR": 9927482.4,
+      "totalCost": 64000,
+      "cashDeductedCorrectly": true,
+      "holdingsUpdatedCorrectly": true
+    },
+    "status": "NOT REPRODUCED"
+  }
+]

@@ -1,0 +1,199 @@
+{
+  "timestamp": "2026-10-31T01:42:52.362Z",
+  "expectedHash": "441077e432987ce85a8ec982b818564f68f9b3fa8a59128e5313d04ab30c754c",
+  "postHash": "441077e432987ce85a8ec982b818564f68f9b3fa8a59128e5313d04ab30c754c",
+  "passed": 27,
+  "failed": 0,
+  "total": 27,
+  "results": [
+    {
+      "page": "Global Theme",
+      "category": "Browser Interaction",
+      "testName": "Initial Data Theme",
+      "status": "PASS",
+      "details": "Theme attribute is \"light\" (Light default)"
+    },
+    {
+      "page": "Global Theme",
+      "category": "Browser Interaction",
+      "testName": "Toggle to Dark Mode",
+      "status": "PASS",
+      "details": "data-theme: \"dark\", localStorage: \"dark\""
+    },
+    {
+      "page": "Global Theme",
+      "category": "Browser Interaction",
+      "testName": "Persistence across Reload",
+      "status": "PASS",
+      "details": "Retained data-theme: \"dark\" after page reload"
+    },
+    {
+      "page": "Global Theme",
+      "category": "Browser Interaction",
+      "testName": "Restored to Daylight Default",
+      "status": "PASS",
+      "details": "Restored to \"light\""
+    },
+    {
+      "page": "Public Landing",
+      "category": "Browser Interaction",
+      "testName": "Dual Taglines & Visual Text",
+      "status": "PASS",
+      "details": "Found both primary and secondary taglines"
+    },
+    {
+      "page": "Public Landing",
+      "category": "Browser Interaction",
+      "testName": "Capacity & Capital Specifications",
+      "status": "PASS",
+      "details": "10-20 Houses, ₹1 Crore, 2,000+ universe present"
+    },
+    {
+      "page": "Public Landing",
+      "category": "Browser Interaction",
+      "testName": "Public CTAs & Navigation Links",
+      "status": "PASS",
+      "details": "Login & Registration links present"
+    },
+    {
+      "page": "Registration Page",
+      "category": "Browser Interaction",
+      "testName": "Form Elements & Capacity Guard",
+      "status": "PASS",
+      "details": "Found 6 input fields and registration form"
+    },
+    {
+      "page": "Login Page",
+      "category": "Browser Interaction",
+      "testName": "Input Elements & Focus Targets",
+      "status": "PASS",
+      "details": "Found username & password inputs"
+    },
+    {
+      "page": "Login Page",
+      "category": "Browser Interaction",
+      "testName": "Invalid Credentials Handling",
+      "status": "PASS",
+      "details": "Error alert displayed on invalid credentials"
+    },
+    {
+      "page": "Authentication Backend",
+      "category": "API / Token Generation",
+      "testName": "Role Token Provisioning",
+      "status": "PASS",
+      "details": "Tokens issued for admin, team, sebi, journalist, advisor"
+    },
+    {
+      "page": "Admin Console",
+      "category": "Browser Interaction",
+      "testName": "Floor Director Dashboard",
+      "status": "PASS",
+      "details": "Header, capacity controls, and operational tabs rendered"
+    },
+    {
+      "page": "Floor Operations",
+      "category": "Browser Interaction",
+      "testName": "Queue Telemetry & Desks",
+      "status": "PASS",
+      "details": "Found floor operations overview and desk telemetry"
+    },
+    {
+      "page": "SEBI Console",
+      "category": "Browser Interaction",
+      "testName": "Surveillance Radar & Phoenix Acts",
+      "status": "PASS",
+      "details": "Surveillance radar, halt actions, and Phoenix indicators rendered"
+    },
+    {
+      "page": "Projector Display",
+      "category": "Browser Interaction",
+      "testName": "Large-Format Auditorium Screen",
+      "status": "PASS",
+      "details": "body.style.overflow is strictly hidden; leaderboard and ticker tape rendered"
+    },
+    {
+      "page": "Participant Terminal",
+      "category": "Browser Interaction",
+      "testName": "Portfolio Summary & Order Form",
+      "status": "PASS",
+      "details": "Team portfolio summary, cash balance, and order form rendered"
+    },
+    {
+      "page": "Exchange Desk",
+      "category": "Browser Interaction",
+      "testName": "Physical Slip Intake & Desks 1-5",
+      "status": "PASS",
+      "details": "Found exchange clearance desk with 5 physical desk filters and intake controls"
+    },
+    {
+      "page": "Broker Advisory",
+      "category": "Browser Interaction",
+      "testName": "Market Scanner & Bull/Bear Views",
+      "status": "PASS",
+      "details": "Advisor workstation rendered with sector filter and research publishing"
+    },
+    {
+      "page": "Bull/Bear Debate",
+      "category": "Browser Interaction",
+      "testName": "Standalone Debate Arena Rendered",
+      "status": "PASS",
+      "details": "Rendered BullBearDebatePage at #/debate"
+    },
+    {
+      "page": "News Anchor Console",
+      "category": "Browser Interaction",
+      "testName": "Teleprompter & Rundown Console",
+      "status": "PASS",
+      "details": "News anchor / teleprompter console rendered with scroll controls"
+    },
+    {
+      "page": "Personnel Management",
+      "category": "Browser Interaction",
+      "testName": "Staff Directory & Protected Safeguards",
+      "status": "PASS",
+      "details": "Personnel directory rendered with protected super-admin (sridhara) safeguards"
+    },
+    {
+      "page": "Training Workstation",
+      "category": "Browser Interaction",
+      "testName": "Mount & Control Layout",
+      "status": "PASS",
+      "details": "Mounted with Desks 1-3, pace badge, and start/pause/end/reset buttons"
+    },
+    {
+      "page": "Training Workstation",
+      "category": "Browser Interaction",
+      "testName": "Drill Start & Slip Generation",
+      "status": "PASS",
+      "details": "Started drill: generated 2 rehearsal orders across desks"
+    },
+    {
+      "page": "Training Workstation",
+      "category": "Browser Interaction",
+      "testName": "Manual Order Entry Completion",
+      "status": "PASS",
+      "details": "Manual \"Mark Done\" action transitioned order to completed with latency measurement"
+    },
+    {
+      "page": "Training Workstation",
+      "category": "Browser Interaction",
+      "testName": "End Drill & Coach Modal",
+      "status": "PASS",
+      "details": "Summary modal opened with desk latency metrics and Operational Coach Recommendations"
+    },
+    {
+      "page": "Training Workstation",
+      "category": "Browser Interaction",
+      "testName": "Performance Log CSV Export",
+      "status": "PASS",
+      "details": "Triggered client-side CSV download link with session telemetry"
+    },
+    {
+      "page": "Training Workstation",
+      "category": "Browser Interaction",
+      "testName": "Reset Drill State Cycle",
+      "status": "PASS",
+      "details": "Drill reset cleared all orders and returned simulator to idle"
+    }
+  ]
+}

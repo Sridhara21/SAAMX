@@ -1,0 +1,255 @@
+[
+  {
+    "id": "PHASE-C-01",
+    "title": "Pre-Flight Authoritative Hash Check",
+    "endpoint": "N/A",
+    "role": "SYSTEM",
+    "scenario": "Compute SHA-256 of authoritative state.json prior to test execution",
+    "expected": "SHA-256 equals 6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "actual": "SHA-256 is 6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "evidence": {
+      "sha256": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-C-02",
+    "title": "Multi-Desk Queue Route & Navigation Registration",
+    "endpoint": "#/desk-queues",
+    "role": "SYSTEM",
+    "scenario": "Static inspection of route switch and navigation registration for Portal #11",
+    "expected": "Page exists, route switch includes #/desk-queues, navigationConfig registers #/desk-queues",
+    "actual": "Page exists, App.jsx routes #/desk-queues, navigationConfig registers #/desk-queues",
+    "evidence": {
+      "pageExists": true,
+      "hasAppRoute": true,
+      "hasNavRoute": true
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-C-03",
+    "title": "Dynamic Desk Registry & Endpoint Verification",
+    "endpoint": "/api/desks and /api/desks/assign",
+    "role": "admin",
+    "scenario": "Verify GET /api/desks baseline and dynamic registration of DESK_6 via /api/desks/assign",
+    "expected": "DESK_6 registered dynamically without HTTP 400 rejection; exchange, bank, and fxDesk present",
+    "actual": "DESK_6 successfully registered. Total exchange desks: 6",
+    "evidence": {
+      "dynamicDeskId": "DESK_6",
+      "totalExchangeDesks": 6,
+      "fxDeskPresent": true
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-C-04",
+    "title": "Queue Dashboard Multi-Desk Telemetry Contract",
+    "endpoint": "/api/desk-queue-dashboard",
+    "role": "operator_x / verification",
+    "scenario": "Verify telemetry contract with Exchange, Bank, and FX desk telemetry",
+    "expected": "HTTP 200, desks and bankDesks arrays present, fxDesk object attached with reserves",
+    "actual": "HTTP 200. Desks: 6, Bank Desks: 2, FX Desk ID: FX_DESK_1",
+    "evidence": {
+      "desksCount": 6,
+      "bankDesksCount": 2,
+      "fxDesk": "FX_DESK_1"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-C-05",
+    "title": "Distinct Identifier Generation & Strict Uniqueness (100+ Items)",
+    "endpoint": "/api/orders/submit and /api/order/action",
+    "role": "exchange",
+    "scenario": "Generate 100 queue tickets; assert regex format and 100% collision-free uniqueness across Tokens, Orders, and Vouchers",
+    "expected": "100 unique Tokens, 100 unique Orders, 10 unique Vouchers; zero cross-namespace collision",
+    "actual": "Unique Tokens: 100, Unique Orders: 100, Unique Vouchers: 10. Zero collisions detected.",
+    "evidence": {
+      "tokenCount": 100,
+      "orderCount": 100,
+      "voucherCount": 10,
+      "sampleVoucher": "BNK-PAY-TKN-EX1-1794041476346-0001-MW6604IA"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-C-06",
+    "title": "Anti-Replay Guard on Duplicate Ticket Intake",
+    "endpoint": "/api/orders/submit",
+    "role": "exchange",
+    "scenario": "Attempt to submit an order with a previously registered ticket number",
+    "expected": "HTTP 400 Bad Request with Duplicate Ticket Number error message",
+    "actual": "HTTP 400 returned. Error: \"Duplicate Ticket Number: Physical Ticket #TKN-EX1-1794041476346-0001 has already been logged into the queue.\"",
+    "evidence": {
+      "status": 400,
+      "error": "Duplicate Ticket Number: Physical Ticket #TKN-EX1-1794041476346-0001 has already been logged into the queue."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-C-07",
+    "title": "Operator Claim Mutex Lock (Concurrent Claim Race)",
+    "endpoint": "/api/order/claim",
+    "role": "operator_x / verification",
+    "scenario": "Simultaneous claim requests from two clerks for the same order slip",
+    "expected": "Exactly one HTTP 200 (lock acquired) and one HTTP 409 Conflict (lock contention)",
+    "actual": "Winner HTTP 200, Competitor HTTP 409. Error: \"Conflict: Order #TKN-EX1-1794041476346-0016 is already claimed and in status VERIFYING_AT_EXCHANGE by DESK_1 (exchange).\"",
+    "evidence": {
+      "winnerStatus": 200,
+      "competitorStatus": 409,
+      "lockError": "Conflict: Order #TKN-EX1-1794041476346-0016 is already claimed and in status VERIFYING_AT_EXCHANGE by DESK_1 (exchange)."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-C-08",
+    "title": "Real-Time Desk Metrics Calculation Engine",
+    "endpoint": "/api/desk-queue-dashboard",
+    "role": "verification",
+    "scenario": "Verify real-time calculation of pendingCount, processingTicket, averageWaitTimeMs, completedCount, and operationalStatus",
+    "expected": "pendingCount >= 0, completedCount >= 10, averageWaitTimeMs >= 0, operationalStatus in ACTIVE/PAUSED/SATURATED",
+    "actual": "pendingCount: 766, completedCount: 199, avgWaitMs: 37069297, status: SATURATED",
+    "evidence": {
+      "pendingCount": 766,
+      "completedCount": 199,
+      "averageWaitTimeMs": 37069297,
+      "operationalStatus": "SATURATED"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-C-09",
+    "title": "Physical Slip Verification Decoupled from Bank Settlement",
+    "endpoint": "/api/order/action (ACCEPT)",
+    "role": "exchange",
+    "scenario": "Exchange approves verified order, issuing BNK-PAY voucher; verify client cash is NOT debited",
+    "expected": "Order status EXCHANGE_APPROVED, voucher emitted, client cash untouched (strictly decoupled)",
+    "actual": "Status: EXCHANGE_APPROVED, Voucher: BNK-PAY-TKN-EX1-1794041476346-0021-MW660D6X, Cash Before: 50000000, Cash After: 50000000 (Unchanged)",
+    "evidence": {
+      "voucherReference": "BNK-PAY-TKN-EX1-1794041476346-0021-MW660D6X",
+      "cashBefore": 50000000,
+      "cashAfter": 50000000,
+      "reserved": 40026
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-C-10",
+    "title": "Physical Slip Rejection Guard (physicalSlipChecked: false)",
+    "endpoint": "/api/order/action",
+    "role": "exchange",
+    "scenario": "Attempt VERIFY and ACCEPT when physicalSlipChecked is explicitly false",
+    "expected": "HTTP 400 Bad Request blocking approval without physical slip confirmation",
+    "actual": "VERIFY HTTP 400, ACCEPT HTTP 400. Blocked properly.",
+    "evidence": {
+      "verifyError": "Physical slip verification requires confirming that the paper slip matches the digital order specifications.",
+      "acceptError": "Cannot accept order without physical slip verification."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-C-11",
+    "title": "Return for Correction Workflow & Mandatory Reason",
+    "endpoint": "/api/order/action (RETURN_FOR_CORRECTION)",
+    "role": "exchange",
+    "scenario": "Verify mandatory return reason requirement and desk lock release upon return",
+    "expected": "Missing reason rejected with HTTP 400; valid reason returns order and clears lockedByDesk",
+    "actual": "Missing reason HTTP 400, Valid reason HTTP 200, lockedByDesk: null",
+    "evidence": {
+      "errorOnMissing": "Every returned order must provide an explicit return reason detailing the needed correction.",
+      "returnedStatus": "RETURNED_FOR_CORRECTION",
+      "lockCleared": true
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-C-12",
+    "title": "Order Rejection with Full Cash Unreservation",
+    "endpoint": "/api/order/action (REJECT)",
+    "role": "exchange",
+    "scenario": "Reject order slip with mandatory reason; verify 100% of cash reservation (+5% buffer) is cleanly restored",
+    "expected": "HTTP 200, status REJECTED_BY_EXCHANGE, reserved cash decreases by exactly reservedCost (0% leakage)",
+    "actual": "HTTP 200. Reserved Before: 39625.74, Reserved After: 39225.48, Unreserved Delta: 400.26",
+    "evidence": {
+      "reservedCost": 400.26,
+      "reservedBeforeReject": 39625.74,
+      "reservedAfterReject": 39225.48,
+      "unreservedDelta": 400.26
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-C-13",
+    "title": "Bank Desk Claim & Settlement Execution via Voucher",
+    "endpoint": "/api/bank/claim and /api/bank/settle",
+    "role": "bank_teller",
+    "scenario": "Bank teller claims voucher (mutex protected) and settles trade; verify cash debited and shares delivered",
+    "expected": "Bank claim mutex enforces 409 on contention; settlement debits cash and credits holdings",
+    "actual": "Bank Claim 1 HTTP 200, Bank Claim 2 HTTP 409. Settle HTTP 200. Holdings: 5019 -> 5020",
+    "evidence": {
+      "voucher": "BNK-PAY-TKN-EX1-1794041476346-0021-MW660D6X",
+      "cashBeforeSettle": 50000000,
+      "cashAfterSettle": 49999618.8,
+      "holdingsBeforeSettle": 5019,
+      "holdingsAfterSettle": 5020
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-C-14",
+    "title": "Participant Team Slip Approval Role Guard (HTTP 403 Forbidden)",
+    "endpoint": "/api/order/action (ACCEPT by role: team)",
+    "role": "team (T01)",
+    "scenario": "Participant trading team attempts to self-approve paper slip without exchange clerk authorization",
+    "expected": "HTTP 403 Forbidden blocking participant team from approving physical slips",
+    "actual": "HTTP 403 returned. Error: \"Forbidden: Order execution and acceptance requires exchange staff permissions.\"",
+    "evidence": {
+      "status": 403,
+      "error": "Forbidden: Order execution and acceptance requires exchange staff permissions."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-C-15",
+    "title": "State Machine Guard on Re-Validation After Exchange Approval",
+    "endpoint": "/api/order/action (VALIDATE on EXCHANGE_APPROVED order)",
+    "role": "exchange",
+    "scenario": "Operator attempts to re-validate an order that has already been approved by exchange desk",
+    "expected": "HTTP 400 Bad Request blocking state machine regression and duplicate voucher generation",
+    "actual": "HTTP 400 returned. Error: \"Order is already approved/executed and waiting for or completed Bank Desk settlement.\"",
+    "evidence": {
+      "status": 400,
+      "error": "Order is already approved/executed and waiting for or completed Bank Desk settlement."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-C-16",
+    "title": "Duplicate Slip Acceptance Prevention Guard (EXCHANGE_APPROVED and SETTLED)",
+    "endpoint": "/api/order/action (ACCEPT on EXCHANGE_APPROVED / SETTLED order)",
+    "role": "exchange",
+    "scenario": "Attempt duplicate acceptance on order in EXCHANGE_APPROVED and SETTLED terminal states",
+    "expected": "HTTP 400 Bad Request blocking duplicate slip acceptance",
+    "actual": "EXCHANGE_APPROVED duplicate HTTP 400, SETTLED duplicate HTTP 400",
+    "evidence": {
+      "approvedStatus": 400,
+      "settledStatus": 400
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-C-17",
+    "title": "Post-Flight Authoritative Baseline Hash Integrity",
+    "endpoint": "N/A",
+    "role": "SYSTEM",
+    "scenario": "Recompute SHA-256 of authoritative state.json following all test executions and cleanup",
+    "expected": "SHA-256 strictly matches baseline 6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "actual": "SHA-256 is 6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca (Bit-exact match)",
+    "evidence": {
+      "sha256": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+      "matches": true
+    },
+    "status": "PASSED"
+  }
+]

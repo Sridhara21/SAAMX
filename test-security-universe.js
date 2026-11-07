@@ -7,18 +7,20 @@ console.log('===================================================================
 
 const universe = generateFullSecurityUniverse();
 
-// 1. Total Universe Count (target ~2000)
-console.log(`[TEST 1] Verifying Total Securities Count >= 1,900...`);
-assert(universe.length >= 1900 && universe.length <= 2200, `Expected 1900-2200 securities, got ${universe.length}`);
+// 1. Total Universe Count (authoritative 2,849 + staged IPOs/simulated instruments)
+console.log(`[TEST 1] Verifying Total Securities Count >= 2,849...`);
+assert(universe.length >= 2849, `Expected at least 2,849 securities, got ${universe.length}`);
 console.log(`  ✓ Passed: Universe contains exactly ${universe.length} securities.\n`);
 
-// 2. Ticker & ID Uniqueness
-console.log(`[TEST 2] Verifying 100% Uniqueness for Tickers and IDs...`);
-const tickerSet = new Set(universe.map(s => s.ticker));
+// 2. Canonical ID Uniqueness & Scoped Ticker Verification
+console.log(`[TEST 2] Verifying 100% Uniqueness for Canonical Security IDs...`);
 const idSet = new Set(universe.map(s => s.id));
-assert.strictEqual(tickerSet.size, universe.length, `Duplicate tickers found! Tickers: ${tickerSet.size}, Total: ${universe.length}`);
 assert.strictEqual(idSet.size, universe.length, `Duplicate IDs found! IDs: ${idSet.size}, Total: ${universe.length}`);
-console.log(`  ✓ Passed: Zero collisions across ${universe.length} IDs and tickers.\n`);
+
+// Multi-exchange ticker collisions: exactly 20 tickers repeat across different exchanges (e.g. BHP on ASX vs LSE)
+const scopedTickerSet = new Set(universe.map(s => `${s.ticker}::${s.exchange}`));
+assert.strictEqual(scopedTickerSet.size, universe.length, `Collisions found in scoped (ticker::exchange) pairs!`);
+console.log(`  ✓ Passed: 100% unique canonical IDs (${idSet.size}) and unique scoped ticker::exchange pairs across all instruments.\n`);
 
 // 3. 5 Simulated IPO Verification
 console.log(`[TEST 3] Verifying the 5 New Simulated IPOs (OpenAI, Stripe, Canva, Discord, Polymarket)...`);

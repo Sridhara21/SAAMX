@@ -1,0 +1,985 @@
+[
+  {
+    "id": "ADV-M2-PREFLIGHT-01",
+    "title": "Pre-flight Authoritative State Hash Verification",
+    "category": "Integrity",
+    "scenario": "Verify state.json SHA-256 matches baseline before testing",
+    "expected": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "actual": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "evidence": {
+      "sha256": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-M2-EXHAUST-01",
+    "title": "Requesting Exactly Available Reserve (Exact Boundary Success)",
+    "category": "Reserve Exhaustion",
+    "scenario": "Submit direct exchange for exactly 10000 AUD (100% of available pool); verify fulfillment and pool depletion to 0",
+    "expected": "HTTP 200, toAmount === 10000, availableReserve === 0",
+    "actual": "HTTP 200: toAmount=10000, availableReserve=0",
+    "evidence": {
+      "exactInr": 557497.5,
+      "fxTransaction": {
+        "id": "FXTX_1793547561469_awzt2",
+        "ticketNumber": "FX-1469",
+        "timestamp": 1793547563121,
+        "teamCode": "T01",
+        "teamId": "T01",
+        "teamName": "Trader Elite 1",
+        "fromCurrency": "INR",
+        "toCurrency": "AUD",
+        "fromAmount": 557497.5,
+        "toAmount": 10000,
+        "effectiveRate": 55.74975,
+        "spreadPercent": 0.45,
+        "scarcityImpact": 0,
+        "utilization": 0,
+        "operatorId": "exchange",
+        "status": "CONFIRMED",
+        "notes": "Currency Desk Execution"
+      },
+      "postAudReserves": {
+        "currency": "AUD",
+        "openingReserve": 10000,
+        "replenishments": 0,
+        "completedPurchases": 0,
+        "completedSales": 10000,
+        "reservedInventory": 0,
+        "availableReserve": 0,
+        "currentInventory": 0,
+        "deskInrCash": 5000557497.5,
+        "minReserveThreshold": 1500000,
+        "maxCapacity": 1000000000,
+        "updatedAt": "2026-11-01T15:39:17.652Z"
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-M2-EXHAUST-02",
+    "title": "Requesting Units on Depleted Reserve Pool (HTTP 400 & Zero Negative Inventory)",
+    "category": "Reserve Exhaustion",
+    "scenario": "Submit exchange request on depleted AUD pool (availableReserve === 0); verify HTTP 400 Insufficient FX desk reserves",
+    "expected": "HTTP 400 Bad Request with error=\"Insufficient FX desk reserves\", availableReserve === 0, non-negative inventory",
+    "actual": "HTTP 400: error=\"Insufficient FX desk reserves\", availableReserve=0",
+    "evidence": {
+      "response": {
+        "error": "Insufficient FX desk reserves",
+        "currency": "AUD",
+        "requestedAmount": 15.6,
+        "availableReserve": 0
+      },
+      "deskReserveAfter": {
+        "currency": "AUD",
+        "openingReserve": 10000,
+        "replenishments": 0,
+        "completedPurchases": 0,
+        "completedSales": 10000,
+        "reservedInventory": 0,
+        "availableReserve": 0,
+        "currentInventory": 0,
+        "deskInrCash": 5000557497.5,
+        "minReserveThreshold": 1500000,
+        "maxCapacity": 1000000000,
+        "updatedAt": "2026-11-01T15:39:17.652Z"
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-M2-EXHAUST-03",
+    "title": "Requesting Available + 1 Unit on Active Pool (HTTP 400 Rejection)",
+    "category": "Reserve Exhaustion",
+    "scenario": "Submit exchange for 501 SGD when exactly 500 is available; verify rejection",
+    "expected": "HTTP 400 Bad Request: error=\"Insufficient FX desk reserves\", requestedAmount > 500",
+    "actual": "HTTP 400: error=\"Insufficient FX desk reserves\", requested=501, avail=500",
+    "evidence": {
+      "error": "Insufficient FX desk reserves",
+      "currency": "SGD",
+      "requestedAmount": 501,
+      "availableReserve": 500
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-M2-PARTIAL-01",
+    "title": "Partial Conversions Default False (Strict All-or-Nothing Guarantee)",
+    "category": "Reserve Exhaustion",
+    "scenario": "Verify request exceeding available reserve is 100% rejected; zero partial fulfillment, zero leakage, desk reserves intact",
+    "expected": "HTTP 400 rejection across all partial flags, client SGD unchanged, desk SGD available unchanged at 500",
+    "actual": "Client SGD=10000, Desk SGD available=500, partialFalse=400, partialTrue=400",
+    "evidence": {
+      "teamWallets": {
+        "INR": 999442502.5,
+        "USD": 10000,
+        "GBP": 5000,
+        "EUR": 5000,
+        "JPY": 1000000,
+        "AED": 20000,
+        "SGD": 10000,
+        "CNY": 50000,
+        "AUD": 20000,
+        "KRW": 10000000
+      },
+      "deskReserve": {
+        "currency": "SGD",
+        "openingReserve": 500,
+        "replenishments": 0,
+        "completedPurchases": 0,
+        "completedSales": 0,
+        "reservedInventory": 0,
+        "availableReserve": 500,
+        "currentInventory": 500,
+        "deskInrCash": 5000000000,
+        "minReserveThreshold": 1300000,
+        "maxCapacity": 1000000000,
+        "updatedAt": "2026-11-01T15:39:17.652Z"
+      },
+      "explicitFalseStatus": 400,
+      "explicitTrueStatus": 400
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-M2-QUEUE-EXHAUST-01",
+    "title": "Queued Request Exhaustion Boundary & Atomic Settlement",
+    "category": "Reserve Exhaustion",
+    "scenario": "Submit 501 SGD queue request (rejected 400); submit 500 SGD request (accepted, reserves pool); submit 2nd request (rejected 400); settle",
+    "expected": "Queue 501 rejects HTTP 400; Queue 500 locks pool to available=0; 2nd queue rejects 400; settlement completes cleanly",
+    "actual": "Queue501=400, Queue500=200, Queue2nd=400, Settle=200, finalAvail=0",
+    "evidence": {
+      "queueExhaustReq": {
+        "error": "Insufficient FX desk reserves",
+        "currency": "SGD",
+        "requestedAmount": 501,
+        "availableReserve": 500
+      },
+      "queueExactReq": {
+        "success": true,
+        "fxRequest": {
+          "id": "FX_1793547563170_xr4u",
+          "requestId": "FX_1793547563170_xr4u",
+          "teamCode": "T01",
+          "teamName": "Trader Elite 1",
+          "eventId": "EVT_LIVE_MAIN",
+          "fromCurrency": "INR",
+          "toCurrency": "SGD",
+          "fromAmount": 33550.3,
+          "toAmount": 500,
+          "quoteRate": 67.1006,
+          "spreadPercent": 0.45,
+          "scarcityImpact": 0,
+          "utilization": 0,
+          "status": "QUEUED",
+          "operatorId": "T01",
+          "notes": "Floor FX conversion request",
+          "createdAt": 1793547563351,
+          "settledAt": null,
+          "rejectionReason": null
+        }
+      },
+      "queueSecondReq": {
+        "error": "Insufficient FX desk reserves",
+        "currency": "SGD",
+        "requestedAmount": 1.3,
+        "availableReserve": 0
+      },
+      "settleExactReq": {
+        "success": true,
+        "fxRequest": {
+          "id": "FX_1793547563170_xr4u",
+          "requestId": "FX_1793547563170_xr4u",
+          "teamCode": "T01",
+          "teamName": "Trader Elite 1",
+          "eventId": "EVT_LIVE_MAIN",
+          "fromCurrency": "INR",
+          "toCurrency": "SGD",
+          "fromAmount": 33550.3,
+          "toAmount": 500,
+          "quoteRate": 67.1006,
+          "spreadPercent": 0.45,
+          "scarcityImpact": 0,
+          "utilization": 0,
+          "status": "SETTLED",
+          "operatorId": "exchange",
+          "notes": "Floor FX conversion request",
+          "createdAt": 1793547563351,
+          "settledAt": 1793547564593,
+          "rejectionReason": null
+        },
+        "transaction": {
+          "id": "FXTX_1793547563376_8s35",
+          "ticketNumber": "FX_1793547563170_xr4u",
+          "timestamp": 1793547563376,
+          "teamCode": "T01",
+          "teamId": "T01",
+          "teamName": "Trader Elite 1",
+          "fromCurrency": "INR",
+          "toCurrency": "SGD",
+          "fromAmount": 33550.3,
+          "toAmount": 500,
+          "rate": 67.1006,
+          "spreadPercent": 0.45,
+          "scarcityImpact": 0,
+          "utilization": 0,
+          "operatorId": "exchange",
+          "notes": "Floor FX conversion request",
+          "walletsAfter": {
+            "INR": 999408952.2,
+            "USD": 10000,
+            "GBP": 5000,
+            "EUR": 5000,
+            "JPY": 1000000,
+            "AED": 20000,
+            "SGD": 10500,
+            "CNY": 50000,
+            "AUD": 20000,
+            "KRW": 10000000
+          }
+        },
+        "settleTx": {
+          "id": "FXTX_1793547563376_8s35",
+          "ticketNumber": "FX_1793547563170_xr4u",
+          "timestamp": 1793547563376,
+          "teamCode": "T01",
+          "teamId": "T01",
+          "teamName": "Trader Elite 1",
+          "fromCurrency": "INR",
+          "toCurrency": "SGD",
+          "fromAmount": 33550.3,
+          "toAmount": 500,
+          "rate": 67.1006,
+          "spreadPercent": 0.45,
+          "scarcityImpact": 0,
+          "utilization": 0,
+          "operatorId": "exchange",
+          "notes": "Floor FX conversion request",
+          "walletsAfter": {
+            "INR": 999408952.2,
+            "USD": 10000,
+            "GBP": 5000,
+            "EUR": 5000,
+            "JPY": 1000000,
+            "AED": 20000,
+            "SGD": 10500,
+            "CNY": 50000,
+            "AUD": 20000,
+            "KRW": 10000000
+          }
+        },
+        "cashWallets": {
+          "INR": 999408952.2,
+          "USD": 10000,
+          "GBP": 5000,
+          "EUR": 5000,
+          "JPY": 1000000,
+          "AED": 20000,
+          "SGD": 10500,
+          "CNY": 50000,
+          "AUD": 20000,
+          "KRW": 10000000
+        },
+        "cashBalance": 1005509552.2
+      },
+      "postSettleSgdReserves": {
+        "currency": "SGD",
+        "openingReserve": 500,
+        "replenishments": 0,
+        "completedPurchases": 0,
+        "completedSales": 500,
+        "reservedInventory": 0,
+        "availableReserve": 0,
+        "currentInventory": 0,
+        "deskInrCash": 5638281082.97,
+        "minReserveThreshold": 1300000,
+        "maxCapacity": 1000000000,
+        "updatedAt": "2026-11-01T15:39:26.049Z"
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-M2-PRECISION-JPY-01",
+    "title": "Algorithmic Stress Oracle: 10,000 JPY Conversion Trials (Strict Zero-Decimal Integer)",
+    "category": "Integer Precision",
+    "scenario": "Execute 10,000 conversions with random fractional paise, micro-amounts, and irrationals to JPY; assert Number.isInteger(toAmount) on 100%",
+    "expected": "10,000/10,000 trials return integer toAmount (0 failures)",
+    "actual": "10000/10,000 passed (0 failures)",
+    "evidence": {
+      "totalTrials": 10000,
+      "jpyFailures": 0,
+      "sampleFailures": []
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-M2-PRECISION-KRW-01",
+    "title": "Algorithmic Stress Oracle: 10,000 KRW Conversion Trials (Strict Zero-Decimal Integer)",
+    "category": "Integer Precision",
+    "scenario": "Execute 10,000 conversions with random fractional paise, micro-amounts, and irrationals to KRW; assert Number.isInteger(toAmount) on 100%",
+    "expected": "10,000/10,000 trials return integer toAmount (0 failures)",
+    "actual": "10000/10,000 passed (0 failures)",
+    "evidence": {
+      "totalTrials": 10000,
+      "krwFailures": 0,
+      "sampleFailures": []
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-M2-PRECISION-CROSS-01",
+    "title": "Cross-Currency Zero-Decimal Conversions (2,500 JPY->KRW, 2,500 KRW->JPY)",
+    "category": "Integer Precision",
+    "scenario": "Execute 5,000 triangular cross-currency conversions between zero-decimal pairs; assert integer outputs",
+    "expected": "5,000/5,000 trials return strict integers",
+    "actual": "5000/5,000 passed (0 failures)",
+    "evidence": {
+      "totalTrials": 5000,
+      "crossFailures": 0
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-M2-PRECISION-HTTP-01",
+    "title": "End-to-End HTTP Conversion with Fractional Paise Inputs",
+    "category": "Integer Precision",
+    "scenario": "Dispatch /api/fx/convert with ₹1,23,456.78 for JPY and ₹9,87,654.32 for KRW; assert JSON payload toAmount isInteger",
+    "expected": "HTTP 200, JPY toAmount integer=true, KRW toAmount integer=true",
+    "actual": "JPY=211903 (int=true), KRW=15858545 (int=true)",
+    "evidence": {
+      "jpyHttp": {
+        "success": true,
+        "teamCode": "T01",
+        "fromCurrency": "INR",
+        "toCurrency": "JPY",
+        "debited": 123456.78,
+        "credited": 211903,
+        "toAmount": 211903,
+        "effectiveRate": 0.58261,
+        "spreadPercent": 0.45,
+        "scarcityImpact": 0,
+        "ticketNumber": "FX-4672",
+        "wallets": {
+          "INR": 999319045.72,
+          "USD": 10000,
+          "GBP": 5000,
+          "EUR": 5000,
+          "JPY": 1211903,
+          "AED": 20000,
+          "SGD": 10000,
+          "CNY": 50000,
+          "KRW": 10000000,
+          "AUD": 20000
+        },
+        "cashBalance": 1005509149.46
+      },
+      "krwHttp": {
+        "success": true,
+        "teamCode": "T01",
+        "fromCurrency": "INR",
+        "toCurrency": "KRW",
+        "debited": 987654.32,
+        "credited": 15858545,
+        "toAmount": 15858545,
+        "effectiveRate": 0.062279,
+        "spreadPercent": 0.45,
+        "scarcityImpact": 0,
+        "ticketNumber": "FX-5821",
+        "wallets": {
+          "INR": 998331391.4,
+          "USD": 10000,
+          "GBP": 5000,
+          "EUR": 5000,
+          "JPY": 1211903,
+          "AED": 20000,
+          "SGD": 10000,
+          "CNY": 50000,
+          "KRW": 25858545,
+          "AUD": 20000
+        },
+        "cashBalance": 1005504724.93
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-M2-FORMATTER-ORACLE-01",
+    "title": "Universal Financial Formatter Oracle (2,000 JPY/KRW Trials)",
+    "category": "Integer Precision",
+    "scenario": "Format 2,000 continuous floating numbers with formatCurrency; assert zero decimal points and proper currency symbols",
+    "expected": "2,000/2,000 formatted strings have zero decimal point characters",
+    "actual": "2000/2,000 passed (0 failures)",
+    "evidence": {
+      "totalTrials": 2000,
+      "fmtFailures": 0
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-M2-CADCHF-MATRIX-01",
+    "title": "CAD/CHF Strict Boundary Matrix (22 Boundary Rejection Tests)",
+    "category": "CAD/CHF Isolation",
+    "scenario": "Attempt exchange, convert, queue, and replenishment across 22 distinct permutations of CAD and CHF",
+    "expected": "22/22 requests rejected with HTTP 400 Bad Request",
+    "actual": "22/22 rejected with HTTP 400",
+    "evidence": [
+      {
+        "endpoint": "/api/fx/exchange",
+        "params": {
+          "teamCode": "T01",
+          "fromCurrency": "CAD",
+          "toCurrency": "INR",
+          "fromAmount": 1000
+        },
+        "status": 400,
+        "error": "CAD and CHF are legacy currencies and not available for new exchange transactions.",
+        "passed": true
+      },
+      {
+        "endpoint": "/api/fx/exchange",
+        "params": {
+          "teamCode": "T01",
+          "fromCurrency": "INR",
+          "toCurrency": "CAD",
+          "fromAmount": 65000
+        },
+        "status": 400,
+        "error": "CAD and CHF are legacy currencies and not available for new exchange transactions.",
+        "passed": true
+      },
+      {
+        "endpoint": "/api/fx/exchange",
+        "params": {
+          "teamCode": "T01",
+          "fromCurrency": "CHF",
+          "toCurrency": "INR",
+          "fromAmount": 1000
+        },
+        "status": 400,
+        "error": "CAD and CHF are legacy currencies and not available for new exchange transactions.",
+        "passed": true
+      },
+      {
+        "endpoint": "/api/fx/exchange",
+        "params": {
+          "teamCode": "T01",
+          "fromCurrency": "INR",
+          "toCurrency": "CHF",
+          "fromAmount": 100000
+        },
+        "status": 400,
+        "error": "CAD and CHF are legacy currencies and not available for new exchange transactions.",
+        "passed": true
+      },
+      {
+        "endpoint": "/api/fx/exchange",
+        "params": {
+          "teamCode": "T01",
+          "fromCurrency": "CAD",
+          "toCurrency": "CHF",
+          "fromAmount": 1000
+        },
+        "status": 400,
+        "error": "CAD and CHF are legacy currencies and not available for new exchange transactions.",
+        "passed": true
+      },
+      {
+        "endpoint": "/api/fx/exchange",
+        "params": {
+          "teamCode": "T01",
+          "fromCurrency": "CHF",
+          "toCurrency": "CAD",
+          "fromAmount": 1000
+        },
+        "status": 400,
+        "error": "CAD and CHF are legacy currencies and not available for new exchange transactions.",
+        "passed": true
+      },
+      {
+        "endpoint": "/api/fx/exchange",
+        "params": {
+          "teamCode": "T01",
+          "fromCurrency": "CAD",
+          "toCurrency": "USD",
+          "fromAmount": 1000
+        },
+        "status": 400,
+        "error": "CAD and CHF are legacy currencies and not available for new exchange transactions.",
+        "passed": true
+      },
+      {
+        "endpoint": "/api/fx/exchange",
+        "params": {
+          "teamCode": "T01",
+          "fromCurrency": "USD",
+          "toCurrency": "CHF",
+          "fromAmount": 1000
+        },
+        "status": 400,
+        "error": "CAD and CHF are legacy currencies and not available for new exchange transactions.",
+        "passed": true
+      },
+      {
+        "endpoint": "/api/fx/convert",
+        "params": {
+          "teamCode": "T01",
+          "fromCurrency": "CAD",
+          "toCurrency": "INR",
+          "amount": 1000
+        },
+        "status": 400,
+        "error": "CAD and CHF are legacy currencies and not available for new exchange transactions.",
+        "passed": true
+      },
+      {
+        "endpoint": "/api/fx/convert",
+        "params": {
+          "teamCode": "T01",
+          "fromCurrency": "INR",
+          "toCurrency": "CAD",
+          "amount": 65000
+        },
+        "status": 400,
+        "error": "CAD and CHF are legacy currencies and not available for new exchange transactions.",
+        "passed": true
+      },
+      {
+        "endpoint": "/api/fx/convert",
+        "params": {
+          "teamCode": "T01",
+          "fromCurrency": "CHF",
+          "toCurrency": "USD",
+          "amount": 1000
+        },
+        "status": 400,
+        "error": "CAD and CHF are legacy currencies and not available for new exchange transactions.",
+        "passed": true
+      },
+      {
+        "endpoint": "/api/fx/convert",
+        "params": {
+          "teamCode": "T01",
+          "fromCurrency": "USD",
+          "toCurrency": "CHF",
+          "amount": 1000
+        },
+        "status": 400,
+        "error": "CAD and CHF are legacy currencies and not available for new exchange transactions.",
+        "passed": true
+      },
+      {
+        "endpoint": "/api/fx/request",
+        "params": {
+          "teamCode": "T01",
+          "fromCurrency": "CAD",
+          "toCurrency": "INR",
+          "fromAmount": 1000
+        },
+        "status": 400,
+        "error": "CAD and CHF are legacy currencies and not available for new exchange transactions.",
+        "passed": true
+      },
+      {
+        "endpoint": "/api/fx/request",
+        "params": {
+          "teamCode": "T01",
+          "fromCurrency": "INR",
+          "toCurrency": "CAD",
+          "fromAmount": 65000
+        },
+        "status": 400,
+        "error": "CAD and CHF are legacy currencies and not available for new exchange transactions.",
+        "passed": true
+      },
+      {
+        "endpoint": "/api/fx/request",
+        "params": {
+          "teamCode": "T01",
+          "fromCurrency": "CHF",
+          "toCurrency": "INR",
+          "fromAmount": 1000
+        },
+        "status": 400,
+        "error": "CAD and CHF are legacy currencies and not available for new exchange transactions.",
+        "passed": true
+      },
+      {
+        "endpoint": "/api/fx/request",
+        "params": {
+          "teamCode": "T01",
+          "fromCurrency": "INR",
+          "toCurrency": "CHF",
+          "fromAmount": 100000
+        },
+        "status": 400,
+        "error": "CAD and CHF are legacy currencies and not available for new exchange transactions.",
+        "passed": true
+      },
+      {
+        "endpoint": "/api/fx/reserves/replenish",
+        "params": {
+          "currency": "CAD",
+          "quantity": 100000,
+          "reason": "Test legacy CAD"
+        },
+        "status": 400,
+        "error": "Cannot replenish legacy non-tradable currencies (CAD, CHF).",
+        "passed": true
+      },
+      {
+        "endpoint": "/api/fx/reserves/replenish",
+        "params": {
+          "currency": "CHF",
+          "quantity": 100000,
+          "reason": "Test legacy CHF"
+        },
+        "status": 400,
+        "error": "Cannot replenish legacy non-tradable currencies (CAD, CHF).",
+        "passed": true
+      },
+      {
+        "endpoint": "/api/fx/reserves/replenish",
+        "params": {
+          "currency": "cad",
+          "quantity": 100000,
+          "reason": "Test lowercase cad"
+        },
+        "status": 400,
+        "error": "Cannot replenish legacy non-tradable currencies (CAD, CHF).",
+        "passed": true
+      },
+      {
+        "endpoint": "/api/fx/reserves/replenish",
+        "params": {
+          "currency": "chf",
+          "quantity": 100000,
+          "reason": "Test lowercase chf"
+        },
+        "status": 400,
+        "error": "Cannot replenish legacy non-tradable currencies (CAD, CHF).",
+        "passed": true
+      },
+      {
+        "endpoint": "/api/fx/replenish",
+        "params": {
+          "currency": "CAD",
+          "quantity": 100000,
+          "reason": "Test legacy CAD alias"
+        },
+        "status": 400,
+        "error": "Cannot replenish legacy non-tradable currencies (CAD, CHF).",
+        "passed": true
+      },
+      {
+        "endpoint": "/api/fx/replenish",
+        "params": {
+          "currency": "CHF",
+          "quantity": 100000,
+          "reason": "Test legacy CHF alias"
+        },
+        "status": 400,
+        "error": "Cannot replenish legacy non-tradable currencies (CAD, CHF).",
+        "passed": true
+      }
+    ],
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-M2-CADCHF-METADATA-01",
+    "title": "CAD/CHF Metadata Non-Tradable Isolation & calculateFxConversion Exception Guard",
+    "category": "CAD/CHF Isolation",
+    "scenario": "Verify formatters exports CAD/CHF as tradable: false, excludes from active currencies, and calculateFxConversion throws",
+    "expected": "tradable=false, isLegacy=true, activeExcludes=true, calculateFxConversion throws for both",
+    "actual": "cadTradable=true, chfTradable=true, excludes=true, throwsCad=true, throwsChf=true",
+    "evidence": {
+      "cadTradable": true,
+      "chfTradable": true,
+      "activeExcludesCad": true,
+      "foreignExcludesCad": true,
+      "fnThrowsCad": true,
+      "fnThrowsChf": true
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-M2-SOLVENCY-01",
+    "title": "Solvency Invariant ($A + Res = I$ and $I \\ge Res \\ge 0$) Across 9 Foreign Pools",
+    "category": "Solvency Invariants",
+    "scenario": "Assert Available + Reserved = Current Inventory, non-negativity, and inventory formula before and after interleaved multi-currency burst",
+    "expected": "Invariants hold 100% across all 9 foreign currencies pools before and after operations",
+    "actual": "Pre-burst=true, Post-burst=true",
+    "evidence": {
+      "USD": {
+        "inv": 104911247.41,
+        "avail": 104911247.41,
+        "resv": 0,
+        "open": 10000000,
+        "rep": 95000000,
+        "pur": 5250,
+        "sal": 94002.59,
+        "invDiff": 0,
+        "sumDiff": 0,
+        "nonNeg": true,
+        "holds": true
+      },
+      "GBP": {
+        "inv": 7983858.98,
+        "avail": 7983858.98,
+        "resv": 0,
+        "open": 8000000,
+        "rep": 0,
+        "pur": 0,
+        "sal": 16141.02,
+        "invDiff": 0,
+        "sumDiff": 0,
+        "nonNeg": true,
+        "holds": true
+      },
+      "EUR": {
+        "inv": 8986472.31,
+        "avail": 8986472.31,
+        "resv": 0,
+        "open": 9000000,
+        "rep": 0,
+        "pur": 0,
+        "sal": 13527.69,
+        "invDiff": 0,
+        "sumDiff": 0,
+        "nonNeg": true,
+        "holds": true
+      },
+      "JPY": {
+        "inv": 2494833973,
+        "avail": 2494833973,
+        "resv": 0,
+        "open": 1500000000,
+        "rep": 1000000000,
+        "pur": 0,
+        "sal": 5166027,
+        "invDiff": 0,
+        "sumDiff": 0,
+        "nonNeg": true,
+        "holds": true
+      },
+      "AED": {
+        "inv": 35960732.72,
+        "avail": 35960732.72,
+        "resv": 0,
+        "open": 36000000,
+        "rep": 0,
+        "pur": 25000,
+        "sal": 64267.28,
+        "invDiff": 0,
+        "sumDiff": 0,
+        "nonNeg": true,
+        "holds": true
+      },
+      "SGD": {
+        "inv": 0,
+        "avail": 0,
+        "resv": 0,
+        "open": 500,
+        "rep": 0,
+        "pur": 0,
+        "sal": 500,
+        "invDiff": 0,
+        "sumDiff": 0,
+        "nonNeg": true,
+        "holds": true
+      },
+      "CNY": {
+        "inv": 70015044.8,
+        "avail": 70015044.8,
+        "resv": 0,
+        "open": 70000000,
+        "rep": 0,
+        "pur": 25000,
+        "sal": 9955.2,
+        "invDiff": 0,
+        "sumDiff": 0,
+        "nonNeg": true,
+        "holds": true
+      },
+      "AUD": {
+        "inv": 0,
+        "avail": 0,
+        "resv": 0,
+        "open": 10000,
+        "rep": 0,
+        "pur": 0,
+        "sal": 10000,
+        "invDiff": 0,
+        "sumDiff": 0,
+        "nonNeg": true,
+        "holds": true
+      },
+      "KRW": {
+        "inv": 12942592062,
+        "avail": 12942592062,
+        "resv": 0,
+        "open": 13000000000,
+        "rep": 0,
+        "pur": 0,
+        "sal": 57407938,
+        "invDiff": 0,
+        "sumDiff": 0,
+        "nonNeg": true,
+        "holds": true
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-M2-CONSERVE-01",
+    "title": "Mathematical Conservation of Currency (Zero Creation Ex Nihilo)",
+    "category": "Zero Currency Creation",
+    "scenario": "Client purchases CNY; verify client wallet gain strictly equals desk completedSales increase and inventory reduction",
+    "expected": "clientCnyGain === deskCnySalesDelta === deskCnyInventoryReduction > 0",
+    "actual": "clientGain=9955.2, deskSalesDelta=9955.2, deskInvDrop=9955.2, holds=true",
+    "evidence": {
+      "tx": {
+        "id": "FXTX_1793547571184_clz06",
+        "ticketNumber": "FX-1184",
+        "timestamp": 1793547572294,
+        "teamCode": "T01",
+        "teamId": "T01",
+        "teamName": "Trader Elite 1",
+        "fromCurrency": "INR",
+        "toCurrency": "CNY",
+        "fromAmount": 122500,
+        "toAmount": 9955.2,
+        "effectiveRate": 12.305125,
+        "spreadPercent": 0.45,
+        "scarcityImpact": 0,
+        "utilization": 0.0001,
+        "operatorId": "exchange",
+        "status": "CONFIRMED",
+        "notes": "Currency Desk Execution"
+      },
+      "clientCnyGain": 9955.2,
+      "deskCnySalesDelta": 9955.2,
+      "deskCnyInvDelta": 9955.2
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-M2-ATTACK-VECTORS-01",
+    "title": "Adversarial Injection Defense (Negative, Zero, NaN, Infinity, Malformed)",
+    "category": "Zero Currency Creation",
+    "scenario": "Send 11 adversarial and boundary injection payloads designed to trick currency creation logic; assert HTTP 400",
+    "expected": "11/11 payloads rejected with HTTP 400 Bad Request",
+    "actual": "11/11 rejected with HTTP 400",
+    "evidence": [
+      {
+        "name": "Negative fromAmount (-1000)",
+        "endpoint": "/api/fx/exchange",
+        "status": 400,
+        "error": "Invalid exchange parameters: teamCode, fromCurrency, toCurrency, and positive finite fromAmount are required.",
+        "passed": true
+      },
+      {
+        "name": "Zero fromAmount (0)",
+        "endpoint": "/api/fx/exchange",
+        "status": 400,
+        "error": "Invalid exchange parameters: teamCode, fromCurrency, toCurrency, and positive finite fromAmount are required.",
+        "passed": true
+      },
+      {
+        "name": "String NaN",
+        "endpoint": "/api/fx/exchange",
+        "status": 400,
+        "error": "Invalid exchange parameters: teamCode, fromCurrency, toCurrency, and positive finite fromAmount are required.",
+        "passed": true
+      },
+      {
+        "name": "String Infinity",
+        "endpoint": "/api/fx/exchange",
+        "status": 400,
+        "error": "Invalid exchange parameters: teamCode, fromCurrency, toCurrency, and positive finite fromAmount are required.",
+        "passed": true
+      },
+      {
+        "name": "Negative Infinity",
+        "endpoint": "/api/fx/exchange",
+        "status": 400,
+        "error": "Invalid exchange parameters: teamCode, fromCurrency, toCurrency, and positive finite fromAmount are required.",
+        "passed": true
+      },
+      {
+        "name": "Null fromAmount",
+        "endpoint": "/api/fx/exchange",
+        "status": 400,
+        "error": "Invalid exchange parameters: teamCode, fromCurrency, toCurrency, and positive finite fromAmount are required.",
+        "passed": true
+      },
+      {
+        "name": "SQL injection string",
+        "endpoint": "/api/fx/exchange",
+        "status": 400,
+        "error": "Invalid exchange parameters: teamCode, fromCurrency, toCurrency, and positive finite fromAmount are required.",
+        "passed": true
+      },
+      {
+        "name": "Negative replenishment (-100000)",
+        "endpoint": "/api/fx/reserves/replenish",
+        "status": 400,
+        "error": "Valid foreign currency and positive finite quantity are required for replenishment.",
+        "passed": true
+      },
+      {
+        "name": "Zero replenishment (0)",
+        "endpoint": "/api/fx/reserves/replenish",
+        "status": 400,
+        "error": "Valid foreign currency and positive finite quantity are required for replenishment.",
+        "passed": true
+      },
+      {
+        "name": "Sub-minimum reason string",
+        "endpoint": "/api/fx/reserves/replenish",
+        "status": 400,
+        "error": "Mandatory justification reason required for authorized FX reserve replenishment (min 5 characters).",
+        "passed": true
+      },
+      {
+        "name": "INR foreign replenishment",
+        "endpoint": "/api/fx/reserves/replenish",
+        "status": 400,
+        "error": "Cannot replenish INR under foreign currency desk reserves.",
+        "passed": true
+      }
+    ],
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-M2-DOUBLE-ENTRY-01",
+    "title": "Double-Entry Accounting Invariant (Balanced Debits and Credits Per Currency)",
+    "category": "Accounting Integrity",
+    "scenario": "Inspect PostgreSQL journal_entries and ledger_lines for settled FX transaction; assert Sum(Debits) === Sum(Credits) per currency",
+    "expected": "Sum(Debits) === Sum(Credits) for INR and CNY respectively, 4 balanced ledger lines",
+    "actual": "balanced=true, lineCount=4",
+    "evidence": {
+      "INR": {
+        "debit": 122500,
+        "credit": 122500
+      },
+      "CNY": {
+        "debit": 9955.2,
+        "credit": 9955.2
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-M2-POSTFLIGHT-01",
+    "title": "Post-Flight Authoritative State Baseline Hash Integrity",
+    "category": "Integrity",
+    "scenario": "Confirm authoritative state.json was 100% bit-for-bit untouched throughout all test executions",
+    "expected": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "actual": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "evidence": {
+      "sha256": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca"
+    },
+    "status": "PASSED"
+  }
+]

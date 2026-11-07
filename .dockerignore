@@ -1,0 +1,43 @@
+# Git
+.git
+.gitignore
+
+# Dependencies & Build Artefacts
+node_modules
+dist
+.firebase
+
+# Secrets and Local Environment
+.env
+.env.*
+*.local
+service-account*.json
+credentials*.json
+
+# Logs & Temporary Files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.tmp
+
+# Documentation, Data Workbooks & Raw Datasets
+*.md
+docs
+Securities Data
+*.xlsx
+*.csv
+backups
+scratch
+.agents
+.vscode
+
+# Test Suites & Rehearsal Scripts
+test-*
+test_*
+scripts/test_*
+scripts/verify_*
+
+# Containerization
+Dockerfile
+.dockerignore

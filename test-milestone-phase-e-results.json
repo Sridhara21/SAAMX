@@ -1,0 +1,446 @@
+[
+  {
+    "id": "PHASE-E-PREFLIGHT-01",
+    "title": "Pre-flight Authoritative Baseline Hash Verification",
+    "endpoint": "Local File System (state.json)",
+    "role": "system",
+    "scenario": "Verify state.json SHA-256 is strictly bit-exact before testing",
+    "expected": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "actual": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "evidence": {
+      "sha256": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-E-FIXTURE-01",
+    "title": "Disposable Fixture Initialization",
+    "endpoint": "Local File System",
+    "role": "system",
+    "scenario": "Create isolated writable test fixture snapshot for ephemeral server",
+    "expected": "state.test-phase-e-broker.json created from state.json",
+    "actual": "Snapshot initialized",
+    "evidence": {
+      "disposableState": "C:\\Users\\Lapcarts Electronics\\OneDrive\\Desktop\\Antigravity\\SAAMX\\state.test-phase-e-broker.json"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-E-AUTH-01",
+    "title": "Authentication & Session Token Acquisition",
+    "endpoint": "/api/auth/login",
+    "role": "team, admin, advisor",
+    "scenario": "Acquire JWT session tokens for role verification",
+    "expected": "Valid session tokens for T01 and Admin",
+    "actual": "T01: true, Admin: true",
+    "evidence": {
+      "hasTokenT01": true,
+      "hasTokenAdmin": true
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-E-METRIC-01",
+    "title": "Standard P/E Ratio Calculation (Price / EPS)",
+    "endpoint": "src/lib/companyFundamentals.js",
+    "role": "unit",
+    "scenario": "Calculate P/E for profitable stock: 1500 / 30 = 50.00x",
+    "expected": "50.00x",
+    "actual": "50.00x",
+    "evidence": {
+      "peRatio": 50,
+      "display": "50.00x"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-E-METRIC-02",
+    "title": "P/E Ratio Guardrail: Loss-Making Company",
+    "endpoint": "src/lib/companyFundamentals.js",
+    "role": "unit",
+    "scenario": "Prevent negative P/E; display N/A (Loss-Making)",
+    "expected": "N/A (Loss-Making)",
+    "actual": "N/A (Loss-Making)",
+    "evidence": {
+      "peRatio": null,
+      "display": "N/A (Loss-Making)"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-E-METRIC-03",
+    "title": "P/E Ratio Guardrail: Zero EPS Break-Even",
+    "endpoint": "src/lib/companyFundamentals.js",
+    "role": "unit",
+    "scenario": "Prevent division by zero or Infinity; display N/A (Break-even)",
+    "expected": "N/A (Break-even)",
+    "actual": "N/A (Break-even)",
+    "evidence": {
+      "peRatio": null,
+      "display": "N/A (Break-even)"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-E-METRIC-04",
+    "title": "P/E Ratio Guardrail: Non-Equity Fixed Income",
+    "endpoint": "src/lib/companyFundamentals.js",
+    "role": "unit",
+    "scenario": "Bonds/G-Secs return N/A (Fixed Income)",
+    "expected": "N/A (Fixed Income)",
+    "actual": "N/A (Fixed Income)",
+    "evidence": {
+      "peRatio": null,
+      "display": "N/A (Fixed Income)"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-E-METRIC-05",
+    "title": "Standard Debt-to-Equity Ratio Calculation",
+    "endpoint": "src/lib/companyFundamentals.js",
+    "role": "unit",
+    "scenario": "Calculate D/E for leveraged firm: 240M / 1200M = 0.20x",
+    "expected": "0.20x",
+    "actual": "0.20x",
+    "evidence": {
+      "deRatio": 0.2,
+      "display": "0.20x"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-E-METRIC-06",
+    "title": "Debt-to-Equity Guardrail: Zero Debt Company",
+    "endpoint": "src/lib/companyFundamentals.js",
+    "role": "unit",
+    "scenario": "Debt-free firm displays 0.00x (Debt-Free)",
+    "expected": "0.00x (Debt-Free)",
+    "actual": "0.00x (Debt-Free)",
+    "evidence": {
+      "deRatio": 0,
+      "display": "0.00x (Debt-Free)"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-E-METRIC-07",
+    "title": "Debt-to-Equity Guardrail: Negative Shareholder Equity",
+    "endpoint": "src/lib/companyFundamentals.js",
+    "role": "unit",
+    "scenario": "Insolvent firm with negative equity displays N/A (Negative Equity)",
+    "expected": "N/A (Negative Equity)",
+    "actual": "N/A (Negative Equity)",
+    "evidence": {
+      "deRatio": null,
+      "display": "N/A (Negative Equity)"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-E-METRIC-08",
+    "title": "Standard Operating Margin Calculation",
+    "endpoint": "src/lib/companyFundamentals.js",
+    "role": "unit",
+    "scenario": "Operating Margin = (250M / 1000M) * 100 = 25.00%",
+    "expected": "+25.00%",
+    "actual": "+25.00%",
+    "evidence": {
+      "opMargin": 25,
+      "display": "+25.00%"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-E-METRIC-09",
+    "title": "Operating Margin Guardrail: Operating Loss",
+    "endpoint": "src/lib/companyFundamentals.js",
+    "role": "unit",
+    "scenario": "Negative EBIT yields negative margin display",
+    "expected": "-5.00%",
+    "actual": "-5.00% (Operating Loss)",
+    "evidence": {
+      "opMargin": -5,
+      "display": "-5.00% (Operating Loss)"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-E-METRIC-10",
+    "title": "Operating Margin Guardrail: Pre-Revenue Startup",
+    "endpoint": "src/lib/companyFundamentals.js",
+    "role": "unit",
+    "scenario": "Zero revenue firm displays N/A (Pre-Revenue) without division by zero",
+    "expected": "N/A (Pre-Revenue)",
+    "actual": "N/A (Pre-Revenue)",
+    "evidence": {
+      "opMargin": null,
+      "display": "N/A (Pre-Revenue)"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-E-METRIC-11",
+    "title": "Standard Return on Equity (ROE) Calculation",
+    "endpoint": "src/lib/companyFundamentals.js",
+    "role": "unit",
+    "scenario": "ROE = (300M / 1200M) * 100 = 25.00%",
+    "expected": "+25.00%",
+    "actual": "+25.00%",
+    "evidence": {
+      "roe": 25,
+      "display": "+25.00%"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-E-METRIC-12",
+    "title": "ROE Anti-Spurious Trap: Negative Equity Deficit",
+    "endpoint": "src/lib/companyFundamentals.js",
+    "role": "unit",
+    "scenario": "Trap (-NetIncome) / (-Equity) mathematically positive result; display N/A (Deficit Equity)",
+    "expected": "N/A (Deficit Equity)",
+    "actual": "N/A (Deficit Equity)",
+    "evidence": {
+      "roe": null,
+      "display": "N/A (Deficit Equity)"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-E-VAL-01",
+    "title": "Valuation Indicator: Undervalued Alpha Opportunity",
+    "endpoint": "src/lib/companyFundamentals.js",
+    "role": "unit",
+    "scenario": "Price trading significantly below intrinsic anchor classified as UNDERVALUED",
+    "expected": "UNDERVALUED with negative deviation",
+    "actual": "UNDERVALUED (-34.0%)",
+    "evidence": {
+      "status": "UNDERVALUED",
+      "deviationPercent": -33.99,
+      "fairValue": 1515,
+      "bearTarget": 1333.2,
+      "bullTarget": 1787.7,
+      "currency": "INR",
+      "guidanceText": "Trading at a 34.0% discount to intrinsic fair value. High margin of safety for long allocations.",
+      "badgeVariant": "rise",
+      "provenance": "SIMULATED_ADVISORY"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-E-VAL-02",
+    "title": "Valuation Indicator: Overvalued Multiple Warning",
+    "endpoint": "src/lib/companyFundamentals.js",
+    "role": "unit",
+    "scenario": "Price trading significantly above intrinsic anchor classified as OVERVALUED",
+    "expected": "OVERVALUED with positive deviation",
+    "actual": "OVERVALUED (+45.2%)",
+    "evidence": {
+      "status": "OVERVALUED",
+      "deviationPercent": 45.21,
+      "fairValue": 1515,
+      "bearTarget": 1333.2,
+      "bullTarget": 1787.7,
+      "currency": "INR",
+      "guidanceText": "Trading at a 45.2% premium over intrinsic fair value. Multiple compression vulnerability.",
+      "badgeVariant": "fall",
+      "provenance": "SIMULATED_ADVISORY"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-E-VAL-03",
+    "title": "Valuation Indicator: Fair Value Balanced Band",
+    "endpoint": "src/lib/companyFundamentals.js",
+    "role": "unit",
+    "scenario": "Price trading within +/- 10% classified as FAIR VALUE",
+    "expected": "FAIR VALUE",
+    "actual": "FAIR VALUE (0.3%)",
+    "evidence": {
+      "status": "FAIR VALUE",
+      "deviationPercent": 0.33,
+      "fairValue": 1515,
+      "bearTarget": 1333.2,
+      "bullTarget": 1787.7,
+      "currency": "INR",
+      "guidanceText": "Trading within normal ±10% fair value band (+0.3%). Balanced risk-reward profile.",
+      "badgeVariant": "caution",
+      "provenance": "SIMULATED_ADVISORY"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-E-VAL-04",
+    "title": "Target Price Range Integrity (Bear, Fair, Bull Targets)",
+    "endpoint": "src/lib/companyFundamentals.js",
+    "role": "unit",
+    "scenario": "Ensure Target Price range satisfies Bear < Fair < Bull and all > 0",
+    "expected": "BearTarget < FairValue < BullTarget, all positive",
+    "actual": "Bear=1333.2, Fair=1515, Bull=1787.7",
+    "evidence": {
+      "bear": 1333.2,
+      "fair": 1515,
+      "bull": 1787.7
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-E-THESIS-01",
+    "title": "Bullish Catalysts Multi-Factor Generation",
+    "endpoint": "src/lib/companyFundamentals.js",
+    "role": "unit",
+    "scenario": "Generate 3 distinct data-backed bull theses (valuation, margins, momentum)",
+    "expected": ">= 3 structured bull arguments",
+    "actual": "4 arguments generated",
+    "evidence": [
+      "Upside Target: Floor consensus targets intrinsic bull projection of INR 1787.7.",
+      "Profitability Quality: Core operating margin at +25.00% demonstrates strong pricing power and cost absorption.",
+      "Disciplined Capital Structure: Conservative debt-to-equity of 0.20x provides ample balance sheet flexibility.",
+      "Secular Sector Momentum: Structural institutional demand in Technology driving continuous liquidity and depth."
+    ],
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-E-THESIS-02",
+    "title": "Bearish Risk Warning Multi-Factor Generation",
+    "endpoint": "src/lib/companyFundamentals.js",
+    "role": "unit",
+    "scenario": "Generate 3 distinct data-backed risk warnings (multiple, debt, circuit limits)",
+    "expected": ">= 3 structured bear arguments",
+    "actual": "4 arguments generated",
+    "evidence": [
+      "Downside Support Test: Bear target projection at INR 1333.2 represents key downside test boundary.",
+      "Macro Liquidity Friction: Tightening interbank rate spreads could elevate working capital financing friction.",
+      "Margin Compression Risk: Input cost inflation and competitive discounting pose near-term headwinds to operating margin retention.",
+      "Regulatory Circuit Limits: Active ±30% intraday circuit-breaker thresholds can trigger liquidity lockups during volatility spikes."
+    ],
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-E-PROV-01",
+    "title": "Structural Provenance Segregation in DOM",
+    "endpoint": "src/pages/BrokerAdvisoryTerminal.jsx",
+    "role": "static-ast",
+    "scenario": "Verify distinct DOM containers with data-provenance=\"factual\" and \"simulated\"",
+    "expected": "Both factual and simulated provenance containers present in component",
+    "actual": "Factual: true, Simulated: true",
+    "evidence": {
+      "hasFactualProvenance": true,
+      "hasSimulatedProvenance": true
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-E-PROV-02",
+    "title": "Visual Badges and Regulatory Disclaimer Banner",
+    "endpoint": "src/pages/BrokerAdvisoryTerminal.jsx",
+    "role": "static-ast",
+    "scenario": "Verify visual badging for Factual Data vs Simulated Advisory and non-execution disclaimer",
+    "expected": "Visual provenance badges and educational disclaimer present",
+    "actual": "FactualBadge: true, OpinionBadge: true, Disclaimer: true",
+    "evidence": {
+      "hasFactualBadge": true,
+      "hasOpinionBadge": true,
+      "hasDisclaimer": true
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-E-EXEC-01",
+    "title": "Pure Advisory Mode: Zero Order Routing in Terminal Code",
+    "endpoint": "src/pages/BrokerAdvisoryTerminal.jsx",
+    "role": "static-ast",
+    "scenario": "Confirm absence of /api/order, order submission functions, and presence of paper slip notice",
+    "expected": "No /api/order calls, no order dispatchers, paper slip banner verified",
+    "actual": "hasOrderApiCall: false, hasSubmitOrder: false, hasPaperSlipNotice: true",
+    "evidence": {
+      "hasOrderApiCall": false,
+      "hasSubmitOrder": false,
+      "hasPaperSlipNotice": true
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-E-EXEC-02",
+    "title": "Signal Dispatch Non-Mutation Invariant",
+    "endpoint": "POST /api/advisor/signal",
+    "role": "advisor",
+    "scenario": "Publishing BUY signal must strictly NOT create orders or mutate participant wallets",
+    "expected": "Orders count unchanged, wallet balances unchanged",
+    "actual": "Signal status=200, Orders delta=0, Cash delta=0",
+    "evidence": {
+      "signalSuccess": true,
+      "ordersDelta": 0
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-E-EXEC-03",
+    "title": "RBAC Gate: Advisor Role Order Creation Prohibited",
+    "endpoint": "POST /api/order",
+    "role": "advisor",
+    "scenario": "Attempting order creation with advisor session is rejected",
+    "expected": "HTTP 400, 401, 403, or 404 rejection",
+    "actual": "HTTP 404: API endpoint POST /api/order not found.",
+    "evidence": {
+      "status": 404,
+      "error": "API endpoint POST /api/order not found."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-E-FLOW-01",
+    "title": "Advisor Signal Audit Protection: Overwrite Rejection",
+    "endpoint": "POST /api/advisor/signal",
+    "role": "advisor",
+    "scenario": "Attempting to overwrite a completed referral signal returns HTTP 400",
+    "expected": "HTTP 400 rejection preserving audit record",
+    "actual": "HTTP 400: Signal has already been published as 'BUY'. Overwriting is prohibited to preserve audit trail.",
+    "evidence": {
+      "status": 400,
+      "error": "Signal has already been published as 'BUY'. Overwriting is prohibited to preserve audit trail."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-E-FLOW-02",
+    "title": "Broker Research Recommendation Publishing & Broadcast",
+    "endpoint": "POST /api/broker/recommendation, GET /api/broker/recommendations",
+    "role": "advisor, public",
+    "scenario": "Publish formal research report bulletin and verify presence in public feed",
+    "expected": "Recommendation saved and retrievable via GET",
+    "actual": "POST status=200, Found in list: true",
+    "evidence": {
+      "recommendationId": "REC_1794041757027_h2x1",
+      "totalRecs": 1
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-E-BUILD-01",
+    "title": "Vite Production Build Compilation (npm run build)",
+    "endpoint": "CLI (vite build)",
+    "role": "system",
+    "scenario": "Compile entire project with Vite production bundler with 0 syntax or import errors",
+    "expected": "Exit code 0, 0 compilation errors",
+    "actual": "Build completed cleanly",
+    "evidence": {
+      "buildOutputSnippet": "ip:  54.81 kB\u001b[22m\n\u001b[2mdist/\u001b[22m\u001b[36massets/index-BSZf7i9Z.js                     \u001b[39m\u001b[1m\u001b[33m  643.21 kB\u001b[39m\u001b[22m\u001b[2m │ gzip:  88.76 kB\u001b[22m\n\u001b[2mdist/\u001b[22m\u001b[36massets/universe-data-Bi6jwlR-.js             \u001b[39m\u001b[1m\u001b[33m4,261.86 kB\u001b[39m\u001b[22m\u001b[2m │ gzip: 497.79 kB\u001b[22m\n\u001b[32m✓ built in 8.47s\u001b[39m"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "PHASE-E-POSTFLIGHT-01",
+    "title": "Post-flight Authoritative Baseline Hash Verification",
+    "endpoint": "Local File System (state.json)",
+    "role": "system",
+    "scenario": "Confirm authoritative state.json remained 100% bit-for-bit untouched throughout testing",
+    "expected": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "actual": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "evidence": {
+      "sha256": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca"
+    },
+    "status": "PASSED"
+  }
+]

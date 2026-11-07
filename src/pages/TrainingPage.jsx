@@ -1,5 +1,30 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { apiFetch } from '../lib/api.js';
+import {
+  Card,
+  Badge,
+  Button,
+  Modal,
+  Alert
+} from '../components/ui/index.js';
+import {
+  IconTarget,
+  IconPlay,
+  IconPause,
+  IconSlash,
+  IconRefreshCw,
+  IconMonitor,
+  IconClock,
+  IconCheck,
+  IconAlertTriangle,
+  IconFlame,
+  IconTrendingUp,
+  IconDownload,
+  IconBarChart,
+  IconBuilding,
+  IconFileText,
+  IconActivity
+} from '../lib/icons.jsx';
 
 export default function TrainingPage({ state }) {
   const [drillStatus, setDrillStatus] = useState('idle'); // idle, running, paused
@@ -27,16 +52,28 @@ export default function TrainingPage({ state }) {
 
   // Calculate dynamic interval based on market conditions (influenced by Phoenix acts, IPOs, halts, and volatility)
   const getDynamicInterval = () => {
-    if (!state || !state.marketState) return { interval: 30000, paceLabel: '💤 STABLE MARKET FLOW' };
+    if (!state || !state.marketState) {
+      return {
+        interval: 30000,
+        paceLabel: 'STABLE MARKET FLOW',
+        variant: 'neutral',
+        icon: <IconActivity size={14} />
+      };
+    }
 
     const isMarketOpen = state.marketState.status === 'Open';
     if (!isMarketOpen) {
-      return { interval: 999999, paceLabel: '⏸ MARKET CLOSED / AWAITING OPEN' };
+      return {
+        interval: 15000,
+        paceLabel: 'REHEARSAL DRILL PACE (PRE-MARKET)',
+        variant: 'info',
+        icon: <IconActivity size={14} />
+      };
     }
 
     const hasPendingIpo = (state.securities || []).some(s => s.status === 'IPO_PENDING');
     const hasHalted = (state.securities || []).some(s => s.status === 'Halted');
-    
+
     // Check recent corporate actions or news in the last 2 minutes
     const cutoff = Date.now() - 120000;
     const recentAction = (state.corporateActions || []).some(act => act.triggeredAt >= cutoff);
@@ -44,17 +81,37 @@ export default function TrainingPage({ state }) {
 
     if (hasPendingIpo) {
       // High frequency during IPO launches
-      return { interval: 10000, paceLabel: '🔥 IPO PEAK RUSH (HIGH VOLUME)' };
+      return {
+        interval: 10000,
+        paceLabel: 'IPO PEAK RUSH (HIGH VOLUME)',
+        variant: 'danger',
+        icon: <IconFlame size={14} />
+      };
     } else if (hasHalted || recentAction) {
       // Panic sell/buy
-      return { interval: 15000, paceLabel: '⚠️ INTENSE MARKET VOLATILITY SPIKE' };
+      return {
+        interval: 15000,
+        paceLabel: 'INTENSE MARKET VOLATILITY SPIKE',
+        variant: 'warn',
+        icon: <IconAlertTriangle size={14} />
+      };
     } else if (recentNews) {
       // News reaction
-      return { interval: 20000, paceLabel: '📈 ACTIVE NEWS RESPONSE' };
+      return {
+        interval: 20000,
+        paceLabel: 'ACTIVE NEWS RESPONSE',
+        variant: 'info',
+        icon: <IconTrendingUp size={14} />
+      };
     }
 
     // Default flow
-    return { interval: 30000, paceLabel: '💤 STABLE MARKET FLOW' };
+    return {
+      interval: 30000,
+      paceLabel: 'STABLE MARKET FLOW',
+      variant: 'neutral',
+      icon: <IconActivity size={14} />
+    };
   };
 
   const dynamicSettings = getDynamicInterval();
@@ -153,13 +210,13 @@ export default function TrainingPage({ state }) {
       let rationale = '';
 
       const teamHoldings = Object.entries(team.holdings || {}).filter(([_, q]) => q > 0);
-      
+
       if (personality === 'PANIC') {
         if (teamHoldings.length > 0 && Math.random() < 0.7) {
           action = 'SELL';
           const [secId, ownedQty] = teamHoldings[Math.floor(Math.random() * teamHoldings.length)];
           const panicSec = state.securities.find(s => (s.id === secId || s.ticker === secId) && s.status === 'Active');
-          
+
           if (panicSec) {
             const panicTicker = panicSec.ticker;
             quantity = Math.max(1, Math.floor(Math.random() * ownedQty));
@@ -182,13 +239,13 @@ export default function TrainingPage({ state }) {
         }
       } else if (personality === 'FOMO') {
         action = 'BUY';
-        const maxAffordable = Math.floor((team.cashBalance || 1000000) / price);
+        const maxAffordable = Math.floor((team.cashBalance || 10000000) / price);
         quantity = Math.max(10, Math.min(100, Math.floor(maxAffordable * 0.4)));
         const fomoRationales = [
           `TO THE MOON! Buy ${ticker} now before we get left behind!`,
           `Everyone is buying ${ticker}, loading up the boat!`,
           `Pump it! Institutional investors are buying ${ticker} in blocks!`,
-          `Rocket emoji! ${ticker} is breaking resistance levels!`
+          `Breaking resistance! ${ticker} is surging on high volume!`
         ];
         rationale = fomoRationales[Math.floor(fomoRationales.length * Math.random())];
       } else if (personality === 'FAT_FINGER') {
@@ -213,7 +270,7 @@ export default function TrainingPage({ state }) {
         rationale = confusedRationales[Math.floor(Math.random() * confusedRationales.length)];
       } else {
         action = Math.random() < 0.7 ? 'BUY' : 'SELL';
-        const maxAffordable = Math.floor((team.cashBalance || 1000000) / price);
+        const maxAffordable = Math.floor((team.cashBalance || 10000000) / price);
         if (price > 5000) {
           quantity = Math.max(1, Math.min(5, maxAffordable));
         } else if (price > 1000) {
@@ -241,7 +298,7 @@ export default function TrainingPage({ state }) {
   // Trigger Order Generation
   const triggerOrderGeneration = () => {
     if (!isSeeded) return;
-    
+
     const orderSlip = generateMockOrder();
 
     if (orderSlip) {
@@ -272,8 +329,7 @@ export default function TrainingPage({ state }) {
   // Setup Generator Loop
   useEffect(() => {
     if (drillStatus !== 'running') return;
-    if (state.marketState.status !== 'Open') return;
-    
+
     // Initial order right away
     triggerOrderGeneration();
 
@@ -282,7 +338,7 @@ export default function TrainingPage({ state }) {
     }, dynamicSettings.interval);
 
     return () => clearInterval(interval);
-  }, [drillStatus, dynamicSettings.interval, state.marketState.status]);
+  }, [drillStatus, dynamicSettings.interval]);
 
   // Method B: Auto-detection via transaction ledger
   useEffect(() => {
@@ -293,7 +349,7 @@ export default function TrainingPage({ state }) {
       if (pendingOrders.length === 0) return;
 
       const recentTransactions = state.transactions || [];
-      
+
       let updatedAny = false;
       const nextOrders = ordersRef.current.map(order => {
         if (order.status !== 'pending') return order;
@@ -349,7 +405,7 @@ export default function TrainingPage({ state }) {
   // Metrics Calculations
   const completedOrders = orders.filter(o => o.status === 'completed');
   const pendingOrders = orders.filter(o => o.status === 'pending');
-  
+
   const avgTime = completedOrders.length > 0
     ? parseFloat((completedOrders.reduce((acc, curr) => acc + curr.elapsedSeconds, 0) / completedOrders.length).toFixed(1))
     : 0;
@@ -363,16 +419,16 @@ export default function TrainingPage({ state }) {
       : 0;
 
     let indicator = '✓';
-    let color = 'var(--color-rise)';
+    let variant = 'gain';
     if (deskAvg > 20) {
       indicator = '✗';
-      color = 'var(--color-fall)';
+      variant = 'danger';
     } else if (deskAvg > 10) {
       indicator = '⚠';
-      color = 'var(--color-brass)';
+      variant = 'warn';
     } else if (deskCompleted.length === 0) {
       indicator = '—';
-      color = 'var(--color-ink-3)';
+      variant = 'neutral';
     }
 
     return {
@@ -380,7 +436,7 @@ export default function TrainingPage({ state }) {
       total: deskOrders.length,
       avg: deskAvg,
       indicator,
-      color,
+      variant,
       pending: deskPending.length
     };
   };
@@ -440,327 +496,655 @@ export default function TrainingPage({ state }) {
     setShowSummary(false);
   };
 
-  // Render elapsed timer with colors
+  // Render elapsed timer badge
   const renderElapsedTime = (order) => {
     if (order.status === 'completed') {
-      return <span style={{ color: 'var(--color-rise)', fontWeight: 'bold' }}>✓ Done ({order.elapsedSeconds}s)</span>;
+      return (
+        <Badge variant="gain" size="sm" icon={<IconCheck size={12} />}>
+          <span className="font-mono tabular-nums">Done ({order.elapsedSeconds}s)</span>
+        </Badge>
+      );
     }
     const elapsed = Math.max(0, Math.floor((time - order.generatedAt) / 1000));
-    let color = 'var(--color-rise)';
+    let variant = 'info';
     if (elapsed > 20) {
-      color = 'var(--color-fall)';
+      variant = 'danger';
     } else if (elapsed > 10) {
-      color = 'var(--color-brass)';
+      variant = 'warn';
     }
 
+    const minutes = String(Math.floor(elapsed / 60)).padStart(2, '0');
+    const seconds = String(elapsed % 60).padStart(2, '0');
+
     return (
-      <span style={{ color, fontWeight: 'bold' }}>
-        ⏱ {String(Math.floor(elapsed / 60)).padStart(2, '0')}:{String(elapsed % 60).padStart(2, '0')} elapsed
-      </span>
+      <Badge variant={variant} size="sm" icon={<IconClock size={12} />}>
+        <span className="font-mono tabular-nums">{minutes}:{seconds} elapsed</span>
+      </Badge>
     );
   };
 
   if (!isSeeded) {
     return (
-      <div style={{ padding: '40px', maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
-        <div className="glass card" style={{ borderTop: '4px solid var(--color-fall)' }}>
-          <h2 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-fall)', marginBottom: '16px' }}>drill configuration restricted</h2>
-          <p style={{ color: 'var(--color-ink-2)', lineHeight: '1.6' }}>
+      <div style={{ padding: '40px 20px', maxWidth: '680px', margin: '40px auto' }}>
+        <Card style={{ borderTop: '4px solid var(--color-loss)', padding: '28px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px', color: 'var(--color-loss)' }}>
+            <IconAlertTriangle size={24} />
+            <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>
+              Drill Configuration Restricted
+            </h2>
+          </div>
+          <p style={{ margin: 0, color: 'var(--color-ink-secondary)', lineHeight: 1.6, fontSize: '0.92rem' }}>
             Please seed securities and teams in the Admin Console before starting a training drill. The simulator requires active assets and registered codes to generate realistic trading instructions.
           </p>
-        </div>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px', backgroundColor: 'var(--color-paper)', minHeight: 'calc(100vh - 60px)' }}>
-      
+    <div style={{
+      maxWidth: '1440px',
+      margin: '0 auto',
+      padding: '24px 20px 80px',
+      fontFamily: 'var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif)',
+      color: 'var(--color-ink-primary)',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '24px'
+    }}>
+
       {/* 1. Header controls panel */}
-      <div className="glass card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-        <div>
-          <h2 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-brass)', fontSize: '1.8rem', margin: 0 }}>
-            🎯 Staff Speed-Training Rehearsal
-          </h2>
-          <span style={{ fontSize: '0.85rem', color: 'var(--color-ink-2)' }}>Rehearse exchange entry times under live event trading frequencies.</span>
+      <Card style={{ padding: '20px 24px' }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '16px'
+        }}>
+          <div>
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              color: 'var(--color-brass)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              marginBottom: '6px'
+            }}>
+              <IconTarget size={14} />
+              <span>Floor Training</span>
+              <span style={{ opacity: 0.5 }}>/</span>
+              <IconActivity size={14} />
+              <span>Speed Rehearsal</span>
+            </div>
+            <h1 style={{
+              margin: '0 0 6px',
+              fontSize: '1.85rem',
+              fontWeight: 800,
+              fontFamily: "var(--font-display, 'Cinzel', serif)",
+              color: 'var(--color-ink-primary)',
+              letterSpacing: '-0.01em'
+            }}>
+              Staff Speed-Training Rehearsal
+            </h1>
+            <p style={{ margin: 0, fontSize: '0.90rem', color: 'var(--color-ink-secondary)' }}>
+              Rehearse exchange entry times under live event trading frequencies.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            {drillStatus === 'running' ? (
+              <Button
+                variant="secondary"
+                icon={<IconPause size={14} />}
+                onClick={() => setDrillStatus('paused')}
+              >
+                Pause Drill
+              </Button>
+            ) : (
+              <Button
+                variant="primary"
+                icon={<IconPlay size={14} />}
+                onClick={() => setDrillStatus('running')}
+              >
+                Start Drill
+              </Button>
+            )}
+
+            <Button
+              variant="danger"
+              icon={<IconSlash size={14} />}
+              onClick={handleEndDrill}
+              disabled={orders.length === 0}
+            >
+              End Drill
+            </Button>
+
+            <Button
+              variant="secondary"
+              icon={<IconRefreshCw size={14} />}
+              onClick={handleResetDrill}
+              disabled={orders.length === 0 && drillStatus === 'idle'}
+            >
+              Reset
+            </Button>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          {drillStatus === 'running' ? (
-            <button className="btn" style={{ backgroundColor: 'var(--color-brass-light)', color: 'var(--color-brass)' }} onClick={() => setDrillStatus('paused')}>
-              ⏸ Pause
-            </button>
-          ) : (
-            <button className="btn btn-primary" onClick={() => setDrillStatus('running')}>
-              ▶ Start Drill
-            </button>
-          )}
-          <button className="btn" style={{ backgroundColor: 'var(--color-fall-light)', color: 'var(--color-fall)' }} onClick={handleEndDrill}>
-            ⏹ End Drill
-          </button>
-          <button className="btn btn-secondary" onClick={handleResetDrill}>
-            🔄 Reset
-          </button>
-        </div>
-      </div>
+      </Card>
 
       {/* 2. Speed mode selectors & top statistics */}
-      <div className="glass card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>Market Activity Pace:</span>
-          <span 
-            className="badge" 
-            style={{ 
-              backgroundColor: dynamicSettings.paceLabel.includes('PEAK') ? 'var(--color-fall)' : dynamicSettings.paceLabel.includes('VOLATILITY') ? 'var(--color-brass)' : 'var(--color-brass-light)',
-              color: dynamicSettings.paceLabel.includes('PEAK') || dynamicSettings.paceLabel.includes('VOLATILITY') ? '#fff' : 'var(--color-brass)',
-              fontWeight: '900',
-              padding: '6px 12px',
-              fontSize: '0.85rem',
-              borderRadius: '4px',
-              fontFamily: 'var(--font-display)'
-            }}
-          >
-            {dynamicSettings.paceLabel}
-          </span>
-          <span style={{ fontSize: '0.75rem', color: 'var(--color-ink-2)' }}>
-            (Interval: {dynamicSettings.interval === 999999 ? 'Paused' : `${dynamicSettings.interval / 1000}s`})
-          </span>
-        </div>
+      <Card style={{ padding: '16px 20px' }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '16px'
+        }}>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--color-ink-secondary)' }}>
+              Market Activity Pace:
+            </span>
+            <Badge
+              variant={dynamicSettings.variant}
+              size="md"
+              icon={dynamicSettings.icon}
+            >
+              {dynamicSettings.paceLabel}
+            </Badge>
+            <span className="font-mono tabular-nums" style={{ fontSize: '0.78rem', color: 'var(--color-ink-muted)' }}>
+              (Interval: {dynamicSettings.interval === 999999 ? 'Paused' : `${dynamicSettings.interval / 1000}s`})
+            </span>
+          </div>
 
-        <div style={{ display: 'flex', gap: '24px' }}>
-          <div style={{ textAlign: 'center' }}>
-            <span style={{ fontSize: '0.7rem', color: 'var(--color-ink-2)', display: 'block', textTransform: 'uppercase' }}>TOTAL SLIPS</span>
-            <span style={{ fontSize: '1.2rem', fontWeight: 'bold', fontFamily: 'var(--font-mono)' }}>{orders.length}</span>
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <span style={{ fontSize: '0.7rem', color: 'var(--color-ink-2)', display: 'block', textTransform: 'uppercase' }}>COMPLETED</span>
-            <span style={{ fontSize: '1.2rem', fontWeight: 'bold', fontFamily: 'var(--font-mono)', color: 'var(--color-rise)' }}>{completedOrders.length}</span>
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <span style={{ fontSize: '0.7rem', color: 'var(--color-ink-2)', display: 'block', textTransform: 'uppercase' }}>QUEUED PENDING</span>
-            <span style={{ fontSize: '1.2rem', fontWeight: 'bold', fontFamily: 'var(--font-mono)', color: 'var(--color-fall)' }}>{pendingOrders.length}</span>
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <span style={{ fontSize: '0.7rem', color: 'var(--color-ink-2)', display: 'block', textTransform: 'uppercase' }}>AVG PROCESSING</span>
-            <span style={{ fontSize: '1.2rem', fontWeight: 'bold', fontFamily: 'var(--font-mono)' }}>{avgTime}s</span>
+          <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+            <div style={{ textAlign: 'center' }}>
+              <span style={{ fontSize: '0.70rem', color: 'var(--color-ink-muted)', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Total Slips
+              </span>
+              <span className="font-mono tabular-nums" style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-ink-primary)' }}>
+                {orders.length}
+              </span>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <span style={{ fontSize: '0.70rem', color: 'var(--color-ink-muted)', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Completed
+              </span>
+              <span className="font-mono tabular-nums" style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-gain)' }}>
+                {completedOrders.length}
+              </span>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <span style={{ fontSize: '0.70rem', color: 'var(--color-ink-muted)', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Queued Pending
+              </span>
+              <span className="font-mono tabular-nums" style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-loss)' }}>
+                {pendingOrders.length}
+              </span>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <span style={{ fontSize: '0.70rem', color: 'var(--color-ink-muted)', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Avg Processing
+              </span>
+              <span className="font-mono tabular-nums" style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-ink-primary)' }}>
+                {avgTime}s
+              </span>
+            </div>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* 3. Desk Breakdown Columns */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '24px' }}>
-        
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+
         {/* Desk 1 Column */}
-        <div className="glass card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid var(--color-border)', paddingBottom: '8px' }}>
-            <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-ink)', fontSize: '1.1rem', margin: 0 }}>💼 Desk 1 Operations</h3>
-            <span style={{ fontWeight: 'bold', color: desk1.color }}>{desk1.indicator} Avg: {desk1.avg}s ({desk1.completed}/{desk1.total})</span>
+        <Card style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            borderBottom: '1px solid var(--color-border-subtle)',
+            paddingBottom: '10px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <IconMonitor size={16} />
+              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--color-ink-primary)' }}>
+                Desk 1 Operations
+              </h3>
+            </div>
+            <Badge variant={desk1.variant} size="sm">
+              <span className="font-mono tabular-nums">{desk1.indicator} Avg: {desk1.avg}s ({desk1.completed}/{desk1.total})</span>
+            </Badge>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', maxHeight: '450px', minHeight: '300px' }}>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', maxHeight: '460px', minHeight: '260px' }}>
             {orders.filter(o => o.desk === 1).length === 0 ? (
-              <div style={{ color: 'var(--color-ink-3)', fontSize: '0.85rem', textAlign: 'center', padding: '40px 0' }}>No slips assigned.</div>
+              <div style={{ color: 'var(--color-ink-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '48px 0' }}>
+                No slips assigned to Desk 1.
+              </div>
             ) : (
               orders.filter(o => o.desk === 1).map(o => (
-                <div key={o.id} className="glass" style={{ padding: '12px', borderLeft: `4px solid ${o.status === 'completed' ? 'var(--color-rise)' : 'var(--color-fall)'}` }}>
+                <div
+                  key={o.id}
+                  style={{
+                    padding: '12px',
+                    borderRadius: '6px',
+                    backgroundColor: 'var(--color-surface-sunken)',
+                    border: '1px solid var(--color-border-subtle)',
+                    borderLeft: `4px solid ${o.status === 'completed' ? 'var(--color-gain)' : 'var(--color-loss)'}`
+                  }}
+                >
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                    <span style={{ fontWeight: 900, fontSize: '0.85rem' }}>{o.id}</span>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--color-ink-3)' }}>{new Date(o.generatedAt).toLocaleTimeString()}</span>
+                    <span className="font-mono tabular-nums" style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--color-ink-primary)' }}>
+                      {o.id}
+                    </span>
+                    <span className="font-mono tabular-nums" style={{ fontSize: '0.75rem', color: 'var(--color-ink-muted)' }}>
+                      {new Date(o.generatedAt).toLocaleTimeString()}
+                    </span>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '6px', fontSize: '0.85rem', marginBottom: '8px' }}>
-                    <div>Team: <strong>{o.teamCode}</strong></div>
-                    <div>Ticker: <strong>{o.ticker}</strong></div>
-                    <div>Action: <strong style={{ color: o.action === 'BUY' ? 'var(--color-rise)' : 'var(--color-fall)' }}>{o.action}</strong></div>
-                    <div>Qty: <strong>{o.quantity}</strong></div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '6px', fontSize: '0.82rem', marginBottom: '8px' }}>
+                    <div>Team: <strong className="font-mono tabular-nums">{o.teamCode}</strong></div>
+                    <div>Ticker: <strong className="font-mono">{o.ticker}</strong></div>
+                    <div>Action: <strong style={{ color: o.action === 'BUY' ? 'var(--color-gain)' : 'var(--color-loss)' }}>{o.action}</strong></div>
+                    <div>Qty: <strong className="font-mono tabular-nums">{o.quantity}</strong></div>
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--color-ink-2)', fontStyle: 'italic', marginBottom: '10px' }}>
+
+                  <div style={{ fontSize: '0.75rem', color: 'var(--color-ink-secondary)', fontStyle: 'italic', marginBottom: '10px' }}>
                     "{o.rationale}"
                   </div>
+
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     {renderElapsedTime(o)}
                     {o.status === 'pending' && (
-                      <button className="btn" style={{ padding: '2px 8px', fontSize: '0.7rem', backgroundColor: 'var(--color-rise-light)', color: 'var(--color-rise)' }} onClick={() => handleMarkDone(o.id)}>
-                        MARK DONE ✓
-                      </button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        icon={<IconCheck size={12} />}
+                        onClick={() => handleMarkDone(o.id)}
+                      >
+                        Mark Done
+                      </Button>
                     )}
                   </div>
                 </div>
               ))
             )}
           </div>
-        </div>
+        </Card>
 
         {/* Desk 2 Column */}
-        <div className="glass card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid var(--color-border)', paddingBottom: '8px' }}>
-            <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-ink)', fontSize: '1.1rem', margin: 0 }}>💼 Desk 2 Operations</h3>
-            <span style={{ fontWeight: 'bold', color: desk2.color }}>{desk2.indicator} Avg: {desk2.avg}s ({desk2.completed}/{desk2.total})</span>
+        <Card style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            borderBottom: '1px solid var(--color-border-subtle)',
+            paddingBottom: '10px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <IconMonitor size={16} />
+              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--color-ink-primary)' }}>
+                Desk 2 Operations
+              </h3>
+            </div>
+            <Badge variant={desk2.variant} size="sm">
+              <span className="font-mono tabular-nums">{desk2.indicator} Avg: {desk2.avg}s ({desk2.completed}/{desk2.total})</span>
+            </Badge>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', maxHeight: '450px', minHeight: '300px' }}>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', maxHeight: '460px', minHeight: '260px' }}>
             {orders.filter(o => o.desk === 2).length === 0 ? (
-              <div style={{ color: 'var(--color-ink-3)', fontSize: '0.85rem', textAlign: 'center', padding: '40px 0' }}>No slips assigned.</div>
+              <div style={{ color: 'var(--color-ink-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '48px 0' }}>
+                No slips assigned to Desk 2.
+              </div>
             ) : (
               orders.filter(o => o.desk === 2).map(o => (
-                <div key={o.id} className="glass" style={{ padding: '12px', borderLeft: `4px solid ${o.status === 'completed' ? 'var(--color-rise)' : 'var(--color-fall)'}` }}>
+                <div
+                  key={o.id}
+                  style={{
+                    padding: '12px',
+                    borderRadius: '6px',
+                    backgroundColor: 'var(--color-surface-sunken)',
+                    border: '1px solid var(--color-border-subtle)',
+                    borderLeft: `4px solid ${o.status === 'completed' ? 'var(--color-gain)' : 'var(--color-loss)'}`
+                  }}
+                >
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                    <span style={{ fontWeight: 900, fontSize: '0.85rem' }}>{o.id}</span>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--color-ink-3)' }}>{new Date(o.generatedAt).toLocaleTimeString()}</span>
+                    <span className="font-mono tabular-nums" style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--color-ink-primary)' }}>
+                      {o.id}
+                    </span>
+                    <span className="font-mono tabular-nums" style={{ fontSize: '0.75rem', color: 'var(--color-ink-muted)' }}>
+                      {new Date(o.generatedAt).toLocaleTimeString()}
+                    </span>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '6px', fontSize: '0.85rem', marginBottom: '8px' }}>
-                    <div>Team: <strong>{o.teamCode}</strong></div>
-                    <div>Ticker: <strong>{o.ticker}</strong></div>
-                    <div>Action: <strong style={{ color: o.action === 'BUY' ? 'var(--color-rise)' : 'var(--color-fall)' }}>{o.action}</strong></div>
-                    <div>Qty: <strong>{o.quantity}</strong></div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '6px', fontSize: '0.82rem', marginBottom: '8px' }}>
+                    <div>Team: <strong className="font-mono tabular-nums">{o.teamCode}</strong></div>
+                    <div>Ticker: <strong className="font-mono">{o.ticker}</strong></div>
+                    <div>Action: <strong style={{ color: o.action === 'BUY' ? 'var(--color-gain)' : 'var(--color-loss)' }}>{o.action}</strong></div>
+                    <div>Qty: <strong className="font-mono tabular-nums">{o.quantity}</strong></div>
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--color-ink-2)', fontStyle: 'italic', marginBottom: '10px' }}>
+
+                  <div style={{ fontSize: '0.75rem', color: 'var(--color-ink-secondary)', fontStyle: 'italic', marginBottom: '10px' }}>
                     "{o.rationale}"
                   </div>
+
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     {renderElapsedTime(o)}
                     {o.status === 'pending' && (
-                      <button className="btn" style={{ padding: '2px 8px', fontSize: '0.7rem', backgroundColor: 'var(--color-rise-light)', color: 'var(--color-rise)' }} onClick={() => handleMarkDone(o.id)}>
-                        MARK DONE ✓
-                      </button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        icon={<IconCheck size={12} />}
+                        onClick={() => handleMarkDone(o.id)}
+                      >
+                        Mark Done
+                      </Button>
                     )}
                   </div>
                 </div>
               ))
             )}
           </div>
-        </div>
+        </Card>
 
         {/* Desk 3 Column */}
-        <div className="glass card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid var(--color-border)', paddingBottom: '8px' }}>
-            <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-ink)', fontSize: '1.1rem', margin: 0 }}>💼 Desk 3 Operations</h3>
-            <span style={{ fontWeight: 'bold', color: desk3.color }}>{desk3.indicator} Avg: {desk3.avg}s ({desk3.completed}/{desk3.total})</span>
+        <Card style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            borderBottom: '1px solid var(--color-border-subtle)',
+            paddingBottom: '10px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <IconMonitor size={16} />
+              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--color-ink-primary)' }}>
+                Desk 3 Operations
+              </h3>
+            </div>
+            <Badge variant={desk3.variant} size="sm">
+              <span className="font-mono tabular-nums">{desk3.indicator} Avg: {desk3.avg}s ({desk3.completed}/{desk3.total})</span>
+            </Badge>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', maxHeight: '450px', minHeight: '300px' }}>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', maxHeight: '460px', minHeight: '260px' }}>
             {orders.filter(o => o.desk === 3).length === 0 ? (
-              <div style={{ color: 'var(--color-ink-3)', fontSize: '0.85rem', textAlign: 'center', padding: '40px 0' }}>No slips assigned.</div>
+              <div style={{ color: 'var(--color-ink-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '48px 0' }}>
+                No slips assigned to Desk 3.
+              </div>
             ) : (
               orders.filter(o => o.desk === 3).map(o => (
-                <div key={o.id} className="glass" style={{ padding: '12px', borderLeft: `4px solid ${o.status === 'completed' ? 'var(--color-rise)' : 'var(--color-fall)'}` }}>
+                <div
+                  key={o.id}
+                  style={{
+                    padding: '12px',
+                    borderRadius: '6px',
+                    backgroundColor: 'var(--color-surface-sunken)',
+                    border: '1px solid var(--color-border-subtle)',
+                    borderLeft: `4px solid ${o.status === 'completed' ? 'var(--color-gain)' : 'var(--color-loss)'}`
+                  }}
+                >
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                    <span style={{ fontWeight: 900, fontSize: '0.85rem' }}>{o.id}</span>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--color-ink-3)' }}>{new Date(o.generatedAt).toLocaleTimeString()}</span>
+                    <span className="font-mono tabular-nums" style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--color-ink-primary)' }}>
+                      {o.id}
+                    </span>
+                    <span className="font-mono tabular-nums" style={{ fontSize: '0.75rem', color: 'var(--color-ink-muted)' }}>
+                      {new Date(o.generatedAt).toLocaleTimeString()}
+                    </span>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '6px', fontSize: '0.85rem', marginBottom: '8px' }}>
-                    <div>Team: <strong>{o.teamCode}</strong></div>
-                    <div>Ticker: <strong>{o.ticker}</strong></div>
-                    <div>Action: <strong style={{ color: o.action === 'BUY' ? 'var(--color-rise)' : 'var(--color-fall)' }}>{o.action}</strong></div>
-                    <div>Qty: <strong>{o.quantity}</strong></div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '6px', fontSize: '0.82rem', marginBottom: '8px' }}>
+                    <div>Team: <strong className="font-mono tabular-nums">{o.teamCode}</strong></div>
+                    <div>Ticker: <strong className="font-mono">{o.ticker}</strong></div>
+                    <div>Action: <strong style={{ color: o.action === 'BUY' ? 'var(--color-gain)' : 'var(--color-loss)' }}>{o.action}</strong></div>
+                    <div>Qty: <strong className="font-mono tabular-nums">{o.quantity}</strong></div>
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--color-ink-2)', fontStyle: 'italic', marginBottom: '10px' }}>
+
+                  <div style={{ fontSize: '0.75rem', color: 'var(--color-ink-secondary)', fontStyle: 'italic', marginBottom: '10px' }}>
                     "{o.rationale}"
                   </div>
+
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     {renderElapsedTime(o)}
                     {o.status === 'pending' && (
-                      <button className="btn" style={{ padding: '2px 8px', fontSize: '0.7rem', backgroundColor: 'var(--color-rise-light)', color: 'var(--color-rise)' }} onClick={() => handleMarkDone(o.id)}>
-                        MARK DONE ✓
-                      </button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        icon={<IconCheck size={12} />}
+                        onClick={() => handleMarkDone(o.id)}
+                      >
+                        Mark Done
+                      </Button>
                     )}
                   </div>
                 </div>
               ))
             )}
           </div>
-        </div>
+        </Card>
 
       </div>
 
       {/* 4. Performance Log Table */}
-      <div className="glass card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-ink)', fontSize: '1.25rem', margin: 0 }}>📊 Performance Log</h3>
-          <button className="btn btn-secondary" onClick={handleExportCSV}>Export CSV</button>
+      <Card style={{ padding: '20px 24px' }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '12px',
+          marginBottom: '16px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <IconBarChart size={18} />
+            <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: 'var(--color-ink-primary)' }}>
+              Performance Log
+            </h3>
+          </div>
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={<IconDownload size={14} />}
+            onClick={handleExportCSV}
+            disabled={orders.length === 0}
+          >
+            Export CSV
+          </Button>
         </div>
-        <div style={{ overflowX: 'auto', maxHeight: '300px' }}>
-          <table className="fms-table" style={{ marginTop: 0 }}>
+
+        <div style={{ overflowX: 'auto', maxHeight: '340px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
             <thead>
-              <tr>
-                <th>#</th>
-                <th>Desk</th>
-                <th>Team</th>
-                <th>Security</th>
-                <th>Action</th>
-                <th style={{ textAlign: 'right' }}>Qty</th>
-                <th>Gen Time</th>
-                <th>Done Time</th>
-                <th style={{ textAlign: 'right' }}>Seconds</th>
+              <tr style={{
+                backgroundColor: 'var(--color-surface-sunken)',
+                borderBottom: '1px solid var(--color-border-subtle)',
+                color: 'var(--color-ink-secondary)',
+                textTransform: 'uppercase',
+                fontSize: '0.72rem',
+                letterSpacing: '0.05em'
+              }}>
+                <th style={{ padding: '10px 14px' }}>#</th>
+                <th style={{ padding: '10px 14px' }}>Desk</th>
+                <th style={{ padding: '10px 14px' }}>Team</th>
+                <th style={{ padding: '10px 14px' }}>Security</th>
+                <th style={{ padding: '10px 14px' }}>Action</th>
+                <th style={{ padding: '10px 14px', textAlign: 'right' }}>Qty</th>
+                <th style={{ padding: '10px 14px' }}>Gen Time</th>
+                <th style={{ padding: '10px 14px' }}>Done Time</th>
+                <th style={{ padding: '10px 14px', textAlign: 'right' }}>Seconds</th>
               </tr>
             </thead>
             <tbody>
-              {orders.map(o => (
-                <tr key={o.id}>
-                  <td className="font-data" style={{ fontWeight: 700 }}>{o.id}</td>
-                  <td className="font-data">{o.desk}</td>
-                  <td className="font-data">{o.teamCode}</td>
-                  <td className="font-data">{o.ticker}</td>
-                  <td className="font-data" style={{ color: o.action === 'BUY' ? 'var(--color-rise)' : 'var(--color-fall)' }}>{o.action}</td>
-                  <td className="font-data" style={{ textAlign: 'right' }}>{o.quantity}</td>
-                  <td className="font-data">{new Date(o.generatedAt).toLocaleTimeString()}</td>
-                  <td className="font-data">{o.completedAt ? new Date(o.completedAt).toLocaleTimeString() : 'pending'}</td>
-                  <td className="font-data" style={{ textAlign: 'right', fontWeight: 700 }}>
-                    {o.elapsedSeconds !== null ? `${o.elapsedSeconds}s` : '—'}
+              {orders.length === 0 ? (
+                <tr>
+                  <td colSpan="9" style={{ padding: '32px', textAlign: 'center', color: 'var(--color-ink-muted)' }}>
+                    No orders recorded yet. Start drill to begin performance logging.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                orders.map(o => (
+                  <tr
+                    key={o.id}
+                    style={{
+                      borderBottom: '1px solid var(--color-border-subtle)',
+                      transition: 'background-color 0.15s ease'
+                    }}
+                  >
+                    <td className="font-mono tabular-nums" style={{ padding: '10px 14px', fontWeight: 700 }}>
+                      {o.id}
+                    </td>
+                    <td className="font-mono tabular-nums" style={{ padding: '10px 14px' }}>
+                      Desk {o.desk}
+                    </td>
+                    <td className="font-mono tabular-nums" style={{ padding: '10px 14px', fontWeight: 600 }}>
+                      {o.teamCode}
+                    </td>
+                    <td className="font-mono" style={{ padding: '10px 14px', fontWeight: 700 }}>
+                      {o.ticker}
+                    </td>
+                    <td style={{ padding: '10px 14px', fontWeight: 700, color: o.action === 'BUY' ? 'var(--color-gain)' : 'var(--color-loss)' }}>
+                      {o.action}
+                    </td>
+                    <td className="font-mono tabular-nums" style={{ padding: '10px 14px', textAlign: 'right' }}>
+                      {o.quantity}
+                    </td>
+                    <td className="font-mono tabular-nums" style={{ padding: '10px 14px', color: 'var(--color-ink-muted)' }}>
+                      {new Date(o.generatedAt).toLocaleTimeString()}
+                    </td>
+                    <td className="font-mono tabular-nums" style={{ padding: '10px 14px', color: 'var(--color-ink-muted)' }}>
+                      {o.completedAt ? new Date(o.completedAt).toLocaleTimeString() : 'pending'}
+                    </td>
+                    <td className="font-mono tabular-nums" style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700 }}>
+                      {o.elapsedSeconds !== null ? `${o.elapsedSeconds}s` : '—'}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
-      </div>
+      </Card>
 
-      {/* Summary modal */}
-      {showSummary && (
-        <div className="modal-backdrop" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 100 }}>
-          <div className="glass card" style={{ maxWidth: '600px', width: '100%', padding: '32px', borderTop: '6px solid var(--color-brass)' }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-brass)', textAlign: 'center', margin: '0 0 16px 0' }}>DRILL SESSION COMPLETE</h2>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px', backgroundColor: 'var(--color-surface-2)', padding: '16px', borderRadius: '8px' }}>
-              <div>Total Slips: <strong>{orders.length}</strong></div>
-              <div>Completed: <strong style={{ color: 'var(--color-rise)' }}>{completedOrders.length}</strong></div>
-              <div style={{ gridColumn: 'span 2', fontSize: '1.1rem' }}>
-                OVERALL AVERAGE: <strong style={{ color: avgTime <= 10 ? 'var(--color-rise)' : avgTime <= 20 ? 'var(--color-brass)' : 'var(--color-fall)' }}>{avgTime}s</strong>
-              </div>
+      {/* 5. Summary Modal */}
+      <Modal
+        isOpen={showSummary}
+        onClose={() => setShowSummary(false)}
+        title="Drill Session Complete"
+        subtitle="Review throughput metrics, desk bottlenecks, and operational coaching recommendations."
+        size="md"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '12px',
+            backgroundColor: 'var(--color-surface-sunken)',
+            padding: '16px',
+            borderRadius: '8px',
+            border: '1px solid var(--color-border-subtle)'
+          }}>
+            <div>
+              <span style={{ fontSize: '0.75rem', color: 'var(--color-ink-muted)', textTransform: 'uppercase', display: 'block' }}>
+                Total Slips
+              </span>
+              <strong className="font-mono tabular-nums" style={{ fontSize: '1.2rem', color: 'var(--color-ink-primary)' }}>
+                {orders.length}
+              </strong>
             </div>
 
-            <div style={{ borderBottom: '1px dashed var(--color-border)', paddingBottom: '12px', marginBottom: '16px' }}>
-              <h4 style={{ margin: '0 0 8px 0', textTransform: 'uppercase', fontSize: '0.8rem', color: 'var(--color-ink-2)' }}>Desk Metrics Breakdown</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Desk 1:</span>
-                  <span><strong>{desk1.avg}s</strong> average ({desk1.completed} orders)</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Desk 2:</span>
-                  <span><strong>{desk2.avg}s</strong> average ({desk2.completed} orders)</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Desk 3:</span>
-                  <span><strong>{desk3.avg}s</strong> average ({desk3.completed} orders)</span>
-                </div>
-              </div>
+            <div>
+              <span style={{ fontSize: '0.75rem', color: 'var(--color-ink-muted)', textTransform: 'uppercase', display: 'block' }}>
+                Completed
+              </span>
+              <strong className="font-mono tabular-nums" style={{ fontSize: '1.2rem', color: 'var(--color-gain)' }}>
+                {completedOrders.length}
+              </strong>
             </div>
 
-            <div style={{ marginBottom: '24px' }}>
-              <h4 style={{ margin: '0 0 8px 0', textTransform: 'uppercase', fontSize: '0.8rem', color: 'var(--color-ink-2)' }}>AI Operational Coach Recommendations</h4>
-              {recLoading ? (
-                <div style={{ fontStyle: 'italic', color: 'var(--color-ink-3)', fontSize: '0.9rem' }}>Generating recommendations from operations coach...</div>
-              ) : (
-                <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.5', padding: '12px', backgroundColor: 'var(--color-surface)', borderRadius: '6px', borderLeft: '3px solid var(--color-brass)' }}>
-                  {recommendation}
-                </p>
-              )}
-            </div>
-
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-              <button className="btn btn-secondary" onClick={handleExportCSV}>Export CSV</button>
-              <button className="btn btn-primary" onClick={handleResetDrill}>Run Again</button>
-              <button className="btn" style={{ backgroundColor: 'var(--color-surface-2)' }} onClick={() => setShowSummary(false)}>Close</button>
+            <div style={{ gridColumn: 'span 2', borderTop: '1px solid var(--color-border-subtle)', paddingTop: '10px', marginTop: '4px' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--color-ink-muted)', textTransform: 'uppercase', display: 'block' }}>
+                Overall Average
+              </span>
+              <strong
+                className="font-mono tabular-nums"
+                style={{
+                  fontSize: '1.4rem',
+                  color: avgTime <= 10 ? 'var(--color-gain)' : avgTime <= 20 ? 'var(--color-brass)' : 'var(--color-loss)'
+                }}
+              >
+                {avgTime}s
+              </strong>
             </div>
           </div>
+
+          <div style={{ borderBottom: '1px solid var(--color-border-subtle)', paddingBottom: '16px' }}>
+            <h4 style={{ margin: '0 0 10px 0', textTransform: 'uppercase', fontSize: '0.75rem', color: 'var(--color-ink-secondary)', letterSpacing: '0.05em' }}>
+              Desk Metrics Breakdown
+            </h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.85rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>Desk 1:</span>
+                <span className="font-mono tabular-nums">
+                  <strong>{desk1.avg}s</strong> average ({desk1.completed} orders)
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>Desk 2:</span>
+                <span className="font-mono tabular-nums">
+                  <strong>{desk2.avg}s</strong> average ({desk2.completed} orders)
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>Desk 3:</span>
+                <span className="font-mono tabular-nums">
+                  <strong>{desk3.avg}s</strong> average ({desk3.completed} orders)
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h4 style={{ margin: '0 0 8px 0', textTransform: 'uppercase', fontSize: '0.75rem', color: 'var(--color-ink-secondary)', letterSpacing: '0.05em' }}>
+              Operational Coach Recommendations
+            </h4>
+            {recLoading ? (
+              <div style={{ fontStyle: 'italic', color: 'var(--color-ink-muted)', fontSize: '0.85rem' }}>
+                Generating recommendations from operations coach...
+              </div>
+            ) : (
+              <p style={{
+                margin: 0,
+                fontSize: '0.88rem',
+                lineHeight: 1.5,
+                padding: '12px 14px',
+                backgroundColor: 'var(--color-surface-sunken)',
+                borderRadius: '6px',
+                borderLeft: '3px solid var(--color-brass)',
+                color: 'var(--color-ink-primary)'
+              }}>
+                {recommendation}
+              </p>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', paddingTop: '10px' }}>
+            <Button variant="secondary" onClick={handleExportCSV}>
+              Export CSV
+            </Button>
+            <Button variant="primary" onClick={handleResetDrill}>
+              Run Again
+            </Button>
+            <Button variant="ghost" onClick={() => setShowSummary(false)}>
+              Close
+            </Button>
+          </div>
         </div>
-      )}
+      </Modal>
 
     </div>
   );

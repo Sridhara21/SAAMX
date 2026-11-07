@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { db, ref, onValue } from '../lib/firebase.js';
 import { apiFetch } from '../lib/api.js';
+import { CURRENCY_DIRECTORY, CURRENCY_SYMBOLS, DEFAULT_FX_RATES } from '../lib/formatters.js';
 
 export default function CompanyProfileModal({ securityId, securities, newsEvents, onClose }) {
-  const security = (securities || []).find(s => s.id === securityId || s.ticker === securityId);
+  const security = Array.isArray(securities)
+    ? securities.find(s => s.id === securityId || s.ticker === securityId)
+    : (securities?.[securityId] || Object.values(securities || {}).find(s => s.id === securityId || s.ticker === securityId));
   if (!security) return null;
 
   // Active Tab state inside Modal Drawer
@@ -40,8 +43,6 @@ export default function CompanyProfileModal({ securityId, securities, newsEvents
   // Trade Calculator state
   const [calcAction, setCalcAction] = useState('BUY');
   const [calcQty, setCalcQty] = useState(100);
-  const [calcOrderType, setCalcOrderType] = useState('MARKET');
-  const [calcLimitPrice, setCalcLimitPrice] = useState(security.currentPrice || security.basePrice || 100);
   const [copiedNotification, setCopiedNotification] = useState(false);
 
   // Lazy-load price history from Firebase RTDB
@@ -53,6 +54,9 @@ export default function CompanyProfileModal({ securityId, securities, newsEvents
   });
 
   useEffect(() => {
+    // Initialize immediately with local security price history
+    setHistory(security.priceHistory || [{ timestamp: Date.now(), price: security.currentPrice || security.basePrice }]);
+
     const historyRef = ref(db, `fms/priceHistory/${security.ticker}`);
     const unsubHistory = onValue(historyRef, (snap) => {
       if (snap.exists()) {
@@ -62,9 +66,9 @@ export default function CompanyProfileModal({ securityId, securities, newsEvents
           price: tick.price
         })).sort((a, b) => a.timestamp - b.timestamp);
         setHistory(ticks);
-      } else {
-        setHistory(security.priceHistory || [{ timestamp: Date.now(), price: security.currentPrice || security.basePrice }]);
       }
+    }, () => {
+      // Handled gracefully under Phase 4 zero-trust isolation
     });
 
     const fxRef = ref(db, 'fms/fxRates');
@@ -72,6 +76,8 @@ export default function CompanyProfileModal({ securityId, securities, newsEvents
       if (snap.exists()) {
         setFxRates(snap.val());
       }
+    }, () => {
+      // Handled gracefully under Phase 4 zero-trust isolation
     });
 
     return () => {
@@ -106,13 +112,13 @@ export default function CompanyProfileModal({ securityId, securities, newsEvents
 
   // Currency Resolution & FX Conversion
   const secCurrency = security.currency || (security.exchange === 'NASDAQ' || security.exchange === 'NYSE' ? 'USD' : security.exchange === 'LSE' ? 'GBP' : security.exchange === 'XETRA' || security.exchange === 'Euronext' ? 'EUR' : 'INR');
-  const curSym = secCurrency === 'USD' ? '$' : secCurrency === 'GBP' ? '£' : secCurrency === 'EUR' ? '€' : '₹';
+  const curSym = CURRENCY_SYMBOLS[secCurrency] || (secCurrency === 'USD' ? '$' : '₹');
   const isForeign = secCurrency !== 'INR';
 
   const currentFxRate = useMemo(() => {
     if (!isForeign) return 1.0;
     const pairKey = `${secCurrency}INR`;
-    return fxRates[pairKey]?.midRate || (secCurrency === 'USD' ? 88.20 : secCurrency === 'GBP' ? 119.40 : 103.50);
+    return fxRates[pairKey]?.midRate || DEFAULT_FX_RATES[pairKey]?.midRate || 1.0;
   }, [secCurrency, isForeign, fxRates]);
 
   const approxInrPrice = useMemo(() => {
@@ -217,13 +223,13 @@ export default function CompanyProfileModal({ securityId, securities, newsEvents
   const profile = security.profileDetails || {};
 
   // Calculator Gross Values
-  const effectivePrice = calcOrderType === 'MARKET' ? currentPrice : Number(calcLimitPrice) || currentPrice;
+  const effectivePrice = currentPrice;
   const calcGrossNative = calcQty * effectivePrice;
   const calcGrossINR = calcGrossNative * currentFxRate;
   const calcImpactPercent = ((calcQty / (security.totalUnits || 100000)) * (security.volatility || 0.5) * 100).toFixed(2);
 
   const handleCopyOrderSummary = () => {
-    const text = `ORDER SLIP: ${calcAction} ${calcQty}x ${security.ticker} @ ${curSym}${effectivePrice} [${calcOrderType}] | Gross: ${curSym}${calcGrossNative.toLocaleString()} (~₹${calcGrossINR.toLocaleString()})`;
+    const text = `ORDER SLIP: ${calcAction} ${calcQty}x ${security.ticker} @ ${curSym}${effectivePrice} [MARKET] | Gross: ${curSym}${calcGrossNative.toLocaleString()} (~₹${calcGrossINR.toLocaleString()})`;
     navigator.clipboard.writeText(text);
     setCopiedNotification(true);
     setTimeout(() => setCopiedNotification(false), 2000);
@@ -253,7 +259,8 @@ export default function CompanyProfileModal({ securityId, securities, newsEvents
           maxWidth: '660px',
           height: '100vh',
           overflowY: 'auto',
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--color-surface)',
+          color: 'var(--color-ink)',
           boxShadow: '-8px 0 36px rgba(0, 0, 0, 0.25)',
           borderLeft: '1px solid var(--color-border)',
           padding: '24px 28px',
@@ -317,7 +324,7 @@ export default function CompanyProfileModal({ securityId, securities, newsEvents
               <span className="badge badge-public" style={{ fontSize: '0.84rem', padding: '2px 8px', fontWeight: 900 }}>
                 {security.ticker}
               </span>
-              <span className="badge" style={{ backgroundColor: 'var(--color-surface-2)', color: '#1E232B', border: '1px solid var(--color-border)', fontSize: '0.76rem' }}>
+              <span className="badge" style={{ backgroundColor: 'var(--color-surface-2)', color: 'var(--color-ink)', border: '1px solid var(--color-border)', fontSize: '0.76rem' }}>
                 {security.exchange || 'NSE'} &bull; {security.country || 'Global'}
               </span>
               <span className={`badge ${security.status === 'Active' ? 'badge-rise' : 'badge-fall'}`} style={{ fontSize: '0.74rem', fontWeight: 800 }}>
@@ -398,15 +405,15 @@ export default function CompanyProfileModal({ securityId, securities, newsEvents
         {/* 2. Global Price & Foreign Exchange Conversion Strip */}
         <div style={{ 
           padding: '16px 20px', 
-          backgroundColor: '#FAF8F3', 
-          border: '1.5px solid rgba(132, 85, 8, 0.3)', 
+          backgroundColor: 'var(--color-surface-2)', 
+          border: '1.5px solid var(--color-border)', 
           borderRadius: '12px', 
           marginBottom: '16px'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
             {/* Native Price */}
             <div>
-              <span style={{ fontSize: '0.7rem', color: '#4A5568', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>
+              <span style={{ fontSize: '0.7rem', color: 'var(--color-ink-3)', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>
                 NATIVE MARKET PRICE ({secCurrency})
               </span>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
@@ -557,7 +564,7 @@ export default function CompanyProfileModal({ securityId, securities, newsEvents
                 <h4 style={{ fontSize: '0.82rem', fontWeight: 900, color: 'var(--color-ink)', margin: 0, textTransform: 'uppercase' }}>
                   📊 5-Level Order Depth Book
                 </h4>
-                <span style={{ fontSize: '0.72rem', color: '#242C38', fontWeight: 800 }}>
+                <span style={{ fontSize: '0.72rem', color: 'var(--color-ink-2)', fontWeight: 800 }}>
                   Spread: {curSym}{depth.spread}
                 </span>
               </div>
@@ -571,7 +578,7 @@ export default function CompanyProfileModal({ securityId, securities, newsEvents
                   {depth.bids.map((b, i) => (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
                       <span style={{ color: 'var(--color-rise)', fontWeight: 800 }}>{curSym}{b.price}</span>
-                      <span style={{ color: '#242C38' }}>{b.qty}</span>
+                      <span style={{ color: 'var(--color-ink-2)' }}>{b.qty}</span>
                     </div>
                   ))}
                 </div>
@@ -584,7 +591,7 @@ export default function CompanyProfileModal({ securityId, securities, newsEvents
                   {depth.asks.map((a, i) => (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
                       <span style={{ color: 'var(--color-fall)', fontWeight: 800 }}>{curSym}{a.price}</span>
-                      <span style={{ color: '#242C38' }}>{a.qty}</span>
+                      <span style={{ color: 'var(--color-ink-2)' }}>{a.qty}</span>
                     </div>
                   ))}
                 </div>
@@ -600,7 +607,7 @@ export default function CompanyProfileModal({ securityId, securities, newsEvents
               <h4 style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--color-ink)', margin: '0 0 8px 0', textTransform: 'uppercase' }}>
                 🏢 Instrument Overview & Mandate
               </h4>
-              <p style={{ fontSize: '0.84rem', color: '#1E232B', lineHeight: '1.5', margin: 0 }}>
+              <p style={{ fontSize: '0.84rem', color: 'var(--color-ink-2)', lineHeight: '1.5', margin: 0 }}>
                 {security.description || profile.about || `${security.name} is an active constituent in the ${security.sector} sector.`}
               </p>
             </div>
@@ -608,27 +615,27 @@ export default function CompanyProfileModal({ securityId, securities, newsEvents
             {/* Key Trading Metrics Grid */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px' }}>
               <div style={{ background: 'var(--color-surface-2)', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
-                <span style={{ fontSize: '0.68rem', color: '#4A5568', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>Primary Exchange</span>
+                <span style={{ fontSize: '0.68rem', color: 'var(--color-ink-3)', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>Primary Exchange</span>
                 <strong style={{ fontSize: '0.9rem', color: 'var(--color-ink)' }}>{security.exchange || 'NSE'} ({security.country || 'India'})</strong>
               </div>
               <div style={{ background: 'var(--color-surface-2)', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
-                <span style={{ fontSize: '0.68rem', color: '#4A5568', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>Asset Class</span>
+                <span style={{ fontSize: '0.68rem', color: 'var(--color-ink-3)', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>Asset Class</span>
                 <strong style={{ fontSize: '0.9rem', color: 'var(--color-ink)' }}>{security.type || 'Stock'}</strong>
               </div>
               <div style={{ background: 'var(--color-surface-2)', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
-                <span style={{ fontSize: '0.68rem', color: '#4A5568', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>Trading Currency</span>
+                <span style={{ fontSize: '0.68rem', color: 'var(--color-ink-3)', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>Trading Currency</span>
                 <strong style={{ fontSize: '0.9rem', color: 'var(--color-ink)' }}>{secCurrency} ({curSym})</strong>
               </div>
               <div style={{ background: 'var(--color-surface-2)', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
-                <span style={{ fontSize: '0.68rem', color: '#4A5568', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>Total Float Units</span>
+                <span style={{ fontSize: '0.68rem', color: 'var(--color-ink-3)', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>Total Float Units</span>
                 <strong style={{ fontSize: '0.9rem', color: 'var(--color-ink)' }}>{(security.totalUnits || 100000).toLocaleString()}</strong>
               </div>
               <div style={{ background: 'var(--color-surface-2)', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
-                <span style={{ fontSize: '0.68rem', color: '#4A5568', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>Available Float</span>
+                <span style={{ fontSize: '0.68rem', color: 'var(--color-ink-3)', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>Available Float</span>
                 <strong style={{ fontSize: '0.9rem', color: 'var(--color-rise)' }}>{(security.availableUnits || 0).toLocaleString()}</strong>
               </div>
               <div style={{ background: 'var(--color-surface-2)', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
-                <span style={{ fontSize: '0.68rem', color: '#4A5568', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>Volatility Coeff</span>
+                <span style={{ fontSize: '0.68rem', color: 'var(--color-ink-3)', textTransform: 'uppercase', fontWeight: 800, display: 'block' }}>Volatility Coeff</span>
                 <strong style={{ fontSize: '0.9rem', color: 'var(--color-ink)' }}>{((security.volatility || 0.5) * 100).toFixed(0)}%</strong>
               </div>
             </div>

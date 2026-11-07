@@ -1,0 +1,233 @@
+{
+  "timestamp": "2026-11-07T08:45:45.220Z",
+  "total": 15,
+  "passed": 15,
+  "failed": 0,
+  "results": [
+    {
+      "id": "D2-UI-01",
+      "title": "Admin UI Reset Endpoint Alignment",
+      "endpoint": "src/pages/AdminPage.jsx",
+      "role": "static-audit",
+      "scenario": "Verify Admin UI calls authoritative /api/admin/reset without 404 mismatch",
+      "expected": "No /api/admin/reset-database, contains /api/admin/reset with confirmText",
+      "actual": "hasWrongEndpoint: false, hasCorrectEndpoint: true, sendsConfirmText: true",
+      "evidence": {
+        "hasWrongEndpoint": false,
+        "hasCorrectEndpoint": true,
+        "sendsConfirmText": true
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "D2-UI-02",
+      "title": "Admin UI Reset Phrase Alignment",
+      "endpoint": "src/pages/AdminPage.jsx",
+      "role": "static-audit",
+      "scenario": "Verify Admin UI prompts and checks exact phrase RESET ALL",
+      "expected": "No CONFIRM RESET check, contains resetPhrase !== \"RESET ALL\" and placeholder",
+      "actual": "hasWrongPhrase: false, hasCorrectPhrase: true, hasCorrectPlaceholder: true",
+      "evidence": {
+        "hasWrongPhrase": false,
+        "hasCorrectPhrase": true,
+        "hasCorrectPlaceholder": true
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "D3-FX-01",
+      "title": "FX Queue Settle ACID Wallet Mutation",
+      "endpoint": "POST /api/fx/queue-action",
+      "role": "exchange",
+      "scenario": "Settle queued FX request (100,000 INR -> USD); verify atomic debit/credit",
+      "expected": "Status SETTLED, INR debited exactly 100,000, USD credited converted amount",
+      "actual": "status: SETTLED, inrDelta: 100000, usdDelta: 1128.7100",
+      "evidence": {
+        "itemStatus": "SETTLED",
+        "inrDelta": 100000,
+        "usdDelta": 1128.7099999999991,
+        "walletsAfter": {
+          "INR": 9825000,
+          "JPY": 5000000,
+          "AED": 100000,
+          "SGD": 50000,
+          "CNY": 200000,
+          "AUD": 50000,
+          "KRW": 50000000,
+          "GBP": 25625.33,
+          "USD": 51128.71,
+          "EUR": 25000
+        }
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "D3-FX-02",
+      "title": "FX Queue Settle Ledger & Transaction Record",
+      "endpoint": "POST /api/fx/queue-action",
+      "role": "exchange",
+      "scenario": "Verify fxTransactions array records ticketNumber, operatorId, and walletsAfter",
+      "expected": "fxTransaction recorded with ticketNumber, operatorId, and valid transaction ID",
+      "actual": "recorded: true, ticketNumber: FX_1794041128804_wicg, operatorId: exchange",
+      "evidence": {
+        "txId": "FXTX_1794041129108_603e",
+        "ticketNumber": "FX_1794041128804_wicg",
+        "operatorId": "exchange",
+        "inState": true
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "D4-DUP-01",
+      "title": "Duplicate FX Ticket Submission Rejection",
+      "endpoint": "POST /api/fx/exchange",
+      "role": "exchange",
+      "scenario": "Submit identical ticketNumber FX-TKT-M0-... twice to /api/fx/exchange",
+      "expected": "Second attempt rejected with HTTP 400 Bad Request (\"already been processed\")",
+      "actual": "HTTP 400 - FX Ticket FX-TKT-M0-1794041131058 has already been processed.",
+      "evidence": {
+        "error": "FX Ticket FX-TKT-M0-1794041131058 has already been processed."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "D4-DUP-02",
+      "title": "Duplicate FX Ticket Zero-Debit Invariant",
+      "endpoint": "POST /api/fx/exchange",
+      "role": "exchange",
+      "scenario": "Verify wallet was not debited a second time on duplicate ticket rejection",
+      "expected": "INR wallet after duplicate attempt strictly equals wallet after first attempt",
+      "actual": "inrAfterDirect1: 9815000, inrAfterDirect2: 9815000",
+      "evidence": {
+        "inrAfterDirect1": 9815000,
+        "inrAfterDirect2": 9815000,
+        "diff": 0
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "D5-LEAK-01",
+      "title": "BUY Order Cancellation Reserved Cash Zero-Leak",
+      "endpoint": "POST /api/orders/cancel",
+      "role": "admin",
+      "scenario": "Cancel BUY order in EXECUTED_PENDING_SETTLEMENT; verify reservedCash released to baseline",
+      "expected": "Order CANCELLED, reservedCash returns to pre-order level, voucher marked CANCELLED",
+      "actual": "orderStatus: CANCELLED, preBuyReserved: 0, postExecReserved: 4076.73, postCancelReserved: 0, voucherStatus: CANCELLED",
+      "evidence": {
+        "preBuyReserved": 0,
+        "postExecReserved": 4076.73,
+        "postCancelReserved": 0,
+        "voucherStatus": "CANCELLED"
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "D5-LEAK-02",
+      "title": "Cancelled Voucher Settlement Prevention",
+      "endpoint": "POST /api/bank/settle",
+      "role": "bank_teller",
+      "scenario": "Bank teller attempts to settle voucher from cancelled order",
+      "expected": "HTTP 400 Bad Request (\"Cannot settle record in status CANCELLED\")",
+      "actual": "HTTP 400 - Cannot settle record in status CANCELLED.",
+      "evidence": {
+        "error": "Cannot settle record in status CANCELLED."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "D5-LEAK-03",
+      "title": "SELL Order Cancellation Holdings Restoration",
+      "endpoint": "POST /api/orders/cancel",
+      "role": "admin",
+      "scenario": "Cancel SELL order in EXECUTED_PENDING_SETTLEMENT; verify surrendered shares restored",
+      "expected": "Order CANCELLED, holdings restored to pre-order count, voucher marked CANCELLED",
+      "actual": "orderStatus: CANCELLED, preSellHoldings: 10, postExecHoldings: 10, postCancelHoldings: 10, voucherStatus: CANCELLED",
+      "evidence": {
+        "preSellHoldings": 10,
+        "postExecHoldings": 10,
+        "postCancelHoldings": 10,
+        "voucherStatus": "CANCELLED"
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "D5-LEAK-04",
+      "title": "Settled Order Cancellation Guard",
+      "endpoint": "POST /api/orders/cancel",
+      "role": "admin",
+      "scenario": "Attempt to cancel an order that has already been SETTLED at the Bank",
+      "expected": "HTTP 400 Bad Request (\"Cannot cancel order in status SETTLED\")",
+      "actual": "HTTP 400 - Cannot cancel order in status SETTLED.",
+      "evidence": {
+        "error": "Cannot cancel order in status SETTLED."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "D1-SEC-01",
+      "title": "Unauthenticated Reset Request Rejection",
+      "endpoint": "POST /api/admin/reset",
+      "role": "anonymous",
+      "scenario": "Caller without session token attempts to trigger master reset",
+      "expected": "HTTP 401 Unauthorized",
+      "actual": "HTTP 401",
+      "evidence": {
+        "error": "401 Unauthorized: Valid session authentication required."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "D1-SEC-02",
+      "title": "Non-Admin Participant Reset Request Rejection",
+      "endpoint": "POST /api/admin/reset",
+      "role": "team (T01)",
+      "scenario": "Participant team attempts to trigger master reset with valid phrase",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403",
+      "evidence": {
+        "error": "Forbidden: Requires Admin privileges."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "D1-SEC-03",
+      "title": "Empty Body Reset Bypass Prevention",
+      "endpoint": "POST /api/admin/reset",
+      "role": "admin",
+      "scenario": "Admin sends empty body {} without confirmText (verifying empty-body bypass is closed)",
+      "expected": "HTTP 400 Bad Request with exact confirmation phrase required",
+      "actual": "HTTP 400 - Accidental reset prevented. Must provide exact confirmation phrase \"RESET ALL\".",
+      "evidence": {
+        "error": "Accidental reset prevented. Must provide exact confirmation phrase \"RESET ALL\"."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "D1-SEC-04",
+      "title": "Wrong Phrase (CONFIRM RESET) Rejection",
+      "endpoint": "POST /api/admin/reset",
+      "role": "admin",
+      "scenario": "Admin sends legacy/incorrect phrase \"CONFIRM RESET\"",
+      "expected": "HTTP 400 Bad Request",
+      "actual": "HTTP 400 - Accidental reset prevented. Must provide exact confirmation phrase \"RESET ALL\".",
+      "evidence": {
+        "error": "Accidental reset prevented. Must provide exact confirmation phrase \"RESET ALL\"."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "D1-SEC-05",
+      "title": "Authorized Master Reset with Exact Phrase RESET ALL",
+      "endpoint": "POST /api/admin/reset",
+      "role": "admin",
+      "scenario": "Admin provides exact confirmation phrase \"RESET ALL\"",
+      "expected": "HTTP 200 OK with success: true",
+      "actual": "HTTP 200 - success=true",
+      "evidence": {
+        "success": true,
+        "teamsCount": 20
+      },
+      "status": "PASSED"
+    }
+  ]
+}

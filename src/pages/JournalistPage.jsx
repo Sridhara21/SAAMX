@@ -1,663 +1,660 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { apiFetch } from '../lib/api.js';
-import { NEWS_PRESETS } from '../lib/newsPresets.js';
+import NewsAnchorConsole from './NewsAnchorConsole.jsx';
+import { NEWS_PRESET_CATEGORIES } from '../lib/newsPresetsLibrary.js';
+import {
+  Button,
+  Input,
+  Select,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardBody,
+  SectionHeader,
+  Badge,
+  Alert,
+  EmptyState
+} from '../components/ui/index.js';
 
-export default function JournalistPage({ state, adminPassword }) {
-  // Preset news sequence player logic
-  const currentNewsStep = state?.settings?.currentNewsStep || 1;
-
-  const handleBroadcastStep = async (stepNum) => {
-    const preset = NEWS_PRESETS.find(p => p.step === stepNum);
-    if (!preset) {
-      alert("Invalid step number or end of sequence reached.");
-      return;
-    }
-
-    const confirmSend = window.confirm(`Broadcast Step ${stepNum} news to exchange?\n\n"${preset.headline}"`);
-    if (!confirmSend) return;
-
-    try {
-      // 1. Dispatch news event via standard endpoint
-      const resNews = await apiFetch('/api/news', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-FMS-Password': adminPassword
-        },
-        body: JSON.stringify({
-          headline: preset.headline,
-          description: preset.description,
-          affectedSecurityIds: preset.affectedSecurityIds || [],
-          affectedSector: preset.affectedSector || null,
-          sentiment: preset.sentiment || 'Neutral',
-          impactPercent: preset.impactPercent || 0,
-          category: preset.category || 'Macro'
-        })
-      });
-
-      if (!resNews.ok) {
-        throw new Error("Failed to dispatch news bulletin.");
+export default function JournalistPage({ state, adminPassword, initialMode = 'draft' }) {
+  const [activeMode, setActiveMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash || '';
+      if (hash.includes('tab=anchor') || hash.includes('#/anchor') || hash.includes('#/news-anchor')) {
+        return 'anchor';
       }
-
-      // 2. Increment step count in Firebase settings
-      const nextStep = stepNum + 1;
-      const currentSettings = state.settings || {};
-      const resSettings = await apiFetch('/api/admin/settings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-FMS-Password': adminPassword
-        },
-        body: JSON.stringify({
-          settings: {
-            ...currentSettings,
-            currentNewsStep: nextStep
-          }
-        })
-      });
-
-      if (!resSettings.ok) {
-        throw new Error("News dispatched, but failed to update step counter in settings.");
+      if (hash.includes('tab=history') || hash.includes('#/draft-history')) {
+        return 'history';
       }
-
-      alert(`Step ${stepNum} news broadcasted successfully! Next step is Step ${nextStep}.`);
-    } catch (err) {
-      alert(`Error broadcasting step: ${err.message}`);
     }
-  };
+    return initialMode;
+  });
 
-  const handleResetStep = async () => {
-    const confirmReset = window.confirm("Are you sure you want to reset the news sequence back to Step 1?");
-    if (!confirmReset) return;
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [includeSimTag, setIncludeSimTag] = useState(true);
 
-    try {
-      const currentSettings = state.settings || {};
-      const res = await apiFetch('/api/admin/settings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-FMS-Password': adminPassword
-        },
-        body: JSON.stringify({
-          settings: {
-            ...currentSettings,
-            currentNewsStep: 1
-          }
-        })
-      });
-      if (res.ok) {
-        alert("News sequence reset to Step 1 successfully.");
-      }
-    } catch (err) {
-      alert("Failed to reset news step: " + err.message);
-    }
-  };
+  // Draft form fields
   const [headline, setHeadline] = useState('');
   const [description, setDescription] = useState('');
+  const [category, setCategory] = useState(NEWS_PRESET_CATEGORIES[0] || 'Corporate earnings');
+  const [subcategory, setSubcategory] = useState('QUARTERLY_RESULTS');
+  const [priority, setPriority] = useState('IMPORTANT');
   const [sentiment, setSentiment] = useState('Positive');
-  const [impactPct, setImpactPct] = useState('10');
-  const [category, setCategory] = useState('Macro');
-  const [targetScope, setTargetScope] = useState('Whole Sector');
+  const [impactMagnitude, setImpactMagnitude] = useState('8.0');
+  const [targetScope, setTargetScope] = useState('Specific Asset');
+  const [targetSecId, setTargetSecId] = useState('TCS');
   const [targetSector, setTargetSector] = useState('');
-  const [targetSecId, setTargetSecId] = useState('');
-  const [selectedCategoryTab, setSelectedCategoryTab] = useState('All');
+  const [targetCurrency, setTargetCurrency] = useState('INR');
+  const [classification, setClassification] = useState('confirmed');
+  const [durationMinutes, setDurationMinutes] = useState('5');
+  const [trainingEligibility, setTrainingEligibility] = useState(false);
 
-  const handlePublish = async (e) => {
+  // Local drafts list synced with state
+  const [drafts, setDrafts] = useState([]);
+  const [isLoadingDrafts, setIsLoadingDrafts] = useState(false);
+  const [submitSuccessMsg, setSubmitSuccessMsg] = useState(null);
+
+  const fetchDrafts = async () => {
+    setIsLoadingDrafts(true);
+    try {
+      const res = await apiFetch('/api/news/drafts');
+      if (res.ok) {
+        const data = await res.json();
+        setDrafts(data.drafts || []);
+      }
+    } catch (err) {
+      console.warn('Could not fetch drafts from server:', err);
+    } finally {
+      setIsLoadingDrafts(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDrafts();
+  }, [state?.newsDrafts]);
+
+  const handleSubmitDraft = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     if (!headline.trim()) {
       alert('Headline is required.');
       return;
     }
+    if (!description.trim()) {
+      alert('Description is required.');
+      return;
+    }
 
-    const payload = {
-      headline,
-      description,
-      sentiment,
-      impactPercent: Number(impactPct) || 0,
+    const rawHeadline = headline.trim();
+    const finalHeadline = (includeSimTag && !rawHeadline.startsWith('[SIMULATION'))
+      ? `[SIMULATION WIRE] ${rawHeadline}`
+      : rawHeadline;
+
+    setIsSubmitting(true);
+    setSubmitSuccessMsg(null);
+
+    let affectedSecurities = [];
+    let affectedSectors = [];
+
+    if (targetScope === 'Specific Asset' && targetSecId) {
+      affectedSecurities = [targetSecId];
+      const secObj = (state?.securities || []).find(s => s.id === targetSecId || s.ticker === targetSecId);
+      if (secObj?.sector) affectedSectors = [secObj.sector];
+    } else if (targetScope === 'Whole Sector' && targetSector) {
+      affectedSectors = [targetSector];
+    }
+
+    const draftPayload = {
+      headline: finalHeadline,
+      description: description.trim(),
       category,
-      affectedSector: targetScope === 'Whole Sector' && targetSector ? targetSector : null,
-      affectedSecurityIds: targetScope === 'Specific Asset' && targetSecId ? [targetSecId] : []
+      subcategory,
+      priority,
+      sentiment,
+      impactMagnitude: Number(impactMagnitude) || 5,
+      affectedSecurityIds: affectedSecurities,
+      affectedSector: affectedSectors[0] || null,
+      affectedSectors,
+      affectedCurrencies: [targetCurrency || 'INR'],
+      eventType: 'JOURNALIST_WIRE_DRAFT',
+      classification,
+      durationMinutes: Number(durationMinutes) || 5,
+      decayType: 'exponential',
+      trainingEligibility,
+      authorUsername: 'journalist'
     };
 
     try {
-      const res = await apiFetch('/api/news', {
+      const res = await apiFetch('/api/news/draft', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'X-FMS-Password': adminPassword
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(draftPayload)
       });
+
       if (res.ok) {
+        const data = await res.json();
         setHeadline('');
         setDescription('');
-        setTargetSecId('');
-        setImpactPct('10');
-        alert('News Bulletin Published & Broadcasted Live!');
+        setSubmitSuccessMsg(`Draft ${data.draft?.id || ''} submitted successfully! Awaiting News Controller review.`);
+        fetchDrafts();
       } else {
-        const data = await res.json();
-        alert(data.error || 'Failed to dispatch news.');
+        const errData = await res.json();
+        alert(errData.error || 'Failed to submit draft.');
       }
     } catch (err) {
-      alert('Publishing failed: ' + err.message);
+      alert('Draft submission failed: ' + err.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleApplyTemplate = (tpl) => {
-    setHeadline(tpl.headline);
-    setDescription(tpl.description || '');
-    setSentiment(tpl.sentiment);
-    setImpactPct(String(tpl.impactPercent));
-    setCategory(tpl.category || 'Policy');
-
-    if (tpl.affectedSector) {
-      setTargetScope('Whole Sector');
-      setTargetSector(tpl.affectedSector);
-    } else if (tpl.tickerMatch) {
-      const sec = state.securities.find(s => s.ticker === tpl.tickerMatch);
-      if (sec) {
-        setTargetScope('Specific Asset');
-        setTargetSecId(sec.id);
-      }
-    } else {
-      setTargetScope('Whole Sector');
-      setTargetSector('');
-    }
-  };
-
-  // Staged news templates for quick-select
-  const PRE_GENERATED_NEWS = [
-    {
-      headline: "INF & TCS Evaluate Blockbuster Cloud Infrastructure Merger",
-      description: "Industry rumors suggest India's top software services exporters are discussing a joint venture in sovereign AI compute cloud services.",
-      sentiment: "Positive",
-      impactPercent: 8,
-      category: "Merger",
-      targetScope: "Whole Sector",
-      targetSector: "Technology"
-    },
-    {
-      headline: "Union Budget Proposes 18% Tariff Hike on Imported GPU & AI Accelerators",
-      description: "Finance Ministry tables proposal to raise customs duties on advanced microchips to encourage domestic fab development.",
-      sentiment: "Negative",
-      impactPercent: 12,
-      category: "Policy",
-      targetScope: "Whole Sector",
-      targetSector: "Technology"
-    },
-    {
-      headline: "Foreign Institutional Investors Inflow Hits Record High in Tech Sector",
-      description: "Block deals in tech conglomerates drive major indices up. Global wealth funds cite low valuation and strong tailwinds.",
-      sentiment: "Positive",
-      impactPercent: 10,
-      category: "Macro",
-      targetScope: "Whole Sector",
-      targetSector: "Technology"
-    },
-    {
-      headline: "RBI Announces Surprise Repo Rate Cut of 25 Basis Points",
-      description: "Monetary Policy Committee moves to ease interest rates as inflation cools down to 3.2% year-on-year.",
-      sentiment: "Positive",
-      impactPercent: 6,
-      category: "Policy",
-      targetScope: "Whole Sector",
-      targetSector: ""
-    },
-    {
-      headline: "Tech Volatility Spike: SEBI Surveillance Desk Flags High-Frequency Speculation",
-      description: "Regulator advises brokerages to increase margin requirements on volatile tech listings citing excessive retail leverage.",
-      sentiment: "Negative",
-      impactPercent: 8,
-      category: "Policy",
-      targetScope: "Whole Sector",
-      targetSector: "Technology"
-    },
-    {
-      headline: "Retail Investors FOMO Peak: Daily Signup Volume Reaches 5-Year High",
-      description: "Major domestic brokers report server latency due to massive retail order volumes rushing into AI and fintech assets.",
-      sentiment: "Positive",
-      impactPercent: 7,
-      category: "Macro",
-      targetScope: "Whole Sector",
-      targetSector: ""
-    },
-    {
-      headline: "Tata Sons Evaluates Minority Strategic Stake in Staged Tech IPOs",
-      description: "Whispers from Bombay House suggest evaluation of upcoming startup subscription filings to expand digital portfolio.",
-      sentiment: "Positive",
-      impactPercent: 15,
-      category: "Merger",
-      targetScope: "Whole Sector",
-      targetSector: "Fintech / Technology"
-    },
-    {
-      headline: "Major Computing Firms Face Liquidity Squeeze Amid Elevated Bond Yields",
-      description: "Debt-heavy technology and compute startups struggle to refinance short-term debt instruments.",
-      sentiment: "Negative",
-      impactPercent: 14,
-      category: "Earnings",
-      targetScope: "Whole Sector",
-      targetSector: "Technology"
-    },
-    {
-      headline: "Global Chip Shortage Threatens Local AI Deployments",
-      description: "Supply chain blockages delay local server deployments for leading technology enterprises by 6 months.",
-      sentiment: "Negative",
-      impactPercent: 11,
-      category: "Disaster",
-      targetScope: "Whole Sector",
-      targetSector: "Technology"
-    },
-    {
-      headline: "Tech Index Technical Breakout: Indices Break Historic Resistance Levels",
-      description: "Chartists indicate strong momentum and support levels as indices surge past previous record highs.",
-      sentiment: "Positive",
-      impactPercent: 5,
-      category: "Macro",
-      targetScope: "Whole Sector",
-      targetSector: "Technology"
-    }
-  ];
-
-  const handleQuickPublish = async (tpl) => {
-    let targetSectorName = null;
-    let targetSecIdVal = [];
-
-    if (tpl.targetScope === 'Whole Sector' && tpl.targetSector) {
-      targetSectorName = tpl.targetSector;
-    } else if (tpl.targetScope === 'Specific Asset') {
-      const match = state.securities.find(s => s.ticker === tpl.targetSecId);
-      if (match) targetSecIdVal = [match.id];
-    }
-
-    const payload = {
-      headline: tpl.headline,
-      description: tpl.description || '',
-      sentiment: tpl.sentiment,
-      impactPercent: tpl.impactPercent,
-      category: tpl.category || 'Policy',
-      affectedSector: targetSectorName,
-      affectedSecurityIds: targetSecIdVal
-    };
-
-    try {
-      const res = await apiFetch('/api/news', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'X-FMS-Password': adminPassword
-        },
-        body: JSON.stringify(payload)
-      });
-      if (res.ok) {
-        alert('News Bulletin Broadcasted Live!');
-      } else {
-        const data = await res.json();
-        alert(data.error || 'Failed to dispatch news.');
-      }
-    } catch (err) {
-      alert('Publishing failed: ' + err.message);
-    }
-  };
-
-  const templateCategories = ['All', 'Earnings', 'Policy', 'Merger', 'Macro', 'Disaster'];
-  
-  const filteredTemplates = PRE_GENERATED_NEWS.filter(n => {
-    if (selectedCategoryTab === 'All') return true;
-    return n.category === selectedCategoryTab;
-  });
-
-  const publishedNews = [...state.newsEvents]
-    .filter(n => n.triggeredAt)
-    .sort((a, b) => b.triggeredAt - a.triggeredAt);
+  const publishedNews = state?.newsEvents || [];
+  const activeDraftsList = (drafts.length > 0 ? drafts : state?.newsDrafts) || [];
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px', padding: '12px' }}>
+    <div className="portal-container" style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
       
-      {/* Column 1: News Bulletin Composer */}
-      <div className="glass card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid var(--color-border)', paddingBottom: '12px' }}>
-          <div>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.6rem', color: 'var(--color-ink)' }}>Newsroom Bulletin Editor</h2>
-            <p style={{ color: 'var(--color-ink-2)', fontSize: '0.85rem' }}>Draft and broadcast market intelligence wire dispatches</p>
+      {/* Header Banner */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.75rem', fontWeight: 900, margin: 0, color: 'var(--color-ink)' }}>
+              📰 Journalist Console & Press Room
+            </h1>
+            <Badge variant="outline">PORTAL #9</Badge>
           </div>
-          <span className="badge badge-public" style={{ backgroundColor: 'var(--color-brass-light)', color: 'var(--color-brass)' }}>PRESS WIRE</span>
+          <p style={{ margin: '4px 0 0', color: 'var(--color-ink-2)', fontSize: '0.88rem' }}>
+            Two-Phase Editorial Pipeline: Compose drafts for News Controller clearance before live broadcast.
+          </p>
         </div>
 
-        <form onSubmit={handlePublish} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div className="form-group">
-            <label>Headline Bulletin</label>
-            <input
-              type="text"
-              className="input-field"
-              required
-              value={headline}
-              onChange={e => setHeadline(e.target.value)}
-              placeholder="e.g. TCRP Announces Breakthrough AI Chip Core"
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Supporting Story Description</label>
-            <textarea
-              className="input-field"
-              rows="4"
-              style={{ resize: 'none' }}
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              placeholder="Provide context on product releases, regulatory actions, or macro trends..."
-            />
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
-            <div className="form-group">
-              <label>Sentiment</label>
-              <select className="input-field" value={sentiment} onChange={e => setSentiment(e.target.value)}>
-                <option value="Positive">Positive (Bullish)</option>
-                <option value="Negative">Negative (Bearish)</option>
-                <option value="Neutral">Neutral (Flat)</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Price Impact (%)</label>
-              <input
-                type="number"
-                className="input-field font-data"
-                value={impactPct}
-                onChange={e => setImpactPct(e.target.value)}
-              />
-            </div>
-            <div className="form-group">
-              <label>Category</label>
-              <select className="input-field" value={category} onChange={e => setCategory(e.target.value)}>
-                <option value="Earnings">Earnings</option>
-                <option value="Policy">Policy</option>
-                <option value="Scandal">Scandal</option>
-                <option value="Merger">Merger</option>
-                <option value="Product">Product</option>
-                <option value="Macro">Macro</option>
-                <option value="Disaster">Disaster</option>
-              </select>
-            </div>
-          </div>
-
-          <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '16px' }}>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-ink-2)', marginBottom: '8px' }}>Target Asset Scope</label>
-            <div style={{ display: 'flex', gap: '24px', marginBottom: '12px' }}>
-              <label style={{ display: 'flex', gap: '6px', alignItems: 'center', cursor: 'pointer', fontSize: '0.9rem' }}>
-                <input type="radio" checked={targetScope === 'Whole Sector'} onChange={() => setTargetScope('Whole Sector')} /> Whole Sector
-              </label>
-              <label style={{ display: 'flex', gap: '6px', alignItems: 'center', cursor: 'pointer', fontSize: '0.9rem' }}>
-                <input type="radio" checked={targetScope === 'Specific Asset'} onChange={() => setTargetScope('Specific Asset')} /> Specific Asset
-              </label>
-            </div>
-
-            {targetScope === 'Whole Sector' ? (
-              <select className="input-field" value={targetSector} onChange={e => setTargetSector(e.target.value)}>
-                <option value="">All Sectors (Global Market Impact)</option>
-                {[...new Set(state.securities.map(s => s.sector))].map(s => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
-            ) : (
-              <select className="input-field" value={targetSecId} onChange={e => setTargetSecId(e.target.value)}>
-                <option value="">Select Target Security...</option>
-                {state.securities.map(s => (
-                  <option key={s.id} value={s.id}>{s.ticker} &mdash; {s.name}</option>
-                ))}
-              </select>
-            )}
-          </div>
-
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '14px', fontWeight: 700 }}>
-            ⚡ PUBLISH WIRE BULLETIN
+        {/* View Mode Switcher */}
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            type="button"
+            className={`btn btn-sm ${activeMode === 'draft' ? 'btn-primary' : 'btn-outline'}`}
+            onClick={() => setActiveMode('draft')}
+          >
+            ✍️ Draft Composer
           </button>
-        </form>
+          <button
+            type="button"
+            className={`btn btn-sm ${activeMode === 'history' ? 'btn-primary' : 'btn-outline'}`}
+            onClick={() => { setActiveMode('history'); fetchDrafts(); }}
+          >
+            📋 Draft Clearance ({activeDraftsList.length})
+          </button>
+          <button
+            type="button"
+            className={`btn btn-sm ${activeMode === 'anchor' ? 'btn-primary' : 'btn-outline'}`}
+            onClick={() => setActiveMode('anchor')}
+          >
+            🎙️ Anchor Teleprompter
+          </button>
+        </div>
       </div>
 
-      {/* Column 2: News Templates & Live Wire Feed */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        
-        {/* Templates Panel */}
-        <div className="glass card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-ink)', fontSize: '1.25rem' }}>
-            Quick-Select Templates
-          </h3>
-          
-          {/* Categories Tab Selector */}
-          <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '6px', borderBottom: '1px solid var(--color-border)' }}>
-            {templateCategories.map(cat => (
+      {/* Mode 1: News Anchor Teleprompter Mode */}
+      {activeMode === 'anchor' && (
+        <NewsAnchorConsole state={state} />
+      )}
+
+      {/* Mode 2: Draft Clearance History */}
+      {activeMode === 'history' && (
+        <div className="glass card" style={{ padding: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <div>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', margin: 0, color: 'var(--color-ink)' }}>
+                Editorial Draft Submissions & Review Status
+              </h2>
+              <span style={{ fontSize: '0.8rem', color: 'var(--color-ink-2)' }}>
+                Track approval status and reviewer feedback notes from the News Controller.
+              </span>
+            </div>
+            <button type="button" className="btn btn-sm btn-outline" onClick={fetchDrafts} disabled={isLoadingDrafts}>
+              {isLoadingDrafts ? 'Refreshing...' : '🔄 Refresh Queue'}
+            </button>
+          </div>
+
+          {activeDraftsList.length === 0 ? (
+            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--color-ink-3)' }}>
+              <p style={{ fontSize: '1rem', margin: 0 }}>No drafts submitted yet.</p>
               <button
-                key={cat}
                 type="button"
-                className="btn"
-                style={{
-                  padding: '4px 10px',
-                  fontSize: '0.75rem',
-                  backgroundColor: selectedCategoryTab === cat ? 'var(--color-brass-light)' : 'transparent',
-                  color: selectedCategoryTab === cat ? 'var(--color-brass)' : 'var(--color-ink-2)',
-                  border: 'none',
-                  borderRadius: '4px'
-                }}
-                onClick={() => setSelectedCategoryTab(cat)}
+                className="btn btn-sm btn-primary"
+                style={{ marginTop: '12px' }}
+                onClick={() => setActiveMode('draft')}
               >
-                {cat}
+                Create First Draft
               </button>
-            ))}
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '250px', overflowY: 'auto' }}>
-            {filteredTemplates.length === 0 ? (
-              <div style={{ color: 'var(--color-ink-3)', fontSize: '0.85rem', textAlign: 'center', marginTop: '16px' }}>No templates in this category.</div>
-            ) : (
-              filteredTemplates.map((tpl, idx) => (
-                <div
-                  key={idx}
-                  className="glass"
-                  style={{
-                    padding: '12px 14px',
-                    border: '1px solid var(--color-border)',
-                    boxShadow: 'var(--shadow-l1)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '6px'
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span className={tpl.sentiment === 'Positive' ? 'text-up' : tpl.sentiment === 'Negative' ? 'text-down' : 'text-brass'} style={{ fontWeight: 700, fontSize: '0.85rem' }}>
-                      {tpl.headline}
-                    </span>
-                    <span className="badge badge-public" style={{ fontSize: '0.6rem' }}>{tpl.category}</span>
-                  </div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--color-ink-2)' }}>
-                    Impact: {tpl.sentiment === 'Positive' ? '+' : '-'}{tpl.impactPercent}% &bull; Target: {tpl.targetSector || 'Global'}
-                  </span>
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                    <button type="button" className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: '0.7rem' }} onClick={() => handleApplyTemplate(tpl)}>
-                      📝 Draft
-                    </button>
-                    <button type="button" className="btn" style={{ padding: '2px 8px', fontSize: '0.7rem', backgroundColor: 'var(--color-brass-light)', color: 'var(--color-brass)', border: 'none' }} onClick={() => handleQuickPublish(tpl)}>
-                      🚀 Send Live
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Panel: SAAMX Event Scenario Sequence Player */}
-        {(() => {
-          const currentPreset = NEWS_PRESETS.find(p => p.step === currentNewsStep) || null;
-          return (
-            <div className="glass card" style={{ display: 'flex', flexDirection: 'column', gap: '16px', border: '1.5px solid var(--color-brass)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-brass)', fontSize: '1.25rem', margin: 0 }}>
-                  🎭 SAAMX Event Scenario Wire
-                </h3>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  style={{ padding: '4px 8px', fontSize: '0.7rem', backgroundColor: 'var(--color-surface-2)', border: '1px solid var(--color-border)', cursor: 'pointer' }}
-                  onClick={handleResetStep}
-                >
-                  ⏪ Reset to Step 1
-                </button>
-              </div>
-
-              {currentPreset ? (
-                <div style={{ backgroundColor: 'var(--color-surface-2)', padding: '16px', borderRadius: '8px', borderLeft: '4px solid var(--color-brass)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--color-brass)' }}>
-                      ▶ NEXT NEWS: STEP {currentNewsStep} / {NEWS_PRESETS.length}
-                    </span>
-                    <span style={{
-                      fontSize: '0.65rem',
-                      fontWeight: 'bold',
-                      padding: '2px 6px',
-                      borderRadius: '4px',
-                      backgroundColor: currentPreset.sentiment === 'Positive' ? 'var(--color-rise-light)' : currentPreset.sentiment === 'Negative' ? 'var(--color-fall-light)' : 'var(--color-border)',
-                      color: currentPreset.sentiment === 'Positive' ? 'var(--color-rise)' : currentPreset.sentiment === 'Negative' ? 'var(--color-fall)' : 'var(--color-ink-2)'
-                    }}>
-                      {currentPreset.sentiment} ({currentPreset.impactPercent > 0 ? `+${currentPreset.impactPercent}%` : `${currentPreset.impactPercent}%`})
-                    </span>
-                  </div>
-
-                  <strong style={{ color: 'var(--color-ink)', fontSize: '1.05rem', display: 'block' }}>
-                    {currentPreset.headline}
-                  </strong>
-                  <p style={{ color: 'var(--color-ink-2)', fontSize: '0.8rem', margin: 0, lineHeight: '1.5' }}>
-                    {currentPreset.description}
-                  </p>
-
-                  <div style={{ display: 'flex', gap: '12px', fontSize: '0.75rem', color: 'var(--color-ink-2)', flexWrap: 'wrap', borderTop: '1px solid var(--color-border)', paddingTop: '10px', marginTop: '4px' }}>
-                    <span><strong>Sector:</strong> {currentPreset.affectedSector || 'Macro / Universal'}</span>
-                    {currentPreset.affectedSecurityIds && currentPreset.affectedSecurityIds.length > 0 && (
-                      <span><strong>Targets:</strong> {currentPreset.affectedSecurityIds.join(', ')}</span>
-                    )}
-                  </div>
-
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    style={{
-                      width: '100%',
-                      marginTop: '8px',
-                      backgroundColor: 'var(--color-brass)',
-                      color: '#000',
-                      fontWeight: 'bold',
-                      fontSize: '0.9rem',
-                      padding: '12px',
-                      boxShadow: '0 4px 12px rgba(197, 160, 89, 0.2)',
-                      cursor: 'pointer',
-                      border: 'none',
-                      borderRadius: '6px'
-                    }}
-                    onClick={() => handleBroadcastStep(currentNewsStep)}
-                  >
-                    🚀 BROADCAST STEP {currentNewsStep} NEWS
-                  </button>
-                </div>
-              ) : (
-                <div style={{ textAlign: 'center', padding: '16px', color: 'var(--color-rise)', fontWeight: 'bold', backgroundColor: 'var(--color-rise-light)', borderRadius: '8px' }}>
-                  ✓ All 80 Scheduled Event Scenario News Items Have Been Successfully Broadcasted!
-                </div>
-              )}
-
-              {/* Scrollable list of all steps */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: 'var(--color-ink-2)' }}>
-                  📋 SCENARIO TIMELINE DIRECTORY ({NEWS_PRESETS.length} STEPS)
-                </span>
-                <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid var(--color-border)', borderRadius: '8px', backgroundColor: 'var(--color-surface-2)', padding: '6px' }}>
-                  {NEWS_PRESETS.map((preset) => {
-                    const isBroadcasted = preset.step < currentNewsStep;
-                    const isCurrent = preset.step === currentNewsStep;
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
+                <thead>
+                  <tr style={{ borderBottom: '2px solid var(--color-border)', color: 'var(--color-ink-2)' }}>
+                    <th style={{ padding: '10px 12px' }}>Ticket</th>
+                    <th style={{ padding: '10px 12px' }}>Timestamp</th>
+                    <th style={{ padding: '10px 12px' }}>Headline & Story</th>
+                    <th style={{ padding: '10px 12px' }}>Category</th>
+                    <th style={{ padding: '10px 12px' }}>Priority</th>
+                    <th style={{ padding: '10px 12px' }}>Sentiment</th>
+                    <th style={{ padding: '10px 12px' }}>Impact</th>
+                    <th style={{ padding: '10px 12px' }}>Clearance Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {activeDraftsList.map(draft => {
+                    const statusColors = {
+                      SUBMITTED: { bg: '#FEF3C7', color: '#B45309', label: '⏳ SUBMITTED (In Review)' },
+                      APPROVED: { bg: '#DBEAFE', color: '#1D4ED8', label: '✓ APPROVED (Pending Broadcast)' },
+                      REJECTED: { bg: '#FEE2E2', color: '#B91C1C', label: '✕ REJECTED' },
+                      PUBLISHED: { bg: '#D1FAE5', color: '#047857', label: '🚀 PUBLISHED LIVE' }
+                    };
+                    const s = statusColors[draft.status] || { bg: '#F3F4F6', color: '#4B5563', label: draft.status };
 
                     return (
-                      <div
-                        key={preset.step}
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          padding: '8px 10px',
-                          borderBottom: '1px solid var(--color-border)',
-                          backgroundColor: isCurrent ? 'rgba(197, 160, 89, 0.08)' : 'transparent',
-                          fontSize: '0.75rem'
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', maxWidth: '75%' }}>
+                      <tr key={draft.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                        <td className="font-mono" style={{ padding: '12px', fontWeight: 700, fontSize: '0.78rem' }}>
+                          {draft.id}
+                        </td>
+                        <td style={{ padding: '12px', whiteSpace: 'nowrap', color: 'var(--color-ink-2)' }}>
+                          {draft.submittedAt ? new Date(draft.submittedAt).toLocaleTimeString() : 'N/A'}
+                        </td>
+                        <td style={{ padding: '12px', maxWidth: '350px' }}>
+                          <div style={{ fontWeight: 700, color: 'var(--color-ink)', marginBottom: '4px' }}>
+                            {draft.headline}
+                          </div>
+                          <div style={{ fontSize: '0.78rem', color: 'var(--color-ink-2)', lineHeight: 1.3 }}>
+                            {draft.description}
+                          </div>
+
+                          {/* Rejection Feedback Note Callout */}
+                          {draft.status === 'REJECTED' && draft.rejectionReason && (
+                            <div style={{
+                              marginTop: '8px',
+                              padding: '8px 12px',
+                              background: '#FEF2F2',
+                              border: '1px solid #FCA5A5',
+                              borderRadius: '6px',
+                              color: '#991B1B',
+                              fontSize: '0.78rem'
+                            }}>
+                              <strong>Editorial Feedback:</strong> {draft.rejectionReason}
+                              {draft.reviewedBy && <span style={{ marginLeft: '6px', opacity: 0.8 }}>({draft.reviewedBy})</span>}
+                            </div>
+                          )}
+                        </td>
+                        <td style={{ padding: '12px', whiteSpace: 'nowrap' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>{draft.category}</span>
+                        </td>
+                        <td style={{ padding: '12px' }}>
                           <span style={{
-                            fontWeight: 'bold',
-                            color: isBroadcasted ? 'var(--color-rise)' : isCurrent ? 'var(--color-brass)' : 'var(--color-ink-3)',
-                            minWidth: '55px'
-                          }}>
-                            {isBroadcasted ? '✓ Step ' : isCurrent ? '▶ Step ' : '⏳ Step '}{preset.step}
-                          </span>
-                          <span style={{
-                            color: isBroadcasted ? 'var(--color-ink-3)' : 'var(--color-ink)',
-                            textDecoration: isBroadcasted ? 'line-through' : 'none',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis'
-                          }} title={preset.headline}>
-                            {preset.headline}
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          className="btn"
-                          style={{
+                            fontSize: '0.7rem',
+                            fontWeight: 800,
                             padding: '2px 6px',
-                            fontSize: '0.65rem',
-                            backgroundColor: isBroadcasted ? 'var(--color-surface-3)' : 'var(--color-brass-light)',
-                            color: isBroadcasted ? 'var(--color-ink-3)' : 'var(--color-brass)',
-                            border: 'none',
-                            fontWeight: 'bold',
-                            cursor: 'pointer'
-                          }}
-                          onClick={() => handleBroadcastStep(preset.step)}
-                        >
-                          Trigger
-                        </button>
-                      </div>
+                            borderRadius: '4px',
+                            background: draft.priority === 'CRITICAL' ? '#EF4444' : '#6B7280',
+                            color: '#FFF'
+                          }}>
+                            {draft.priority}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px' }}>
+                          <span className={draft.sentiment === 'Positive' ? 'text-up' : draft.sentiment === 'Negative' ? 'text-down' : ''} style={{ fontWeight: 700 }}>
+                            {draft.sentiment}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px', fontWeight: 700 }}>
+                          ±{draft.impactMagnitude}%
+                        </td>
+                        <td style={{ padding: '12px', whiteSpace: 'nowrap' }}>
+                          <span style={{
+                            padding: '4px 10px',
+                            borderRadius: '12px',
+                            fontWeight: 800,
+                            fontSize: '0.75rem',
+                            background: s.bg,
+                            color: s.color
+                          }}>
+                            {s.label}
+                          </span>
+                        </td>
+                      </tr>
                     );
                   })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Mode 3: Draft Composer */}
+      {activeMode === 'draft' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(500px, 2fr) 1fr', gap: '24px' }}>
+          
+          {/* Main Draft Composer Form */}
+          <div className="glass card" style={{ padding: '24px' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', margin: '0 0 16px', color: 'var(--color-ink)' }}>
+              ✍️ Compose News Draft for Clearance
+            </h2>
+
+            {submitSuccessMsg && (
+              <div style={{ padding: '12px 16px', background: '#D1FAE5', border: '1px solid #10B981', color: '#065F46', borderRadius: '8px', marginBottom: '16px', fontSize: '0.88rem' }}>
+                {submitSuccessMsg}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmitDraft} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              
+              {/* Simulation Wire Prefix Option */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input
+                  type="checkbox"
+                  id="includeSimTag"
+                  checked={includeSimTag}
+                  onChange={e => setIncludeSimTag(e.target.checked)}
+                />
+                <label htmlFor="includeSimTag" style={{ fontSize: '0.85rem', color: 'var(--color-ink-2)', cursor: 'pointer' }}>
+                  Auto-prefix headline with <code>[SIMULATION WIRE]</code>
+                </label>
+              </div>
+
+              {/* Headline Input */}
+              <div className="form-group">
+                <label style={{ display: 'block', fontWeight: 700, fontSize: '0.85rem', marginBottom: '6px' }}>
+                  Headline Bulletin <span style={{ color: 'red' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  className="input-field"
+                  placeholder="e.g. TCS Secures $1.8B Multi-Year Cloud Modernization Pact with EU Banking Consortium"
+                  value={headline}
+                  onChange={e => setHeadline(e.target.value)}
+                  style={{ width: '100%', padding: '10px 12px', fontSize: '0.95rem' }}
+                  required
+                />
+              </div>
+
+              {/* Description Input */}
+              <div className="form-group">
+                <label style={{ display: 'block', fontWeight: 700, fontSize: '0.85rem', marginBottom: '6px' }}>
+                  Story Details & Context <span style={{ color: 'red' }}>*</span>
+                </label>
+                <textarea
+                  className="input-field"
+                  placeholder="Provide institutional background, expected revenue or margin impact, key contract milestones, or regulatory context..."
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
+                  rows={4}
+                  style={{ width: '100%', padding: '10px 12px', fontSize: '0.9rem', resize: 'vertical' }}
+                  required
+                />
+              </div>
+
+              {/* Grid: Category, Priority, Sentiment, Impact */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                
+                {/* Category (9 Official Categories) */}
+                <div className="form-group">
+                  <label style={{ display: 'block', fontWeight: 700, fontSize: '0.85rem', marginBottom: '6px' }}>Category</label>
+                  <select
+                    className="input-field"
+                    value={category}
+                    onChange={e => setCategory(e.target.value)}
+                    style={{ width: '100%', padding: '8px 10px' }}
+                  >
+                    {NEWS_PRESET_CATEGORIES.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
                 </div>
+
+                {/* Subcategory */}
+                <div className="form-group">
+                  <label style={{ display: 'block', fontWeight: 700, fontSize: '0.85rem', marginBottom: '6px' }}>Subcategory Tag</label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    value={subcategory}
+                    onChange={e => setSubcategory(e.target.value)}
+                    style={{ width: '100%', padding: '8px 10px' }}
+                  />
+                </div>
+
+                {/* Priority */}
+                <div className="form-group">
+                  <label style={{ display: 'block', fontWeight: 700, fontSize: '0.85rem', marginBottom: '6px' }}>Priority</label>
+                  <select
+                    className="input-field"
+                    value={priority}
+                    onChange={e => setPriority(e.target.value)}
+                    style={{ width: '100%', padding: '8px 10px' }}
+                  >
+                    <option value="CRITICAL">🔴 CRITICAL</option>
+                    <option value="BREAKING">🟠 BREAKING</option>
+                    <option value="IMPORTANT">🟡 IMPORTANT</option>
+                    <option value="INFORMATION">⚪ INFORMATION</option>
+                  </select>
+                </div>
+
+                {/* Sentiment */}
+                <div className="form-group">
+                  <label style={{ display: 'block', fontWeight: 700, fontSize: '0.85rem', marginBottom: '6px' }}>Sentiment Direction</label>
+                  <select
+                    className="input-field"
+                    value={sentiment}
+                    onChange={e => setSentiment(e.target.value)}
+                    style={{ width: '100%', padding: '8px 10px' }}
+                  >
+                    <option value="Positive">Bullish (Positive Price Action)</option>
+                    <option value="Negative">Bearish (Negative Price Action)</option>
+                    <option value="Neutral">Neutral (Informational)</option>
+                  </select>
+                </div>
+
+                {/* Magnitude */}
+                <div className="form-group">
+                  <label style={{ display: 'block', fontWeight: 700, fontSize: '0.85rem', marginBottom: '6px' }}>Est. Magnitude (%)</label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    max="50"
+                    className="input-field"
+                    value={impactMagnitude}
+                    onChange={e => setImpactMagnitude(e.target.value)}
+                    style={{ width: '100%', padding: '8px 10px' }}
+                  />
+                </div>
+
+                {/* Duration */}
+                <div className="form-group">
+                  <label style={{ display: 'block', fontWeight: 700, fontSize: '0.85rem', marginBottom: '6px' }}>Active Duration (min)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="60"
+                    className="input-field"
+                    value={durationMinutes}
+                    onChange={e => setDurationMinutes(e.target.value)}
+                    style={{ width: '100%', padding: '8px 10px' }}
+                  />
+                </div>
+
+                {/* Classification */}
+                <div className="form-group">
+                  <label style={{ display: 'block', fontWeight: 700, fontSize: '0.85rem', marginBottom: '6px' }}>Classification</label>
+                  <select
+                    className="input-field"
+                    value={classification}
+                    onChange={e => setClassification(e.target.value)}
+                    style={{ width: '100%', padding: '8px 10px' }}
+                  >
+                    <option value="confirmed">Confirmed Fact</option>
+                    <option value="rumour">Unverified Rumour</option>
+                    <option value="speculative">Market Speculation</option>
+                    <option value="macroeconomic">Macroeconomic Benchmark</option>
+                  </select>
+                </div>
+
+              </div>
+
+              {/* Target Asset Scope */}
+              <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '16px' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '8px' }}>
+                  Target Asset Scope
+                </label>
+                <div style={{ display: 'flex', gap: '20px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                  <label style={{ display: 'flex', gap: '6px', alignItems: 'center', cursor: 'pointer', fontSize: '0.85rem' }}>
+                    <input type="radio" checked={targetScope === 'Specific Asset'} onChange={() => setTargetScope('Specific Asset')} /> Specific Security
+                  </label>
+                  <label style={{ display: 'flex', gap: '6px', alignItems: 'center', cursor: 'pointer', fontSize: '0.85rem' }}>
+                    <input type="radio" checked={targetScope === 'Whole Sector'} onChange={() => setTargetScope('Whole Sector')} /> Whole Sector
+                  </label>
+                  <label style={{ display: 'flex', gap: '6px', alignItems: 'center', cursor: 'pointer', fontSize: '0.85rem' }}>
+                    <input type="radio" checked={targetScope === 'Currency Pair'} onChange={() => setTargetScope('Currency Pair')} /> FX Currency Pair
+                  </label>
+                </div>
+
+                {targetScope === 'Specific Asset' && (
+                  <select
+                    className="input-field"
+                    value={targetSecId}
+                    onChange={e => setTargetSecId(e.target.value)}
+                    style={{ width: '100%', padding: '8px 10px' }}
+                  >
+                    <option value="">Select Target Security...</option>
+                    {(state?.securities || []).map(s => (
+                      <option key={s.id || s.ticker} value={s.ticker || s.id}>
+                        {s.ticker} &mdash; {s.name} ({s.sector || 'Equities'})
+                      </option>
+                    ))}
+                  </select>
+                )}
+
+                {targetScope === 'Whole Sector' && (
+                  <select
+                    className="input-field"
+                    value={targetSector}
+                    onChange={e => setTargetSector(e.target.value)}
+                    style={{ width: '100%', padding: '8px 10px' }}
+                  >
+                    <option value="">All Sectors (Broad Market)</option>
+                    {[...new Set((state?.securities || []).map(s => s.sector))].filter(Boolean).map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                )}
+
+                {targetScope === 'Currency Pair' && (
+                  <select
+                    className="input-field"
+                    value={targetCurrency}
+                    onChange={e => setTargetCurrency(e.target.value)}
+                    style={{ width: '100%', padding: '8px 10px' }}
+                  >
+                    <option value="USD">USD/INR (US Dollar)</option>
+                    <option value="EUR">EUR/INR (Euro)</option>
+                    <option value="GBP">GBP/INR (British Pound)</option>
+                    <option value="JPY">JPY/INR (Japanese Yen)</option>
+                    <option value="AED">AED/INR (UAE Dirham)</option>
+                  </select>
+                )}
+              </div>
+
+              {/* Training Isolation Checkbox */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '8px' }}>
+                <input
+                  type="checkbox"
+                  id="trainingEligibility"
+                  checked={trainingEligibility}
+                  onChange={e => setTrainingEligibility(e.target.checked)}
+                />
+                <label htmlFor="trainingEligibility" style={{ fontSize: '0.85rem', color: 'var(--color-ink-2)', cursor: 'pointer' }}>
+                  Training Sandbox Eligible (can be triggered in isolated simulation drills)
+                </label>
+              </div>
+
+              {/* Submit Draft Button */}
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="btn btn-primary"
+                style={{
+                  width: '100%',
+                  padding: '14px',
+                  fontWeight: 900,
+                  fontSize: '1rem',
+                  marginTop: '8px',
+                  cursor: isSubmitting ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {isSubmitting ? 'Submitting to Editorial Desk...' : '📤 Submit Draft to News Controller Queue'}
+              </button>
+
+            </form>
+          </div>
+
+          {/* Right Rail: Editorial Guidelines & Published Stream */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            
+            {/* Editorial Clearance Rules */}
+            <div className="glass card" style={{ padding: '18px' }}>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', margin: '0 0 10px', color: 'var(--color-ink)' }}>
+                🛡️ Newsroom Editorial Policy
+              </h3>
+              <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '0.82rem', color: 'var(--color-ink-2)', lineHeight: 1.5 }}>
+                <li><strong>No Direct Publishing:</strong> All articles must pass editorial review by the News Controller to ensure floor integrity.</li>
+                <li><strong>Cap on Volatility:</strong> Single-event price impacts above ±20% trigger mandatory circuit halts.</li>
+                <li><strong>Rumour Discipline:</strong> Unconfirmed rumors carry a 50% uncertainty dampener until officially confirmed or debunked.</li>
+                <li><strong>Audit Accountability:</strong> Every submission logs author staff identity to durable PostgreSQL audit records.</li>
+              </ul>
+            </div>
+
+            {/* Live Published Wire Stream */}
+            <div className="glass card" style={{ padding: '18px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', margin: 0, color: 'var(--color-ink)' }}>
+                  📡 Broadcasted Wire Stream
+                </h3>
+                <span style={{ fontSize: '0.72rem', color: 'var(--color-ink-2)' }}>{publishedNews.length} Live</span>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '420px', overflowY: 'auto' }}>
+                {publishedNews.length === 0 ? (
+                  <div style={{ color: 'var(--color-ink-3)', fontSize: '0.82rem', textAlign: 'center', padding: '16px' }}>
+                    No bulletins broadcasted yet.
+                  </div>
+                ) : (
+                  publishedNews.map(news => (
+                    <div key={news.id} style={{ borderBottom: '1px solid var(--color-border)', paddingBottom: '8px', fontSize: '0.8rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2px' }}>
+                        <span className={news.sentiment === 'Positive' ? 'text-up' : news.sentiment === 'Negative' ? 'text-down' : ''} style={{ fontWeight: 800 }}>
+                          {news.headline}
+                        </span>
+                        <span className="font-mono tabular-nums" style={{ fontSize: '0.7rem', color: 'var(--color-ink-3)', marginLeft: '6px' }}>
+                          {new Date(news.triggeredAt).toLocaleTimeString()}
+                        </span>
+                      </div>
+                      <p style={{ margin: 0, color: 'var(--color-ink-2)', fontSize: '0.75rem', lineHeight: 1.25 }}>
+                        {news.description}
+                      </p>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
-          );
-        })()}
 
-        {/* Live Published Press Wire */}
-        <div className="glass card">
-          <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-ink)', fontSize: '1.25rem', marginBottom: '16px' }}>
-            Published Press Wire
-          </h3>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '250px', overflowY: 'auto' }}>
-            {publishedNews.length === 0 ? (
-              <div style={{ color: 'var(--color-ink-3)', fontSize: '0.85rem', textAlign: 'center', marginTop: '16px' }}>No bulletins broadcasted yet.</div>
-            ) : (
-              publishedNews.map(news => (
-                <div key={news.id} style={{ borderBottom: '1px solid var(--color-border)', paddingBottom: '8px', fontSize: '0.85rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <span className={news.sentiment === 'Positive' ? 'text-up' : news.sentiment === 'Negative' ? 'text-down' : ''} style={{ fontWeight: 700 }}>
-                      {news.headline}
-                    </span>
-                    <span className="font-data" style={{ fontSize: '0.75rem', color: 'var(--color-ink-3)' }}>
-                      {new Date(news.triggeredAt).toLocaleTimeString()}
-                    </span>
-                  </div>
-                  <p style={{ color: 'var(--color-ink-2)', fontSize: '0.75rem' }}>{news.description}</p>
-                </div>
-              ))
-            )}
           </div>
-        </div>
 
-      </div>
+        </div>
+      )}
 
     </div>
   );

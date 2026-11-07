@@ -1,0 +1,588 @@
+[
+  {
+    "id": "ADV-PHASE-F-PRE-01",
+    "title": "Pre-flight Authoritative Baseline Hash Verification",
+    "battery": "Integrity",
+    "scenario": "Confirm state.json SHA-256 is strictly bit-exact before tests run",
+    "expected": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "actual": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "evidence": {
+      "sha256": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-PHASE-F-SCORE-01",
+    "title": "Fresh Operator Scorecard Initialization Defaults",
+    "battery": "Battery 1: Scorecards",
+    "scenario": "Query scorecard for newly initialized operator before any actions",
+    "expected": "totalOps=0, completedOps=0, errors=0, accuracy=100%, compliance=100, badge=EVENT READY",
+    "actual": "totalOps=0, accuracy=100%, compliance=100, badge=EVENT READY",
+    "evidence": {
+      "operatorId": "Op_Fresh_101",
+      "role": "operator_x",
+      "totalOperations": 0,
+      "completedOperations": 0,
+      "approvals": 0,
+      "rejections": 0,
+      "returns": 0,
+      "errors": 0,
+      "violations": 0,
+      "totalLatencySeconds": 0,
+      "averageLatencySeconds": 0,
+      "accuracyRate": 100,
+      "errorRate": 0,
+      "complianceScore": 100,
+      "statusBadge": "EVENT READY",
+      "history": []
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-PHASE-F-SCORE-02",
+    "title": "Valid Operations Latency Accumulation & 100% Accuracy Math",
+    "battery": "Battery 1: Scorecards",
+    "scenario": "Execute 3 successive valid operations (claim, check slip, approve)",
+    "expected": "totalOps=3, completed=3, errors=0, avgLatency=4.5s, accuracy=100.0%, compliance=100, badge=EVENT READY",
+    "actual": "totalOps=3, completed=3, errors=0, avgLatency=4.5s, accuracy=100%, compliance=100",
+    "evidence": {
+      "operatorId": "Op_Math_Rigorous",
+      "role": "operator_x",
+      "totalOperations": 3,
+      "completedOperations": 3,
+      "approvals": 0,
+      "rejections": 0,
+      "returns": 0,
+      "errors": 0,
+      "violations": 0,
+      "totalLatencySeconds": 13.5,
+      "averageLatencySeconds": 4.5,
+      "accuracyRate": 100,
+      "errorRate": 0,
+      "complianceScore": 100,
+      "statusBadge": "EVENT READY",
+      "history": []
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-PHASE-F-SCORE-03",
+    "title": "Intentional Violation: Unverified Physical Slip Approval Math",
+    "battery": "Battery 1: Scorecards",
+    "scenario": "Attempt APPROVE on order without physical slip check -> expect 400, accuracy drops to 75%, compliance drops to 70",
+    "expected": "HTTP 400, totalOps=4, errors=1, accuracy=75.0%, errorRate=25.0%, compliance=70, badge=PROVISIONAL OPERATOR",
+    "actual": "HTTP 400, totalOps=4, errors=1, accuracy=75%, compliance=70, badge=PROVISIONAL OPERATOR",
+    "evidence": {
+      "error": {
+        "error": "Physical slip verification checklist must be completed prior to order approval."
+      },
+      "scorecard": {
+        "operatorId": "Op_Math_Rigorous",
+        "role": "operator_x",
+        "totalOperations": 4,
+        "completedOperations": 4,
+        "approvals": 0,
+        "rejections": 0,
+        "returns": 0,
+        "errors": 1,
+        "violations": 1,
+        "totalLatencySeconds": 19.5,
+        "averageLatencySeconds": 4.9,
+        "accuracyRate": 75,
+        "errorRate": 25,
+        "complianceScore": 70,
+        "statusBadge": "PROVISIONAL OPERATOR",
+        "history": []
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-PHASE-F-SCORE-04",
+    "title": "Intentional Violation: Rejection Without Mandatory Reason Math",
+    "battery": "Battery 1: Scorecards",
+    "scenario": "Attempt REJECT with empty reason -> expect 400, accuracy drops to 60%, compliance drops to 40, badge=NON-COMPLIANT",
+    "expected": "HTTP 400, totalOps=5, errors=2, accuracy=60.0%, errorRate=40.0%, compliance=40, badge=NON-COMPLIANT",
+    "actual": "HTTP 400, totalOps=5, errors=2, accuracy=60%, compliance=40, badge=NON-COMPLIANT",
+    "evidence": {
+      "error": {
+        "error": "Every rejected order must provide an explicit rejection reason."
+      },
+      "scorecard": {
+        "operatorId": "Op_Math_Rigorous",
+        "role": "operator_x",
+        "totalOperations": 5,
+        "completedOperations": 5,
+        "approvals": 0,
+        "rejections": 0,
+        "returns": 0,
+        "errors": 2,
+        "violations": 2,
+        "totalLatencySeconds": 24.5,
+        "averageLatencySeconds": 4.9,
+        "accuracyRate": 60,
+        "errorRate": 40,
+        "complianceScore": 40,
+        "statusBadge": "NON-COMPLIANT",
+        "history": []
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-PHASE-F-SCORE-05",
+    "title": "Intentional Violation: Return Without Mandatory Reason Math",
+    "battery": "Battery 1: Scorecards",
+    "scenario": "Attempt RETURN with empty reason -> expect 400, compliance drops to 10",
+    "expected": "HTTP 400, totalOps=6, errors=3, compliance=10",
+    "actual": "HTTP 400, totalOps=6, errors=3, compliance=10",
+    "evidence": {
+      "error": {
+        "error": "Mandatory returnReason required when returning order for correction."
+      },
+      "scorecard": {
+        "operatorId": "Op_Math_Rigorous",
+        "role": "operator_x",
+        "totalOperations": 6,
+        "completedOperations": 6,
+        "approvals": 0,
+        "rejections": 0,
+        "returns": 0,
+        "errors": 3,
+        "violations": 3,
+        "totalLatencySeconds": 29.5,
+        "averageLatencySeconds": 4.9,
+        "accuracyRate": 50,
+        "errorRate": 50,
+        "complianceScore": 10,
+        "statusBadge": "NON-COMPLIANT",
+        "history": []
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-PHASE-F-SCORE-06",
+    "title": "Intentional Violation: Bank Hold Without Mandatory Notes Math",
+    "battery": "Battery 1: Scorecards",
+    "scenario": "Attempt bank hold without notes -> expect 400, teller errors=1, compliance drops to 70",
+    "expected": "HTTP 400, totalOps=2, errors=1, compliance=70",
+    "actual": "HTTP 400, totalOps=2, errors=1, compliance=70",
+    "evidence": {
+      "error": {
+        "error": "Mandatory notes required when holding a voucher for review."
+      },
+      "scorecard": {
+        "operatorId": "Teller_Math_Test",
+        "role": "bank_teller",
+        "totalOperations": 2,
+        "completedOperations": 2,
+        "approvals": 0,
+        "rejections": 0,
+        "returns": 0,
+        "errors": 1,
+        "violations": 1,
+        "totalLatencySeconds": 8.3,
+        "averageLatencySeconds": 4.2,
+        "accuracyRate": 50,
+        "errorRate": 50,
+        "complianceScore": 70,
+        "statusBadge": "PROVISIONAL OPERATOR",
+        "history": []
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-PHASE-F-SCORE-07",
+    "title": "Intentional Violation: Double Settlement Rejection & Heavy Penalty Math",
+    "battery": "Battery 1: Scorecards",
+    "scenario": "Attempt duplicate settlement on SETTLED voucher -> expect 409, penalty -35, compliance drops to 38, badge=NON-COMPLIANT",
+    "expected": "HTTP 409, totalOps=4, errors=2, compliance=38, badge=NON-COMPLIANT",
+    "actual": "HTTP 409, totalOps=4, errors=2, compliance=38, badge=NON-COMPLIANT",
+    "evidence": {
+      "error": {
+        "error": "Duplicate settlement prevented: This voucher has already been settled and funds processed."
+      },
+      "scorecard": {
+        "operatorId": "Teller_Math_Test",
+        "role": "bank_teller",
+        "totalOperations": 4,
+        "completedOperations": 4,
+        "approvals": 0,
+        "rejections": 0,
+        "returns": 0,
+        "errors": 2,
+        "violations": 2,
+        "totalLatencySeconds": 17.5,
+        "averageLatencySeconds": 4.4,
+        "accuracyRate": 50,
+        "errorRate": 50,
+        "complianceScore": 38,
+        "statusBadge": "NON-COMPLIANT",
+        "history": []
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-PHASE-F-SCORE-08",
+    "title": "Intentional Violation: FX Reserve Overdraft Block & Penalty Math",
+    "battery": "Battery 1: Scorecards",
+    "scenario": "Deplete SGD reserve to ~11k SGD, then attempt conversion for ~29k SGD -> expect 400 Insufficient reserves, errors=1, compliance drops to 70",
+    "expected": "HTTP 400 Insufficient sandbox reserves, totalOps=1, errors=1, compliance=70",
+    "actual": "HTTP 400, totalOps=1, errors=1, compliance=70",
+    "evidence": {
+      "error": {
+        "error": "Insufficient sandbox reserves",
+        "availableReserve": 11549.920000000013,
+        "requested": 29806.26
+      },
+      "scorecard": {
+        "operatorId": "FX_Overdraft_Tester",
+        "role": "operator_x",
+        "totalOperations": 1,
+        "completedOperations": 1,
+        "approvals": 0,
+        "rejections": 0,
+        "returns": 0,
+        "errors": 1,
+        "violations": 1,
+        "totalLatencySeconds": 4,
+        "averageLatencySeconds": 4,
+        "accuracyRate": 0,
+        "errorRate": 100,
+        "complianceScore": 70,
+        "statusBadge": "PROVISIONAL OPERATOR",
+        "history": []
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-PHASE-F-SCORE-09",
+    "title": "Mathematical Invariant: Compliance Score Lower Bound Clamping [0, 100]",
+    "battery": "Battery 1: Scorecards",
+    "scenario": "Subject operator to 6 severe violations (180 penalty points) -> verify complianceScore is clamped strictly at 0",
+    "expected": "totalOps=6, errors=6, complianceScore=0 (clamped, >= 0), accuracyRate=0.0%, errorRate=100.0%",
+    "actual": "complianceScore=0, accuracyRate=0%, errorRate=100%",
+    "evidence": {
+      "operatorId": "Op_Extreme_Violator",
+      "role": "operator_x",
+      "totalOperations": 6,
+      "completedOperations": 6,
+      "approvals": 0,
+      "rejections": 0,
+      "returns": 0,
+      "errors": 6,
+      "violations": 6,
+      "totalLatencySeconds": 36,
+      "averageLatencySeconds": 6,
+      "accuracyRate": 0,
+      "errorRate": 100,
+      "complianceScore": 0,
+      "statusBadge": "NON-COMPLIANT",
+      "history": []
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-PHASE-F-NEWS-01",
+    "title": "Training News Sandbox Containment & Zero Live News Feed Leakage",
+    "battery": "Battery 2: News Containment",
+    "scenario": "Publish aggressive simulated news -> verify present in sandbox newsEvents but completely absent in live /api/news",
+    "expected": "foundInSandbox=true, leakedIntoLiveNews=false",
+    "actual": "foundInSandbox=true, leakedIntoLiveNews=false",
+    "evidence": {
+      "foundInSandbox": true,
+      "leakedIntoLiveNews": false,
+      "liveNewsCountPre": 0,
+      "liveNewsCountPost": 0
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-PHASE-F-NEWS-02",
+    "title": "Training News Zero Live State & Price Mutation",
+    "battery": "Battery 2: News Containment",
+    "scenario": "Verify training news does not leak into live state.newsEvents or impact live security prices",
+    "expected": "leakedIntoLiveState=false, priceUnmutated=true",
+    "actual": "leakedIntoLiveState=false, priceUnmutated=true (price=2678.29)",
+    "evidence": {
+      "reliancePricePre": 2678.29,
+      "reliancePricePost": 2678.29,
+      "leakedIntoLiveState": false
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-PHASE-F-RESET-01",
+    "title": "Sandbox Reset Hygiene: Capital, Reserves & Queues Restored (Preserve Scorecards)",
+    "battery": "Battery 3: Reset Hygiene",
+    "scenario": "Execute POST /api/training/reset with preserveScorecards=true -> verify pristine initial capital (₹1 Cr), reserves restored, queues empty, scorecards retained",
+    "expected": "INR=10000000, USDReserve=500000, queuesEmpty=true, scorecardsPreserved=true",
+    "actual": "INR=10000000, USDReserve=500000, queuesEmpty=true, scorecardsPreserved=true",
+    "evidence": {
+      "t04Cash": 10000000,
+      "usdReserve": 500000,
+      "queuesCleared": true,
+      "scorecardKeys": [
+        "Op_Fresh_101",
+        "Op_Math_Rigorous",
+        "Op_Prep",
+        "Teller_Math_Test",
+        "Op_Prep_FX",
+        "FX_Overdraft_Tester",
+        "Op_Extreme_Violator",
+        "Drill_Journalist_1",
+        "Op_Reset_Prep"
+      ]
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-PHASE-F-RESET-02",
+    "title": "Sandbox Reset Hygiene: Complete Scorecard Clearance (Wipe Mode)",
+    "battery": "Battery 3: Reset Hygiene",
+    "scenario": "Execute POST /api/training/reset with preserveScorecards=false -> verify user scorecards are wiped and only default UI placeholder remains",
+    "expected": "priorOperatorsWiped=true, only Operator 1 UI placeholder remains with totalOperations=0",
+    "actual": "scorecardsKeys=[Operator 1], priorOperatorsWiped=true",
+    "evidence": {
+      "scorecards": {
+        "Operator 1": {
+          "operatorId": "Operator 1",
+          "role": "operator_x",
+          "totalOperations": 0,
+          "completedOperations": 0,
+          "approvals": 0,
+          "rejections": 0,
+          "returns": 0,
+          "errors": 0,
+          "violations": 0,
+          "totalLatencySeconds": 0,
+          "averageLatencySeconds": 0,
+          "accuracyRate": 100,
+          "errorRate": 0,
+          "complianceScore": 100,
+          "statusBadge": "EVENT READY",
+          "history": []
+        }
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-PHASE-F-RESET-03",
+    "title": "Live State Invariance Across Sandbox Resets",
+    "battery": "Battery 3: Reset Hygiene",
+    "scenario": "Verify live /api/state is 100% unmutated by training resets",
+    "expected": "liveTeamsUntouched=true",
+    "actual": "liveTeamsUntouched=true",
+    "evidence": {
+      "liveTeamsCount": 20
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-PHASE-F-CONC-01",
+    "title": "High-Concurrency Multi-Operator Throughput & Zero Crash Integrity",
+    "battery": "Battery 4: Concurrency",
+    "scenario": "Fire 50 simultaneous mixed requests across 5 distinct operators -> assert 0 HTTP 500s",
+    "expected": "serverErrors.length === 0",
+    "actual": "serverErrors.length === 0 (total requests=50)",
+    "evidence": {
+      "durationMs": 106,
+      "totalRequests": 50,
+      "serverErrors": []
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-PHASE-F-CONC-02",
+    "title": "Concurrent Telemetry Additive Exactness & Math Consistency",
+    "battery": "Battery 4: Concurrency",
+    "scenario": "Verify each concurrent operator recorded exactly 10 operations and satisfied mathematical invariants",
+    "expected": "All operators recorded totalOps=10 with strict mathematical consistency",
+    "actual": "Op_Conc_Exch_1=10, Op_Conc_Exch_2=10, Op_Conc_FX=10, Journ_Conc_1=10, allMathConsistent=true",
+    "evidence": {
+      "scExch1": {
+        "operatorId": "Op_Conc_Exch_1",
+        "role": "operator_x",
+        "totalOperations": 10,
+        "completedOperations": 10,
+        "approvals": 0,
+        "rejections": 0,
+        "returns": 0,
+        "errors": 0,
+        "violations": 0,
+        "totalLatencySeconds": 35,
+        "averageLatencySeconds": 3.5,
+        "accuracyRate": 100,
+        "errorRate": 0,
+        "complianceScore": 100,
+        "statusBadge": "EVENT READY",
+        "history": []
+      },
+      "scExch2": {
+        "operatorId": "Op_Conc_Exch_2",
+        "role": "operator_x",
+        "totalOperations": 10,
+        "completedOperations": 10,
+        "approvals": 0,
+        "rejections": 0,
+        "returns": 0,
+        "errors": 0,
+        "violations": 0,
+        "totalLatencySeconds": 57.999999999999986,
+        "averageLatencySeconds": 5.8,
+        "accuracyRate": 100,
+        "errorRate": 0,
+        "complianceScore": 100,
+        "statusBadge": "EVENT READY",
+        "history": []
+      },
+      "scFxConc": {
+        "operatorId": "Op_Conc_FX",
+        "role": "operator_x",
+        "totalOperations": 10,
+        "completedOperations": 10,
+        "approvals": 0,
+        "rejections": 0,
+        "returns": 0,
+        "errors": 0,
+        "violations": 0,
+        "totalLatencySeconds": 51.00000000000001,
+        "averageLatencySeconds": 5.1,
+        "accuracyRate": 100,
+        "errorRate": 0,
+        "complianceScore": 100,
+        "statusBadge": "EVENT READY",
+        "history": []
+      },
+      "scJourn": {
+        "operatorId": "Journ_Conc_1",
+        "role": "journalist",
+        "totalOperations": 10,
+        "completedOperations": 10,
+        "approvals": 0,
+        "rejections": 0,
+        "returns": 0,
+        "errors": 0,
+        "violations": 0,
+        "totalLatencySeconds": 120,
+        "averageLatencySeconds": 12,
+        "accuracyRate": 100,
+        "errorRate": 0,
+        "complianceScore": 100,
+        "statusBadge": "EVENT READY",
+        "history": []
+      },
+      "allMathConsistent": true
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-PHASE-F-EDGE-01",
+    "title": "Order Action: Unsupported Action Type Rejection",
+    "battery": "Battery 5: Edge Cases",
+    "scenario": "Submit unrecognized actionType -> expect HTTP 400",
+    "expected": "HTTP 400 Unsupported actionType",
+    "actual": "HTTP 400: Unsupported actionType 'ILLEGAL_CORRUPTION_ACTION'",
+    "evidence": {
+      "error": "Unsupported actionType 'ILLEGAL_CORRUPTION_ACTION'"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-PHASE-F-EDGE-02",
+    "title": "Terminal Order State Immutability Guard",
+    "battery": "Battery 5: Edge Cases",
+    "scenario": "Attempt exchange action on an already SETTLED order -> expect HTTP 400",
+    "expected": "HTTP 400 terminal state",
+    "actual": "HTTP 400: Order is in terminal state 'SETTLED'. No further exchange actions permitted.",
+    "evidence": {
+      "error": "Order is in terminal state 'SETTLED'. No further exchange actions permitted."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-PHASE-F-EDGE-03",
+    "title": "Order Quantity Validation: Negative & Non-Numeric Rejection",
+    "battery": "Battery 5: Edge Cases",
+    "scenario": "Submit quantity=-50 and quantity=\"not-a-number\" -> expect HTTP 400 for both",
+    "expected": "Both requests rejected with HTTP 400",
+    "actual": "negQty=400, strQty=400",
+    "evidence": {
+      "neg": {
+        "error": "Quantity must be a positive integer."
+      },
+      "str": {
+        "error": "Quantity must be a positive integer."
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-PHASE-F-EDGE-04",
+    "title": "Non-Existent Entities 404 Clean Handling",
+    "battery": "Battery 5: Edge Cases",
+    "scenario": "Query or claim non-existent order and voucher -> expect HTTP 404",
+    "expected": "Both return HTTP 404",
+    "actual": "fakeOrder=404, fakeVoucher=404",
+    "evidence": {
+      "order404": {
+        "error": "Mock order 'TRN-ORD-FAKE-999999' not found in sandbox."
+      },
+      "voucher404": {
+        "error": "Mock voucher 'VCH-NONEXISTENT' not found in sandbox."
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-PHASE-F-EDGE-05",
+    "title": "FX Desk Safety: Same-Currency & Legacy Currency Rejection",
+    "battery": "Battery 5: Edge Cases",
+    "scenario": "Attempt INR->INR and INR->CAD conversions -> expect HTTP 400 rejection",
+    "expected": "Both rejected with HTTP 400",
+    "actual": "sameCurr=400, legacyCad=400",
+    "evidence": {
+      "same": {
+        "error": "Cannot exchange currency to itself."
+      },
+      "legacy": {
+        "error": "CAD and CHF are legacy currencies and not available for new exchange transactions."
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-PHASE-F-EDGE-06",
+    "title": "Training News Input Validation: Short Headline & Sentiment Enum",
+    "battery": "Battery 5: Edge Cases",
+    "scenario": "Attempt headline length < 5 and unapproved sentiment enum -> expect HTTP 400",
+    "expected": "Both rejected with HTTP 400",
+    "actual": "shortHeadline=400, badSentiment=400",
+    "evidence": {
+      "short": {
+        "error": "Headline must be at least 5 characters."
+      },
+      "sentiment": {
+        "error": "Sentiment must be one of: Positive, Negative, Neutral, Bullish, Bearish"
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-PHASE-F-POST-01",
+    "title": "Post-flight Authoritative Baseline Hash Certification",
+    "battery": "Integrity",
+    "scenario": "Confirm authoritative state.json was 100% bit-for-bit unmutated through entire adversarial suite",
+    "expected": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "actual": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "evidence": {
+      "sha256": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca"
+    },
+    "status": "PASSED"
+  }
+]

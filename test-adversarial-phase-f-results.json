@@ -1,0 +1,995 @@
+[
+  {
+    "id": "ADV-F-PRE-01",
+    "title": "Pre-flight Authoritative Baseline Hash Verification",
+    "battery": "Pre-Flight Integrity",
+    "scenario": "Verify state.json SHA-256 is strictly bit-exact before running stress harness",
+    "expected": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "actual": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "evidence": {
+      "sha256": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-PRE-02",
+    "title": "Disposable Test Fixture Initialization",
+    "battery": "Pre-Flight Integrity",
+    "scenario": "Create isolated writable test fixture snapshot for ephemeral server",
+    "expected": "state.test-phase-f-adversarial.json created from state.json",
+    "actual": "Snapshot initialized",
+    "evidence": {
+      "disposableState": "C:\\Users\\Lapcarts Electronics\\OneDrive\\Desktop\\Antigravity\\SAAMX\\state.test-phase-f-adversarial.json"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-PRE-03",
+    "title": "Ephemeral Test Server Healthcheck",
+    "battery": "Pre-Flight Integrity",
+    "scenario": "Confirm test server initializes with disposable state on dynamic port",
+    "expected": "HTTP 200 with ready: true",
+    "actual": "Server ready",
+    "evidence": {
+      "port": 3129
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-PRE-04",
+    "title": "Multi-Role Test Authentication",
+    "battery": "Pre-Flight Integrity",
+    "scenario": "Obtain JWT tokens for admin, team, exchange, bank, and journalist",
+    "expected": "Valid tokens for all 5 roles",
+    "actual": "All 5 tokens received",
+    "evidence": {
+      "roles": [
+        "admin",
+        "team",
+        "exchange",
+        "bank",
+        "journalist"
+      ]
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-PRE-05",
+    "title": "Pre-Storm Live Event State Deep Snapshot Capture",
+    "battery": "Pre-Flight Integrity",
+    "scenario": "Capture complete pre-storm snapshot of all live teams, balances, holdings, orders, FX, news, and audit logs",
+    "expected": "Complete snapshot captured via GET /api/state",
+    "actual": "Captured 20 teams, 1000 orders, 30 news events",
+    "evidence": {
+      "teamsCount": 20,
+      "ordersCount": 1000,
+      "newsCount": 30
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-ORD-01",
+    "title": "High-Volume Mock Orders Concurrent Ingestion",
+    "battery": "Battery 1: Orders Storm",
+    "scenario": "Submit burst of 150 concurrent BUY and SELL mock orders across all 5 mock teams and desks",
+    "expected": "All 150 orders return HTTP 200 with orderId and status AWAITING_PHYSICAL_SLIP",
+    "actual": "150/150 orders created successfully",
+    "evidence": {
+      "totalSubmitted": 150,
+      "successCount": 150
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-ORD-02",
+    "title": "Mock BUY +5% Execution Buffer Reservation Verification",
+    "battery": "Battery 1: Orders Storm",
+    "scenario": "Verify every mock BUY order reserves requestedValue + 5% execution buffer in sandbox",
+    "expected": "reservedCashAmount == Math.ceil(price * quantity * 1.05) across all orders",
+    "actual": "All BUY orders have exact +5% cash reservation",
+    "evidence": {
+      "sampleBuy": {
+        "id": "TRN-ORD-1794041819838-5089",
+        "ticketNumber": "TRN-TKT-9838",
+        "teamCode": "TRAIN_T01",
+        "ticker": "RELIANCE",
+        "action": "BUY",
+        "quantity": 2,
+        "price": 2678.29,
+        "orderType": "MARKET",
+        "requestedValue": 5356.58,
+        "reservedCashAmount": 5625,
+        "status": "AWAITING_PHYSICAL_SLIP",
+        "physicalSlipChecked": false,
+        "deskId": "DESK_1",
+        "operator": "Adversarial Operator 1",
+        "createdAt": 1794041819838
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-ORD-03",
+    "title": "Mock SELL Deliverable Shares Locking Verification",
+    "battery": "Battery 1: Orders Storm",
+    "scenario": "Verify every mock SELL order locks deliverable shares with zero cash reservation",
+    "expected": "reservedCashAmount == 0 on all SELL orders",
+    "actual": "All SELL orders lock shares with 0 cash reserved",
+    "evidence": {
+      "sampleSell": {
+        "id": "TRN-ORD-1794041819885-8328",
+        "ticketNumber": "TRN-TKT-9886",
+        "teamCode": "TRAIN_T02",
+        "ticker": "TCS",
+        "action": "SELL",
+        "quantity": 4,
+        "price": 381.2,
+        "orderType": "MARKET",
+        "requestedValue": 1524.8,
+        "reservedCashAmount": 0,
+        "status": "AWAITING_PHYSICAL_SLIP",
+        "physicalSlipChecked": false,
+        "deskId": "DESK_2",
+        "operator": "Adversarial Operator 2",
+        "createdAt": 1794041819886
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-ORD-04",
+    "title": "Zero Quantity Mock Order Boundary Guard",
+    "battery": "Battery 1: Orders Storm",
+    "scenario": "Submit mock order with quantity=0; must be rejected with HTTP 400",
+    "expected": "HTTP 400 Quantity must be a positive integer",
+    "actual": "HTTP 400 Error: Missing required order fields: teamCode, ticker, action, quantity",
+    "evidence": {
+      "error": "Missing required order fields: teamCode, ticker, action, quantity"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-ORD-05",
+    "title": "Negative Quantity Mock Order Boundary Guard",
+    "battery": "Battery 1: Orders Storm",
+    "scenario": "Submit mock order with quantity=-50; must be rejected with HTTP 400",
+    "expected": "HTTP 400 Quantity must be a positive integer",
+    "actual": "HTTP 400 Error: Quantity must be a positive integer.",
+    "evidence": {
+      "error": "Quantity must be a positive integer."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-ORD-06",
+    "title": "Non-Numeric Quantity Mock Order Guard",
+    "battery": "Battery 1: Orders Storm",
+    "scenario": "Submit mock order with quantity='INVALID_NUMBER'; must be rejected with HTTP 400",
+    "expected": "HTTP 400 Quantity must be a positive integer",
+    "actual": "HTTP 400 Error: Quantity must be a positive integer.",
+    "evidence": {
+      "error": "Quantity must be a positive integer."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-ORD-07",
+    "title": "Mock Cash Overdraft Protection Guard",
+    "battery": "Battery 1: Orders Storm",
+    "scenario": "Submit mock BUY order requiring ₹142+ Crore against ₹1 Crore wallet",
+    "expected": "HTTP 400 Insufficient sandbox cash balance",
+    "actual": "HTTP 400 Error: Insufficient sandbox cash balance for order pre-reservation.",
+    "evidence": {
+      "error": "Insufficient sandbox cash balance for order pre-reservation.",
+      "required": 140610225000,
+      "available": 9915625
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-ORD-08",
+    "title": "Mock Deliverable Shares Overdraft Protection Guard",
+    "battery": "Battery 1: Orders Storm",
+    "scenario": "Submit mock SELL order requiring 50,000,000 shares against 500 holdings",
+    "expected": "HTTP 400 Insufficient deliverable holdings",
+    "actual": "HTTP 400 Error: Insufficient deliverable holdings for order share locking.",
+    "evidence": {
+      "error": "Insufficient deliverable holdings for order share locking.",
+      "requested": 50000000,
+      "deliverable": 470
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-ORD-09",
+    "title": "Non-Existent Mock Team Rejection",
+    "battery": "Battery 1: Orders Storm",
+    "scenario": "Submit order with teamCode='NONEXISTENT_TRAIN_99'",
+    "expected": "HTTP 404 Mock team not found in sandbox",
+    "actual": "HTTP 404 Error: Mock team 'NONEXISTENT_TRAIN_99' not found in sandbox.",
+    "evidence": {
+      "error": "Mock team 'NONEXISTENT_TRAIN_99' not found in sandbox."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-ORD-10",
+    "title": "Live Team Code Injection Sandbox Isolation Guard",
+    "battery": "Battery 1: Orders Storm",
+    "scenario": "Submit training order using live team code 'T01'; assert zero mutation to live T01 state",
+    "expected": "Live team cash balance and holdings strictly unmutated",
+    "actual": "Live T01 strictly unmutated",
+    "evidence": {
+      "responseStatus": 200,
+      "liveCash": 36948164.4,
+      "preCash": 36948164.4
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-ORD-11",
+    "title": "Missing Required Fields Order Guard",
+    "battery": "Battery 1: Orders Storm",
+    "scenario": "Submit order payload missing ticker, action, and quantity",
+    "expected": "HTTP 400 Missing required order fields",
+    "actual": "HTTP 400 Error: Missing required order fields: teamCode, ticker, action, quantity",
+    "evidence": {
+      "error": "Missing required order fields: teamCode, ticker, action, quantity"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-ORD-12",
+    "title": "Unsupported Action Type Order Guard",
+    "battery": "Battery 1: Orders Storm",
+    "scenario": "Submit order with action='HODL'",
+    "expected": "HTTP 400 Action must be BUY or SELL",
+    "actual": "HTTP 400 Error: Action must be BUY or SELL.",
+    "evidence": {
+      "error": "Action must be BUY or SELL."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-DVP-01",
+    "title": "Concurrent Mock Order Intake & Claiming",
+    "battery": "Battery 2: DvP Settlement Storm",
+    "scenario": "Concurrently claim 30 pending orders by multiple simulated exchange officers",
+    "expected": "All 30 orders transition to VERIFYING_AT_EXCHANGE with claimedBy populated",
+    "actual": "30/30 orders claimed successfully",
+    "evidence": {
+      "claimedCount": 30
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-DVP-02",
+    "title": "Physical Slip Checklist Mandatory Verification Guard",
+    "battery": "Battery 2: DvP Settlement Storm",
+    "scenario": "Attempt to APPROVE mock order without completing physical slip checklist (physicalSlipChecked=false)",
+    "expected": "HTTP 400 Physical slip verification checklist must be completed prior to order approval",
+    "actual": "HTTP 400 Error: Physical slip verification checklist must be completed prior to order approval.",
+    "evidence": {
+      "error": "Physical slip verification checklist must be completed prior to order approval."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-DVP-03",
+    "title": "Mandatory Rejection Reason Guard",
+    "battery": "Battery 2: DvP Settlement Storm",
+    "scenario": "Attempt to REJECT mock order with empty rejectionReason",
+    "expected": "HTTP 400 Every rejected order must provide an explicit rejection reason",
+    "actual": "HTTP 400 Error: Every rejected order must provide an explicit rejection reason.",
+    "evidence": {
+      "error": "Every rejected order must provide an explicit rejection reason."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-DVP-04",
+    "title": "Mandatory Return Reason Guard",
+    "battery": "Battery 2: DvP Settlement Storm",
+    "scenario": "Attempt to RETURN mock order with empty returnReason",
+    "expected": "HTTP 400 Mandatory returnReason required when returning order for correction",
+    "actual": "HTTP 400 Error: Mandatory returnReason required when returning order for correction.",
+    "evidence": {
+      "error": "Mandatory returnReason required when returning order for correction."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-DVP-05",
+    "title": "Order Rejection & Sandbox Resource Release",
+    "battery": "Battery 2: DvP Settlement Storm",
+    "scenario": "Reject order with valid reason; assert status=REJECTED and resources unlocked",
+    "expected": "Status 200, status=REJECTED, rejectionReason recorded",
+    "actual": "Status: 200, OrderStatus: REJECTED",
+    "evidence": {
+      "id": "TRN-ORD-1794041820037-8601",
+      "ticketNumber": "TRN-TKT-0037",
+      "teamCode": "TRAIN_T05",
+      "ticker": "TATASTEEL",
+      "action": "SELL",
+      "quantity": 10,
+      "price": 2595.25,
+      "orderType": "MARKET",
+      "requestedValue": 25952.5,
+      "reservedCashAmount": 0,
+      "status": "REJECTED",
+      "physicalSlipChecked": false,
+      "deskId": "DESK_2",
+      "operator": "Adversarial Operator 10",
+      "createdAt": 1794041820037,
+      "claimedBy": "Exchange Officer 2",
+      "claimedAt": 1794041820348,
+      "rejectionReason": "Invalid physical stamp on broker slip"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-DVP-06",
+    "title": "Order Return For Correction & Resource Release",
+    "battery": "Battery 2: DvP Settlement Storm",
+    "scenario": "Return order with valid reason; assert status=RETURNED_TO_TEAM",
+    "expected": "Status 200, status=RETURNED_TO_TEAM, returnReason recorded",
+    "actual": "Status: 200, OrderStatus: RETURNED_TO_TEAM",
+    "evidence": {
+      "id": "TRN-ORD-1794041820036-2750",
+      "ticketNumber": "TRN-TKT-0036",
+      "teamCode": "TRAIN_T04",
+      "ticker": "HDFCBANK",
+      "action": "BUY",
+      "quantity": 8,
+      "price": 2568.19,
+      "orderType": "MARKET",
+      "requestedValue": 20545.52,
+      "reservedCashAmount": 21573,
+      "status": "RETURNED_TO_TEAM",
+      "physicalSlipChecked": false,
+      "deskId": "DESK_3",
+      "operator": "Adversarial Operator 9",
+      "createdAt": 1794041820036,
+      "claimedBy": "Exchange Officer 3",
+      "claimedAt": 1794041820349,
+      "returnReason": "Missing team trader signature on ticket"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-DVP-07",
+    "title": "Physical Slip Verification & Voucher Generation Storm",
+    "battery": "Battery 2: DvP Settlement Storm",
+    "scenario": "Approve 20 orders with physicalSlipChecked=true; verify voucher generation",
+    "expected": "20 vouchers generated with valid voucherReference and status PENDING",
+    "actual": "20/20 vouchers generated",
+    "evidence": {
+      "voucherCount": 20,
+      "sampleVoucher": "VCH-0401530"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-DVP-08",
+    "title": "Terminal Order State Mutation Guard",
+    "battery": "Battery 2: DvP Settlement Storm",
+    "scenario": "Attempt to APPROVE an order already in terminal REJECTED state",
+    "expected": "HTTP 400 Order is in terminal state",
+    "actual": "HTTP 400 Error: Order is in terminal state 'REJECTED'. No further exchange actions permitted.",
+    "evidence": {
+      "error": "Order is in terminal state 'REJECTED'. No further exchange actions permitted."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-DVP-09",
+    "title": "Bank Teller Settlement Voucher Intake & Claim",
+    "battery": "Battery 2: DvP Settlement Storm",
+    "scenario": "Claim settlement voucher; transition status to VERIFYING_AT_BANK",
+    "expected": "Status 200, status=VERIFYING_AT_BANK, bankDeskId=BANK_1",
+    "actual": "Status: 200, VoucherStatus: VERIFYING_AT_BANK",
+    "evidence": {
+      "id": "TRN-VCH-1794041820401-5202",
+      "voucherReference": "VCH-0401530",
+      "orderId": "TRN-ORD-1794041820035-5408",
+      "ticketNumber": "TRN-TKT-0035",
+      "teamCode": "TRAIN_T03",
+      "ticker": "INFY",
+      "action": "SELL",
+      "quantity": 6,
+      "price": 531.83,
+      "amount": 3190.9800000000005,
+      "reservedCashAmount": 0,
+      "currency": "INR",
+      "status": "VERIFYING_AT_BANK",
+      "bankDeskId": "BANK_1",
+      "createdAt": 1794041820401,
+      "claimedBy": "Bank Teller Alpha",
+      "claimedAt": 1794041820452
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-DVP-10",
+    "title": "Bank Hold Mandatory Review Notes Guard",
+    "battery": "Battery 2: DvP Settlement Storm",
+    "scenario": "Attempt to place voucher on HOLD without mandatory notes",
+    "expected": "HTTP 400 Mandatory notes required when holding a voucher for review",
+    "actual": "HTTP 400 Error: Mandatory notes required when holding a voucher for review.",
+    "evidence": {
+      "error": "Mandatory notes required when holding a voucher for review."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-DVP-11",
+    "title": "Bank Hold Valid Execution & Ledger Tagging",
+    "battery": "Battery 2: DvP Settlement Storm",
+    "scenario": "Place voucher on hold with detailed notes; assert status=HELD_FOR_REVIEW",
+    "expected": "Status 200, status=HELD_FOR_REVIEW, holdNotes saved",
+    "actual": "Status: 200, VoucherStatus: HELD_FOR_REVIEW",
+    "evidence": {
+      "id": "TRN-VCH-1794041820403-2750",
+      "voucherReference": "VCH-0403786",
+      "orderId": "TRN-ORD-1794041820034-5192",
+      "ticketNumber": "TRN-TKT-0034",
+      "teamCode": "TRAIN_T02",
+      "ticker": "TCS",
+      "action": "BUY",
+      "quantity": 4,
+      "price": 381.2,
+      "amount": 1524.8,
+      "reservedCashAmount": 1602,
+      "currency": "INR",
+      "status": "HELD_FOR_REVIEW",
+      "bankDeskId": "BANK_1",
+      "createdAt": 1794041820403,
+      "holdNotes": "Counterparty physical cash token serial mismatch. Awaiting manager approval."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-DVP-12",
+    "title": "Two-Phase DvP Settlement & Cash/Securities Delivery",
+    "battery": "Battery 2: DvP Settlement Storm",
+    "scenario": "Execute DvP settlement; verify funds transfer, share delivery, and transaction log",
+    "expected": "Status 200, voucher.status=SETTLED, order.status=SETTLED",
+    "actual": "Voucher: SETTLED, Order: SETTLED",
+    "evidence": {
+      "voucher": "VCH-0404322",
+      "teamBalances": {
+        "cashBalance": 10005356.58,
+        "cashWallets": {
+          "INR": 10005356.58,
+          "USD": 100000,
+          "EUR": 50000,
+          "GBP": 50000,
+          "JPY": 0,
+          "AED": 0,
+          "SGD": 0,
+          "CNY": 0,
+          "AUD": 0,
+          "KRW": 0
+        },
+        "holdings": {
+          "RELIANCE": 498,
+          "TATASTEEL": 1000,
+          "INFY": 400,
+          "TCS": 300,
+          "HDFCBANK": 600
+        }
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-DVP-13",
+    "title": "Double Settlement Race Condition Conflict Prevention Guard",
+    "battery": "Battery 2: DvP Settlement Storm",
+    "scenario": "Fire 10 simultaneous POST /api/training/bank/settle requests on the same voucher",
+    "expected": "Exactly 1 request returns HTTP 200; remaining 9 return HTTP 409 Conflict",
+    "actual": "200 OK: 1, 409 Conflict: 9",
+    "evidence": {
+      "race200Count": 1,
+      "race409Count": 9,
+      "sampleConflict": {
+        "error": "Duplicate settlement prevented: This voucher has already been settled and funds processed."
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-DVP-14",
+    "title": "Bank Settlement Rejection & Resource Unlocking",
+    "battery": "Battery 2: DvP Settlement Storm",
+    "scenario": "Reject voucher at Bank Desk with action='REJECT'; assert status=SETTLEMENT_REJECTED",
+    "expected": "Status 200, voucher.status=SETTLEMENT_REJECTED, order.status=SETTLEMENT_REJECTED",
+    "actual": "Voucher: SETTLEMENT_REJECTED, Order: SETTLEMENT_REJECTED",
+    "evidence": {
+      "success": true,
+      "voucherReference": "VCH-0406615",
+      "status": "SETTLEMENT_REJECTED",
+      "voucher": {
+        "id": "TRN-VCH-1794041820406-7957",
+        "voucherReference": "VCH-0406615",
+        "orderId": "TRN-ORD-1794041820031-4877",
+        "ticketNumber": "TRN-TKT-0031",
+        "teamCode": "TRAIN_T04",
+        "ticker": "HDFCBANK",
+        "action": "SELL",
+        "quantity": 8,
+        "price": 2568.19,
+        "amount": 20545.52,
+        "reservedCashAmount": 0,
+        "currency": "INR",
+        "status": "SETTLEMENT_REJECTED",
+        "bankDeskId": "BANK_1",
+        "createdAt": 1794041820406
+      },
+      "order": {
+        "id": "TRN-ORD-1794041820031-4877",
+        "ticketNumber": "TRN-TKT-0031",
+        "teamCode": "TRAIN_T04",
+        "ticker": "HDFCBANK",
+        "action": "SELL",
+        "quantity": 8,
+        "price": 2568.19,
+        "orderType": "MARKET",
+        "requestedValue": 20545.52,
+        "reservedCashAmount": 0,
+        "status": "SETTLEMENT_REJECTED",
+        "physicalSlipChecked": true,
+        "deskId": "DESK_5",
+        "operator": "Adversarial Operator 4",
+        "createdAt": 1794041820031,
+        "claimedBy": "Exchange Officer 8",
+        "claimedAt": 1794041820353
+      },
+      "tellerScorecard": {
+        "operatorId": "Bank Teller Alpha",
+        "role": "bank_teller",
+        "totalOperations": 5,
+        "completedOperations": 5,
+        "approvals": 0,
+        "rejections": 0,
+        "returns": 0,
+        "errors": 1,
+        "violations": 1,
+        "totalLatencySeconds": 23,
+        "averageLatencySeconds": 4.6,
+        "accuracyRate": 80,
+        "errorRate": 20,
+        "complianceScore": 73,
+        "statusBadge": "PROVISIONAL OPERATOR",
+        "history": []
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-FX-01",
+    "title": "High-Volume Multi-Currency FX Spot Conversion Storm",
+    "battery": "Battery 3: FX Storm & Reserves",
+    "scenario": "Execute burst of 100 concurrent spot conversions across all 9 currencies against sandbox reserves",
+    "expected": "All 100 conversions return HTTP 200 with transaction record and updated reserves",
+    "actual": "100/100 conversions succeeded",
+    "evidence": {
+      "totalSubmitted": 100,
+      "successCount": 100,
+      "sampleTx": {
+        "id": "TRN-FXTX-1794041820567-4286",
+        "ticketNumber": "FX-TRN-0567",
+        "teamCode": "TRAIN_T01",
+        "fromCurrency": "INR",
+        "toCurrency": "USD",
+        "fromAmount": 5000,
+        "toAmount": 56.43,
+        "effectiveRate": 88.6,
+        "timestamp": 1794041820567,
+        "operator": "FX Trainee 1"
+      }
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-FX-02",
+    "title": "Self-Currency FX Conversion Rejection Guard",
+    "battery": "Battery 3: FX Storm & Reserves",
+    "scenario": "Attempt to exchange INR to INR",
+    "expected": "HTTP 400 Cannot exchange currency to itself",
+    "actual": "HTTP 400 Error: Cannot exchange currency to itself.",
+    "evidence": {
+      "error": "Cannot exchange currency to itself."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-FX-03",
+    "title": "Legacy Currency Rejection Guard (CAD & CHF)",
+    "battery": "Battery 3: FX Storm & Reserves",
+    "scenario": "Attempt conversions involving decommissioned currencies CAD and CHF",
+    "expected": "HTTP 400 CAD and CHF are legacy currencies and not available",
+    "actual": "CAD: HTTP 400, CHF: HTTP 400",
+    "evidence": {
+      "cadError": "CAD and CHF are legacy currencies and not available for new exchange transactions.",
+      "chfError": "CAD and CHF are legacy currencies and not available for new exchange transactions."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-FX-04",
+    "title": "Negative / Zero FX Conversion Amount Guard",
+    "battery": "Battery 3: FX Storm & Reserves",
+    "scenario": "Attempt conversion with amount=-5000",
+    "expected": "HTTP 400 Amount must be a positive number",
+    "actual": "HTTP 400 Error: Amount must be a positive number.",
+    "evidence": {
+      "error": "Amount must be a positive number."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-FX-05",
+    "title": "Team Wallet Overdraft Guard on FX Conversion",
+    "battery": "Battery 3: FX Storm & Reserves",
+    "scenario": "Attempt to convert ₹99+ Crore when available wallet is ~₹90 Lakh",
+    "expected": "HTTP 400 Insufficient sandbox cash wallet balance",
+    "actual": "HTTP 400 Error: Insufficient sandbox cash wallet balance in INR. Available: 9810356.58",
+    "evidence": {
+      "error": "Insufficient sandbox cash wallet balance in INR. Available: 9810356.58"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-FX-06",
+    "title": "Finite FX Reserve Exhaustion Attack & Guard Verification",
+    "battery": "Battery 3: FX Storm & Reserves",
+    "scenario": "Pound SGD reserve with high-volume spot conversions until depleted; verify strict 400 rejection",
+    "expected": "HTTP 400 Insufficient sandbox reserves when requested amount exceeds available reserve",
+    "actual": "HTTP 400 Error: Insufficient sandbox reserves",
+    "evidence": {
+      "error": "Insufficient sandbox reserves",
+      "availableReserve": 114232.48000000001,
+      "requested": 134128.17
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-FX-07",
+    "title": "Zero Leakage into Live FX Reserves Under Exhaustion",
+    "battery": "Battery 3: FX Storm & Reserves",
+    "scenario": "Confirm live event FX desk reserves remained 100% untouched while sandbox USD was depleted",
+    "expected": "liveState.fxReserves strictly identical to pre-storm snapshot",
+    "actual": "Live FX reserves 100% identical and untouched",
+    "evidence": {
+      "preReserves": [
+        "KRW",
+        "USD",
+        "GBP",
+        "EUR",
+        "JPY",
+        "AED",
+        "SGD",
+        "CNY",
+        "AUD"
+      ],
+      "midReserves": [
+        "KRW",
+        "USD",
+        "GBP",
+        "EUR",
+        "JPY",
+        "AED",
+        "SGD",
+        "CNY",
+        "AUD"
+      ]
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-NEWS-01",
+    "title": "High-Frequency Training News Broadcast Flood",
+    "battery": "Battery 4: Training News Flood",
+    "scenario": "Flood sandbox wire with 50 simulated news releases across all 5 sentiments and categories",
+    "expected": "All 50 news items return HTTP 200 and are tagged with isSandbox: true",
+    "actual": "50/50 news items published",
+    "evidence": {
+      "totalPublished": 50,
+      "sampleHeadline": "Simulated Rehearsal Wire 1: RBI Macro Liquidity Adjustment on Market Volatility"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-NEWS-02",
+    "title": "Headline Minimum Length Validation Guard",
+    "battery": "Battery 4: Training News Flood",
+    "scenario": "Submit news release with headline='RBI' (< 5 chars)",
+    "expected": "HTTP 400 Headline must be at least 5 characters",
+    "actual": "HTTP 400 Error: Headline must be at least 5 characters.",
+    "evidence": {
+      "error": "Headline must be at least 5 characters."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-NEWS-03",
+    "title": "Sentiment Whitelist Validation Guard",
+    "battery": "Battery 4: Training News Flood",
+    "scenario": "Submit news release with sentiment='EUPHORIC'",
+    "expected": "HTTP 400 Sentiment must be one of: Positive, Negative, Neutral, Bullish, Bearish",
+    "actual": "HTTP 400 Error: Sentiment must be one of: Positive, Negative, Neutral, Bullish, Bearish",
+    "evidence": {
+      "error": "Sentiment must be one of: Positive, Negative, Neutral, Bullish, Bearish"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-NEWS-04",
+    "title": "Live News Feed Zero-Leakage Invariant Verification",
+    "battery": "Battery 4: Training News Flood",
+    "scenario": "Check live state newsEvents array; assert exactly 0 sandbox news items leaked",
+    "expected": "Zero leaked sandbox news items in live feed",
+    "actual": "Found 0 leaked items in live news feed",
+    "evidence": {
+      "leakedCount": 0,
+      "liveCount": 30,
+      "preCount": 30
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-RST-01",
+    "title": "Rapid-Fire Consecutive Sandbox Resets",
+    "battery": "Battery 5: Sandbox Resets",
+    "scenario": "Execute 10 rapid consecutive POST /api/training/reset calls alternating scorecard preservation",
+    "expected": "All 10 reset calls return HTTP 200 cleanly",
+    "actual": "10/10 reset calls returned 200 OK",
+    "evidence": [
+      {
+        "attempt": 1,
+        "status": 200,
+        "preserved": true
+      },
+      {
+        "attempt": 2,
+        "status": 200,
+        "preserved": false
+      },
+      {
+        "attempt": 3,
+        "status": 200,
+        "preserved": true
+      },
+      {
+        "attempt": 4,
+        "status": 200,
+        "preserved": false
+      },
+      {
+        "attempt": 5,
+        "status": 200,
+        "preserved": true
+      },
+      {
+        "attempt": 6,
+        "status": 200,
+        "preserved": false
+      },
+      {
+        "attempt": 7,
+        "status": 200,
+        "preserved": true
+      },
+      {
+        "attempt": 8,
+        "status": 200,
+        "preserved": false
+      },
+      {
+        "attempt": 9,
+        "status": 200,
+        "preserved": true
+      },
+      {
+        "attempt": 10,
+        "status": 200,
+        "preserved": false
+      }
+    ],
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-RST-02",
+    "title": "Reset with Scorecard Telemetry Retention",
+    "battery": "Battery 5: Sandbox Resets",
+    "scenario": "Reset sandbox with preserveScorecards=true; confirm operator scorecards are retained",
+    "expected": "Operator scorecards survive reset",
+    "actual": "Scorecards retained successfully",
+    "evidence": {
+      "operatorId": "Telemetry Operator Alpha",
+      "role": "operator_x",
+      "totalOperations": 0,
+      "completedOperations": 0,
+      "approvals": 0,
+      "rejections": 0,
+      "returns": 0,
+      "errors": 0,
+      "violations": 0,
+      "totalLatencySeconds": 0,
+      "averageLatencySeconds": 0,
+      "accuracyRate": 100,
+      "errorRate": 0,
+      "complianceScore": 100,
+      "statusBadge": "EVENT READY",
+      "history": []
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-RST-03",
+    "title": "Pristine Sandbox Reset State Hygiene",
+    "battery": "Battery 5: Sandbox Resets",
+    "scenario": "Execute full reset (preserveScorecards=false); assert mock queues cleared & balances restored to ₹1 Crore",
+    "expected": "Orders: 0, Vouchers: 0, News: 0, Team starting cash: ₹10,000,000 across all mock teams",
+    "actual": "Pristine sandbox fixtures verified",
+    "evidence": {
+      "sbOrdersAfter": 0,
+      "sbVouchersAfter": 0,
+      "sbNewsAfter": 0,
+      "teamCount": 5
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-RST-04",
+    "title": "Interleaved Concurrent Traffic & Reset Concurrency Resilience",
+    "battery": "Battery 5: Sandbox Resets",
+    "scenario": "Simultaneously interleave orders, FX conversions, news, and resets without server crash",
+    "expected": "All interleaved requests handled gracefully without crash; server health remains 200 OK",
+    "actual": "Server survived interleaved storm cleanly",
+    "evidence": {
+      "pingStatus": 200,
+      "ready": true
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-ZERO-01",
+    "title": "Live Team Cash Balances Strictly Zero-Delta",
+    "battery": "Battery 6: Zero-Delta Verification",
+    "scenario": "Assert bit-exact zero-delta across cashBalance, cashWallets, and reservedCash for all live teams",
+    "expected": "0 cash balance deltas across all live teams",
+    "actual": "0 cash balance deltas detected",
+    "evidence": {
+      "totalLiveTeams": 20,
+      "teamCashDeltas": 0
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-ZERO-02",
+    "title": "Live Team Stock Holdings Strictly Zero-Delta",
+    "battery": "Battery 6: Zero-Delta Verification",
+    "scenario": "Assert bit-exact zero-delta across deliverable holdings and lockedHoldings for all live teams",
+    "expected": "0 holdings deltas across all live teams",
+    "actual": "0 holdings deltas detected",
+    "evidence": {
+      "teamHoldingsDeltas": 0
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-ZERO-03",
+    "title": "Live Orders & Clearing Accounts Strictly Zero-Delta",
+    "battery": "Battery 6: Zero-Delta Verification",
+    "scenario": "Assert live orders queue length, IDs, and statuses remain 100% bit-exact",
+    "expected": "Exact match: preCount=1000, postCount=1000",
+    "actual": "Live orders 100% identical",
+    "evidence": {
+      "preOrdersCount": 1000,
+      "postOrdersCount": 1000
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-ZERO-04",
+    "title": "Live FX Desk Reserves Strictly Zero-Delta",
+    "battery": "Battery 6: Zero-Delta Verification",
+    "scenario": "Assert all 9 live FX currency desk reserves remain 100% bit-exact untouched",
+    "expected": "liveState.fxReserves bit-for-bit identical to pre-storm snapshot",
+    "actual": "All 9 currency reserves 100% identical",
+    "evidence": {
+      "preCurrencies": [
+        "KRW",
+        "USD",
+        "GBP",
+        "EUR",
+        "JPY",
+        "AED",
+        "SGD",
+        "CNY",
+        "AUD"
+      ],
+      "postCurrencies": [
+        "KRW",
+        "USD",
+        "GBP",
+        "EUR",
+        "JPY",
+        "AED",
+        "SGD",
+        "CNY",
+        "AUD"
+      ]
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-ZERO-05",
+    "title": "Live News Events Stream Strictly Zero-Delta",
+    "battery": "Battery 6: Zero-Delta Verification",
+    "scenario": "Assert live newsEvents stream contains 0 extra items and remains 100% bit-exact",
+    "expected": "Exact match: preCount=30, postCount=30",
+    "actual": "Live news stream 100% identical",
+    "evidence": {
+      "preNewsCount": 30,
+      "postNewsCount": 30
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-ZERO-06",
+    "title": "Live Transactions & Audit Logs Strictly Zero-Delta",
+    "battery": "Battery 6: Zero-Delta Verification",
+    "scenario": "Assert live transactions ledger and audit log contain zero mock entries",
+    "expected": "Transactions and audit logs bit-for-bit identical to pre-storm snapshot",
+    "actual": "Audit logs 100% identical",
+    "evidence": {
+      "preTx": 0,
+      "postTx": 0,
+      "preAudit": 300,
+      "postAudit": 300
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-ZERO-07",
+    "title": "Live Securities Prices & Market State Strictly Zero-Delta",
+    "battery": "Battery 6: Zero-Delta Verification",
+    "scenario": "Assert securities prices, trading session, and market state remain 100% identical",
+    "expected": "Securities prices and marketState untouched",
+    "actual": "Securities & market state 100% identical",
+    "evidence": {
+      "securitiesCount": 2856,
+      "sessionState": "CONTINUOUS_TRADING"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-ZERO-08",
+    "title": "Comprehensive Mathematical Zero-Delta State Hash Proof",
+    "battery": "Battery 6: Zero-Delta Verification",
+    "scenario": "Cryptographic SHA-256 hash comparison across all live event state subtrees pre vs post storm",
+    "expected": "77c87fa666f0ba7113f307cd56243381d35e623b521ac3e69445e4234ab68a31",
+    "actual": "77c87fa666f0ba7113f307cd56243381d35e623b521ac3e69445e4234ab68a31",
+    "evidence": {
+      "preFullHash": "77c87fa666f0ba7113f307cd56243381d35e623b521ac3e69445e4234ab68a31",
+      "postFullHash": "77c87fa666f0ba7113f307cd56243381d35e623b521ac3e69445e4234ab68a31",
+      "deltaFound": false
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-F-POST-01",
+    "title": "Post-Storm Authoritative Baseline State.json SHA-256 Certification",
+    "battery": "Battery 7: Hash Certification",
+    "scenario": "Assert state.json hash is bit-exact to authoritative hash 6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "expected": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "actual": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "evidence": {
+      "sha256": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca"
+    },
+    "status": "PASSED"
+  }
+]

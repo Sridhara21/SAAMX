@@ -1,5 +1,32 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { apiFetch, calculateMarketClock } from '../lib/api.js';
+import {
+  Button,
+  Input,
+  Select,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardBody,
+  SectionHeader,
+  Badge,
+  Modal,
+  Alert,
+  EmptyState,
+  ToastContainer
+} from '../components/ui/index.js';
+import {
+  IconActivity,
+  IconClock,
+  IconAlertTriangle,
+  IconCheck,
+  IconMegaphone,
+  IconPause,
+  IconPlay,
+  IconShieldAlert,
+  IconArrowRight,
+  IconZap
+} from '../lib/icons.jsx';
 
 export default function FloorOperationsDashboard({ state, connected }) {
   const [serverTimeOffset, setServerTimeOffset] = useState(0);
@@ -7,6 +34,26 @@ export default function FloorOperationsDashboard({ state, connected }) {
   const [desksData, setDesksData] = useState([]);
   const [fxQueue, setFxQueue] = useState([]);
   const [lastRefresh, setLastRefresh] = useState(Date.now());
+  const [toasts, setToasts] = useState([]);
+
+  // Operational Control Modals
+  const [showControlModal, setShowControlModal] = useState(null); // 'PAUSE', 'RESUME', 'DIRECTIVE'
+  const [directiveHeadline, setDirectiveHeadline] = useState('');
+  const [directiveBody, setDirectiveBody] = useState('');
+  const [directiveSeverity, setDirectiveSeverity] = useState('HIGH');
+  const [isSubmittingControl, setIsSubmittingControl] = useState(false);
+
+  const userRole = (sessionStorage.getItem('saamx_role') || sessionStorage.getItem('fms_role') || '').toLowerCase();
+  const userName = sessionStorage.getItem('saamx_username') || sessionStorage.getItem('fms_username') || 'Floor Operator';
+  const canControlMarket = ['admin', 'operator_x', 'super_admin'].includes(userRole);
+
+  const addToast = (message, type = 'success') => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 3500);
+  };
 
   // Clock tick
   useEffect(() => {
@@ -21,12 +68,12 @@ export default function FloorOperationsDashboard({ state, connected }) {
   useEffect(() => {
     const fetchOpsData = async () => {
       try {
-        const [desksRes, fxRes] = await Promise.all([
-          apiFetch('/api/order-desks').catch(() => null),
-          apiFetch('/api/fx/queue').catch(() => null)
+        const [desksDataJson, fxDataJson] = await Promise.all([
+          apiFetch('/api/order-desks').then(r => r.json()).catch(() => null),
+          apiFetch('/api/fx/queue').then(r => r.json()).catch(() => null)
         ]);
-        if (desksRes?.desks) setDesksData(desksRes.desks);
-        if (fxRes?.queue) setFxQueue(fxRes.queue);
+        if (desksDataJson?.desks) setDesksData(desksDataJson.desks);
+        if (fxDataJson?.queue) setFxQueue(fxDataJson.queue);
         setLastRefresh(Date.now());
       } catch (e) {
         console.error('Error fetching ops data:', e);
@@ -41,6 +88,11 @@ export default function FloorOperationsDashboard({ state, connected }) {
   const marketClock = useMemo(() => {
     return calculateMarketClock(state?.marketState, serverTimeOffset);
   }, [state?.marketState, serverTimeOffset]);
+
+  const sessionStatus = state?.marketState?.status || 'Closed';
+  const sessionPhase = state?.marketState?.sessionState || 'PRE_OPEN';
+  const isMarketOpen = sessionStatus === 'Open' || sessionPhase === 'CONTINUOUS_TRADING';
+  const isMarketPaused = sessionStatus === 'Paused' || state?.marketState?.isFrozen;
 
   // Team counts & lifecycle metrics
   const teamsList = useMemo(() => {
@@ -68,7 +120,8 @@ export default function FloorOperationsDashboard({ state, connected }) {
   const ordersAwaitingVerification = allOrders.filter(o => ['QUEUED', 'SUBMITTED', 'PENDING'].includes(o.status)).length;
   const ordersInVerification = allOrders.filter(o => o.status === 'VERIFYING').length;
   const ordersValidatedReady = allOrders.filter(o => o.status === 'VALIDATED').length;
-  const ordersExecutedTotal = allOrders.filter(o => o.status === 'EXECUTED').length;
+  const ordersExecutedTotal = allOrders.filter(o => ['EXECUTED', 'SETTLED', 'EXECUTED_PENDING_SETTLEMENT'].includes(o.status)).length;
+  const ordersReturnedTotal = allOrders.filter(o => o.status === 'RETURNED_FOR_CORRECTION').length;
 
   // FX Queue metrics
   const activeFxCount = fxQueue.filter(f => ['QUEUED', 'RATE_CHECK', 'PROCESSING'].includes(f.status)).length;
@@ -78,220 +131,440 @@ export default function FloorOperationsDashboard({ state, connected }) {
   const nextScheduledEvent = useMemo(() => {
     const elapsedMinutes = marketClock.elapsedMinutes || 0;
     const acts = [
-      { minute: 8, label: 'DTAI Loss Announcement (-22%)' },
-      { minute: 16, label: 'OpenAI Hyperscale IPO (OAI)' },
-      { minute: 20, label: 'Mystery Buyer Recovery Surge' },
-      { minute: 25, label: 'Leadership Upheaval (-8%)' },
-      { minute: 30, label: 'Stripe Global Infra IPO (STRP)' },
-      { minute: 32, label: 'Goldman Pump Velocity to ₹420' },
-      { minute: 35, label: 'Tata Acquisition Rumour (+8%)' },
-      { minute: 47, label: 'SEBI Regulatory Notice Hint' },
-      { minute: 50, label: 'SEBI Investigation Opened (-25%)' },
-      { minute: 54, label: 'Trading Suspension (Halt)' },
-      { minute: 56, label: 'Bankruptcy Declaration' }
+      { minute: 8, label: 'DTAI Loss Announcement (-22%)', code: 'ACT_1' },
+      { minute: 16, label: 'OpenAI Hyperscale IPO (OAI) Listing', code: 'IPO_1' },
+      { minute: 20, label: 'Mystery Buyer Recovery Surge (+12%)', code: 'ACT_2' },
+      { minute: 25, label: 'Leadership Upheaval CEO Resignation (-8%)', code: 'ACT_3' },
+      { minute: 30, label: 'Stripe Global Infra IPO (STRP) Listing', code: 'IPO_2' },
+      { minute: 32, label: 'Pump Phase: Velocity Spike to ₹420', code: 'ACT_4' },
+      { minute: 35, label: 'Tata Strategic Acquisition Rumour (+8%)', code: 'ACT_5' },
+      { minute: 47, label: 'SEBI Regulatory Notice / Hint', code: 'HINT' },
+      { minute: 50, label: 'SEBI Enforcement Investigation (-25%)', code: 'ACT_6' },
+      { minute: 54, label: 'Floor Trading Halt & Circuit Freeze', code: 'ACT_7' },
+      { minute: 56, label: 'Bankruptcy Declaration & Final Liquidation', code: 'ACT_8' }
     ];
-    return acts.find(a => a.minute > elapsedMinutes) || { minute: 60, label: 'Market Closing & Final Settlement' };
+    return acts.find(a => a.minute > elapsedMinutes) || { minute: 60, label: 'Market Closing Bell & Multi-Currency Settlement', code: 'CLOSE' };
   }, [marketClock.elapsedMinutes]);
 
   const currentEvent = (state?.events || []).find(e => e.eventId === state?.currentEventId) || state?.events?.[0];
 
+  // Recent operational audit logs
+  const recentAuditLogs = useMemo(() => {
+    const logs = state?.auditLog || [];
+    return [...logs].reverse().slice(0, 8);
+  }, [state?.auditLog]);
+
+  // Handle Market Pause / Resume Action
+  const handleMarketAction = async (actionType) => {
+    setIsSubmittingControl(true);
+    try {
+      const res = await apiFetch('/api/market/control', {
+        method: 'POST',
+        body: JSON.stringify({ action: actionType })
+      });
+      if (res.error) {
+        addToast(`Market Control Failed: ${res.error}`, 'error');
+      } else {
+        addToast(`Market successfully updated: ${actionType}`, 'success');
+        setShowControlModal(null);
+      }
+    } catch (e) {
+      console.error(e);
+      addToast('Network error updating market status', 'error');
+    } finally {
+      setIsSubmittingControl(false);
+    }
+  };
+
+  // Dispatch Urgent Floor Directive
+  const handleDispatchDirective = async (e) => {
+    e.preventDefault();
+    if (!directiveHeadline.trim()) {
+      addToast('Directive headline is required', 'error');
+      return;
+    }
+    setIsSubmittingControl(true);
+    try {
+      const res = await apiFetch('/api/news', {
+        method: 'POST',
+        body: JSON.stringify({
+          headline: `[OPERATIONAL DIRECTIVE] ${directiveHeadline.trim()}`,
+          description: directiveBody.trim() || 'Floor instruction issued by Exchange Controller.',
+          category: 'Exchange',
+          sentiment: 'Neutral',
+          severity: directiveSeverity,
+          impactPercent: 0,
+          isCustom: true
+        })
+      });
+      if (res.ok || res.success) {
+        addToast('Operational Directive broadcasted to all screens!', 'success');
+        setDirectiveHeadline('');
+        setDirectiveBody('');
+        setShowControlModal(null);
+      } else {
+        addToast('Failed to broadcast directive', 'error');
+      }
+    } catch (e) {
+      console.error(e);
+      addToast('Network error broadcasting directive', 'error');
+    } finally {
+      setIsSubmittingControl(false);
+    }
+  };
+
   return (
-    <div style={{ backgroundColor: '#090D14', color: '#E2E8F0', minHeight: '100vh', padding: '24px', fontFamily: 'system-ui, sans-serif' }}>
+    <div style={{ maxWidth: '1440px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px', padding: '16px 0' }}>
       
+      {/* Toast Notification Container */}
+      <ToastContainer
+        toasts={toasts}
+        onDismiss={(id) => setToasts(prev => prev.filter(t => t.id !== id))}
+      />
+
       {/* Top Operations Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '20px', marginBottom: '24px' }}>
+      <div className="card-primary" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', borderLeft: '6px solid var(--color-brass)' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ background: '#3B82F6', color: '#FFF', fontSize: '0.75rem', fontWeight: 800, padding: '3px 8px', borderRadius: '4px', letterSpacing: '0.05em' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+            <span style={{ 
+              background: 'linear-gradient(135deg, #1E232B, #333d4b)', 
+              color: '#D4AF37', 
+              fontSize: '0.72rem', 
+              fontWeight: 900, 
+              padding: '3px 8px', 
+              borderRadius: '4px', 
+              letterSpacing: '0.06em' 
+            }}>
               INTERNAL FLOOR STAFF ONLY
             </span>
-            <span style={{ fontSize: '0.85rem', color: connected ? '#10B981' : '#EF4444', fontWeight: 600 }}>
+            <span style={{ fontSize: '0.8rem', color: connected ? 'var(--color-rise)' : 'var(--color-fall)', fontWeight: 700 }}>
               ● {connected ? 'TELEMETRY SYNCED' : 'DISCONNECTED'}
             </span>
+            <span style={{ fontSize: '0.75rem', color: 'var(--color-ink-3)' }}>
+              Operator: <strong>{userName}</strong> ({userRole.toUpperCase()})
+            </span>
           </div>
-          <h1 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#F8FAFC', margin: '6px 0 2px 0' }}>
+
+          <h1 style={{ fontSize: '1.9rem', fontWeight: 900, fontFamily: 'var(--font-brand)', margin: '4px 0 2px 0', color: 'var(--color-ink)' }}>
             SAAMX Floor Operations Radar
           </h1>
-          <div style={{ fontSize: '0.85rem', color: '#94A3B8' }}>
-            {currentEvent?.eventName || 'SAAMX Live Championship'} • Mode: <strong style={{ color: currentEvent?.eventMode === 'REHEARSAL' ? '#F59E0B' : '#10B981' }}>{currentEvent?.eventMode || 'LIVE'}</strong>
+
+          <div style={{ fontSize: '0.82rem', color: 'var(--color-ink-2)' }}>
+            {currentEvent?.eventName || 'SAAMX Live Championship'} &bull; Floor Mode: <strong style={{ color: currentEvent?.eventMode === 'REHEARSAL' ? 'var(--color-brass)' : 'var(--color-rise)' }}>{currentEvent?.eventMode || 'LIVE'}</strong>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '20px', textAlign: 'right' }}>
+        {/* Real-time Exchange Clock & Session State */}
+        <div style={{ display: 'flex', gap: '24px', alignItems: 'center', flexWrap: 'wrap' }}>
           <div>
-            <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 700 }}>EXCHANGE CLOCK</div>
-            <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#F8FAFC', fontFamily: 'monospace' }}>
+            <div style={{ fontSize: '0.72rem', color: 'var(--color-ink-3)', fontWeight: 800 }}>EXCHANGE CLOCK</div>
+            <div className="font-data font-mono tabular-nums" style={{ fontSize: '1.6rem', fontWeight: 900, color: 'var(--color-ink)', lineHeight: 1.1 }}>
               {currentTimeStr || '09:15:00 AM'}
             </div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--color-ink-3)' }}>Session: {marketClock.timeString}</div>
           </div>
-          <div>
-            <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 700 }}>SESSION STATUS</div>
-            <div style={{ fontSize: '1.2rem', fontWeight: 800, color: state?.marketState?.status === 'Open' ? '#10B981' : state?.marketState?.status === 'Paused' ? '#F59E0B' : '#EF4444' }}>
-              {state?.marketState?.status?.toUpperCase() || 'NOT STARTED'}
+
+          <div style={{ borderLeft: '1px solid var(--color-border)', paddingLeft: '20px' }}>
+            <div style={{ fontSize: '0.72rem', color: 'var(--color-ink-3)', fontWeight: 800 }}>SESSION STATUS</div>
+            <div style={{ 
+              fontSize: '1.25rem', 
+              fontWeight: 900, 
+              color: isMarketPaused ? 'var(--color-fall)' : isMarketOpen ? 'var(--color-rise)' : 'var(--color-brass)',
+              lineHeight: 1.2
+            }}>
+              {isMarketPaused ? 'PAUSED / FROZEN' : isMarketOpen ? 'CONTINUOUS TRADING' : sessionPhase}
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>{marketClock.timeLeftString}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--color-ink-2)' }}>Remaining: <strong className="font-mono tabular-nums">{marketClock.timeLeftString}</strong></div>
           </div>
+
+          {/* Quick Authorized Control Buttons */}
+          {canControlMarket && (
+            <div style={{ display: 'flex', gap: '8px', borderLeft: '1px solid var(--color-border)', paddingLeft: '20px' }}>
+              {isMarketOpen && !isMarketPaused ? (
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() => setShowControlModal('PAUSE')}
+                >
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <IconPause size={14} />
+                    <span>Pause Trading</span>
+                  </span>
+                </Button>
+              ) : (
+                <Button
+                  variant="success"
+                  size="sm"
+                  onClick={() => setShowControlModal('RESUME')}
+                >
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <IconPlay size={14} />
+                    <span>Resume Trading</span>
+                  </span>
+                </Button>
+              )}
+
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowControlModal('DIRECTIVE')}
+              >
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <IconMegaphone size={14} />
+                  <span>Broadcast Directive</span>
+                </span>
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Emergency Freeze Alert Banner if market is frozen */}
-      {state?.marketState?.isFrozen && (
-        <div style={{ background: 'rgba(239, 68, 68, 0.25)', border: '2px solid #EF4444', borderRadius: '8px', padding: '16px 20px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      {/* Urgent System Condition Banner */}
+      {(state?.marketState?.isFrozen || ordersAwaitingVerification >= 10 || !connected) && (
+        <div style={{ 
+          background: state?.marketState?.isFrozen ? 'rgba(239, 68, 68, 0.12)' : 'rgba(245, 158, 11, 0.12)', 
+          border: `1.5px solid ${state?.marketState?.isFrozen ? 'var(--color-fall)' : 'var(--color-brass)'}`, 
+          borderRadius: '8px', 
+          padding: '14px 20px', 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '12px'
+        }}>
           <div>
-            <div style={{ color: '#FCA5A5', fontWeight: 800, fontSize: '1.1rem' }}>⚠️ EMERGENCY MARKET FREEZE ACTIVE</div>
-            <div style={{ color: '#FECACA', fontSize: '0.85rem' }}>All 5 order desks and FX trading queues are locked by the Executive Controller.</div>
+            <div style={{ color: state?.marketState?.isFrozen ? 'var(--color-fall)' : 'var(--color-brass)', fontWeight: 900, fontSize: '0.98rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {state?.marketState?.isFrozen ? (
+                <>
+                  <IconAlertTriangle size={18} />
+                  <span>EMERGENCY MARKET FREEZE ACTIVE</span>
+                </>
+              ) : ordersAwaitingVerification >= 10 ? (
+                <>
+                  <IconZap size={18} />
+                  <span>HIGH TICKET QUEUE BACKLOG ON FLOOR</span>
+                </>
+              ) : (
+                <>
+                  <IconAlertTriangle size={18} />
+                  <span>TELEMETRY CONNECTION LOST</span>
+                </>
+              )}
+            </div>
+            <div style={{ color: 'var(--color-ink-2)', fontSize: '0.8rem', marginTop: '2px' }}>
+              {state?.marketState?.isFrozen 
+                ? 'All secondary trading desks and FX operations locked by Executive Controller.' 
+                : ordersAwaitingVerification >= 10 
+                  ? `${ordersAwaitingVerification} paper order slips are currently awaiting clerk claim across the 5 exchange desks.` 
+                  : 'Reconnecting to live simulation event stream...'}
+            </div>
           </div>
-          <a href="#/admin" style={{ padding: '8px 16px', background: '#EF4444', color: '#FFF', borderRadius: '4px', textDecoration: 'none', fontWeight: 700, fontSize: '0.85rem' }}>
-            Manage in Admin Console →
-          </a>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <a href="#/exchange" style={{ textDecoration: 'none' }}>
+              <Button variant="primary" size="sm">
+                Clear Order Slips →
+              </Button>
+            </a>
+          </div>
         </div>
       )}
 
-      {/* Main KPI Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-        <div style={{ background: '#111622', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '16px' }}>
-          <div style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 700 }}>REGISTERED HOUSES</div>
-          <div style={{ fontSize: '2rem', fontWeight: 900, color: '#38BDF8', margin: '4px 0' }}>{registeredCount}</div>
-          <div style={{ fontSize: '0.75rem', color: '#64748B' }}>Total delegations logged</div>
+      {/* Main Operational KPI Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '14px' }}>
+        
+        <div className="card-data" style={{ padding: '16px' }}>
+          <div style={{ fontSize: '0.72rem', color: 'var(--color-ink-3)', fontWeight: 800 }}>REGISTERED HOUSES</div>
+          <div className="font-data font-mono tabular-nums" style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--color-brass)', margin: '4px 0' }}>{registeredCount}</div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--color-ink-2)' }}>{verifiedCount} verified on ledger</div>
         </div>
 
-        <div style={{ background: '#111622', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '16px' }}>
-          <div style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 700 }}>VERIFIED TEAMS</div>
-          <div style={{ fontSize: '2rem', fontWeight: 900, color: '#10B981', margin: '4px 0' }}>{verifiedCount}</div>
-          <div style={{ fontSize: '0.75rem', color: '#64748B' }}>Cleared by Admin desk</div>
+        <div className="card-data" style={{ padding: '16px' }}>
+          <div style={{ fontSize: '0.72rem', color: 'var(--color-ink-3)', fontWeight: 800 }}>ACTIVE FLOOR TEAMS</div>
+          <div className="font-data font-mono tabular-nums" style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--color-rise)', margin: '4px 0' }}>{activeTradingCount}</div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--color-ink-2)' }}>{readyCount} ready for clearance</div>
         </div>
 
-        <div style={{ background: '#111622', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '16px' }}>
-          <div style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 700 }}>READY / ACTIVE TEAMS</div>
-          <div style={{ fontSize: '2rem', fontWeight: 900, color: '#F59E0B', margin: '4px 0' }}>{readyCount}</div>
-          <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{activeTradingCount} live on floor</div>
-        </div>
-
-        <div style={{ background: '#111622', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '16px' }}>
-          <div style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 700 }}>ORDERS IN QUEUE</div>
-          <div style={{ fontSize: '2rem', fontWeight: 900, color: ordersInQueue > 0 ? '#F97316' : '#94A3B8', margin: '4px 0' }}>{ordersInQueue}</div>
-          <div style={{ fontSize: '0.75rem', color: '#64748B' }}>{ordersAwaitingVerification} unverified</div>
-        </div>
-
-        <div style={{ background: '#111622', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '16px' }}>
-          <div style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 700 }}>EXECUTED ORDERS</div>
-          <div style={{ fontSize: '2rem', fontWeight: 900, color: '#10B981', margin: '4px 0' }}>{ordersExecutedTotal}</div>
-          <div style={{ fontSize: '0.75rem', color: '#64748B' }}>Total tickets matched</div>
-        </div>
-
-        <div style={{ background: '#111622', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '16px' }}>
-          <div style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 700 }}>FX QUEUE / SETTLED</div>
-          <div style={{ fontSize: '2rem', fontWeight: 900, color: activeFxCount > 0 ? '#EAB308' : '#94A3B8', margin: '4px 0' }}>
-            {activeFxCount} <span style={{ fontSize: '1rem', color: '#64748B' }}>/ {settledFxCount}</span>
+        <div className="card-data" style={{ padding: '16px' }}>
+          <div style={{ fontSize: '0.72rem', color: 'var(--color-ink-3)', fontWeight: 800 }}>ORDERS IN QUEUE</div>
+          <div className="font-data font-mono tabular-nums" style={{ fontSize: '2rem', fontWeight: 900, color: ordersInQueue > 0 ? 'var(--color-brass)' : 'var(--color-ink-3)', margin: '4px 0' }}>{ordersInQueue}</div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--color-ink-2)' }}>
+            <span style={{ color: ordersAwaitingVerification > 0 ? 'var(--color-fall)' : 'var(--color-rise)', fontWeight: 700 }}>
+              {ordersAwaitingVerification} unverified
+            </span> &bull; {ordersInVerification} verifying
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#64748B' }}>Multi-currency requests</div>
+        </div>
+
+        <div className="card-data" style={{ padding: '16px' }}>
+          <div style={{ fontSize: '0.72rem', color: 'var(--color-ink-3)', fontWeight: 800 }}>EXECUTED ORDERS</div>
+          <div className="font-data font-mono tabular-nums" style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--color-rise)', margin: '4px 0' }}>{ordersExecutedTotal}</div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--color-ink-2)' }}>{ordersValidatedReady} ready for execution</div>
+        </div>
+
+        <div className="card-data" style={{ padding: '16px' }}>
+          <div style={{ fontSize: '0.72rem', color: 'var(--color-ink-3)', fontWeight: 800 }}>RETURNED FOR CORRECTION</div>
+          <div className="font-data font-mono tabular-nums" style={{ fontSize: '2rem', fontWeight: 900, color: ordersReturnedTotal > 0 ? 'var(--color-fall)' : 'var(--color-ink-3)', margin: '4px 0' }}>{ordersReturnedTotal}</div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--color-ink-2)' }}>Awaiting team slip correction</div>
+        </div>
+
+        <div className="card-data" style={{ padding: '16px' }}>
+          <div style={{ fontSize: '0.72rem', color: 'var(--color-ink-3)', fontWeight: 800 }}>FX CLEARANCE QUEUE</div>
+          <div className="font-data font-mono tabular-nums" style={{ fontSize: '2rem', fontWeight: 900, color: activeFxCount > 0 ? 'var(--color-brass)' : 'var(--color-ink-3)', margin: '4px 0' }}>
+            {activeFxCount} <span style={{ fontSize: '1rem', color: 'var(--color-ink-3)' }}>/ {settledFxCount}</span>
+          </div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--color-ink-2)' }}>Multi-currency spot desk</div>
         </div>
       </div>
 
-      {/* Middle Operational Section: 5 Order Desks & Event Radar */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px', marginBottom: '24px' }}>
+      {/* Middle Section: 5 Order Desks Distribution & Event Milestone Radar */}
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px' }}>
         
-        {/* 5 Simultaneous Order Desks Status */}
-        <div style={{ background: '#111622', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', padding: '20px' }}>
+        {/* 5 Simultaneous Physical Order Desks Status */}
+        <div className="card-primary" style={{ padding: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, color: '#F8FAFC' }}>
-              Simultaneous Order Desks (5 Physical Desks)
-            </h3>
-            <span style={{ fontSize: '0.75rem', color: '#64748B' }}>Auto-refreshed: {new Date(lastRefresh).toLocaleTimeString()}</span>
+            <div>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 900, margin: 0, color: 'var(--color-ink)' }}>
+                Simultaneous Order Desks (5 Physical Clearance Desks)
+              </h3>
+              <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: 'var(--color-ink-3)' }}>
+                Live workload distribution across authorized exchange clerks.
+              </p>
+            </div>
+            <span style={{ fontSize: '0.72rem', color: 'var(--color-ink-3)' }}>
+              Auto-synced: {new Date(lastRefresh).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            </span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px' }}>
-            {[
-              { id: 'DESK_1', name: 'Desk 1', operator: 'Sandesh', color: '#3B82F6' },
-              { id: 'DESK_2', name: 'Desk 2', operator: 'Akshay', color: '#F59E0B' },
-              { id: 'DESK_3', name: 'Desk 3', operator: 'Aarush', color: '#10B981' },
-              { id: 'DESK_4', name: 'Desk 4', operator: 'Sridhara', color: '#8B5CF6' },
-              { id: 'DESK_5', name: 'Desk 5', operator: 'Aksharaa', color: '#EC4899' }
-            ].map(d => {
-              const live = desksData.find(x => x.id === d.id);
-              const inFlight = live?.activeQueueCount || allOrders.filter(o => o.deskId === d.id && ['VERIFYING', 'VALIDATED'].includes(o.status)).length;
-              const totalDone = live?.totalProcessed || allOrders.filter(o => o.executedByDesk === d.id && o.status === 'EXECUTED').length;
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
+            {['DESK_1', 'DESK_2', 'DESK_3', 'DESK_4', 'DESK_5'].map(dId => {
+              const live = desksData.find(x => x.id === dId);
+              const stateDesk = state?.orderDesks?.[dId];
+              const name = live?.name || stateDesk?.name || `Desk ${dId.replace('DESK_', '')}`;
+              const operator = live?.operator || stateDesk?.operatorDisplayName || stateDesk?.operator || 'Unassigned';
+              const color = live?.color || stateDesk?.color || (dId === 'DESK_1' ? '#3B82F6' : dId === 'DESK_2' ? '#F59E0B' : dId === 'DESK_3' ? '#10B981' : dId === 'DESK_4' ? '#8B5CF6' : '#EC4899');
+              const inFlight = live?.activeQueueCount ?? allOrders.filter(o => o.deskId === dId && ['VERIFYING', 'VALIDATED'].includes(o.status)).length;
+              const totalDone = live?.totalProcessed ?? allOrders.filter(o => o.executedByDesk === dId && o.status === 'EXECUTED').length;
 
               return (
-                <div key={d.id} style={{ background: '#0B0F17', border: `1px solid ${d.color}40`, borderTop: `4px solid ${d.color}`, borderRadius: '6px', padding: '14px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.8rem', fontWeight: 800, color: d.color }}>{d.name.toUpperCase()}</div>
-                  <div style={{ fontSize: '0.85rem', color: '#E2E8F0', fontWeight: 600, margin: '2px 0 8px 0' }}>{d.operator}</div>
+                <div 
+                  key={dId} 
+                  style={{ 
+                    background: 'var(--color-surface)', 
+                    border: '1px solid var(--color-border)', 
+                    borderTop: `4px solid ${color}`, 
+                    borderRadius: '8px', 
+                    padding: '12px 10px', 
+                    textAlign: 'center' 
+                  }}
+                >
+                  <div style={{ fontSize: '0.78rem', fontWeight: 900, color: color }}>{name.toUpperCase()}</div>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--color-ink)', fontWeight: 700, margin: '2px 0 8px 0' }}>{operator}</div>
                   
-                  <div style={{ background: 'rgba(255,255,255,0.03)', padding: '8px', borderRadius: '4px', marginBottom: '6px' }}>
-                    <div style={{ fontSize: '0.7rem', color: '#64748B' }}>IN-FLIGHT</div>
-                    <div style={{ fontSize: '1.3rem', fontWeight: 800, color: inFlight > 0 ? '#F59E0B' : '#94A3B8' }}>{inFlight}</div>
+                  <div style={{ background: 'var(--color-surface-2)', padding: '6px', borderRadius: '4px', marginBottom: '6px' }}>
+                    <div style={{ fontSize: '0.66rem', color: 'var(--color-ink-3)', fontWeight: 800 }}>IN-FLIGHT</div>
+                    <div className="font-data" style={{ fontSize: '1.25rem', fontWeight: 900, color: inFlight > 0 ? 'var(--color-brass)' : 'var(--color-ink-3)' }}>{inFlight}</div>
                   </div>
 
-                  <div style={{ fontSize: '0.75rem', color: '#64748B' }}>
-                    Done: <strong style={{ color: '#10B981' }}>{totalDone}</strong>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--color-ink-3)' }}>
+                    Settled: <strong style={{ color: 'var(--color-rise)' }}>{totalDone}</strong>
                   </div>
                 </div>
               );
             })}
           </div>
 
-          <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '10px 14px', borderRadius: '6px' }}>
-            <span style={{ fontSize: '0.8rem', color: '#94A3B8' }}>
-              Unassigned Floor Tickets: <strong style={{ color: ordersAwaitingVerification > 0 ? '#F59E0B' : '#10B981' }}>{ordersAwaitingVerification}</strong> awaiting desk claim
+          <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--color-surface-2)', padding: '10px 14px', borderRadius: '6px', border: '1px solid var(--color-border)' }}>
+            <span style={{ fontSize: '0.8rem', color: 'var(--color-ink-2)' }}>
+              Unassigned Paper Slips: <strong style={{ color: ordersAwaitingVerification > 0 ? 'var(--color-fall)' : 'var(--color-rise)' }}>{ordersAwaitingVerification}</strong> awaiting clerk claim
             </span>
-            <a href="#/exchange" style={{ color: '#38BDF8', fontSize: '0.8rem', fontWeight: 700, textDecoration: 'none' }}>
-              Open Exchange Validation Desks →
-            </a>
+            <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+              <a href="#/desk-dashboard" style={{ color: '#10B981', fontSize: '0.8rem', fontWeight: 800, textDecoration: 'none' }}>
+                Open Queue Dashboard →
+              </a>
+              <a href="#/exchange" style={{ color: 'var(--color-brass)', fontSize: '0.8rem', fontWeight: 800, textDecoration: 'none' }}>
+                Open Exchange Desks →
+              </a>
+            </div>
           </div>
         </div>
 
-        {/* Next Scheduled Scenario Milestone */}
-        <div style={{ background: '#111622', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', padding: '20px' }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '0 0 12px 0', color: '#F8FAFC' }}>
+        {/* Narrative Milestone Radar */}
+        <div className="card-primary" style={{ padding: '20px' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 900, margin: '0 0 12px 0', color: 'var(--color-ink)' }}>
             Event Timeline Radar
           </h3>
           
-          <div style={{ background: '#0B0F17', padding: '16px', borderRadius: '8px', border: '1px solid #1E293B', marginBottom: '16px' }}>
-            <div style={{ fontSize: '0.7rem', color: '#38BDF8', fontWeight: 800, letterSpacing: '0.05em' }}>NEXT UPCOMING SCENARIO</div>
-            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#F8FAFC', margin: '4px 0' }}>
+          <div style={{ background: 'var(--color-surface-2)', padding: '14px', borderRadius: '8px', border: '1px solid var(--color-border)', marginBottom: '14px' }}>
+            <div style={{ fontSize: '0.68rem', color: 'var(--color-brass)', fontWeight: 800, letterSpacing: '0.05em' }}>NEXT UPCOMING SCENARIO</div>
+            <div style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--color-ink)', margin: '4px 0 2px 0' }}>
               {nextScheduledEvent.label}
             </div>
-            <div style={{ fontSize: '0.8rem', color: '#F59E0B' }}>
+            <div style={{ fontSize: '0.76rem', color: 'var(--color-brass)' }}>
               Scheduled at T+{nextScheduledEvent.minute} min (Elapsed: {Math.floor(marketClock.elapsedMinutes || 0)} min)
             </div>
           </div>
 
-          <div style={{ fontSize: '0.8rem', color: '#64748B', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div>• Regulatory Circuit Breaker: <strong>±30% / 5 min</strong></div>
-            <div>• Security Price Bands: <strong>±20%</strong></div>
-            <div>• Maximum Position Limit: <strong>35% of Portfolio</strong></div>
-            <div>• Short Selling: <strong style={{ color: state?.riskControls?.allowShortSelling ? '#10B981' : '#EF4444' }}>{state?.riskControls?.allowShortSelling ? 'ALLOWED' : 'PROHIBITED'}</strong></div>
+          <div style={{ fontSize: '0.78rem', color: 'var(--color-ink-2)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div>&bull; Circuit Breaker Limit: <strong>&plusmn;30% / 5 min</strong></div>
+            <div>&bull; Max Position Allocation: <strong>35% of Capital</strong></div>
+            <div>&bull; Short Selling: <strong style={{ color: state?.riskControls?.allowShortSelling ? 'var(--color-rise)' : 'var(--color-fall)' }}>{state?.riskControls?.allowShortSelling ? 'ALLOWED' : 'PROHIBITED'}</strong></div>
+            <div>&bull; Physical Paper Intake: <strong style={{ color: 'var(--color-rise)' }}>ACTIVE (5 CLERK DESKS)</strong></div>
           </div>
         </div>
       </div>
 
-      {/* Bottom Section: Live Active Queues (Orders & FX) */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+      {/* Bottom Operational Feeds: Active Slip Queue & Live Audit Log Stream */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px' }}>
         
-        {/* Active Inbound Orders Queue */}
-        <div style={{ background: '#111622', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', padding: '20px' }}>
+        {/* Active Inbound Paper Orders Queue */}
+        <div className="card-primary" style={{ padding: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <h4 style={{ margin: 0, fontSize: '0.95rem', color: '#F8FAFC' }}>Active Order Queue ({ordersInQueue})</h4>
-            <a href="#/exchange" style={{ fontSize: '0.75rem', color: '#38BDF8', textDecoration: 'none' }}>Process Tickets</a>
+            <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 900, color: 'var(--color-ink)' }}>
+              Live Inbound Order Queue ({ordersInQueue})
+            </h4>
+            <a href="#/exchange" style={{ fontSize: '0.76rem', color: 'var(--color-brass)', fontWeight: 800, textDecoration: 'none' }}>
+              Process in Exchange Desk →
+            </a>
           </div>
 
           {allOrders.filter(o => ['QUEUED', 'SUBMITTED', 'PENDING', 'VERIFYING', 'VALIDATED'].includes(o.status)).length === 0 ? (
-            <div style={{ padding: '32px', textAlign: 'center', color: '#64748B', fontSize: '0.85rem' }}>
-              ✓ All order tickets have been cleared and executed. Queue empty.
+            <div style={{ padding: '36px', textAlign: 'center', color: 'var(--color-ink-3)', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <IconCheck size={16} color="var(--color-rise)" />
+              <span>All paper order slips have been verified and settled. Clearance queue is clear.</span>
             </div>
           ) : (
-            <div style={{ maxHeight: '280px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ maxHeight: '320px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {allOrders.filter(o => ['QUEUED', 'SUBMITTED', 'PENDING', 'VERIFYING', 'VALIDATED'].includes(o.status)).slice(0, 10).map(o => (
-                <div key={o.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#0B0F17', padding: '10px 14px', borderRadius: '6px', border: '1px solid #1E293B', fontSize: '0.8rem' }}>
+                <div 
+                  key={o.id} 
+                  style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center', 
+                    background: 'var(--color-surface)', 
+                    padding: '10px 14px', 
+                    borderRadius: '6px', 
+                    border: '1px solid var(--color-border)', 
+                    fontSize: '0.8rem' 
+                  }}
+                >
                   <div>
-                    <span style={{ fontWeight: 800, color: '#FFF' }}>#{o.ticketNumber}</span> • <span style={{ color: '#F59E0B' }}>{o.teamCode}</span>
-                    <div style={{ color: '#94A3B8' }}>{o.action} {o.quantity} {o.ticker} ({o.orderType})</div>
+                    <span style={{ fontWeight: 900, color: 'var(--color-brass)', fontFamily: 'monospace' }}>#{o.ticketNumber}</span> &bull; <strong style={{ color: 'var(--color-ink)' }}>Team {o.teamCode}</strong>
+                    <div style={{ color: 'var(--color-ink-2)', fontSize: '0.75rem', marginTop: '2px' }}>
+                      <span style={{ color: o.action === 'BUY' ? 'var(--color-rise)' : 'var(--color-fall)', fontWeight: 800 }}>{o.action}</span> {o.quantity} {o.ticker} ({o.orderType})
+                    </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 700, background: o.status === 'VALIDATED' ? 'rgba(16,185,129,0.2)' : o.status === 'VERIFYING' ? 'rgba(59,130,246,0.2)' : 'rgba(245,158,11,0.2)', color: o.status === 'VALIDATED' ? '#10B981' : o.status === 'VERIFYING' ? '#38BDF8' : '#F59E0B' }}>
+                    <span style={{ 
+                      padding: '2px 8px', 
+                      borderRadius: '4px', 
+                      fontSize: '0.68rem', 
+                      fontWeight: 800, 
+                      background: o.status === 'VALIDATED' ? 'rgba(16,185,129,0.15)' : o.status === 'VERIFYING' ? 'rgba(59,130,246,0.15)' : 'rgba(245,158,11,0.15)', 
+                      color: o.status === 'VALIDATED' ? 'var(--color-rise)' : o.status === 'VERIFYING' ? '#3B82F6' : 'var(--color-brass)' 
+                    }}>
                       {o.status}
                     </span>
-                    {o.deskId && <div style={{ fontSize: '0.7rem', color: '#64748B', marginTop: '2px' }}>{o.deskId}</div>}
+                    {o.deskId && <div style={{ fontSize: '0.68rem', color: 'var(--color-ink-3)', marginTop: '2px' }}>Locked: {o.deskId}</div>}
                   </div>
                 </div>
               ))}
@@ -299,30 +572,49 @@ export default function FloorOperationsDashboard({ state, connected }) {
           )}
         </div>
 
-        {/* Active FX Queue */}
-        <div style={{ background: '#111622', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', padding: '20px' }}>
+        {/* Live Operational Action & Audit Stream */}
+        <div className="card-primary" style={{ padding: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <h4 style={{ margin: 0, fontSize: '0.95rem', color: '#F8FAFC' }}>Active FX Clearance Queue ({activeFxCount})</h4>
-            <a href="#/fx" style={{ fontSize: '0.75rem', color: '#38BDF8', textDecoration: 'none' }}>Open Currency Desk</a>
+            <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 900, color: 'var(--color-ink)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <IconShieldAlert size={16} color="var(--color-brass)" />
+              <span>Live Operational Actions & Audit Stream</span>
+            </h4>
+            <span style={{ fontSize: '0.72rem', color: 'var(--color-ink-3)' }}>Immutable Ledger</span>
           </div>
 
-          {activeFxCount === 0 ? (
-            <div style={{ padding: '32px', textAlign: 'center', color: '#64748B', fontSize: '0.85rem' }}>
-              ✓ All multi-currency conversion requests cleared. Queue empty.
+          {recentAuditLogs.length === 0 ? (
+            <div style={{ padding: '36px', textAlign: 'center', color: 'var(--color-ink-3)', fontSize: '0.85rem' }}>
+              No operational actions logged in current session.
             </div>
           ) : (
-            <div style={{ maxHeight: '280px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {fxQueue.filter(f => ['QUEUED', 'RATE_CHECK', 'PROCESSING'].includes(f.status)).map(f => (
-                <div key={f.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#0B0F17', padding: '10px 14px', borderRadius: '6px', border: '1px solid #1E293B', fontSize: '0.8rem' }}>
-                  <div>
-                    <span style={{ fontWeight: 800, color: '#FFF' }}>{f.teamCode}</span> • <span style={{ color: '#EAB308' }}>{f.fromAmount?.toLocaleString()} {f.fromCurrency} → {f.toAmount?.toLocaleString()} {f.toCurrency}</span>
-                    <div style={{ color: '#94A3B8' }}>Rate: {f.quoteRate} (Spread: {f.spreadPercent}%)</div>
-                  </div>
-                  <div>
-                    <span style={{ padding: '3px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 700, background: 'rgba(234,179,8,0.2)', color: '#EAB308' }}>
-                      {f.status}
+            <div style={{ maxHeight: '320px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {recentAuditLogs.map(log => (
+                <div 
+                  key={log.id} 
+                  style={{ 
+                    background: 'var(--color-surface)', 
+                    padding: '8px 12px', 
+                    borderRadius: '6px', 
+                    border: '1px solid var(--color-border)', 
+                    fontSize: '0.76rem' 
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                    <span style={{ fontWeight: 800, color: 'var(--color-brass)' }}>
+                      {log.action}
+                    </span>
+                    <span style={{ color: 'var(--color-ink-3)', fontFamily: 'monospace', fontSize: '0.68rem' }}>
+                      {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                     </span>
                   </div>
+                  <div style={{ color: 'var(--color-ink)', fontWeight: 600 }}>
+                    Actor: {log.actor} ({log.role || 'system'}) &bull; Target: {log.target}
+                  </div>
+                  {log.reason && (
+                    <div style={{ color: 'var(--color-ink-3)', fontSize: '0.72rem', marginTop: '2px' }}>
+                      {log.reason}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -330,6 +622,116 @@ export default function FloorOperationsDashboard({ state, connected }) {
         </div>
 
       </div>
+
+      {/* Control Modals: Pause, Resume, Directive */}
+      <Modal
+        isOpen={showControlModal === 'PAUSE'}
+        onClose={() => setShowControlModal(null)}
+        title="Confirm Market Pause"
+        size="sm"
+        footer={
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', width: '100%' }}>
+            <Button variant="secondary" onClick={() => setShowControlModal(null)}>Cancel</Button>
+            <Button 
+              variant="danger" 
+              disabled={isSubmittingControl}
+              onClick={() => handleMarketAction('PAUSE')}
+            >
+              {isSubmittingControl ? 'Pausing...' : 'Confirm Pause'}
+            </Button>
+          </div>
+        }
+      >
+        <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--color-ink-2)', lineHeight: 1.4 }}>
+          Are you sure you want to pause continuous trading? Order matching will halt, and desk clerks will not be able to execute slips until resumed.
+        </p>
+      </Modal>
+
+      <Modal
+        isOpen={showControlModal === 'RESUME'}
+        onClose={() => setShowControlModal(null)}
+        title="Confirm Market Resume"
+        size="sm"
+        footer={
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', width: '100%' }}>
+            <Button variant="secondary" onClick={() => setShowControlModal(null)}>Cancel</Button>
+            <Button 
+              variant="success" 
+              disabled={isSubmittingControl}
+              onClick={() => handleMarketAction('START')}
+            >
+              {isSubmittingControl ? 'Resuming...' : 'Confirm Resume'}
+            </Button>
+          </div>
+        }
+      >
+        <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--color-ink-2)', lineHeight: 1.4 }}>
+          Are you sure you want to resume continuous trading? Desks will immediately be unlocked to clear verified paper slips.
+        </p>
+      </Modal>
+
+      <Modal
+        isOpen={showControlModal === 'DIRECTIVE'}
+        onClose={() => setShowControlModal(null)}
+        title="Broadcast Operational Floor Directive"
+        size="md"
+        footer={
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', width: '100%' }}>
+            <Button type="button" variant="secondary" onClick={() => setShowControlModal(null)}>Cancel</Button>
+            <Button 
+              type="button" 
+              variant="primary" 
+              disabled={isSubmittingControl}
+              onClick={handleDispatchDirective}
+            >
+              {isSubmittingControl ? 'Broadcasting...' : 'Broadcast to Floor →'}
+            </Button>
+          </div>
+        }
+      >
+        <form onSubmit={handleDispatchDirective} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--color-ink-2)' }}>
+            This will immediately dispatch a high-priority operational notice to all connected trading desks, central projectors, and participant terminals.
+          </p>
+
+          <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '0.78rem', fontWeight: 800 }}>Directive Headline</label>
+            <input
+              type="text"
+              className="input-field"
+              placeholder="e.g. DESK 3 ROTATION — RUNNERS DISPATCH TO DESK 1"
+              value={directiveHeadline}
+              onChange={(e) => setDirectiveHeadline(e.target.value)}
+              required
+              autoFocus
+            />
+          </div>
+
+          <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '0.78rem', fontWeight: 800 }}>Instructions / Details</label>
+            <textarea
+              className="input-field"
+              style={{ height: '70px', resize: 'none' }}
+              placeholder="Provide specific floor details for runners, clerks, or teams..."
+              value={directiveBody}
+              onChange={(e) => setDirectiveBody(e.target.value)}
+            />
+          </div>
+
+          <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '0.78rem', fontWeight: 800 }}>Severity</label>
+            <select
+              className="input-field"
+              value={directiveSeverity}
+              onChange={(e) => setDirectiveSeverity(e.target.value)}
+            >
+              <option value="CRITICAL">CRITICAL (Immediate Audio/Visual Alert)</option>
+              <option value="HIGH">HIGH (Standard Urgent Floor Directive)</option>
+              <option value="INFO">INFO (Informational Logistics Notice)</option>
+            </select>
+          </div>
+        </form>
+      </Modal>
 
     </div>
   );

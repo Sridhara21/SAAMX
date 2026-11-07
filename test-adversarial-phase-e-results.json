@@ -1,0 +1,297 @@
+[
+  {
+    "id": "ADV-E-PREFLIGHT-01",
+    "title": "Pre-flight Authoritative Baseline Hash Verification",
+    "battery": "Baseline Integrity",
+    "scenario": "Verify state.json SHA-256 matches baseline before launching test harness",
+    "expected": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "actual": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "evidence": {
+      "sha256": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-E-FIXTURE-01",
+    "title": "Disposable Fixture Initialization",
+    "battery": "Fixture Setup",
+    "scenario": "Create isolated writable test fixture snapshot for ephemeral server",
+    "expected": "state.test-phase-e-challenger-2.json initialized from state.json",
+    "actual": "Fixture created",
+    "evidence": {
+      "fixturePath": "C:\\Users\\Lapcarts Electronics\\OneDrive\\Desktop\\Antigravity\\SAAMX\\state.test-phase-e-challenger-2.json"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-E-AUTH-01",
+    "title": "Multi-House & Staff Session Authentication",
+    "battery": "Authentication",
+    "scenario": "Acquire JWT sessions for 10 investment houses (T01-T10), floor advisor, and journalist",
+    "expected": "10 team tokens, 1 advisor token, 1 journalist token acquired",
+    "actual": "Teams: 10/10, Advisor: true, Journalist: true",
+    "evidence": {
+      "teamsCount": 10,
+      "hasAdvisor": true
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-E-REF-01",
+    "title": "Multi-House Concurrent Referral Flood (10 Houses)",
+    "battery": "Referral Concurrency",
+    "scenario": "10 investment houses concurrently submit stock referrals for 10 distinct securities",
+    "expected": "10/10 return HTTP 200, status=PENDING, 10 unique referral IDs",
+    "actual": "Success: 10/10, Unique IDs: 10",
+    "evidence": {
+      "statuses": [
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200
+      ],
+      "uniqueIds": 10
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-E-REF-02",
+    "title": "Simultaneous Multi-House Referral of Same Stock (TSLA)",
+    "battery": "Referral Concurrency",
+    "scenario": "5 distinct investment houses simultaneously submit referrals for TSLA",
+    "expected": "All 5 houses succeed with HTTP 200 and create 5 independent referral entries",
+    "actual": "Success: 5/5, Unique IDs: 5",
+    "evidence": {
+      "statuses": [
+        200,
+        200,
+        200,
+        200,
+        200
+      ],
+      "uniqueIds": 5
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-E-REF-03",
+    "title": "Same-House Duplicate Referral Flood Rejection",
+    "battery": "Referral Concurrency",
+    "scenario": "Team T01 fires 10 concurrent duplicate requests for already pending INFY referral",
+    "expected": "10/10 rejected with HTTP 400 (already pending review)",
+    "actual": "Rejected 400: 10/10",
+    "evidence": {
+      "statuses": [
+        400,
+        400,
+        400,
+        400,
+        400,
+        400,
+        400,
+        400,
+        400,
+        400
+      ],
+      "errorSample": "Referral for INFY is already pending review with the Broker Advisor."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-E-REF-04",
+    "title": "Concurrent Queue Reads & Scope Isolation Under Write Pressure",
+    "battery": "Referral Concurrency",
+    "scenario": "Interleaved concurrent queue reads from participant houses and floor advisor during live submission",
+    "expected": "Team calls scoped to caller team; Advisor/Admin receives full global queue; zero corruption",
+    "actual": "T01 scoped: true, T02 scoped: true, Advisor sees all: true, Write status: 200",
+    "evidence": {
+      "t01Count": 2,
+      "advisorCount": 16
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-E-SIG-01",
+    "title": "Race Condition Duplicate Signal Overwrite Rejection",
+    "battery": "Signal Audit Integrity",
+    "scenario": "10 concurrent competing requests to /api/advisor/signal for the exact same pending referral",
+    "expected": "Exactly 1 request succeeds (HTTP 200); remaining 9 strictly rejected with HTTP 400",
+    "actual": "200 Success: 1, 400 Rejections: 9",
+    "evidence": {
+      "winningSignal": "BUY",
+      "winningAdvisor": "Competing Advisor 1",
+      "sampleRejection": "Signal has already been published as 'BUY'. Overwriting is prohibited to preserve audit trail."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-E-SIG-02",
+    "title": "Subsequent Sequential Signal Overwrite Rejection",
+    "battery": "Signal Audit Integrity",
+    "scenario": "Attempting to overwrite an already completed signal with a subsequent delayed request",
+    "expected": "Strictly rejected with HTTP 400 preserving immutable audit record",
+    "actual": "HTTP 400: Signal has already been published as 'BUY'. Overwriting is prohibited to preserve audit trail.",
+    "evidence": {
+      "status": 400,
+      "error": "Signal has already been published as 'BUY'. Overwriting is prohibited to preserve audit trail."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-E-SIG-03",
+    "title": "Malformed & Unpermitted Signal Rejection Fuzzing",
+    "battery": "Signal Audit Integrity",
+    "scenario": "Submit unpermitted signals (STRONG_BUY, SHORT, VOID, null, numbers)",
+    "expected": "100% rejected with HTTP 400 (Permitted signals strictly BUY, HOLD, SELL)",
+    "actual": "Rejected with 400: 8/8",
+    "evidence": {
+      "statuses": [
+        400,
+        400,
+        400,
+        400,
+        400,
+        400,
+        400,
+        400
+      ]
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-E-SIG-04",
+    "title": "Non-Existent Referral Signal Rejection",
+    "battery": "Signal Audit Integrity",
+    "scenario": "Submit signal against non-existent referral ID",
+    "expected": "HTTP 404 Referral not found",
+    "actual": "HTTP 404: Referral not found.",
+    "evidence": {
+      "status": 404,
+      "error": "Referral not found."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-E-SIG-05",
+    "title": "Pure Advisory Non-Execution Invariant Under Batch Signals",
+    "battery": "Signal Audit Integrity",
+    "scenario": "Publishing batch of advisor signals must never mutate orders or participant cash balances",
+    "expected": "Orders delta = 0, Cash delta = 0",
+    "actual": "Orders delta: 0, Cash delta: 0",
+    "evidence": {
+      "ordersBefore": 1000,
+      "ordersAfter": 1000,
+      "cashBefore": 9925000,
+      "cashAfter": 9925000
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-E-REC-01",
+    "title": "High-Concurrency Research Recommendation Broadcast (20 Batches)",
+    "battery": "Recommendation Pipeline",
+    "scenario": "20 concurrent recommendation broadcasts dispatched by authorized floor advisors",
+    "expected": "20/20 return HTTP 200, 20 unique recommendation IDs generated",
+    "actual": "200 Success: 20/20, Unique IDs: 20",
+    "evidence": {
+      "count": 20,
+      "uniqueIds": 20
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-E-REC-02",
+    "title": "Concurrent Read & Write Interleaving on Recommendations Feed",
+    "battery": "Recommendation Pipeline",
+    "scenario": "Simultaneous 10 writes and 10 reads executing concurrently against recommendations store",
+    "expected": "10/10 writes succeed (200), 10/10 reads succeed (200) without race corruption",
+    "actual": "Writes 200: 10/10, Reads 200: 10/10",
+    "evidence": {
+      "totalRecsInLastRead": 30
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-E-REC-03",
+    "title": "RBAC Authorization Gate on Recommendation Publishing",
+    "battery": "Recommendation Pipeline",
+    "scenario": "Verify participant teams, journalists, and anonymous callers are forbidden from publishing recommendations",
+    "expected": "Team: 403, Journalist: 403, Anonymous: 401/403",
+    "actual": "Team: 403, Journalist: 403, Anonymous: 401",
+    "evidence": {
+      "teamError": "Forbidden: Publishing broker recommendations or bulletins requires Advisory or Administrator privileges.",
+      "journError": "Forbidden: Publishing broker recommendations or bulletins requires Advisory or Administrator privileges."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-E-REC-04",
+    "title": "Recommendation Payload Validation (Missing Parameters)",
+    "battery": "Recommendation Pipeline",
+    "scenario": "Attempting to publish recommendation with missing ticker or recommendation",
+    "expected": "HTTP 400 rejection",
+    "actual": "HTTP 400: Ticker and recommendation required.",
+    "evidence": {
+      "status": 400,
+      "error": "Ticker and recommendation required."
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-E-SCALE-01",
+    "title": "Full Universe Batch Evaluation (2,856 Securities)",
+    "battery": "Scale & Robustness",
+    "scenario": "Execute getCompanyRatios, getValuationAnalysis, and getAnalyticalPerspectives across entire universe",
+    "expected": "2,856/2,856 securities processed with 0 exceptions and valid data contracts",
+    "actual": "Processed 2856/2856 in 96ms (0 exceptions)",
+    "evidence": {
+      "totalSecurities": 2856,
+      "durationMs": 96,
+      "throughputSec": 29750
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-E-SCALE-02",
+    "title": "High-Throughput Stress & Memory Leak Stability (142,800 Evaluations)",
+    "battery": "Scale & Robustness",
+    "scenario": "50 sweeps of 2,856 securities to verify throughput and heap memory stability",
+    "expected": "Throughput > 5,000 evals/sec, bounded heap growth (<60MB)",
+    "actual": "Throughput: 82,258 evals/sec, Heap growth: 8.94 MB (1736ms)",
+    "evidence": {
+      "totalEvals": 142800,
+      "totalDurationMs": 1736,
+      "throughputEvalsPerSec": 82258,
+      "heapDeltaMb": "8.94"
+    },
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-E-SCALE-03",
+    "title": "Pathological Input & Guardrail Boundary Fuzzing",
+    "battery": "Scale & Robustness",
+    "scenario": "Evaluate edge cases: bonds, funds, deficit equity anti-spurious trap, pre-revenue, zero-debt, astronomical caps",
+    "expected": "9/9 pathological cases handled strictly within mathematical guardrails",
+    "actual": "Passed: 9/9",
+    "evidence": "All 9 pathological test cases satisfied guardrails",
+    "status": "PASSED"
+  },
+  {
+    "id": "ADV-E-POSTFLIGHT-01",
+    "title": "Post-flight Authoritative Baseline Hash Verification",
+    "battery": "Baseline Integrity",
+    "scenario": "Confirm authoritative state.json remained 100% bit-for-bit untouched throughout testing",
+    "expected": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "actual": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca",
+    "evidence": {
+      "sha256": "6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca"
+    },
+    "status": "PASSED"
+  }
+]

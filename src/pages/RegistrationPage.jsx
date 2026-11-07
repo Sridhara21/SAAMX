@@ -1,5 +1,21 @@
 import React, { useState } from 'react';
 import { apiFetch } from '../lib/api.js';
+import ThemeToggle from '../components/ThemeToggle.jsx';
+import { Card, CardHeader, CardTitle, CardBody, Badge, Button, Input, Select, Alert } from '../components/ui/index.js';
+import {
+  IconBuilding,
+  IconBriefcase,
+  IconUser,
+  IconShieldCheck,
+  IconShieldAlert,
+  IconChevronLeft,
+  IconArrowRight,
+  IconCheck,
+  IconPrinter,
+  IconX,
+  IconClipboardList,
+  IconLock
+} from '../lib/icons.jsx';
 
 export default function RegistrationPage({ state, onNavigateHome }) {
   const currentEvent = (state?.events || []).find(e => e.eventId === state?.currentEventId) || state?.events?.[0] || {
@@ -12,11 +28,15 @@ export default function RegistrationPage({ state, onNavigateHome }) {
     teamSize: 4
   };
 
-  const isRegistrationClosed = currentEvent.registrationOpen === false;
+  const configuredCapacity = Math.min(20, Math.max(10, Number(currentEvent.maximumInvestmentHouses || state?.settings?.configuredHouseCapacity || 20)));
+  const registeredCount = (state?.investmentHouses || []).length;
+  const activeTeamsCount = (state?.teams || []).filter(t => t.isActive).length;
+  const isCapacityReached = registeredCount >= configuredCapacity;
+  const isRegistrationClosed = currentEvent.registrationOpen === false || isCapacityReached;
 
   const [step, setStep] = useState(1); // 1: School, 2: House, 3: Members, 4: Review, 5: Confirmation
 
-  // Step 1: School Details
+  // Step 1: School Details (including contactEmail and contactPhone)
   const [schoolName, setSchoolName] = useState('');
   const [board, setBoard] = useState('CBSE');
   const [city, setCity] = useState('');
@@ -31,12 +51,12 @@ export default function RegistrationPage({ state, onNavigateHome }) {
   const [preferredTeamCode, setPreferredTeamCode] = useState('');
   const [customPassword, setCustomPassword] = useState('');
 
-  // Step 3: Members (2 to 4 students)
+  // Step 3: Members (2 to 5 students)
   const [members, setMembers] = useState([
-    { name: '', role: 'Chief Investment Officer (CIO)', email: '' },
-    { name: '', role: 'Head of Quantitative Strategy', email: '' },
-    { name: '', role: 'Risk & Derivatives Analyst', email: '' },
-    { name: '', role: 'Macro & Sector Specialist', email: '' }
+    { name: '', role: 'Chief Investment Officer (CIO)' },
+    { name: '', role: 'Head of Quantitative Strategy' },
+    { name: '', role: 'Risk & Derivatives Analyst' },
+    { name: '', role: 'Macro & Sector Specialist' }
   ]);
 
   // Submission state
@@ -54,7 +74,7 @@ export default function RegistrationPage({ state, onNavigateHome }) {
 
   const addMemberField = () => {
     if (members.length < 5) {
-      setMembers(prev => [...prev, { name: '', role: 'Associate Trader', email: '' }]);
+      setMembers(prev => [...prev, { name: '', role: 'Associate Trader' }]);
     }
   };
 
@@ -65,15 +85,23 @@ export default function RegistrationPage({ state, onNavigateHome }) {
   };
 
   const validateStep1 = () => {
-    if (!schoolName.trim()) { setErrorMessage('Please enter school / institution name.'); return false; }
-    if (!contactEmail.trim() || !contactEmail.includes('@')) { setErrorMessage('Please provide a valid contact email.'); return false; }
-    if (!contactPerson.trim()) { setErrorMessage('Please provide a contact person name.'); return false; }
+    if (!schoolName.trim()) {
+      setErrorMessage('Please enter the school or institution name.');
+      return false;
+    }
+    if (!contactPerson.trim() && !facultyCoordinator.trim()) {
+      setErrorMessage('Please provide a student team leader or faculty coordinator name.');
+      return false;
+    }
     setErrorMessage('');
     return true;
   };
 
   const validateStep2 = () => {
-    if (!investmentHouseName.trim()) { setErrorMessage('Please enter Investment House name.'); return false; }
+    if (!investmentHouseName.trim()) {
+      setErrorMessage('Please enter the Investment House name.');
+      return false;
+    }
     setErrorMessage('');
     return true;
   };
@@ -81,7 +109,7 @@ export default function RegistrationPage({ state, onNavigateHome }) {
   const validateStep3 = () => {
     const validMembers = members.filter(m => m.name.trim() !== '');
     if (validMembers.length < 2) {
-      setErrorMessage('At least 2 team members are required to form an Investment House.');
+      setErrorMessage('At least 2 student delegate members are required to form an Investment House.');
       return false;
     }
     setErrorMessage('');
@@ -96,8 +124,8 @@ export default function RegistrationPage({ state, onNavigateHome }) {
       schoolName: schoolName.trim(),
       board,
       city: city.trim(),
-      contactPerson: contactPerson.trim(),
-      contactEmail: contactEmail.trim().toLowerCase(),
+      contactPerson: contactPerson.trim() || facultyCoordinator.trim(),
+      contactEmail: contactEmail.trim(),
       contactPhone: contactPhone.trim(),
       facultyCoordinator: facultyCoordinator.trim() || contactPerson.trim(),
       investmentHouseName: investmentHouseName.trim(),
@@ -113,17 +141,32 @@ export default function RegistrationPage({ state, onNavigateHome }) {
         body: JSON.stringify(payload)
       });
 
-      if (res.error) {
-        setErrorMessage(res.error);
+      let data = null;
+      if (res && typeof res.json === 'function') {
+        data = await res.json();
       } else {
-        setConfirmationData(res);
+        data = res;
+      }
+
+      if (!res.ok || data?.error) {
+        setErrorMessage(data?.error || `Registration submission failed (${res.status || 'Error'}). Please verify details and retry.`);
+      } else {
+        setConfirmationData(data);
         setStep(5); // Confirmation Screen
       }
     } catch (err) {
-      console.error(err);
-      setErrorMessage('Registration server communication error. Please try again.');
+      console.error('Registration submission error:', err);
+      setErrorMessage('Registration server communication error. Please check network connection and try again.');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleBackToHome = () => {
+    if (typeof onNavigateHome === 'function') {
+      onNavigateHome();
+    } else {
+      window.location.hash = '#/';
     }
   };
 
@@ -131,64 +174,259 @@ export default function RegistrationPage({ state, onNavigateHome }) {
     window.print();
   };
 
+  const boardOptions = [
+    { value: 'CBSE', label: 'CBSE (Central Board of Secondary Education)' },
+    { value: 'ICSE / ISC', label: 'ICSE / ISC (Council for the Indian School Certificate Examinations)' },
+    { value: 'IB (International Baccalaureate)', label: 'IB (International Baccalaureate Diploma)' },
+    { value: 'Cambridge (IGCSE / A-Levels)', label: 'Cambridge International (IGCSE / A-Levels)' },
+    { value: 'State Board', label: 'State Examination Board' },
+    { value: 'Undergraduate University', label: 'Undergraduate University / Collegiate Institute' }
+  ];
+
+  const fundTypeOptions = [
+    { value: 'Retail', label: 'Retail Investor Desk (Diversified Portfolio)' },
+    { value: 'Mutual Fund', label: 'Institutional Mutual Fund (Long-Term Value)' },
+    { value: 'Hedge Fund', label: 'Quantitative Hedge Fund (High-Frequency & Arbitrage)' },
+    { value: 'Prop Desk', label: 'Proprietary Trading Desk (Macro Thematic)' }
+  ];
+
+  const wizardSteps = [
+    { num: 1, label: 'Institution', icon: <IconBuilding size={16} /> },
+    { num: 2, label: 'Investment House', icon: <IconBriefcase size={16} /> },
+    { num: 3, label: 'Delegates', icon: <IconUser size={16} /> },
+    { num: 4, label: 'Verification', icon: <IconClipboardList size={16} /> }
+  ];
+
   return (
-    <div className="registration-container" style={{ minHeight: '100vh', backgroundColor: '#0B0E14', color: '#E2E8F0', padding: '32px 16px' }}>
-      <div style={{ maxWidth: '840px', margin: '0 auto' }}>
-        
-        {/* Header Banner */}
-        <div style={{ textAlign: 'center', marginBottom: '32px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '24px' }}>
-          <div style={{ display: 'inline-block', padding: '4px 12px', borderRadius: '4px', background: 'rgba(217, 119, 6, 0.15)', color: '#F59E0B', fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em', marginBottom: '8px' }}>
-            SAAMX OFFICIAL REGISTRATION PORTAL
+    <div
+      className="saamx-registration-page"
+      style={{
+        minHeight: '100vh',
+        backgroundColor: 'var(--color-bg, #0B0E14)',
+        color: 'var(--color-text-primary, #F8FAFC)',
+        padding: '32px 16px 64px 16px',
+        fontFamily: 'var(--font-sans, system-ui, -apple-system, sans-serif)'
+      }}
+    >
+      <div style={{ maxWidth: '860px', margin: '0 auto' }}>
+
+        {/* Top Utility Bar */}
+        <header
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '28px',
+            paddingBottom: '16px',
+            borderBottom: '1px solid var(--color-border-subtle, rgba(255,255,255,0.08))'
+          }}
+        >
+          <button
+            type="button"
+            onClick={handleBackToHome}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 14px',
+              borderRadius: 'var(--radius-md, 6px)',
+              background: 'transparent',
+              color: 'var(--color-text-secondary, #94A3B8)',
+              border: '1px solid var(--color-border, rgba(255,255,255,0.12))',
+              fontSize: '0.825rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <IconChevronLeft size={16} />
+            <span>Floor Gateway</span>
+          </button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                color: 'var(--color-accent-amber, #D97706)',
+                background: 'var(--color-accent-amber-subtle, rgba(217, 119, 6, 0.12))',
+                padding: '4px 10px',
+                borderRadius: 'var(--radius-sm, 4px)',
+                border: '1px solid rgba(217, 119, 6, 0.25)'
+              }}
+            >
+              <IconShieldCheck size={14} />
+              Official Registration Portal
+            </span>
+            <ThemeToggle />
           </div>
-          <h1 style={{ fontFamily: 'var(--font-display, sans-serif)', fontSize: '2.4rem', fontWeight: 800, color: '#F8FAFC', margin: '8px 0' }}>
+        </header>
+
+        {/* Page Header Banner */}
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          <h1
+            style={{
+              fontFamily: 'var(--font-display, sans-serif)',
+              fontSize: '2.25rem',
+              fontWeight: 800,
+              color: 'var(--color-text-primary, #F8FAFC)',
+              margin: '0 0 10px 0',
+              letterSpacing: '-0.02em'
+            }}
+          >
             Investment House Registration
           </h1>
-          <p style={{ color: '#94A3B8', fontSize: '0.95rem', maxWidth: '600px', margin: '0 auto' }}>
+          <p
+            style={{
+              color: 'var(--color-text-secondary, #94A3B8)',
+              fontSize: '0.95rem',
+              maxWidth: '620px',
+              margin: '0 auto 18px auto',
+              lineHeight: 1.5
+            }}
+          >
             {currentEvent.eventName} • {currentEvent.venue}
           </p>
-          <div style={{ marginTop: '12px', fontSize: '0.85rem', color: '#64748B' }}>
-            Starting Virtual Capital: <strong style={{ color: '#10B981' }}>₹{(currentEvent.startingCapital || 10000000).toLocaleString()}</strong> • Team Size: {currentEvent.teamSize || 4} Members
+
+          {/* Institutional Metric Bar */}
+          <div
+            style={{
+              display: 'inline-flex',
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: '16px',
+              padding: '10px 20px',
+              borderRadius: 'var(--radius-md, 8px)',
+              background: 'var(--color-surface, #131822)',
+              border: '1px solid var(--color-border-subtle, rgba(255,255,255,0.08))',
+              fontSize: '0.85rem',
+              color: 'var(--color-text-secondary, #94A3B8)'
+            }}
+          >
+            <div>
+              Starting Capital:{' '}
+              <strong
+                className="tabular-nums"
+                style={{ color: 'var(--color-rise, #10B981)', fontFamily: 'var(--font-mono, monospace)', fontWeight: 700 }}
+              >
+                ₹{(currentEvent.startingCapital || 10000000).toLocaleString('en-IN')}
+              </strong>
+            </div>
+            <span style={{ opacity: 0.3 }}>•</span>
+            <div>
+              Delegation Format: <strong style={{ color: 'var(--color-text-primary, #F8FAFC)' }}>2 to 5 Members</strong>
+            </div>
+            <span style={{ opacity: 0.3 }}>•</span>
+            <div>
+              Configured Capacity:{' '}
+              <strong style={{ color: 'var(--color-primary, #2563EB)' }}>{configuredCapacity} Houses</strong>{' '}
+              <span className="tabular-nums" style={{ fontSize: '0.8rem', color: 'var(--color-text-muted, #64748B)' }}>
+                ({registeredCount}/{configuredCapacity} Registered Intake)
+              </span>
+            </div>
           </div>
         </div>
 
+        {/* Capacity / Registration Closed Warning Banner */}
         {isRegistrationClosed && step !== 5 && (
-          <div style={{ padding: '24px', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', color: '#FCA5A5', textAlign: 'center', marginBottom: '32px' }}>
-            <h3 style={{ margin: '0 0 8px 0' }}>Registration Currently Closed</h3>
-            <p style={{ margin: 0, fontSize: '0.9rem' }}>The event administration has locked online registrations for this session. Please contact the SAAMX Exchange Desk in person for on-floor inquiries.</p>
+          <div style={{ marginBottom: '24px' }}>
+            <Alert
+              variant={isCapacityReached ? 'warning' : 'danger'}
+              title={isCapacityReached ? 'Event Capacity Limit Reached' : 'Online Registration Suspended'}
+            >
+              {isCapacityReached
+                ? `The maximum participating intake of ${configuredCapacity} Investment Houses has been reached for this championship. Additional applications will be reviewed on a standby basis. Please contact the SAAMX Exchange Desk for floor delegation inquiries.`
+                : 'Online registration intake has been closed by the event secretariat. Please report directly to the SAAMX Exchange Desk for on-site registration verification.'}
+            </Alert>
           </div>
         )}
 
         {/* Multi-Step Wizard Indicator */}
         {step < 5 && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px', position: 'relative' }}>
-            <div style={{ position: 'absolute', top: '50%', left: '10%', right: '10%', height: '2px', background: 'rgba(255,255,255,0.1)', zIndex: 0 }} />
-            {[
-              { num: 1, label: 'Institution' },
-              { num: 2, label: 'Investment House' },
-              { num: 3, label: 'Delegates' },
-              { num: 4, label: 'Verification' }
-            ].map(s => {
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              marginBottom: '32px',
+              position: 'relative',
+              padding: '0 8px'
+            }}
+          >
+            {/* Background connecting track */}
+            <div
+              style={{
+                position: 'absolute',
+                top: '20px',
+                left: '40px',
+                right: '40px',
+                height: '2px',
+                background: 'var(--color-border, rgba(255,255,255,0.1))',
+                zIndex: 0
+              }}
+            />
+
+            {wizardSteps.map(s => {
               const isActive = step === s.num;
               const isDone = step > s.num;
               return (
-                <div key={s.num} style={{ position: 'relative', zIndex: 1, textAlign: 'center', flex: 1 }}>
-                  <div style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '50%',
-                    background: isActive ? '#D97706' : isDone ? '#10B981' : '#1E293B',
-                    color: '#FFF',
+                <div
+                  key={s.num}
+                  style={{
+                    position: 'relative',
+                    zIndex: 1,
+                    textAlign: 'center',
+                    flex: 1,
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    margin: '0 auto 8px auto',
-                    fontWeight: 700,
-                    fontSize: '0.9rem',
-                    border: '2px solid rgba(255,255,255,0.1)'
-                  }}>
-                    {isDone ? '✓' : s.num}
+                    flexDirection: 'column',
+                    alignItems: 'center'
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '50%',
+                      background: isActive
+                        ? 'var(--color-primary, #2563EB)'
+                        : isDone
+                        ? 'var(--color-rise, #10B981)'
+                        : 'var(--color-surface, #131822)',
+                      color: '#FFFFFF',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginBottom: '8px',
+                      fontWeight: 700,
+                      fontSize: '0.9rem',
+                      border: isActive
+                        ? '2px solid var(--color-primary-hover, #3B82F6)'
+                        : isDone
+                        ? '2px solid var(--color-rise, #10B981)'
+                        : '2px solid var(--color-border, rgba(255,255,255,0.12))',
+                      boxShadow: isActive ? '0 0 12px rgba(37, 99, 235, 0.4)' : 'none',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    {isDone ? <IconCheck size={18} strokeWidth={2.5} /> : s.num}
                   </div>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 600, color: isActive ? '#F59E0B' : isDone ? '#10B981' : '#64748B' }}>
+                  <div
+                    style={{
+                      fontSize: '0.8rem',
+                      fontWeight: isActive ? 700 : 600,
+                      color: isActive
+                        ? 'var(--color-primary, #2563EB)'
+                        : isDone
+                        ? 'var(--color-rise, #10B981)'
+                        : 'var(--color-text-muted, #64748B)',
+                      transition: 'color 0.2s ease'
+                    }}
+                  >
                     {s.label}
                   </div>
                 </div>
@@ -199,268 +437,385 @@ export default function RegistrationPage({ state, onNavigateHome }) {
 
         {/* Global Error Banner */}
         {errorMessage && (
-          <div style={{ padding: '12px 16px', background: 'rgba(239, 68, 68, 0.2)', border: '1px solid #EF4444', borderRadius: '6px', color: '#FCA5A5', marginBottom: '24px', fontSize: '0.9rem', fontWeight: 600 }}>
-            ⚠️ {errorMessage}
+          <div style={{ marginBottom: '24px' }}>
+            <Alert variant="danger" title="Validation Alert">
+              {errorMessage}
+            </Alert>
           </div>
         )}
 
-        {/* STEP 1: School / Institution Details */}
+        {/* ============================================================ */}
+        {/* STEP 1: Educational Institution Profile                      */}
+        {/* ============================================================ */}
         {step === 1 && (
-          <div style={{ background: '#131822', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '32px' }}>
-            <h2 style={{ fontSize: '1.3rem', fontWeight: 700, color: '#F8FAFC', marginBottom: '8px' }}>
-              Step 1: Educational Institution Profile
-            </h2>
-            <p style={{ color: '#94A3B8', fontSize: '0.85rem', marginBottom: '24px' }}>
-              Register the participating school, college, or academic organization. Duplicate registrations for the same institution under this event are prevented.
-            </p>
+          <Card
+            style={{
+              background: 'var(--color-surface, #131822)',
+              border: '1px solid var(--color-border-subtle, rgba(255,255,255,0.08))',
+              borderRadius: 'var(--radius-lg, 12px)',
+              padding: '32px'
+            }}
+          >
+            <div style={{ marginBottom: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                <span style={{ color: 'var(--color-primary, #2563EB)' }}>
+                  <IconBuilding size={20} />
+                </span>
+                <h2
+                  style={{
+                    fontSize: '1.3rem',
+                    fontWeight: 700,
+                    color: 'var(--color-text-primary, #F8FAFC)',
+                    margin: 0
+                  }}
+                >
+                  Step 1: Educational Institution Profile
+                </h2>
+              </div>
+              <p style={{ color: 'var(--color-text-secondary, #94A3B8)', fontSize: '0.875rem', margin: 0, lineHeight: 1.5 }}>
+                Register the participating school, college, or academic organization. Each educational institution is assigned a single floor delegation per competition session.
+              </p>
+            </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
               <div style={{ gridColumn: '1 / -1' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: '#94A3B8', marginBottom: '6px' }}>School / Institution Name *</label>
-                <input
-                  type="text"
+                <Input
+                  id="registration-school-name"
+                  name="schoolName"
+                  label="School / Institution Name"
+                  required
                   placeholder="e.g. Delhi Public School, R.K. Puram"
                   value={schoolName}
                   onChange={e => setSchoolName(e.target.value)}
-                  style={{ width: '100%', padding: '12px', borderRadius: '6px', background: '#0F131C', border: '1px solid #334155', color: '#FFF' }}
-                  required
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: '#94A3B8', marginBottom: '6px' }}>Board / Curriculum</label>
-                <select
+                <Select
+                  id="registration-board"
+                  name="board"
+                  label="Board / Curriculum"
+                  options={boardOptions}
                   value={board}
                   onChange={e => setBoard(e.target.value)}
-                  style={{ width: '100%', padding: '12px', borderRadius: '6px', background: '#0F131C', border: '1px solid #334155', color: '#FFF' }}
-                >
-                  <option value="CBSE">CBSE</option>
-                  <option value="ICSE / ISC">ICSE / ISC</option>
-                  <option value="IB (International Baccalaureate)">IB (International Baccalaureate)</option>
-                  <option value="Cambridge (IGCSE / A-Levels)">Cambridge (IGCSE / A-Levels)</option>
-                  <option value="State Board">State Board</option>
-                  <option value="Undergraduate University">Undergraduate University</option>
-                </select>
+                />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: '#94A3B8', marginBottom: '6px' }}>City</label>
-                <input
-                  type="text"
+                <Input
+                  id="registration-city"
+                  name="city"
+                  label="City / Region"
                   placeholder="e.g. New Delhi"
                   value={city}
                   onChange={e => setCity(e.target.value)}
-                  style={{ width: '100%', padding: '12px', borderRadius: '6px', background: '#0F131C', border: '1px solid #334155', color: '#FFF' }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: '#94A3B8', marginBottom: '6px' }}>Contact Person / Student Lead *</label>
-                <input
-                  type="text"
+                <Input
+                  id="registration-contact-person"
+                  name="contactPerson"
+                  label="Student Team Leader"
+                  required
                   placeholder="e.g. Aarav Sharma"
                   value={contactPerson}
                   onChange={e => setContactPerson(e.target.value)}
-                  style={{ width: '100%', padding: '12px', borderRadius: '6px', background: '#0F131C', border: '1px solid #334155', color: '#FFF' }}
-                  required
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: '#94A3B8', marginBottom: '6px' }}>Contact Email *</label>
-                <input
+                <Input
+                  id="registration-contact-email"
+                  name="contactEmail"
+                  label="Team Leader Email Address"
                   type="email"
-                  placeholder="e.g. contact@dpsrkp.edu"
+                  placeholder="e.g. aarav.sharma@school.edu"
                   value={contactEmail}
                   onChange={e => setContactEmail(e.target.value)}
-                  style={{ width: '100%', padding: '12px', borderRadius: '6px', background: '#0F131C', border: '1px solid #334155', color: '#FFF' }}
-                  required
+                  helperText="Official credentials and desk allocations will be sent here."
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: '#94A3B8', marginBottom: '6px' }}>Contact Phone / Mobile</label>
-                <input
+                <Input
+                  id="registration-contact-phone"
+                  name="contactPhone"
+                  label="Contact Phone / Mobile"
                   type="tel"
                   placeholder="e.g. +91 98765 43210"
                   value={contactPhone}
                   onChange={e => setContactPhone(e.target.value)}
-                  style={{ width: '100%', padding: '12px', borderRadius: '6px', background: '#0F131C', border: '1px solid #334155', color: '#FFF' }}
+                  helperText="For on-floor dispatch and exchange desk urgent notifications."
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: '#94A3B8', marginBottom: '6px' }}>Faculty Coordinator / Teacher In-Charge</label>
-                <input
-                  type="text"
+                <Input
+                  id="registration-faculty-coordinator"
+                  name="facultyCoordinator"
+                  label="Faculty Coordinator / Teacher In-Charge"
                   placeholder="e.g. Dr. R. K. Joshi"
                   value={facultyCoordinator}
                   onChange={e => setFacultyCoordinator(e.target.value)}
-                  style={{ width: '100%', padding: '12px', borderRadius: '6px', background: '#0F131C', border: '1px solid #334155', color: '#FFF' }}
+                  helperText="Faculty supervisor accompanying the delegation."
                 />
               </div>
             </div>
 
-            <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'flex-end' }}>
-              <button
-                type="button"
-                onClick={() => { if (validateStep1()) setStep(2); }}
-                style={{ padding: '12px 28px', background: '#D97706', color: '#FFF', border: 'none', borderRadius: '6px', fontWeight: 700, cursor: 'pointer' }}
+            <div
+              style={{
+                marginTop: '32px',
+                paddingTop: '20px',
+                borderTop: '1px solid var(--color-border-subtle, rgba(255,255,255,0.08))',
+                display: 'flex',
+                justifyContent: 'flex-end'
+              }}
+            >
+              <Button
+                variant="primary"
+                onClick={() => {
+                  if (validateStep1()) setStep(2);
+                }}
+                disabled={isRegistrationClosed}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '12px 24px' }}
               >
-                Next: Investment House Details →
-              </button>
+                <span>Next: Investment House Details</span>
+                <IconArrowRight size={16} />
+              </Button>
             </div>
-          </div>
+          </Card>
         )}
 
-        {/* STEP 2: Investment House Details */}
+        {/* ============================================================ */}
+        {/* STEP 2: Investment House Details                             */}
+        {/* ============================================================ */}
         {step === 2 && (
-          <div style={{ background: '#131822', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '32px' }}>
-            <h2 style={{ fontSize: '1.3rem', fontWeight: 700, color: '#F8FAFC', marginBottom: '8px' }}>
-              Step 2: Investment House Identity
-            </h2>
-            <p style={{ color: '#94A3B8', fontSize: '0.85rem', marginBottom: '24px' }}>
-              Define the institutional fund entity that will represent your delegation on the live market trading floor.
-            </p>
+          <Card
+            style={{
+              background: 'var(--color-surface, #131822)',
+              border: '1px solid var(--color-border-subtle, rgba(255,255,255,0.08))',
+              borderRadius: 'var(--radius-lg, 12px)',
+              padding: '32px'
+            }}
+          >
+            <div style={{ marginBottom: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                <span style={{ color: 'var(--color-primary, #2563EB)' }}>
+                  <IconBriefcase size={20} />
+                </span>
+                <h2
+                  style={{
+                    fontSize: '1.3rem',
+                    fontWeight: 700,
+                    color: 'var(--color-text-primary, #F8FAFC)',
+                    margin: 0
+                  }}
+                >
+                  Step 2: Investment House Identity
+                </h2>
+              </div>
+              <p style={{ color: 'var(--color-text-secondary, #94A3B8)', fontSize: '0.875rem', margin: 0, lineHeight: 1.5 }}>
+                Define the institutional fund identity that will represent your delegation across the physical exchange floor and order matching engine.
+              </p>
+            </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
               <div style={{ gridColumn: '1 / -1' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: '#94A3B8', marginBottom: '6px' }}>Investment House Name *</label>
-                <input
-                  type="text"
+                <Input
+                  id="registration-house-name"
+                  name="investmentHouseName"
+                  label="Investment House Name"
+                  required
                   placeholder="e.g. Apex Sovereign Asset Management"
                   value={investmentHouseName}
                   onChange={e => setInvestmentHouseName(e.target.value)}
-                  style={{ width: '100%', padding: '12px', borderRadius: '6px', background: '#0F131C', border: '1px solid #334155', color: '#FFF' }}
-                  required
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: '#94A3B8', marginBottom: '6px' }}>Institutional Fund Type</label>
-                <select
+                <Select
+                  id="registration-team-type"
+                  name="teamType"
+                  label="Institutional Fund Type"
+                  options={fundTypeOptions}
                   value={teamType}
                   onChange={e => setTeamType(e.target.value)}
-                  style={{ width: '100%', padding: '12px', borderRadius: '6px', background: '#0F131C', border: '1px solid #334155', color: '#FFF' }}
-                >
-                  <option value="Retail">Retail Investor Desk</option>
-                  <option value="Mutual Fund">Institutional Mutual Fund</option>
-                  <option value="Hedge Fund">Quantitative Hedge Fund</option>
-                  <option value="Prop Desk">Proprietary Trading Desk</option>
-                </select>
+                />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: '#94A3B8', marginBottom: '6px' }}>Preferred Team Code (Optional)</label>
-                <input
-                  type="text"
-                  placeholder="e.g. APEX01 or leave blank for auto-allocation"
+                <Input
+                  id="registration-preferred-team-code"
+                  name="preferredTeamCode"
+                  label="Preferred House Code (Optional)"
+                  placeholder="e.g. APEX01 (or leave blank for auto-allocation)"
                   value={preferredTeamCode}
-                  onChange={e => setPreferredTeamCode(e.target.value)}
-                  style={{ width: '100%', padding: '12px', borderRadius: '6px', background: '#0F131C', border: '1px solid #334155', color: '#FFF' }}
+                  onChange={e => setPreferredTeamCode(e.target.value.toUpperCase())}
+                  helperText="If unassigned, the exchange assigns IH01, IH02, etc."
                 />
-                <span style={{ fontSize: '0.75rem', color: '#64748B' }}>If unassigned, the exchange assigns IH01, IH02, etc.</span>
               </div>
 
               <div style={{ gridColumn: '1 / -1' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: '#94A3B8', marginBottom: '6px' }}>Custom Access Password (Optional)</label>
-                <input
+                <Input
+                  id="registration-custom-password"
+                  name="customPassword"
+                  label="Custom Access Password (Optional)"
                   type="password"
                   placeholder="Leave blank to automatically receive a secure 6-digit access PIN"
                   value={customPassword}
                   onChange={e => setCustomPassword(e.target.value)}
-                  style={{ width: '100%', padding: '12px', borderRadius: '6px', background: '#0F131C', border: '1px solid #334155', color: '#FFF' }}
+                  helperText="If left empty, an authoritative 6-digit floor PIN will be securely generated upon confirmation."
                 />
               </div>
             </div>
 
-            <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'space-between' }}>
-              <button
-                type="button"
+            <div
+              style={{
+                marginTop: '32px',
+                paddingTop: '20px',
+                borderTop: '1px solid var(--color-border-subtle, rgba(255,255,255,0.08))',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}
+            >
+              <Button
+                variant="secondary"
                 onClick={() => setStep(1)}
-                style={{ padding: '12px 24px', background: 'transparent', color: '#94A3B8', border: '1px solid #334155', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
               >
-                ← Back
-              </button>
-              <button
-                type="button"
-                onClick={() => { if (validateStep2()) setStep(3); }}
-                style={{ padding: '12px 28px', background: '#D97706', color: '#FFF', border: 'none', borderRadius: '6px', fontWeight: 700, cursor: 'pointer' }}
+                <IconChevronLeft size={16} />
+                <span>Back</span>
+              </Button>
+
+              <Button
+                variant="primary"
+                onClick={() => {
+                  if (validateStep2()) setStep(3);
+                }}
+                disabled={isRegistrationClosed}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '12px 24px' }}
               >
-                Next: Delegate Members →
-              </button>
+                <span>Next: Delegate Members</span>
+                <IconArrowRight size={16} />
+              </Button>
             </div>
-          </div>
+          </Card>
         )}
 
-        {/* STEP 3: Delegate Members */}
+        {/* ============================================================ */}
+        {/* STEP 3: Delegate Members                                     */}
+        {/* ============================================================ */}
         {step === 3 && (
-          <div style={{ background: '#131822', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '32px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <Card
+            style={{
+              background: 'var(--color-surface, #131822)',
+              border: '1px solid var(--color-border-subtle, rgba(255,255,255,0.08))',
+              borderRadius: 'var(--radius-lg, 12px)',
+              padding: '32px'
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                marginBottom: '20px',
+                flexWrap: 'wrap',
+                gap: '12px'
+              }}
+            >
               <div>
-                <h2 style={{ fontSize: '1.3rem', fontWeight: 700, color: '#F8FAFC', margin: '0 0 4px 0' }}>
-                  Step 3: Team Delegates & Officers
-                </h2>
-                <p style={{ color: '#94A3B8', fontSize: '0.85rem', margin: 0 }}>
-                  Enter student delegate details (min 2, max 5).
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                  <span style={{ color: 'var(--color-primary, #2563EB)' }}>
+                    <IconUser size={20} />
+                  </span>
+                  <h2
+                    style={{
+                      fontSize: '1.3rem',
+                      fontWeight: 700,
+                      color: 'var(--color-text-primary, #F8FAFC)',
+                      margin: 0
+                    }}
+                  >
+                    Step 3: Team Delegates & Officers
+                  </h2>
+                </div>
+                <p style={{ color: 'var(--color-text-secondary, #94A3B8)', fontSize: '0.875rem', margin: 0 }}>
+                  Enter student delegate details (minimum 2, maximum 5 officers). Each delegate receives an official lanyard credential.
                 </p>
               </div>
+
               {members.length < 5 && (
-                <button
-                  type="button"
+                <Button
+                  variant="outline"
                   onClick={addMemberField}
-                  style={{ padding: '8px 14px', background: '#1E293B', color: '#38BDF8', border: '1px solid #38BDF8', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}
+                  style={{ fontSize: '0.825rem', padding: '6px 12px' }}
                 >
-                  + Add Member
-                </button>
+                  + Add Member ({members.length}/5)
+                </Button>
               )}
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '20px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '16px' }}>
               {members.map((member, idx) => (
-                <div key={idx} style={{ display: 'grid', gridTemplateColumns: '2fr 2fr 2fr auto', gap: '12px', alignItems: 'center', background: '#0F131C', padding: '16px', borderRadius: '8px', border: '1px solid #1E293B' }}>
+                <div
+                  key={idx}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr auto',
+                    gap: '16px',
+                    alignItems: 'center',
+                    background: 'var(--color-surface-elevated, #0F131C)',
+                    padding: '16px',
+                    borderRadius: 'var(--radius-md, 8px)',
+                    border: '1px solid var(--color-border-subtle, rgba(255,255,255,0.08))'
+                  }}
+                >
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.75rem', color: '#64748B', marginBottom: '4px' }}>Member {idx + 1} Name *</label>
-                    <input
-                      type="text"
-                      placeholder={`Full Name`}
+                    <Input
+                      id={`registration-member-${idx}-name`}
+                      name={`member_${idx}_name`}
+                      label={`Officer ${idx + 1} Name ${idx < 2 ? '*' : ''}`}
+                      placeholder="Full Name"
                       value={member.name}
                       onChange={e => handleMemberChange(idx, 'name', e.target.value)}
-                      style={{ width: '100%', padding: '10px', borderRadius: '4px', background: '#131822', border: '1px solid #334155', color: '#FFF', fontSize: '0.85rem' }}
                     />
                   </div>
 
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.75rem', color: '#64748B', marginBottom: '4px' }}>Role / Designation</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. CIO / Portfolio Analyst"
+                    <Input
+                      id={`registration-member-${idx}-role`}
+                      name={`member_${idx}_role`}
+                      label="Role / Designation"
+                      placeholder="e.g. CIO / Sector Specialist"
                       value={member.role}
                       onChange={e => handleMemberChange(idx, 'role', e.target.value)}
-                      style={{ width: '100%', padding: '10px', borderRadius: '4px', background: '#131822', border: '1px solid #334155', color: '#FFF', fontSize: '0.85rem' }}
                     />
                   </div>
 
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.75rem', color: '#64748B', marginBottom: '4px' }}>Email (Optional)</label>
-                    <input
-                      type="email"
-                      placeholder="student@school.edu"
-                      value={member.email}
-                      onChange={e => handleMemberChange(idx, 'email', e.target.value)}
-                      style={{ width: '100%', padding: '10px', borderRadius: '4px', background: '#131822', border: '1px solid #334155', color: '#FFF', fontSize: '0.85rem' }}
-                    />
-                  </div>
-
-                  <div style={{ paddingTop: '18px' }}>
+                  <div style={{ paddingTop: '22px' }}>
                     {members.length > 2 && (
                       <button
                         type="button"
                         onClick={() => removeMemberField(idx)}
-                        style={{ background: 'transparent', border: 'none', color: '#EF4444', cursor: 'pointer', fontSize: '1.1rem' }}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--color-fall, #EF4444)',
+                          cursor: 'pointer',
+                          padding: '6px',
+                          borderRadius: '4px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'background 0.15s ease'
+                        }}
                         title="Remove member"
+                        aria-label={`Remove Officer ${idx + 1}`}
                       >
-                        ✕
+                        <IconX size={16} />
                       </button>
                     )}
                   </div>
@@ -468,153 +823,475 @@ export default function RegistrationPage({ state, onNavigateHome }) {
               ))}
             </div>
 
-            <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'space-between' }}>
-              <button
-                type="button"
+            <div
+              style={{
+                marginTop: '32px',
+                paddingTop: '20px',
+                borderTop: '1px solid var(--color-border-subtle, rgba(255,255,255,0.08))',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}
+            >
+              <Button
+                variant="secondary"
                 onClick={() => setStep(2)}
-                style={{ padding: '12px 24px', background: 'transparent', color: '#94A3B8', border: '1px solid #334155', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
               >
-                ← Back
-              </button>
-              <button
-                type="button"
-                onClick={() => { if (validateStep3()) setStep(4); }}
-                style={{ padding: '12px 28px', background: '#D97706', color: '#FFF', border: 'none', borderRadius: '6px', fontWeight: 700, cursor: 'pointer' }}
+                <IconChevronLeft size={16} />
+                <span>Back</span>
+              </Button>
+
+              <Button
+                variant="primary"
+                onClick={() => {
+                  if (validateStep3()) setStep(4);
+                }}
+                disabled={isRegistrationClosed}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '12px 24px' }}
               >
-                Next: Review & Verify →
-              </button>
+                <span>Next: Review & Verify</span>
+                <IconArrowRight size={16} />
+              </Button>
             </div>
-          </div>
+          </Card>
         )}
 
-        {/* STEP 4: Summary & Submission */}
+        {/* ============================================================ */}
+        {/* STEP 4: Review & Verification                                */}
+        {/* ============================================================ */}
         {step === 4 && (
-          <div style={{ background: '#131822', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '32px' }}>
-            <h2 style={{ fontSize: '1.3rem', fontWeight: 700, color: '#F8FAFC', marginBottom: '8px' }}>
-              Step 4: Review Registration Details
-            </h2>
-            <p style={{ color: '#94A3B8', fontSize: '0.85rem', marginBottom: '24px' }}>
-              Please carefully review your submission before sending it to the SAAMX Exchange Desk for verification.
-            </p>
+          <Card
+            style={{
+              background: 'var(--color-surface, #131822)',
+              border: '1px solid var(--color-border-subtle, rgba(255,255,255,0.08))',
+              borderRadius: 'var(--radius-lg, 12px)',
+              padding: '32px'
+            }}
+          >
+            <div style={{ marginBottom: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                <span style={{ color: 'var(--color-primary, #2563EB)' }}>
+                  <IconClipboardList size={20} />
+                </span>
+                <h2
+                  style={{
+                    fontSize: '1.3rem',
+                    fontWeight: 700,
+                    color: 'var(--color-text-primary, #F8FAFC)',
+                    margin: 0
+                  }}
+                >
+                  Step 4: Review Registration Details
+                </h2>
+              </div>
+              <p style={{ color: 'var(--color-text-secondary, #94A3B8)', fontSize: '0.875rem', margin: 0, lineHeight: 1.5 }}>
+                Please carefully verify all institutional parameters before submitting to the SAAMX Exchange Desk for official authorization.
+              </p>
+            </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', background: '#0F131C', padding: '24px', borderRadius: '8px', border: '1px solid #1E293B', marginBottom: '24px' }}>
+            {/* Review Cards Grid */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '20px',
+                background: 'var(--color-surface-elevated, #0F131C)',
+                padding: '24px',
+                borderRadius: 'var(--radius-md, 8px)',
+                border: '1px solid var(--color-border-subtle, rgba(255,255,255,0.08))',
+                marginBottom: '24px'
+              }}
+            >
               <div>
-                <h4 style={{ color: '#F59E0B', margin: '0 0 12px 0', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>School / Institution</h4>
-                <div style={{ fontSize: '0.9rem', marginBottom: '4px' }}><strong>{schoolName}</strong></div>
-                <div style={{ fontSize: '0.85rem', color: '#94A3B8' }}>Curriculum: {board} • City: {city || 'N/A'}</div>
-                <div style={{ fontSize: '0.85rem', color: '#94A3B8' }}>Contact: {contactPerson} ({contactEmail})</div>
-                {contactPhone && <div style={{ fontSize: '0.85rem', color: '#94A3B8' }}>Phone: {contactPhone}</div>}
+                <h3
+                  style={{
+                    color: 'var(--color-accent-amber, #D97706)',
+                    margin: '0 0 12px 0',
+                    fontSize: '0.8rem',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    fontWeight: 700
+                  }}
+                >
+                  Educational Institution
+                </h3>
+                <div style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '6px', color: 'var(--color-text-primary, #F8FAFC)' }}>
+                  {schoolName}
+                </div>
+                <div style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary, #94A3B8)', marginBottom: '4px' }}>
+                  Curriculum: <strong style={{ color: 'var(--color-text-primary, #F8FAFC)' }}>{board}</strong> • City: {city || 'Not specified'}
+                </div>
+                <div style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary, #94A3B8)', marginBottom: '4px' }}>
+                  Leader: {contactPerson || 'Lead Delegate'} {contactEmail && `(${contactEmail})`}
+                </div>
+                {contactPhone && (
+                  <div style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary, #94A3B8)', marginBottom: '4px' }}>
+                    Phone: {contactPhone}
+                  </div>
+                )}
+                {facultyCoordinator && (
+                  <div style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary, #94A3B8)' }}>
+                    Faculty: {facultyCoordinator}
+                  </div>
+                )}
               </div>
 
               <div>
-                <h4 style={{ color: '#F59E0B', margin: '0 0 12px 0', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Investment House</h4>
-                <div style={{ fontSize: '0.9rem', marginBottom: '4px' }}><strong>{investmentHouseName}</strong></div>
-                <div style={{ fontSize: '0.85rem', color: '#94A3B8' }}>Fund Strategy: {teamType}</div>
-                <div style={{ fontSize: '0.85rem', color: '#94A3B8' }}>Requested Code: {preferredTeamCode || 'Auto-allocated (IH01..)'}</div>
-                <div style={{ fontSize: '0.85rem', color: '#10B981' }}>Starting Capital: ₹{(currentEvent.startingCapital || 10000000).toLocaleString()}</div>
+                <h3
+                  style={{
+                    color: 'var(--color-accent-amber, #D97706)',
+                    margin: '0 0 12px 0',
+                    fontSize: '0.8rem',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    fontWeight: 700
+                  }}
+                >
+                  Investment House Identity
+                </h3>
+                <div style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '6px', color: 'var(--color-text-primary, #F8FAFC)' }}>
+                  {investmentHouseName}
+                </div>
+                <div style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary, #94A3B8)', marginBottom: '4px' }}>
+                  Strategy: <strong style={{ color: 'var(--color-text-primary, #F8FAFC)' }}>{teamType}</strong>
+                </div>
+                <div style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary, #94A3B8)', marginBottom: '4px' }}>
+                  Allocated Code: <strong style={{ fontFamily: 'var(--font-mono, monospace)' }}>{preferredTeamCode || 'Auto-allocated (IH01..)'}</strong>
+                </div>
+                <div style={{ fontSize: '0.85rem', color: 'var(--color-rise, #10B981)', fontWeight: 600 }}>
+                  Starting Capital: ₹{(currentEvent.startingCapital || 10000000).toLocaleString('en-IN')}
+                </div>
               </div>
 
-              <div style={{ gridColumn: '1 / -1', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '16px' }}>
-                <h4 style={{ color: '#F59E0B', margin: '0 0 12px 0', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Delegates ({members.filter(m => m.name.trim() !== '').length})</h4>
+              {/* Delegates Section */}
+              <div
+                style={{
+                  gridColumn: '1 / -1',
+                  borderTop: '1px solid var(--color-border-subtle, rgba(255,255,255,0.06))',
+                  paddingTop: '16px'
+                }}
+              >
+                <h3
+                  style={{
+                    color: 'var(--color-accent-amber, #D97706)',
+                    margin: '0 0 12px 0',
+                    fontSize: '0.8rem',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    fontWeight: 700
+                  }}
+                >
+                  Delegates & Officers ({members.filter(m => m.name.trim() !== '').length})
+                </h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px' }}>
                   {members.filter(m => m.name.trim() !== '').map((m, i) => (
-                    <div key={i} style={{ background: '#131822', padding: '10px', borderRadius: '6px', border: '1px solid #334155' }}>
-                      <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{m.name}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>{m.role}</div>
+                    <div
+                      key={i}
+                      style={{
+                        background: 'var(--color-surface, #131822)',
+                        padding: '10px 14px',
+                        borderRadius: 'var(--radius-sm, 6px)',
+                        border: '1px solid var(--color-border-subtle, rgba(255,255,255,0.08))'
+                      }}
+                    >
+                      <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--color-text-primary, #F8FAFC)' }}>
+                        {m.name}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary, #94A3B8)', marginTop: '2px' }}>
+                        {m.role}
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
 
-            <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'space-between' }}>
-              <button
-                type="button"
+            {/* Verification Disclaimer */}
+            <div
+              style={{
+                fontSize: '0.825rem',
+                color: 'var(--color-text-muted, #64748B)',
+                lineHeight: 1.5,
+                marginBottom: '24px',
+                padding: '12px 16px',
+                background: 'var(--color-surface-hover, rgba(255,255,255,0.03))',
+                borderRadius: 'var(--radius-sm, 6px)',
+                border: '1px solid var(--color-border-subtle, rgba(255,255,255,0.06))'
+              }}
+            >
+              By submitting this registration, the delegation confirms adherence to the official SAAMX Market Conduct Code. Submitted entries are routed to the physical Exchange Desk for credentials verification.
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}
+            >
+              <Button
+                variant="secondary"
                 onClick={() => setStep(3)}
-                style={{ padding: '12px 24px', background: 'transparent', color: '#94A3B8', border: '1px solid #334155', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
               >
-                ← Edit Details
-              </button>
-              <button
-                type="button"
+                <IconChevronLeft size={16} />
+                <span>Edit Details</span>
+              </Button>
+
+              <Button
+                variant="primary"
                 disabled={isSubmitting || isRegistrationClosed}
                 onClick={handleSubmitRegistration}
-                style={{ padding: '12px 36px', background: isSubmitting ? '#92400E' : '#10B981', color: '#FFF', border: 'none', borderRadius: '6px', fontWeight: 700, cursor: isSubmitting ? 'not-allowed' : 'pointer', fontSize: '0.95rem' }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '12px 32px',
+                  fontWeight: 700
+                }}
               >
-                {isSubmitting ? 'Submitting Registration...' : '✓ Confirm & Register House'}
-              </button>
+                {isSubmitting ? (
+                  <span>Submitting Registration...</span>
+                ) : (
+                  <>
+                    <IconCheck size={18} strokeWidth={2.5} />
+                    <span>Confirm & Register House</span>
+                  </>
+                )}
+              </Button>
             </div>
-          </div>
+          </Card>
         )}
 
-        {/* STEP 5: Official Confirmation Ticket */}
+        {/* ============================================================ */}
+        {/* STEP 5: Official Confirmation Pass / Credential Slip        */}
+        {/* ============================================================ */}
         {step === 5 && confirmationData && (
-          <div style={{ background: '#131822', border: '2px solid #10B981', borderRadius: '12px', padding: '36px', textAlign: 'center' }}>
-            <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.2)', color: '#10B981', fontSize: '1.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px auto' }}>
-              ✓
+          <Card
+            style={{
+              background: 'var(--color-surface, #131822)',
+              border: '2px solid var(--color-rise, #10B981)',
+              borderRadius: 'var(--radius-xl, 16px)',
+              padding: '36px',
+              textAlign: 'center'
+            }}
+          >
+            <div
+              style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: '50%',
+                background: 'rgba(16, 185, 129, 0.15)',
+                color: 'var(--color-rise, #10B981)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 18px auto',
+                border: '2px solid rgba(16, 185, 129, 0.3)'
+              }}
+            >
+              <IconCheck size={32} strokeWidth={2.5} />
             </div>
-            <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#F8FAFC', margin: '0 0 8px 0' }}>
+
+            <h2
+              style={{
+                fontSize: '1.85rem',
+                fontWeight: 800,
+                color: 'var(--color-text-primary, #F8FAFC)',
+                margin: '0 0 8px 0',
+                letterSpacing: '-0.02em'
+              }}
+            >
               Registration Successfully Submitted!
             </h2>
-            <p style={{ color: '#94A3B8', fontSize: '0.95rem', maxWidth: '520px', margin: '0 auto 28px auto' }}>
-              Your Investment House has been registered in the SAAMX exchange database. Please present this credential slip at the floor verification desk.
+            <p
+              style={{
+                color: 'var(--color-text-secondary, #94A3B8)',
+                fontSize: '0.95rem',
+                maxWidth: '540px',
+                margin: '0 auto 28px auto',
+                lineHeight: 1.5
+              }}
+            >
+              Your Investment House has been recorded in the SAAMX exchange registry. Please present this credential slip at the Exchange Desk upon arrival.
             </p>
 
-            {/* Credential Slip Card */}
-            <div id="saamx-credential-badge" style={{ background: '#0F131C', border: '1px dashed #38BDF8', borderRadius: '10px', padding: '24px', textAlign: 'left', maxWidth: '540px', margin: '0 auto 28px auto' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '12px', marginBottom: '16px' }}>
+            {/* Official Credential Badge (Print Target) */}
+            <div
+              id="saamx-credential-badge"
+              style={{
+                background: 'var(--color-surface-elevated, #0F131C)',
+                border: '1px dashed var(--color-primary, #38BDF8)',
+                borderRadius: 'var(--radius-lg, 12px)',
+                padding: '28px',
+                textAlign: 'left',
+                maxWidth: '560px',
+                margin: '0 auto 28px auto',
+                boxShadow: 'var(--shadow-lg, 0 10px 25px -5px rgba(0,0,0,0.3))'
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  borderBottom: '1px solid var(--color-border-subtle, rgba(255,255,255,0.1))',
+                  paddingBottom: '16px',
+                  marginBottom: '16px'
+                }}
+              >
                 <div>
-                  <div style={{ fontSize: '0.75rem', color: '#38BDF8', fontWeight: 700, letterSpacing: '0.1em' }}>SAAMX OFFICIAL DELEGATE PASS</div>
-                  <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#FFF' }}>{confirmationData.investmentHouse?.investmentHouseName}</div>
-                  <div style={{ fontSize: '0.85rem', color: '#94A3B8' }}>{confirmationData.school?.schoolName}</div>
+                  <div
+                    style={{
+                      fontSize: '0.75rem',
+                      color: 'var(--color-primary, #38BDF8)',
+                      fontWeight: 800,
+                      letterSpacing: '0.1em',
+                      textTransform: 'uppercase',
+                      marginBottom: '4px'
+                    }}
+                  >
+                    SAAMX OFFICIAL DELEGATE PASS
+                  </div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#FFFFFF' }}>
+                    {confirmationData.investmentHouse?.investmentHouseName}
+                  </div>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary, #94A3B8)' }}>
+                    {confirmationData.school?.schoolName}
+                  </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '0.75rem', color: '#64748B' }}>ASSIGNED CODE</div>
-                  <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#F59E0B', fontFamily: 'monospace' }}>{confirmationData.teamCode}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted, #64748B)', fontWeight: 700 }}>
+                    ASSIGNED CODE
+                  </div>
+                  <div
+                    className="tabular-nums"
+                    style={{
+                      fontSize: '1.75rem',
+                      fontWeight: 900,
+                      color: 'var(--color-accent-amber, #F59E0B)',
+                      fontFamily: 'var(--font-mono, monospace)',
+                      lineHeight: 1.1
+                    }}
+                  >
+                    {confirmationData.teamCode}
+                  </div>
                 </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                 <div>
-                  <div style={{ fontSize: '0.75rem', color: '#64748B' }}>CONSOLE USERNAME</div>
-                  <div style={{ fontSize: '1rem', fontWeight: 700, color: '#FFF', fontFamily: 'monospace' }}>{confirmationData.teamCode}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted, #64748B)', fontWeight: 600 }}>
+                    CONSOLE USERNAME
+                  </div>
+                  <div
+                    style={{
+                      fontSize: '1rem',
+                      fontWeight: 700,
+                      color: '#FFFFFF',
+                      fontFamily: 'var(--font-mono, monospace)'
+                    }}
+                  >
+                    {confirmationData.teamCode}
+                  </div>
                 </div>
+
                 <div>
-                  <div style={{ fontSize: '0.75rem', color: '#64748B' }}>TEMPORARY PIN / PASSWORD</div>
-                  <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#10B981', fontFamily: 'monospace' }}>{confirmationData.tempPin}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted, #64748B)', fontWeight: 600 }}>
+                    ACCESS PIN / PASSWORD
+                  </div>
+                  <div
+                    style={{
+                      fontSize: '1.1rem',
+                      fontWeight: 800,
+                      color: 'var(--color-rise, #10B981)',
+                      fontFamily: 'var(--font-mono, monospace)'
+                    }}
+                  >
+                    {confirmationData.tempPin}
+                  </div>
                 </div>
+
                 <div>
-                  <div style={{ fontSize: '0.75rem', color: '#64748B' }}>REGISTRATION REF</div>
-                  <div style={{ fontSize: '0.8rem', color: '#94A3B8', fontFamily: 'monospace' }}>{confirmationData.registrationId}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted, #64748B)', fontWeight: 600 }}>
+                    CLEARANCE DESK
+                  </div>
+                  <div style={{ fontSize: '0.9rem', color: 'var(--color-primary, #38BDF8)', fontWeight: 800 }}>
+                    {confirmationData.assignedDesk
+                      ? confirmationData.assignedDesk.replace('_', ' ')
+                      : `Desk ${((parseInt(confirmationData.teamCode?.replace(/\D/g, '') || '1', 10) - 1) % 5) + 1} (Intake)`}
+                  </div>
                 </div>
+
                 <div>
-                  <div style={{ fontSize: '0.75rem', color: '#64748B' }}>STATUS</div>
-                  <div style={{ fontSize: '0.85rem', color: '#F59E0B', fontWeight: 700 }}>PENDING DESK VERIFICATION</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted, #64748B)', fontWeight: 600 }}>
+                    REGISTRATION REF
+                  </div>
+                  <div
+                    style={{
+                      fontSize: '0.8rem',
+                      color: 'var(--color-text-secondary, #94A3B8)',
+                      fontFamily: 'var(--font-mono, monospace)'
+                    }}
+                  >
+                    {confirmationData.registrationId}
+                  </div>
+                </div>
+
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted, #64748B)', fontWeight: 600 }}>
+                    STATUS
+                  </div>
+                  <div style={{ fontSize: '0.875rem', color: 'var(--color-accent-amber, #F59E0B)', fontWeight: 700 }}>
+                    PENDING DESK VERIFICATION
+                  </div>
                 </div>
               </div>
 
-              <div style={{ fontSize: '0.75rem', color: '#64748B', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '10px' }}>
-                Present this code to the Exchange Administrator to activate your virtual ₹10,000,000 portfolio before the opening bell.
+              <div
+                style={{
+                  fontSize: '0.75rem',
+                  color: 'var(--color-text-muted, #64748B)',
+                  borderTop: '1px solid var(--color-border-subtle, rgba(255,255,255,0.06))',
+                  paddingTop: '12px',
+                  lineHeight: 1.4
+                }}
+              >
+                Present this code to the Exchange Administrator upon arrival to activate your ₹10,000,000 portfolio before the opening bell.
               </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
-              <button
-                type="button"
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
+              <Button
+                variant="primary"
                 onClick={printBadge}
-                style={{ padding: '12px 24px', background: '#38BDF8', color: '#0F172A', border: 'none', borderRadius: '6px', fontWeight: 700, cursor: 'pointer' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '12px 24px' }}
               >
-                🖨️ Print Credential Slip
-              </button>
-              <button
-                type="button"
-                onClick={() => { window.location.hash = '#/'; }}
-                style={{ padding: '12px 24px', background: '#1E293B', color: '#FFF', border: '1px solid #334155', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}
+                <IconPrinter size={18} />
+                <span>Print Credential Slip</span>
+              </Button>
+
+              <a href="#/login" style={{ textDecoration: 'none' }}>
+                <Button
+                  variant="primary"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '12px 24px', backgroundColor: 'var(--color-accent, #2563EB)' }}
+                >
+                  <span>Proceed to Terminal Sign In</span>
+                  <IconArrowRight size={16} />
+                </Button>
+              </a>
+
+              <Button
+                variant="secondary"
+                onClick={handleBackToHome}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '12px 24px' }}
               >
-                Return to Floor Gateway →
-              </button>
+                <span>Return to Floor Gateway</span>
+                <IconArrowRight size={16} />
+              </Button>
             </div>
-          </div>
+          </Card>
         )}
 
       </div>

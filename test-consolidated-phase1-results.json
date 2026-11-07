@@ -1,0 +1,210 @@
+{
+  "totalScenarios": 13,
+  "passed": 5,
+  "failed": 8,
+  "timestamp": "2026-10-31T00:31:04.262Z",
+  "expectedStateHash": "441077e432987ce85a8ec982b818564f68f9b3fa8a59128e5313d04ab30c754c",
+  "finalStateHash": "441077e432987ce85a8ec982b818564f68f9b3fa8a59128e5313d04ab30c754c",
+  "results": [
+    {
+      "id": "VOID-SEC-01",
+      "title": "Unauthenticated Transaction Void Rejection",
+      "endpoint": "POST /api/transactions/void",
+      "role": "anonymous",
+      "scenario": "Unauthenticated caller attempts to void transaction TX_VOID_BUY_01",
+      "expected": "HTTP 401 Unauthorized",
+      "actual": "HTTP 401",
+      "evidence": {
+        "error": "401 Unauthorized: Valid session authentication required."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "VOID-SEC-02",
+      "title": "Unauthorized Participant Team Void Rejection",
+      "endpoint": "POST /api/transactions/void",
+      "role": "team (T01)",
+      "scenario": "Team T01 attempts to void transaction TX_VOID_BUY_01",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403",
+      "evidence": {
+        "error": "Forbidden: Transaction voiding requires SEBI or Administrator privileges."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "VOID-SEC-03",
+      "title": "Trailing Slash Route Normalization (/api/transactions/void/)",
+      "endpoint": "POST /api/transactions/void/",
+      "role": "team (T01)",
+      "scenario": "Team T01 attempts trailing slash alias to bypass void authorization",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403",
+      "evidence": {
+        "error": "Forbidden: Transaction voiding requires SEBI or Administrator privileges."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "VOID-LEGIT-01",
+      "title": "Authorized Administrator Valid BUY Transaction Void",
+      "endpoint": "POST /api/transactions/void",
+      "role": "admin",
+      "scenario": "Administrator voids BUY transaction (₹36,000 / 20 INFY)",
+      "expected": "HTTP 200 with tx.voided=true and audit fields populated",
+      "actual": "HTTP 404, voided=undefined",
+      "evidence": {},
+      "status": "FAILED"
+    },
+    {
+      "id": "VOID-LEDGER-01",
+      "title": "BUY Void Ledger Integrity (Cash Refund & Holdings Reduction)",
+      "endpoint": "Database State Assertion",
+      "role": "financial ledger",
+      "scenario": "Check Team T01 INR wallet, INFY holdings, and aggregate cash balance after void",
+      "expected": "INR wallet=9936000, INFY holdings=80, cashBalance=10024200",
+      "actual": "INR wallet=9900000, INFY holdings=100, cashBalance=9988200",
+      "evidence": {
+        "cashWallets": {
+          "INR": 9900000,
+          "USD": 1000,
+          "GBP": 0,
+          "EUR": 0
+        },
+        "holdings": {
+          "INFY": 100,
+          "TCS": 50
+        },
+        "cashBalance": 9988200
+      },
+      "status": "FAILED"
+    },
+    {
+      "id": "VOID-IDEMPOTENCY-01",
+      "title": "Duplicate Transaction Void Rejection (Idempotency)",
+      "endpoint": "POST /api/transactions/void",
+      "role": "admin",
+      "scenario": "Attempting to void an already-voided transaction a second time",
+      "expected": "HTTP 400 Transaction already voided",
+      "actual": "HTTP 404",
+      "evidence": {
+        "error": "Transaction not found."
+      },
+      "status": "FAILED"
+    },
+    {
+      "id": "VOID-IDEMPOTENCY-02",
+      "title": "Duplicate Void Non-Mutation Guarantee",
+      "endpoint": "Database State Assertion",
+      "role": "financial ledger",
+      "scenario": "Confirm no secondary cash or holdings reversal occurred upon duplicate void attempt",
+      "expected": "Cash remains 9936000, INFY remains 80",
+      "actual": "Cash=9900000, INFY=100",
+      "evidence": {
+        "cashINR": 9900000,
+        "infy": 100
+      },
+      "status": "FAILED"
+    },
+    {
+      "id": "VOID-LEGIT-02",
+      "title": "SEBI Authorized Foreign Currency SELL Void (USD Clawback & Holdings Restoration)",
+      "endpoint": "POST /api/transactions/void",
+      "role": "sebi",
+      "scenario": "SEBI voids SELL transaction in USD ($1,800 / 10 OAI)",
+      "expected": "HTTP 200, USD wallet=3200, OAI holdings=30",
+      "actual": "HTTP 404, USD wallet=5000, OAI holdings=20",
+      "evidence": {
+        "status": 404,
+        "cashWallets": {
+          "INR": 10000000,
+          "USD": 5000,
+          "GBP": 0,
+          "EUR": 0
+        },
+        "holdings": {
+          "OAI": 20
+        },
+        "cashBalance": 10441000
+      },
+      "status": "FAILED"
+    },
+    {
+      "id": "DIV-SEC-01",
+      "title": "Unauthenticated Dividend Trigger Rejection",
+      "endpoint": "POST /api/corporate-action",
+      "role": "anonymous",
+      "scenario": "Unauthenticated caller attempts to trigger dividend distribution",
+      "expected": "HTTP 401 Unauthorized",
+      "actual": "HTTP 401",
+      "evidence": {
+        "error": "401 Unauthorized: Valid session authentication required."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "DIV-SEC-02",
+      "title": "Participant Team Dividend Trigger Rejection",
+      "endpoint": "POST /api/corporate-action",
+      "role": "team (T01)",
+      "scenario": "Team T01 attempts to trigger dividend payout on TCS",
+      "expected": "HTTP 403 Forbidden",
+      "actual": "HTTP 403",
+      "evidence": {
+        "error": "Forbidden: Corporate actions require SEBI or Administrator privileges."
+      },
+      "status": "PASSED"
+    },
+    {
+      "id": "DIV-ACCT-01",
+      "title": "INR Dividend Credited to Native INR Wallet & Cash Balance Reconciled",
+      "endpoint": "POST /api/corporate-action",
+      "role": "admin",
+      "scenario": "Admin triggers 2% dividend on TCS (50 units held by T01)",
+      "expected": "HTTP 200, INR wallet credited +₹3200 (new INR=9903200), USD unchanged (1000), cashBalance=9991400",
+      "actual": "HTTP 400, INR wallet=9900000, USD wallet=1000, cashBalance=9988200",
+      "evidence": {
+        "response": {
+          "error": "Security TCS has no dividend yield defined."
+        },
+        "preCashINR": 9900000,
+        "postCashINR": 9900000,
+        "postCashUSD": 1000,
+        "postCashBalance": 9988200
+      },
+      "status": "FAILED"
+    },
+    {
+      "id": "DIV-IDEMPOTENCY-01",
+      "title": "Duplicate Dividend Distribution Rejection Within Cooldown",
+      "endpoint": "POST /api/corporate-action",
+      "role": "admin",
+      "scenario": "Admin accidentally clicks dividend button twice within 60 seconds",
+      "expected": "HTTP 409 Conflict with duplicate notification",
+      "actual": "HTTP 400",
+      "evidence": {
+        "error": "Security TCS has no dividend yield defined."
+      },
+      "status": "FAILED"
+    },
+    {
+      "id": "DIV-ACCT-02",
+      "title": "USD Foreign Dividend Credited to Native USD Wallet & Reconciled",
+      "endpoint": "POST /api/corporate-action",
+      "role": "sebi",
+      "scenario": "SEBI triggers 3% dividend on USD security OAI (30 units held by T02)",
+      "expected": "HTTP 200, USD wallet credited +$180 (new USD=5180), INR unchanged (10000000), cashBalance=10456876",
+      "actual": "HTTP 400, USD wallet=5000, INR wallet=10000000, cashBalance=10441000",
+      "evidence": {
+        "response": {
+          "error": "Security OAI has no dividend yield defined."
+        },
+        "preUSD": 5000,
+        "postUSD": 5000,
+        "postINR": 10000000,
+        "postCashBalance": 10441000
+      },
+      "status": "FAILED"
+    }
+  ]
+}
