@@ -1,0 +1,109 @@
+name: SAAMX CI Verification & Quality Gates
+
+on:
+  push:
+    branches: [ development, master ]
+  pull_request:
+    branches: [ development, master ]
+
+jobs:
+  verify:
+    name: Verify Invariants, Build & Test Estate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Pre-Flight Baseline Hash Verification
+        run: |
+          node -e "
+          const crypto = require('crypto');
+          const fs = require('fs');
+          const expected = '6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca';
+          const actual = crypto.createHash('sha256').update(fs.readFileSync('state.json')).digest('hex');
+          if (actual !== expected) {
+            console.error('INVARIANT VIOLATION: state.json SHA-256 hash mismatch!');
+            console.error('Expected:', expected);
+            console.error('Actual:  ', actual);
+            process.exit(1);
+          }
+          console.log('Pre-flight Authoritative Baseline Hash OK:', actual);
+          "
+
+      - name: Vite Production Build Check
+        run: npm run build
+
+      - name: Run Milestone M0 (Security & Defects)
+        run: node test-milestone-m0-defects.js
+
+      - name: Run Milestone M1 (Two-Phase Order Lifecycle)
+        run: node test-milestone-m1-order-lifecycle.js
+
+      - name: Run Milestone M2 (Finite FX Reserves)
+        run: node test-milestone-m2-fx-reserves.js
+
+      - name: Run Milestone M3 (Durable Accounting & IPO Allotment)
+        run: node test-milestone-m3-accounting.js
+
+      - name: Run News Intelligence M1 (400 Presets & Contagion)
+        run: node test-milestone-m1-news-intelligence.js
+
+      - name: Run Phase C (Dedicated Desk Queues)
+        run: node test-milestone-phase-c-queues.js
+
+      - name: Run Phase C (Mutex Concurrency Stress)
+        run: node test-adversarial-phase-c-concurrency.js
+
+      - name: Run Phase D (FX Operator Processing Queue)
+        run: node test-milestone-phase-d-fx-queue.js
+
+      - name: Run Phase D (Scarcity & Finite Reserve Stress)
+        run: node test-phase-d-challenger-2-stress.js
+
+      - name: Run Phase D (Adversarial FX Queue)
+        run: node test-adversarial-phase-d-fx-queue.js
+
+      - name: Run Phase E (Broker Advisory Terminal)
+        run: node test-milestone-phase-e-broker.js
+
+      - name: Run Phase E (Valuation & Ratio Boundaries)
+        run: node test-adversarial-phase-e-ratios.js
+
+      - name: Run Phase E (Advisory Non-Execution Assertion)
+        run: node test-adversarial-phase-e-concurrency.js
+
+      - name: Run Phase F (Training Sandbox Workflows)
+        run: node test-milestone-phase-f-training.js
+
+      - name: Run Phase F (Sandbox Zero-Leakage Stress)
+        run: node test-adversarial-phase-f-isolation.js
+
+      - name: Run Phase F (Operator Performance Scorecards)
+        run: node test-adversarial-phase-f-scorecards.js
+
+      - name: Run Master Opaque-Box E2E Runner (Tiers 1-4)
+        run: node test-e2e-master-runner.js
+
+      - name: Post-Flight Baseline Hash Verification
+        run: |
+          node -e "
+          const crypto = require('crypto');
+          const fs = require('fs');
+          const expected = '6c30e425ca30e0a22a5be40c7228543d1e8d716fe9a4795b3cdf136df728acca';
+          const actual = crypto.createHash('sha256').update(fs.readFileSync('state.json')).digest('hex');
+          if (actual !== expected) {
+            console.error('INVARIANT VIOLATION: state.json was mutated during testing!');
+            process.exit(1);
+          }
+          console.log('Post-flight Authoritative Baseline Hash OK (Bit-Exact):', actual);
+          "
