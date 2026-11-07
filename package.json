@@ -10,7 +10,14 @@
     "preview": "vite preview",
     "dev": "vite",
     "start": "node server.js",
-    "test:full": "node test-full-audit.js"
+    "test:full": "node test-full-audit.js",
+    "test:master": "node test-e2e-master-runner.js",
+    "test:milestones": "node test-milestone-m0-defects.js && node test-milestone-m1-order-lifecycle.js && node test-milestone-m2-fx-reserves.js && node test-milestone-m3-accounting.js && node test-milestone-m1-news-intelligence.js",
+    "test:queues": "node test-milestone-phase-c-queues.js && node test-milestone-phase-d-fx-queue.js",
+    "test:advisory": "node test-milestone-phase-e-broker.js",
+    "test:training": "node test-milestone-phase-f-training.js",
+    "simulate": "node scripts/simulate_live_event_drill.js",
+    "verify:hash": "node -e \"const c=require('crypto'),f=require('fs');console.log(c.createHash('sha256').update(f.readFileSync('state.json')).digest('hex'));\""
   },
   "dependencies": {
     "@vercel/node": "^5.8.23",
