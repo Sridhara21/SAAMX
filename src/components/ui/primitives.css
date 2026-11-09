@@ -284,3 +284,96 @@
   box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.05), 0 4px 6px -2px rgba(15, 23, 42, 0.025);
 }
 
+
+/* ==========================================================================
+   MODAL COMPONENT STYLES (Phase 4.5 Standard Dialog Primitives)
+   ========================================================================== */
+
+.saamx-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(11, 25, 44, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 20px;
+  overflow-y: auto;
+  animation: modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.saamx-modal-container {
+  position: relative;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-surface, #FFFFFF);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+  overflow: hidden;
+  animation: modalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.saamx-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-surface, #FFFFFF);
+  flex-shrink: 0;
+}
+
+.saamx-modal-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--color-navy, #0B192C);
+  font-family: var(--font-display, "Plus Jakarta Sans", sans-serif);
+}
+
+.saamx-modal-desc {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: var(--color-ink-secondary, #475569);
+}
+
+.saamx-modal-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background-color: transparent;
+  color: var(--color-ink-muted, #94A3B8);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.saamx-modal-close-btn:hover {
+  background-color: var(--color-surface-sunken, #F1F3F8);
+  color: var(--color-ink, #0F172A);
+}
+
+.saamx-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1 1 auto;
+}
+
+.saamx-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-surface-sunken, #F8FAFC);
+  flex-shrink: 0;
+}

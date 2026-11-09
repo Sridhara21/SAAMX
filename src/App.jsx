@@ -625,7 +625,7 @@ export default function App() {
     } else if (!isAuthenticated) {
       // 4. All Other Internal Routes Require Authentication
       content = <LoginPage onLoginSuccess={handleLoginSuccess} />;
-    } else if (!isRouteAuthorized(userRole, route)) {
+    } else if (!isRouteAuthorized(userRole, (route || "#/").split("?")[0])) {
       // 5. Role-Based Route Authorization Gate
       content = (
         <div
@@ -658,7 +658,8 @@ export default function App() {
       );
     } else {
       // 6. Authorized Desk Routing
-      switch (route) {
+      const baseRoute = (route || "#/").split("?")[0];
+      switch (baseRoute) {
         case '#/tech-ops':
         case '#/monitoring':
           content = <TechOpsMonitoringPage state={normalizedState} connected={dbConnected} />;
