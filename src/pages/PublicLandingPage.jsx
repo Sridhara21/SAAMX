@@ -102,7 +102,7 @@ export default function PublicLandingPage() {
 
   const highlights = [
     { value: '2,000+', label: 'Securities Directory', color: 'var(--color-navy, #0B192C)' },
-    { value: '10–20', label: 'Investment Houses', color: 'var(--color-orange, #FF6800)' },
+    { value: '10', label: 'Investment Houses', color: 'var(--color-orange, #FF6800)' },
     { value: '₹1 Crore', label: 'Starting Capital / Team', color: 'var(--color-gain, #059669)' },
     { value: '5', label: 'Physical Order Desks', color: 'var(--color-navy, #0B192C)' },
     { value: 'SEBI', label: 'Surveillance & Oversight', color: '#0284C7' }
@@ -203,54 +203,60 @@ export default function PublicLandingPage() {
             >
               Home
             </a>
-            <a
-              href="#features"
-              onClick={(e) => {
-                e.preventDefault();
+            <button
+              type="button"
+              onClick={() => {
                 document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
               }}
               style={{
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                cursor: 'pointer',
                 fontSize: '0.90rem',
                 fontWeight: 600,
                 color: 'var(--color-ink-secondary, #475569)',
-                textDecoration: 'none',
                 transition: 'color 0.15s ease'
               }}
             >
               Features
-            </a>
-            <a
-              href="#how-it-works"
-              onClick={(e) => {
-                e.preventDefault();
+            </button>
+            <button
+              type="button"
+              onClick={() => {
                 document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' });
               }}
               style={{
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                cursor: 'pointer',
                 fontSize: '0.90rem',
                 fontWeight: 600,
                 color: 'var(--color-ink-secondary, #475569)',
-                textDecoration: 'none',
                 transition: 'color 0.15s ease'
               }}
             >
               How It Works
-            </a>
-            <a
-              href="#schedule"
-              onClick={(e) => {
-                e.preventDefault();
+            </button>
+            <button
+              type="button"
+              onClick={() => {
                 document.getElementById('schedule')?.scrollIntoView({ behavior: 'smooth' });
               }}
               style={{
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                cursor: 'pointer',
                 fontSize: '0.90rem',
                 fontWeight: 600,
                 color: 'var(--color-ink-secondary, #475569)',
-                textDecoration: 'none',
                 transition: 'color 0.15s ease'
               }}
             >
               Schedule
-            </a>
+            </button>
             <a
               href="#/portals"
               style={{
@@ -284,7 +290,7 @@ export default function PublicLandingPage() {
               </Button>
             </a>
 
-            <a href="#/register" style={{ textDecoration: 'none' }}>
+            <a href="#/login" style={{ textDecoration: 'none' }}>
               <Button
                 variant="primary"
                 size="sm"
@@ -304,7 +310,7 @@ export default function PublicLandingPage() {
               </Button>
             </a>
 
-            <ThemeToggle />
+            
           </div>
         </div>
       </header>
@@ -393,7 +399,7 @@ export default function PublicLandingPage() {
 
             {/* CTAs matching reference */}
             <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '40px' }}>
-              <a href="#/register" style={{ textDecoration: 'none' }}>
+              <a href="#/login" style={{ textDecoration: 'none' }}>
                 <Button
                   variant="primary"
                   size="lg"
@@ -409,7 +415,7 @@ export default function PublicLandingPage() {
                     color: '#FFFFFF'
                   }}
                 >
-                  Register Now
+                  Enter Event Portal
                 </Button>
               </a>
 
@@ -465,84 +471,21 @@ export default function PublicLandingPage() {
                 height: '420px',
                 borderRadius: '24px',
                 overflow: 'hidden',
-                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(240, 244, 249, 0.8) 100%)',
-                boxShadow: '0 20px 48px -12px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.9)'
+                backgroundColor: '#FFFFFF',
+                boxShadow: '0 20px 48px -12px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(226, 232, 240, 0.8)'
               }}
             >
-              {/* Modern Cityscape Architectural Silhouette Vector */}
-              <svg
-                viewBox="0 0 540 420"
-                style={{ width: '100%', height: '100%', display: 'block' }}
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <defs>
-                  <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#EAF1F9" stopOpacity="0.8" />
-                    <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.2" />
-                  </linearGradient>
-                  <linearGradient id="bldgGrad1" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#CBD5E1" stopOpacity="0.45" />
-                    <stop offset="100%" stopColor="#94A3B8" stopOpacity="0.75" />
-                  </linearGradient>
-                  <linearGradient id="bldgGrad2" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#0B192C" stopOpacity="0.85" />
-                    <stop offset="100%" stopColor="#1E293B" stopOpacity="0.95" />
-                  </linearGradient>
-                  <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#FF6800" stopOpacity="0.3" />
-                    <stop offset="100%" stopColor="#FF6800" stopOpacity="0.0" />
-                  </linearGradient>
-                </defs>
-
-                <rect width="540" height="420" fill="url(#skyGrad)" />
-
-                {/* Background skyscraper towers */}
-                <rect x="50" y="140" width="60" height="280" rx="3" fill="url(#bldgGrad1)" />
-                <rect x="130" y="80" width="80" height="340" rx="4" fill="url(#bldgGrad1)" />
-                <rect x="230" y="120" width="70" height="300" rx="4" fill="url(#bldgGrad1)" />
-                <rect x="320" y="60" width="90" height="360" rx="4" fill="url(#bldgGrad1)" />
-                <rect x="430" y="150" width="70" height="270" rx="4" fill="url(#bldgGrad1)" />
-
-                {/* Foreground high-rise architecture with glowing window grids */}
-                <rect x="170" y="130" width="90" height="290" rx="4" fill="url(#bldgGrad2)" />
-                <rect x="280" y="100" width="110" height="320" rx="5" fill="url(#bldgGrad2)" />
-                <rect x="100" y="190" width="65" height="230" rx="4" fill="url(#bldgGrad2)" />
-                <rect x="400" y="170" width="85" height="250" rx="4" fill="url(#bldgGrad2)" />
-
-                {/* Window rows */}
-                {[150, 180, 210, 240, 270, 300, 330, 360].map((y, i) => (
-                  <g key={i}>
-                    <rect x="185" y={y} width="12" height="16" fill="#F8FAFC" fillOpacity="0.4" rx="1" />
-                    <rect x="205" y={y} width="12" height="16" fill="#FFB020" fillOpacity="0.6" rx="1" />
-                    <rect x="225" y={y} width="12" height="16" fill="#F8FAFC" fillOpacity="0.3" rx="1" />
-
-                    <rect x="295" y={y - 20} width="16" height="18" fill="#F8FAFC" fillOpacity="0.4" rx="1" />
-                    <rect x="320" y={y - 20} width="16" height="18" fill="#FF6800" fillOpacity="0.5" rx="1" />
-                    <rect x="345" y={y - 20} width="16" height="18" fill="#F8FAFC" fillOpacity="0.3" rx="1" />
-                    <rect x="370" y={y - 20} width="16" height="18" fill="#00E5FF" fillOpacity="0.4" rx="1" />
-                  </g>
-                ))}
-
-                {/* Dynamic Upward Trending Financial Line Overlay */}
-                <path
-                  d="M 20 350 Q 120 320, 180 280 T 300 210 T 420 140 T 520 70 L 520 420 L 20 420 Z"
-                  fill="url(#chartGrad)"
-                />
-                <path
-                  d="M 20 350 Q 120 320, 180 280 T 300 210 T 420 140 T 520 70"
-                  fill="none"
-                  stroke="#FF6800"
-                  strokeWidth="3.5"
-                  strokeLinecap="round"
-                />
-
-                {/* Glowing Market Vertex Dots */}
-                <circle cx="180" cy="280" r="5" fill="#FFFFFF" stroke="#FF6800" strokeWidth="2.5" />
-                <circle cx="300" cy="210" r="5" fill="#FFFFFF" stroke="#FF6800" strokeWidth="2.5" />
-                <circle cx="420" cy="140" r="5" fill="#FFFFFF" stroke="#FF6800" strokeWidth="2.5" />
-                <circle cx="520" cy="70" r="7" fill="#FF6800" />
-                <circle cx="520" cy="70" r="14" fill="#FF6800" fillOpacity="0.25" />
-              </svg>
+              <img
+                src="/saamx-concept-hero.jpg"
+                alt="SAAMX Financial Simulation"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  objectPosition: 'center',
+                  display: 'block'
+                }}
+              />
 
               {/* Floating Glass Quote Card matching reference bottom right */}
               <div
@@ -551,12 +494,12 @@ export default function PublicLandingPage() {
                   bottom: '24px',
                   right: '24px',
                   padding: '14px 20px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.88)',
+                  backgroundColor: 'rgba(255, 255, 255, 0.92)',
                   backdropFilter: 'blur(16px)',
                   WebkitBackdropFilter: 'blur(16px)',
-                  borderRadius: '14px',
+                  borderRadius: '16px',
                   border: '1px solid rgba(255, 255, 255, 0.95)',
-                  boxShadow: '0 10px 25px -3px rgba(15, 23, 42, 0.12)',
+                  boxShadow: '0 12px 30px -4px rgba(15, 23, 42, 0.15)',
                   maxWidth: '260px'
                 }}
               >
@@ -912,10 +855,10 @@ export default function PublicLandingPage() {
               marginBottom: '36px'
             }}
           >
-            Registered Investment Houses, Verification Officers, Exchange Operators, and Regulatory Observers may register or access the floor below.
+            Registered Investment Houses, Verification Officers, Exchange Operators, and Regulatory Observers may access the floor below.
           </p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
-            <a href="#/register" style={{ textDecoration: 'none' }}>
+            <a href="#/login" style={{ textDecoration: 'none' }}>
               <Button
                 variant="primary"
                 size="lg"
@@ -931,7 +874,7 @@ export default function PublicLandingPage() {
                   color: '#FFFFFF'
                 }}
               >
-                Register Investment House
+                Enter Event Portal
               </Button>
             </a>
             <a href="#/login" style={{ textDecoration: 'none' }}>
@@ -1066,7 +1009,7 @@ export default function PublicLandingPage() {
             {/* Modal Bottom Actions */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <a
-                href="#/register"
+                href="#/login"
                 onClick={() => setShowOnboardingModal(false)}
                 style={{
                   fontSize: '0.90rem',
@@ -1136,7 +1079,7 @@ export default function PublicLandingPage() {
           </div>
 
           <div style={{ display: 'flex', gap: '18px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <a href="#/register" style={{ color: 'var(--color-orange, #FF6800)', textDecoration: 'none', fontWeight: 700 }}>House Registration</a>
+            <a href="#/login" style={{ color: 'var(--color-orange, #FF6800)', textDecoration: 'none', fontWeight: 700 }}>Floor Access</a>
             <a href="#/login" style={{ color: 'var(--color-navy, #0B192C)', textDecoration: 'none', fontWeight: 600 }}>Staff & Team Login</a>
             <a href="#/projector" style={{ color: 'var(--color-ink-secondary, #475569)', textDecoration: 'none', fontWeight: 600 }}>Public Projector</a>
             <a href="#/portals" style={{ color: 'var(--color-ink-secondary, #475569)', textDecoration: 'none', fontWeight: 600 }}>Desks & Portals</a>

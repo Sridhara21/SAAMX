@@ -337,6 +337,30 @@ export default function NewsControllerConsole({ state, adminPassword }) {
     }
   };
 
+  const handleDismissNews = async (item) => {
+    if (!item || !item.id || actionInProgress) return;
+    const confirm = window.confirm(`Dismiss news event ${item.id} from active displays?\n\n"${item.headline}"`);
+    if (!confirm) return;
+
+    setActionInProgress(true);
+    try {
+      const res = await apiFetch('/api/news/dismiss', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
+        body: JSON.stringify({ newsId: item.id })
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to dismiss news event.');
+      }
+      fetchActiveEvents();
+    } catch (err) {
+      alert(`Dismissal error: ${err.message}`);
+    } finally {
+      setActionInProgress(false);
+    }
+  };
+
   // Pre-filter presets for Workspace 2
   const filteredPresets = NEWS_PRESETS_LIBRARY.filter(preset => {
     if (presetCategory !== 'All' && preset.category !== presetCategory) return false;
@@ -1061,14 +1085,22 @@ export default function NewsControllerConsole({ state, adminPassword }) {
                               Decay multiplier: <strong>{(evt.decayMultiplier * 100).toFixed(0)}%</strong>
                             </span>
                           </td>
-                          <td style={{ padding: '12px' }}>
+                          <td style={{ padding: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                             <button
                               type="button"
                               className="btn btn-sm btn-outline"
                               style={{ color: '#DC2626', borderColor: '#FCA5A5', fontWeight: 800 }}
                               onClick={() => handleOpenCorrectionModal(evt)}
                             >
-                              🛑 Issue Correction
+                              🛑 Correct
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline"
+                              style={{ color: '#475569', borderColor: '#CBD5E1', fontWeight: 700 }}
+                              onClick={() => handleDismissNews(evt)}
+                            >
+                              ✕ Dismiss
                             </button>
                           </td>
                         </tr>

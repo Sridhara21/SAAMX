@@ -124,6 +124,11 @@ export default function TrainingTerminal({ state }) {
     affectedSecurityIds: 'RELIANCE'
   });
 
+  // Automated Scenario Generator State
+  const [scenariosList, setScenariosList] = useState([]);
+  const [selectedScenarioId, setSelectedScenarioId] = useState('SCN_BUY_STANDARD');
+  const [generatingScenario, setGeneratingScenario] = useState(false);
+
   // Show temporary toast notification
   const notify = (msg, type = 'info') => {
     setNotification({ msg, type });
@@ -147,6 +152,48 @@ export default function TrainingTerminal({ state }) {
     const interval = setInterval(fetchSandboxState, 4000);
     return () => clearInterval(interval);
   }, [currentOperator]);
+
+  // Fetch Automated Training Scenarios
+  useEffect(() => {
+    const fetchScenarios = async () => {
+      try {
+        const res = await apiFetch('/api/training/scenarios');
+        if (res && res.success && Array.isArray(res.scenarios)) {
+          setScenariosList(res.scenarios);
+          if (res.scenarios[0] && !selectedScenarioId) {
+            setSelectedScenarioId(res.scenarios[0].id);
+          }
+        }
+      } catch (e) {}
+    };
+    fetchScenarios();
+  }, []);
+
+  // Handle Triggering Automated Training Scenario Task
+  const handleTriggerScenario = async (targetScenarioId = selectedScenarioId) => {
+    setGeneratingScenario(true);
+    try {
+      const res = await apiFetch('/api/training/scenario/trigger', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          scenarioId: targetScenarioId,
+          deskId: 'DESK_1',
+          operator: currentOperator
+        })
+      });
+      if (res && res.success) {
+        notify(`Scenario order(s) generated! ${res.message}`, 'success');
+        fetchSandboxState();
+      } else {
+        notify(res?.error || 'Failed to trigger training scenario', 'danger');
+      }
+    } catch (e) {
+      notify(e.message || 'Error generating scenario task', 'danger');
+    } finally {
+      setGeneratingScenario(false);
+    }
+  };
 
   // Handle Reset Sandbox
   const handleResetSandbox = async () => {
@@ -716,6 +763,75 @@ export default function TrainingTerminal({ state }) {
             </div>
           </div>
 
+          {/* AUTOMATED TRAINING SCENARIOS & TASK GENERATOR */}
+          <div className="p-4 rounded-xl bg-gradient-to-r from-amber-950/40 via-slate-900/60 to-slate-900/40 border border-amber-500/30">
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 text-[10px] font-bold rounded bg-amber-500 text-slate-950 uppercase tracking-wider">
+                    Automated Training Simulator
+                  </span>
+                  <span className="text-xs text-slate-400">Zero manual order typing required</span>
+                </div>
+                <h4 className="text-sm font-bold text-slate-100 mt-1">
+                  Inject Realistic Scenario Tasks Directly into Exchange Queue
+                </h4>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Select a pre-configured market scenario. The simulation engine dispatches valid BUY/SELL slips, physical discrepancy challenges, or risk limit triggers directly into your triage queue.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+                <select
+                  value={selectedScenarioId}
+                  onChange={e => setSelectedScenarioId(e.target.value)}
+                  className="bg-slate-950 border border-slate-700 rounded px-3 py-1.5 text-xs text-amber-300 font-semibold focus:border-amber-400 focus:outline-none"
+                >
+                  {(scenariosList.length > 0 ? scenariosList : [
+                    { id: 'SCN_BUY_STANDARD', title: 'Standard Institutional BUY Order' },
+                    { id: 'SCN_SELL_STANDARD', title: 'Standard Institutional SELL Order' },
+                    { id: 'SCN_CORRECTION_REQ', title: 'Physical Slip Discrepancy' },
+                    { id: 'SCN_INSUFFICIENT_FUNDS', title: 'Capital Limit Breach' },
+                    { id: 'SCN_INSUFFICIENT_HOLDINGS', title: 'Short Selling Breach' },
+                    { id: 'SCN_MULTI_ORDER_RUSH', title: 'Multi-Desk Trading Floor Rush' }
+                  ]).map(scn => (
+                    <option key={scn.id} value={scn.id}>{scn.title}</option>
+                  ))}
+                </select>
+
+                <button
+                  onClick={() => handleTriggerScenario(selectedScenarioId)}
+                  disabled={generatingScenario}
+                  className="px-4 py-1.5 text-xs font-bold rounded bg-amber-500 text-slate-950 hover:bg-amber-400 transition flex items-center gap-1.5 shadow-md shadow-amber-500/20 disabled:opacity-50"
+                >
+                  <IconPlay size={13} />
+                  <span>{generatingScenario ? 'Injecting Order...' : 'Generate Simulated Task / Order'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Active Selected Scenario Details Preview */}
+            {(() => {
+              const activeScn = scenariosList.find(s => s.id === selectedScenarioId);
+              if (!activeScn) return null;
+              return (
+                <div className="mt-3 pt-3 border-t border-slate-800/80 flex flex-wrap items-center gap-4 text-xs">
+                  <span className="text-slate-400">
+                    <strong className="text-slate-200">Objective:</strong> {activeScn.learningObjective}
+                  </span>
+                  <span className="text-slate-400">
+                    <strong className="text-slate-200">Expected Action:</strong> <code className="text-amber-400 font-mono">{activeScn.expectedOutcome}</code>
+                  </span>
+                  {activeScn.simulatedDiscrepancy && (
+                    <span className="text-rose-400 bg-rose-950/30 px-2 py-0.5 rounded border border-rose-800/40">
+                      Discrepancy Injected: {activeScn.simulatedDiscrepancy}
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+
           {/* Orders Queue */}
           <div className="space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -1097,72 +1213,173 @@ export default function TrainingTerminal({ state }) {
             </div>
           )}
 
-          {/* Practice Order Entry Form */}
-          <div className="p-5 rounded-xl bg-slate-900/80 border border-slate-800 max-w-xl">
-            <h4 className="text-sm font-bold text-slate-200 mb-3">Submit Practice Order Slip</h4>
-            <form onSubmit={handleCreateOrder} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs text-slate-400 block mb-1">Security Ticker</label>
-                  <select
-                    value={orderForm.ticker}
-                    onChange={e => setOrderForm({ ...orderForm, ticker: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-1.5 text-xs text-slate-200"
-                  >
-                    <option value="RELIANCE">RELIANCE (Reliance Industries)</option>
-                    <option value="TCS">TCS (Tata Consultancy Services)</option>
-                    <option value="INFY">INFY (Infosys Limited)</option>
-                    <option value="HDFCBANK">HDFCBANK (HDFC Bank Ltd)</option>
-                    <option value="TATASTEEL">TATASTEEL (Tata Steel Ltd)</option>
-                  </select>
+          {/* Practice Order Entry & Automated Scenario Generator */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="p-5 rounded-xl bg-slate-900/80 border border-slate-800">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-bold text-slate-200">Submit Manual Practice Slip</h4>
+                <span className="text-[11px] text-slate-400 font-medium">Optional Custom Slip</span>
+              </div>
+              <form onSubmit={handleCreateOrder} className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Security Ticker</label>
+                    <select
+                      value={orderForm.ticker}
+                      onChange={e => setOrderForm({ ...orderForm, ticker: e.target.value })}
+                      className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-1.5 text-xs text-slate-200"
+                    >
+                      <option value="RELIANCE">RELIANCE (Reliance Industries)</option>
+                      <option value="TCS">TCS (Tata Consultancy Services)</option>
+                      <option value="INFY">INFY (Infosys Limited)</option>
+                      <option value="HDFCBANK">HDFCBANK (HDFC Bank Ltd)</option>
+                      <option value="TATASTEEL">TATASTEEL (Tata Steel Ltd)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Action</label>
+                    <select
+                      value={orderForm.action}
+                      onChange={e => setOrderForm({ ...orderForm, action: e.target.value })}
+                      className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-1.5 text-xs text-slate-200"
+                    >
+                      <option value="BUY">BUY (+5% Cash Buffer)</option>
+                      <option value="SELL">SELL (Lock Shares)</option>
+                    </select>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="text-xs text-slate-400 block mb-1">Action</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Quantity</label>
+                    <input
+                      type="number"
+                      value={orderForm.quantity}
+                      onChange={e => setOrderForm({ ...orderForm, quantity: e.target.value })}
+                      className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-1.5 text-xs text-slate-200 font-mono"
+                      min="1"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Order Type</label>
+                    <select
+                      value={orderForm.orderType}
+                      onChange={e => setOrderForm({ ...orderForm, orderType: e.target.value })}
+                      className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-1.5 text-xs text-slate-200"
+                    >
+                      <option value="MARKET">MARKET</option>
+                      <option value="LIMIT">LIMIT</option>
+                    </select>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-2 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700 transition"
+                >
+                  Submit Manual Practice Slip
+                </button>
+              </form>
+            </div>
+
+            {/* Automated Scenario Drill Generator for Practice Teams */}
+            <div className="p-5 rounded-xl bg-gradient-to-br from-amber-950/30 to-slate-900/80 border border-amber-500/30 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="px-2 py-0.5 text-[10px] font-bold rounded bg-amber-500 text-slate-950 uppercase tracking-wider">
+                    Automated Task Generator
+                  </span>
+                  <span className="text-[11px] text-amber-300 font-semibold">Zero Manual Typing</span>
+                </div>
+                <h4 className="text-sm font-bold text-slate-100">
+                  Auto-Dispatch Realistic Scenario Task
+                </h4>
+                <p className="text-xs text-slate-400 mt-1">
+                  Start an automated training scenario to practice standard order verification, capital buffer checks, or error handling. Instantly creates a realistic simulated order under <strong>{selectedTeamCode}</strong> with zero live impact.
+                </p>
+
+                <div className="mt-4 space-y-2">
+                  <label className="text-xs text-slate-400 block font-medium">Select Training Drill Scenario:</label>
                   <select
-                    value={orderForm.action}
-                    onChange={e => setOrderForm({ ...orderForm, action: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-1.5 text-xs text-slate-200"
+                    value={selectedScenarioId}
+                    onChange={e => setSelectedScenarioId(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-xs text-amber-300 font-semibold focus:border-amber-400 focus:outline-none"
                   >
-                    <option value="BUY">BUY (+5% Cash Buffer)</option>
-                    <option value="SELL">SELL (Lock Shares)</option>
+                    {(scenariosList.length > 0 ? scenariosList : [
+                      { id: 'SCN_BUY_STANDARD', title: 'Standard Institutional BUY Order' },
+                      { id: 'SCN_SELL_STANDARD', title: 'Standard Institutional SELL Order' },
+                      { id: 'SCN_CORRECTION_REQ', title: 'Physical Slip Discrepancy' },
+                      { id: 'SCN_INSUFFICIENT_FUNDS', title: 'Capital Limit Breach' },
+                      { id: 'SCN_INSUFFICIENT_HOLDINGS', title: 'Short Selling Breach' },
+                      { id: 'SCN_MULTI_ORDER_RUSH', title: 'Multi-Desk Trading Floor Rush' }
+                    ]).map(scn => (
+                      <option key={scn.id} value={scn.id}>{scn.title}</option>
+                    ))}
                   </select>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs text-slate-400 block mb-1">Quantity</label>
-                  <input
-                    type="number"
-                    value={orderForm.quantity}
-                    onChange={e => setOrderForm({ ...orderForm, quantity: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-1.5 text-xs text-slate-200 font-mono"
-                    min="1"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs text-slate-400 block mb-1">Order Type</label>
-                  <select
-                    value={orderForm.orderType}
-                    onChange={e => setOrderForm({ ...orderForm, orderType: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-1.5 text-xs text-slate-200"
-                  >
-                    <option value="MARKET">MARKET</option>
-                    <option value="LIMIT">LIMIT</option>
-                  </select>
-                </div>
+              <div className="mt-5">
+                <button
+                  onClick={() => handleTriggerScenario(selectedScenarioId)}
+                  disabled={generatingScenario}
+                  className="w-full py-2.5 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 disabled:opacity-50"
+                >
+                  <IconPlay size={14} />
+                  <span>{generatingScenario ? 'Dispatching Simulated Task...' : 'Start Scenario & Auto-Dispatch Order'}</span>
+                </button>
               </div>
+            </div>
+          </div>
 
-              <button
-                type="submit"
-                className="w-full py-2 rounded bg-amber-500 text-slate-950 font-bold text-xs hover:bg-amber-400 transition"
-              >
-                Submit Practice Order Slip to Exchange Desk
-              </button>
-            </form>
+          {/* Team Practice Orders & Ledger Status */}
+          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+              Team {selectedTeamCode} Practice Orders & Triage Status
+            </h4>
+            {(() => {
+              const teamOrders = (sandboxState.orders || []).filter(o => o.teamCode === selectedTeamCode);
+              if (teamOrders.length === 0) {
+                return (
+                  <div className="text-center py-6 text-xs text-slate-500">
+                    No orders in practice queue yet. Click "Start Scenario & Auto-Dispatch Order" above to practice!
+                  </div>
+                );
+              }
+              return (
+                <div className="divide-y divide-slate-800 text-xs">
+                  {teamOrders.map(o => (
+                    <div key={o.id} className="py-2.5 flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-amber-400">{o.ticketNumber || o.id}</span>
+                        <span className={`px-2 py-0.5 text-[10px] font-bold rounded ${
+                          o.action === 'BUY' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'
+                        }`}>
+                          {o.action} {o.quantity} {o.ticker}
+                        </span>
+                        <span className="font-mono text-slate-400">@ ₹{o.price}</span>
+                        <span className="text-slate-400">(₹{(o.requestedValue || 0).toLocaleString()})</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-slate-400">Desk: <strong className="text-slate-200">{o.deskId}</strong></span>
+                        <span className={`font-mono font-semibold px-2 py-0.5 rounded text-[10px] ${
+                          o.status === 'SETTLED' ? 'bg-emerald-500/20 text-emerald-300' :
+                          o.status === 'REJECTED' || o.status === 'SETTLEMENT_REJECTED' ? 'bg-rose-500/20 text-rose-300' :
+                          o.status === 'RETURNED_TO_TEAM' ? 'bg-amber-500/20 text-amber-300' :
+                          o.status === 'EXCHANGE_APPROVED' ? 'bg-cyan-500/20 text-cyan-300' :
+                          'bg-slate-800 text-slate-300'
+                        }`}>
+                          {o.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}

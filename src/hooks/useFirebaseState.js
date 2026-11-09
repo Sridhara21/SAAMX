@@ -235,10 +235,14 @@ export function useFirebaseState() {
           window.location.hostname === 'saamx.in' ||
           window.location.hostname === 'www.saamx.in' ||
           window.location.hostname === 'fmos-a6573.web.app' ||
-          window.location.hostname === 'fmos-a6573.firebaseapp.com'
+          window.location.hostname === 'fmos-a6573.firebaseapp.com' ||
+          window.location.hostname === 'fmos.web.app' ||
+          window.location.hostname === 'fmos.firebaseapp.com' ||
+          window.location.hostname === 'saamx26.web.app' ||
+          window.location.hostname === 'saamx26.firebaseapp.com'
         ) {
           // Direct backend domain for WebSocket upgrades
-          wsUrl = `${protocol}//api.saamx.in`;
+          wsUrl = `${protocol}//saamx-backend-production.up.railway.app`;
         } else if (window.location.port === '5173') {
           // Vite dev server local proxy
           wsUrl = `${protocol}//${window.location.hostname || 'localhost'}:3000`;

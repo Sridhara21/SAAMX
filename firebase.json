@@ -4,7 +4,7 @@
   },
   "hosting": [
     {
-      "site": "fmos",
+      "site": "fmos-a6573",
       "public": "dist",
       "ignore": [
         "firebase.json",
@@ -19,7 +19,7 @@
       ]
     },
     {
-      "site": "fmos-a6573",
+      "site": "saamx26",
       "public": "dist",
       "ignore": [
         "firebase.json",

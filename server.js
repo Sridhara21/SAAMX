@@ -63,7 +63,9 @@ import {
 } from './src/lib/marketImpactEngine.js';
 import {
   getPresetById,
-  validateNewsPreset
+  validateNewsPreset,
+  NEWS_PRESETS_LIBRARY,
+  NEWS_PRESET_CATEGORIES
 } from './src/lib/newsPresetsLibrary.js';
 
 export {
@@ -2349,17 +2351,20 @@ const authMiddleware = async (req, res, next) => {
     '/state',
     '/ping',
     '/db/status',
-    '/rtdb/delta-stats'
+    '/rtdb/delta-stats',
+    '/news/presets',
+    '/training'
   ];
 
   const publicPostPaths = [
     '/auth/login',
     '/register/complete',
-    '/audit-log'
+    '/audit-log',
+    '/training'
   ];
 
   const isPublicGet = req.method === 'GET' && publicGetPaths.some(p => normalizedPath === p || normalizedPath.startsWith(p + '/'));
-  const isPublicPost = req.method === 'POST' && publicPostPaths.some(p => normalizedPath === p);
+  const isPublicPost = req.method === 'POST' && publicPostPaths.some(p => normalizedPath === p || normalizedPath.startsWith(p + '/'));
 
   if (isPublicGet || isPublicPost) {
     const authHeader = req.headers['authorization'] || req.headers['x-fms-token'] || (req.query && req.query.token);
@@ -4184,7 +4189,7 @@ app.get('/api/projector/snapshot', (req, res) => {
     fxRates: state.fxRates,
     marketState: state.marketState,
     breadth: { advances: adv, declines: dec, unchanged: unc, total: (state.securities || []).length },
-    latestNews: (state.newsEvents || [])[state.newsEvents.length - 1] || null
+    latestNews: (state.newsEvents || []).find(n => !n.dismissed && n.active !== false) || null
   });
 });
 
@@ -11390,6 +11395,89 @@ app.post('/api/admin/rehearsal/reset', (req, res) => {
   res.json({ success: true, message: 'Rehearsal data successfully cleared without affecting Live event.' });
 });
 
+// Canonical News Presets Endpoint (Authoritative Single Source for Admin, SEBI, Newsroom, Journalists)
+app.get('/api/news/presets', (req, res) => {
+  const { category, search, sentiment, priority } = req.query || {};
+  let list = NEWS_PRESETS_LIBRARY;
+
+  if (category && category !== 'All') {
+    list = list.filter(p => p.category === category);
+  }
+  if (sentiment && sentiment !== 'All') {
+    list = list.filter(p => p.sentiment === sentiment);
+  }
+  if (priority && priority !== 'All') {
+    list = list.filter(p => p.priority === priority);
+  }
+  if (search) {
+    const q = search.toLowerCase();
+    list = list.filter(p =>
+      p.headline.toLowerCase().includes(q) ||
+      p.description.toLowerCase().includes(q) ||
+      (p.affectedAssets?.securities || []).some(s => s.toLowerCase().includes(q))
+    );
+  }
+
+  res.json({
+    success: true,
+    totalCount: NEWS_PRESETS_LIBRARY.length,
+    filteredCount: list.length,
+    categories: NEWS_PRESET_CATEGORIES,
+    presets: list
+  });
+});
+
+// Server-Side News Dismissal & Retraction Endpoint (Durable lifecycle state update)
+app.post(['/api/news/dismiss', '/api/news/remove'], (req, res) => {
+  const session = req.session || verifySessionToken(req.headers['authorization'] || req.headers['x-fms-token']);
+  const isPrivileged = session && (session.role === 'admin' || session.role === 'super_admin' || session.role === 'news_controller' || session.role === 'sebi' || hasPerm(session, 'news.review') || hasPerm(session, 'market.control'));
+  
+  const { newsId, targetId, reason } = req.body || {};
+  const idToDismiss = newsId || targetId;
+
+  if (!idToDismiss) {
+    // If no ID is passed, dismiss any active projector takeover
+    if (state.marketState) {
+      state.marketState.takeoverEvent = null;
+    }
+    saveState(true);
+    broadcastState('TAKEOVER_DISMISSED', { takeoverEvent: null });
+    return res.json({ success: true, message: 'Active projector takeover dismissed.' });
+  }
+
+  // Find target in state.newsEvents
+  let targetFound = false;
+  if (Array.isArray(state.newsEvents)) {
+    const item = state.newsEvents.find(n => n.id === idToDismiss);
+    if (item) {
+      item.dismissed = true;
+      item.dismissedAt = Date.now();
+      item.active = false;
+      targetFound = true;
+    }
+  }
+
+  // Remove from active decaying loop
+  if (Array.isArray(state.activeDecayingEvents)) {
+    state.activeDecayingEvents = state.activeDecayingEvents.filter(e => e.id !== idToDismiss);
+  }
+
+  // Clear from takeoverEvent if active
+  if (state.marketState?.takeoverEvent && (state.marketState.takeoverEvent.id === idToDismiss || state.marketState.takeoverEvent.newsId === idToDismiss)) {
+    state.marketState.takeoverEvent = null;
+  }
+
+  saveState(true);
+  broadcastState('NEWS_DISMISSED', { newsId: idToDismiss, takeoverEvent: state.marketState?.takeoverEvent || null });
+
+  res.json({
+    success: true,
+    newsId: idToDismiss,
+    targetFound,
+    message: `News event ${idToDismiss} dismissed from authoritative active feeds.`
+  });
+});
+
 // News bulletins & Centralized Market Impact Engine
 app.post('/api/news', (req, res) => {
   const { 
@@ -12051,7 +12139,7 @@ app.get('/api/news/active', (req, res) => {
   const activeDecaying = state.activeDecayingEvents || [];
 
   const activeNews = allEvents
-    .filter(n => n.expiresAt && n.expiresAt > now && !n.corrected)
+    .filter(n => n.expiresAt && n.expiresAt > now && !n.corrected && !n.dismissed && n.active !== false)
     .map(n => {
       const remainingSeconds = Math.max(0, Math.round((n.expiresAt - now) / 1000));
       const elapsedSeconds = Math.round((now - (n.triggeredAt || now)) / 1000);
@@ -15559,6 +15647,225 @@ app.post('/api/training/reset', (req, res) => {
     preservedScorecards: preserveScorecards === true
   });
 });
+
+// ============================================================================
+// PHASE F.2: AUTOMATED TRAINING SCENARIO ENGINE & TASK GENERATOR (ZERO LIVE IMPACT)
+// ============================================================================
+
+const TRAINING_SCENARIOS_CATALOG = [
+  {
+    id: 'SCN_BUY_STANDARD',
+    title: 'Standard Institutional BUY Order',
+    category: 'Exchange & Bank Flow',
+    difficulty: 'Beginner',
+    teamCode: 'TRAIN_T01',
+    description: 'Alpha Capital places an institutional BUY order for 50 shares of RELIANCE. Operator must check paper slip, verify +5% cash pre-reservation buffer, approve to generate Bank voucher, and Bank teller must settle.',
+    taskType: 'ORDER_BUY',
+    ticker: 'RELIANCE',
+    quantity: 50,
+    action: 'BUY',
+    orderType: 'MARKET',
+    deskId: 'DESK_1',
+    expectedOutcome: 'EXCHANGE_APPROVE_AND_BANK_SETTLE',
+    learningObjective: 'Master intake verification checklist, execution buffer reservation, and inter-desk voucher handover.'
+  },
+  {
+    id: 'SCN_SELL_STANDARD',
+    title: 'Standard Institutional SELL Order',
+    category: 'Exchange & Bank Flow',
+    difficulty: 'Beginner',
+    teamCode: 'TRAIN_T01',
+    description: 'Alpha Capital places a SELL order for 100 shares of INFY from held deliverable portfolio. Operator must verify physical slip stamp, approve voucher to Bank Desk, and Bank teller must settle cash proceeds.',
+    taskType: 'ORDER_SELL',
+    ticker: 'INFY',
+    quantity: 100,
+    action: 'SELL',
+    orderType: 'MARKET',
+    deskId: 'DESK_2',
+    expectedOutcome: 'EXCHANGE_APPROVE_AND_BANK_SETTLE',
+    learningObjective: 'Verify share locking mechanics on sell orders and deliverable balance settlement.'
+  },
+  {
+    id: 'SCN_CORRECTION_REQ',
+    title: 'Physical Slip Mismatch / Discrepancy',
+    category: 'Quality Control',
+    difficulty: 'Intermediate',
+    teamCode: 'TRAIN_T02',
+    description: 'Beta Investments submits an order slip with signature and quantity discrepancy. Operator must NOT approve; operator must use "Return for Correction" with mandatory justification note.',
+    taskType: 'ORDER_DISCREPANCY',
+    ticker: 'TCS',
+    quantity: 25,
+    action: 'BUY',
+    orderType: 'LIMIT',
+    deskId: 'DESK_1',
+    simulatedDiscrepancy: 'Trader PIN stamp smudged and quantity on slip indicates 35 units while system record has 25 units.',
+    expectedOutcome: 'RETURN_FOR_CORRECTION',
+    learningObjective: 'Identify paper slip defects and enforce return-for-correction protocol without penalizing team.'
+  },
+  {
+    id: 'SCN_INSUFFICIENT_FUNDS',
+    title: 'Capital Limit Breach / Insufficient Balance',
+    category: 'Risk Management',
+    difficulty: 'Intermediate',
+    teamCode: 'TRAIN_T03',
+    description: 'Gamma Global attempts to place an outsized BUY order for 15,000 shares of RELIANCE exceeding total available cash reserves. Automated risk checks or operator rejection required.',
+    taskType: 'RISK_VIOLATION_CASH',
+    ticker: 'RELIANCE',
+    quantity: 15000,
+    action: 'BUY',
+    orderType: 'MARKET',
+    deskId: 'DESK_3',
+    forceInject: true,
+    expectedOutcome: 'REJECT_ORDER',
+    learningObjective: 'Enforce capital solvency controls and handle over-budget order rejections gracefully.'
+  },
+  {
+    id: 'SCN_INSUFFICIENT_HOLDINGS',
+    title: 'Short Selling Breach / Insufficient Holdings',
+    category: 'Risk Management',
+    difficulty: 'Intermediate',
+    teamCode: 'TRAIN_T02',
+    description: 'Beta Investments attempts to SELL 1,500 shares of TCS when their deliverable holding is only 150 shares. Must trigger rejection due to prohibition of naked short selling.',
+    taskType: 'RISK_VIOLATION_HOLDING',
+    ticker: 'TCS',
+    quantity: 1500,
+    action: 'SELL',
+    orderType: 'MARKET',
+    deskId: 'DESK_2',
+    forceInject: true,
+    expectedOutcome: 'REJECT_ORDER',
+    learningObjective: 'Prevent naked short selling and uphold exchange inventory rules.'
+  },
+  {
+    id: 'SCN_MULTI_ORDER_RUSH',
+    title: 'Multi-Desk Trading Floor Rush',
+    category: 'High Volume Rehearsal',
+    difficulty: 'Advanced',
+    teamCode: 'TRAIN_T01',
+    description: 'Simulates high-velocity market activity with 3 incoming institutional orders across Desks 1, 2, and 3. Operators must triage queues, stamp slips, and batch hand off vouchers to Bank counters.',
+    taskType: 'BATCH_RUSH',
+    batchOrders: [
+      { teamCode: 'TRAIN_T01', ticker: 'HDFCBANK', action: 'BUY', quantity: 80, deskId: 'DESK_1' },
+      { teamCode: 'TRAIN_T02', ticker: 'TATASTEEL', action: 'SELL', quantity: 200, deskId: 'DESK_2' },
+      { teamCode: 'TRAIN_T03', ticker: 'INFY', action: 'BUY', quantity: 60, deskId: 'DESK_3' }
+    ],
+    expectedOutcome: 'CONCURRENT_DESK_TRIAGE',
+    learningObjective: 'Test multi-operator concurrency and queue throughput under market pressure.'
+  }
+];
+
+// 12. GET /api/training/scenarios - Catalog of automated training exercises
+app.get('/api/training/scenarios', (req, res) => {
+  res.json({
+    success: true,
+    totalScenarios: TRAINING_SCENARIOS_CATALOG.length,
+    scenarios: TRAINING_SCENARIOS_CATALOG
+  });
+});
+
+// 13. POST /api/training/scenario/trigger - Automatically generate simulated scenario tasks/orders
+app.post(['/api/training/scenario/trigger', '/api/training/scenario/start'], (req, res) => {
+  const { scenarioId, deskId, operator } = req.body || {};
+  const scenario = TRAINING_SCENARIOS_CATALOG.find(s => s.id === scenarioId) || TRAINING_SCENARIOS_CATALOG[0];
+
+  const targetDesk = deskId || scenario.deskId || 'DESK_1';
+  const actingOperator = operator || 'Practice Operator';
+  const generatedOrders = [];
+
+  if (scenario.taskType === 'BATCH_RUSH' && Array.isArray(scenario.batchOrders)) {
+    for (let i = 0; i < scenario.batchOrders.length; i++) {
+      const cfg = scenario.batchOrders[i];
+      const team = findSandboxTeam(cfg.teamCode) || sandboxState.teams[0];
+      const price = getSandboxSecurityPrice(cfg.ticker);
+      const reqVal = price * cfg.quantity;
+      const resVal = cfg.action === 'BUY' ? Math.ceil(reqVal * 1.05) : 0;
+
+      if (cfg.action === 'BUY') {
+        if (!team.reservedCash) team.reservedCash = { INR: 0 };
+        team.reservedCash.INR = (team.reservedCash.INR || 0) + resVal;
+      } else {
+        if (!team.lockedHoldings) team.lockedHoldings = {};
+        team.lockedHoldings[cfg.ticker] = (team.lockedHoldings[cfg.ticker] || 0) + cfg.quantity;
+      }
+
+      const ordId = `TRN-SCN-${Date.now().toString().slice(-6)}-${i + 1}`;
+      const simOrder = {
+        id: ordId,
+        ticketNumber: `SCN-TKT-${Date.now().toString().slice(-4)}${i + 1}`,
+        scenarioId: scenario.id,
+        scenarioTitle: scenario.title,
+        teamCode: team.teamCode,
+        ticker: cfg.ticker,
+        action: cfg.action,
+        quantity: cfg.quantity,
+        price,
+        orderType: 'MARKET',
+        requestedValue: reqVal,
+        reservedCashAmount: resVal,
+        status: 'AWAITING_PHYSICAL_SLIP',
+        physicalSlipChecked: false,
+        deskId: cfg.deskId || targetDesk,
+        operator: null,
+        notes: `Simulated task: ${scenario.title} (Batch order ${i + 1}/${scenario.batchOrders.length})`,
+        createdAt: Date.now() + i * 50
+      };
+
+      sandboxState.orders.unshift(simOrder);
+      generatedOrders.push(simOrder);
+    }
+  } else {
+    // Single order scenario
+    const team = findSandboxTeam(scenario.teamCode) || sandboxState.teams[0];
+    const price = getSandboxSecurityPrice(scenario.ticker);
+    const reqVal = price * scenario.quantity;
+    const resVal = scenario.action === 'BUY' ? Math.ceil(reqVal * 1.05) : 0;
+
+    if (scenario.action === 'BUY' && !scenario.forceInject) {
+      if (!team.reservedCash) team.reservedCash = { INR: 0 };
+      team.reservedCash.INR = (team.reservedCash.INR || 0) + resVal;
+    } else if (scenario.action === 'SELL' && !scenario.forceInject) {
+      if (!team.lockedHoldings) team.lockedHoldings = {};
+      team.lockedHoldings[scenario.ticker] = (team.lockedHoldings[scenario.ticker] || 0) + scenario.quantity;
+    }
+
+    const ordId = `TRN-SCN-${Date.now().toString().slice(-6)}`;
+    const simOrder = {
+      id: ordId,
+      ticketNumber: `SCN-TKT-${Date.now().toString().slice(-4)}`,
+      scenarioId: scenario.id,
+      scenarioTitle: scenario.title,
+      teamCode: team.teamCode,
+      ticker: scenario.ticker,
+      action: scenario.action,
+      quantity: scenario.quantity,
+      price,
+      orderType: scenario.orderType || 'MARKET',
+      requestedValue: reqVal,
+      reservedCashAmount: resVal,
+      status: 'AWAITING_PHYSICAL_SLIP',
+      physicalSlipChecked: false,
+      deskId: targetDesk,
+      operator: null,
+      discrepancyNote: scenario.simulatedDiscrepancy || null,
+      expectedOutcome: scenario.expectedOutcome,
+      notes: `Simulated scenario task: ${scenario.title}. ${scenario.learningObjective}`,
+      createdAt: Date.now()
+    };
+
+    sandboxState.orders.unshift(simOrder);
+    generatedOrders.push(simOrder);
+  }
+
+  return res.status(200).json({
+    success: true,
+    scenarioId: scenario.id,
+    scenarioTitle: scenario.title,
+    generatedOrdersCount: generatedOrders.length,
+    orders: generatedOrders,
+    message: `Generated ${generatedOrders.length} realistic simulated order(s) for scenario '${scenario.title}'. Zero live impact.`
+  });
+});
+
 
 // Dedicated JSON 404 handler for unmatched API routes
 app.all('/api/*', (req, res) => {

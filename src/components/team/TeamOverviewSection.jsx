@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { apiFetch } from '../../lib/api.js';
 import { useDensity } from '../../context/DensityContext.jsx';
 import PaperSlipModal from './PaperSlipModal.jsx';
 import { Card } from '../ui/Card.jsx';
@@ -75,9 +76,40 @@ export default function TeamOverviewSection({
   const [fxSuccessMsg, setFxSuccessMsg] = useState('');
 
   // IPO Quick Form State
-  const [ipoSelected, setIpoSelected] = useState('OpenAI Hyperscale (OAI)');
+  const [ipoSelected, setIpoSelected] = useState('OAI');
   const [ipoLots, setIpoLots] = useState(1);
   const [ipoSuccessMsg, setIpoSuccessMsg] = useState('');
+  const [ipoSubmitting, setIpoSubmitting] = useState(false);
+
+  const handleIpoApply = async () => {
+    if (ipoSubmitting) return;
+    setIpoSubmitting(true);
+    setIpoSuccessMsg('');
+    try {
+      const res = await apiFetch('/api/ipo/bid', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ticker: ipoSelected,
+          quantity: ipoLots,
+          teamCode: team?.teamCode || team?.id || 'T01'
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setIpoSuccessMsg(data.message || `Successfully applied for ${ipoLots} lot(s) of ${ipoSelected}!`);
+        if (onRefresh) onRefresh();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setIpoSuccessMsg(err.error || `Failed to apply for IPO: ${res.statusText}`);
+      }
+    } catch (e) {
+      setIpoSuccessMsg(`Error submitting IPO bid: ${e.message}`);
+    } finally {
+      setIpoSubmitting(false);
+      setTimeout(() => setIpoSuccessMsg(''), 5000);
+    }
+  };
 
   const usdRate = fxRates?.USDINR?.midRate || 88.20;
   const gbpRate = fxRates?.GBPINR?.midRate || 119.40;
@@ -93,7 +125,7 @@ export default function TeamOverviewSection({
 
   // Latest news / scenario bulletins
   const latestNews = (state?.newsEvents || [])
-    .filter(n => n.triggeredAt || n.timestamp)
+    .filter(n => (n.triggeredAt || n.timestamp) && !n.dismissed && !n.corrected && !n.isCorrection)
     .slice(0, 4);
 
   // Bull & Bear stance
@@ -725,12 +757,16 @@ export default function TeamOverviewSection({
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {[
+              {(latestNews.length > 0 ? latestNews.map(n => ({
+                time: new Date(n.triggeredAt || n.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                text: n.headline || n.title,
+                tag: n.category ? (n.category.split('/')[0] || n.category).trim() : 'Market'
+              })) : [
                 { time: '09:42', text: 'Tech giant releases stronger Q2 earnings than expected', tag: 'Corporate' },
                 { time: '09:21', text: 'Global markets open higher on positive inflation data', tag: 'Economic' },
                 { time: '08:55', text: 'Oil prices fall amid easing geopolitical tensions', tag: 'Global' },
                 { time: '08:32', text: 'Reserve Bank hints at stable interest rates', tag: 'Sector' }
-              ].map((n, idx) => (
+              ]).map((n, idx) => (
                 <div
                   key={idx}
                   style={{
@@ -1436,9 +1472,11 @@ export default function TeamOverviewSection({
               onChange={(e) => setIpoSelected(e.target.value)}
               style={{ width: '100%', padding: '6px', borderRadius: '6px', border: '1px solid var(--color-border)', fontSize: '0.78rem', fontWeight: 700 }}
             >
-              <option value="OpenAI Hyperscale (OAI)">OpenAI Hyperscale (OAI)</option>
-              <option value="Stripe Global Infra (STRP)">Stripe Global Infra (STRP)</option>
-              <option value="Canva Creative (CNVA)">Canva Creative (CNVA)</option>
+              <option value="OAI">OpenAI Hyperscale (OAI)</option>
+              <option value="STRP">Stripe Global Infra (STRP)</option>
+              <option value="CNVA">Canva Creative (CNVA)</option>
+              <option value="DISC">Discord Community (DISC)</option>
+              <option value="POLY">Polymarket Markets (POLY)</option>
             </select>
           </div>
 
@@ -1482,7 +1520,8 @@ export default function TeamOverviewSection({
             type="button"
             variant="primary"
             size="sm"
-            onClick={() => { setIpoSuccessMsg(`Bid placed for ${ipoLots} lot(s).`); setTimeout(() => setIpoSuccessMsg(''), 3000); }}
+            disabled={ipoSubmitting}
+            onClick={handleIpoApply}
             style={{
               width: '100%',
               borderRadius: '8px',
@@ -1493,7 +1532,7 @@ export default function TeamOverviewSection({
               color: '#FFFFFF'
             }}
           >
-            Apply
+            {ipoSubmitting ? 'Submitting...' : 'Apply'}
           </Button>
         </Card>
 
@@ -1546,24 +1585,38 @@ export default function TeamOverviewSection({
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {[
-              { time: '09:42', text: 'Tech giant releases stronger Q2 earnings than expected', tag: 'Corporate', color: '#2563EB' },
-              { time: '08:21', text: 'RBI keeps repo rate unchanged at 6.50%', tag: 'Economic', color: '#D97706' },
-              { time: '08:55', text: 'Oil prices fall amid easing geopolitical tensions', tag: 'Global', color: '#059669' },
-              { time: '08:32', text: 'FMCG sector shows strong domestic demand', tag: 'Sector', color: '#7C3AED' }
-            ].map((item, idx) => (
-              <div key={idx} style={{ display: 'flex', alignItems: 'baseline', gap: '8px', fontSize: '0.75rem' }}>
-                <span className="tabular-nums font-mono" style={{ color: 'var(--color-ink-muted, #64748B)', fontSize: '0.70rem', fontWeight: 700 }}>
-                  {item.time}
-                </span>
-                <span style={{ color: 'var(--color-navy, #0B192C)', fontWeight: 600, flex: 1, lineHeight: 1.25 }}>
-                  {item.text}
-                </span>
-                <span style={{ fontSize: '0.65rem', fontWeight: 800, padding: '1px 5px', borderRadius: '4px', backgroundColor: `${item.color}15`, color: item.color }}>
-                  {item.tag}
-                </span>
-              </div>
-            ))}
+            {(() => {
+              const filtered = (state?.newsEvents || []).filter(n => {
+                if (n.dismissed || n.corrected || n.isCorrection) return false;
+                if (newsFilterTab === 'all') return true;
+                const cat = (n.category || '').toLowerCase();
+                return cat.includes(newsFilterTab);
+              });
+              const displayItems = filtered.length > 0 ? filtered.slice(0, 4).map(n => ({
+                time: new Date(n.triggeredAt || n.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                text: n.headline || n.title,
+                tag: n.category ? (n.category.split('/')[0] || n.category).trim() : 'Market',
+                color: '#FF6800'
+              })) : [
+                { time: '09:42', text: 'Tech giant releases stronger Q2 earnings than expected', tag: 'Corporate', color: '#2563EB' },
+                { time: '08:21', text: 'RBI keeps repo rate unchanged at 6.50%', tag: 'Economic', color: '#D97706' },
+                { time: '08:55', text: 'Oil prices fall amid easing geopolitical tensions', tag: 'Global', color: '#059669' },
+                { time: '08:32', text: 'FMCG sector shows strong domestic demand', tag: 'Sector', color: '#7C3AED' }
+              ];
+              return displayItems.map((item, idx) => (
+                <div key={idx} style={{ display: 'flex', alignItems: 'baseline', gap: '8px', fontSize: '0.75rem' }}>
+                  <span className="tabular-nums font-mono" style={{ color: 'var(--color-ink-muted, #64748B)', fontSize: '0.70rem', fontWeight: 700 }}>
+                    {item.time}
+                  </span>
+                  <span style={{ color: 'var(--color-navy, #0B192C)', fontWeight: 600, flex: 1, lineHeight: 1.25 }}>
+                    {item.text}
+                  </span>
+                  <span style={{ fontSize: '0.65rem', fontWeight: 800, padding: '1px 5px', borderRadius: '4px', backgroundColor: `${item.color}15`, color: item.color }}>
+                    {item.tag}
+                  </span>
+                </div>
+              ));
+            })()}
           </div>
         </Card>
 
@@ -1650,6 +1703,8 @@ export default function TeamOverviewSection({
           security={selectedSecurityObj}
           team={team}
           initialAction={orderAction}
+          initialQuantity={orderQuantity}
+          initialPin={traderPin}
           fxRates={fxRates}
           onOrderSubmitted={(ord) => {
             setShowSlipModal(false);

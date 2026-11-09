@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-11-07T08:45:45.220Z",
+  "timestamp": "2026-11-08T04:15:54.501Z",
   "total": 15,
   "passed": 15,
   "failed": 0,
@@ -48,15 +48,15 @@
         "usdDelta": 1128.7099999999991,
         "walletsAfter": {
           "INR": 9825000,
+          "USD": 51128.71,
+          "EUR": 25000,
           "JPY": 5000000,
           "AED": 100000,
           "SGD": 50000,
           "CNY": 200000,
           "AUD": 50000,
           "KRW": 50000000,
-          "GBP": 25625.33,
-          "USD": 51128.71,
-          "EUR": 25000
+          "GBP": 25625.33
         }
       },
       "status": "PASSED"
@@ -68,10 +68,10 @@
       "role": "exchange",
       "scenario": "Verify fxTransactions array records ticketNumber, operatorId, and walletsAfter",
       "expected": "fxTransaction recorded with ticketNumber, operatorId, and valid transaction ID",
-      "actual": "recorded: true, ticketNumber: FX_1794041128804_wicg, operatorId: exchange",
+      "actual": "recorded: true, ticketNumber: FX_1794111342155_ole9, operatorId: exchange",
       "evidence": {
-        "txId": "FXTX_1794041129108_603e",
-        "ticketNumber": "FX_1794041128804_wicg",
+        "txId": "FXTX_1794111342385_kv7f",
+        "ticketNumber": "FX_1794111342155_ole9",
         "operatorId": "exchange",
         "inState": true
       },
@@ -84,9 +84,9 @@
       "role": "exchange",
       "scenario": "Submit identical ticketNumber FX-TKT-M0-... twice to /api/fx/exchange",
       "expected": "Second attempt rejected with HTTP 400 Bad Request (\"already been processed\")",
-      "actual": "HTTP 400 - FX Ticket FX-TKT-M0-1794041131058 has already been processed.",
+      "actual": "HTTP 400 - FX Ticket FX-TKT-M0-1794111344059 has already been processed.",
       "evidence": {
-        "error": "FX Ticket FX-TKT-M0-1794041131058 has already been processed."
+        "error": "FX Ticket FX-TKT-M0-1794111344059 has already been processed."
       },
       "status": "PASSED"
     },
@@ -112,10 +112,10 @@
       "role": "admin",
       "scenario": "Cancel BUY order in EXECUTED_PENDING_SETTLEMENT; verify reservedCash released to baseline",
       "expected": "Order CANCELLED, reservedCash returns to pre-order level, voucher marked CANCELLED",
-      "actual": "orderStatus: CANCELLED, preBuyReserved: 0, postExecReserved: 4076.73, postCancelReserved: 0, voucherStatus: CANCELLED",
+      "actual": "orderStatus: CANCELLED, preBuyReserved: 0, postExecReserved: 4002.6, postCancelReserved: 0, voucherStatus: CANCELLED",
       "evidence": {
         "preBuyReserved": 0,
-        "postExecReserved": 4076.73,
+        "postExecReserved": 4002.6,
         "postCancelReserved": 0,
         "voucherStatus": "CANCELLED"
       },

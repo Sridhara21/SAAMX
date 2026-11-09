@@ -162,7 +162,7 @@ export default function DrawerManager({
     // C. Quick Actions
     if (searchCategory === 'ALL' || searchCategory === 'ACTIONS') {
       const quickActionsList = [
-        { id: 'act_theme', label: `Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`, icon: 'sun', run: toggleTheme },
+        
         { id: 'act_density', label: `Switch to ${density === 'compact' ? 'Comfortable Studio' : 'Compact Terminal'} Density`, icon: 'sliders', run: toggleDensity },
         { id: 'act_nav', label: 'Open Navigation Drawer (Ctrl+B)', icon: 'dock', run: () => drawerCtx.openDrawer(DRAWER_TYPES.PORTALS) },
         { id: 'act_portfolio', label: 'Inspect Portfolio & 12 Currencies (Ctrl+P)', icon: 'briefcase', run: () => drawerCtx.openDrawer(DRAWER_TYPES.PORTFOLIO) },
@@ -481,7 +481,7 @@ export default function DrawerManager({
               >
                 {density === 'compact' ? 'Studio Mode' : 'Compact Terminal'}
               </button>
-              <ThemeToggle compact />
+              
             </div>
             {onLogout && (
               <button type="button" className="saamx-drawer-logout-btn" onClick={onLogout}>

@@ -87,8 +87,8 @@ export default function FloatingCommandDock({
   style = {}
 }) {
   const { density, toggleDensity, isCompact } = useDensity();
-  const { theme, toggleTheme } = useTheme();
-  const isDark = theme === 'dark';
+  
+  const isDark = false;
 
   const drawerCtx = useDrawer();
   const activeDrawer = propActiveDrawer !== undefined ? propActiveDrawer : drawerCtx.activeDrawer;
@@ -269,20 +269,7 @@ export default function FloatingCommandDock({
             </span>
           </button>
 
-          {/* g) Theme Toggle Button */}
-          <button
-            type="button"
-            className="dock-pip-btn"
-            onClick={toggleTheme}
-            aria-label={`Theme: currently ${theme}. Click to switch to ${isDark ? 'light' : 'dark'} mode (Ctrl+Shift+T)`}
-          >
-            <span className="dock-pip-icon" aria-hidden="true">
-              {isDark ? <IconSun size={17} /> : <IconMoon size={17} />}
-            </span>
-            <span className="dock-pip-tooltip" role="tooltip">
-              Switch to {isDark ? 'Light Mode' : 'Dark Mode'} <kbd>Ctrl+Shift+T</kbd>
-            </span>
-          </button>
+          
         </div>
 
         {/* Divider 3 */}

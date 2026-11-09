@@ -349,9 +349,13 @@ export function getApiBaseUrl() {
       host === 'saamx.in' ||
       host === 'www.saamx.in' ||
       host === 'fmos-a6573.web.app' ||
-      host === 'fmos-a6573.firebaseapp.com'
+      host === 'fmos-a6573.firebaseapp.com' ||
+      host === 'fmos.web.app' ||
+      host === 'fmos.firebaseapp.com' ||
+      host === 'saamx26.web.app' ||
+      host === 'saamx26.firebaseapp.com'
     ) {
-      return 'https://api.saamx.in';
+      return 'https://saamx-backend-production.up.railway.app';
     }
   }
   return '';

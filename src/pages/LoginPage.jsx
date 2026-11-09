@@ -13,24 +13,6 @@ import {
   IconChevronLeft
 } from '../lib/icons.jsx';
 
-const QUICK_FILL_PRESETS = {
-  TEAM: [
-    { label: 'T01 (Apex)', username: 'T01', password: 'saamx-team-01', color: 'var(--color-rise, #10B981)' },
-    { label: 'T02 (Beacon)', username: 'T02', password: 'saamx-team-02', color: 'var(--color-rise, #10B981)' },
-    { label: 'T03 (Citadel)', username: 'T03', password: 'saamx-team-03', color: 'var(--color-rise, #10B981)' },
-    { label: 'Delegate (Aarav)', username: 'Aarav Mehta', password: 'password123', color: 'var(--color-accent, #00E5FF)' }
-  ],
-  STAFF: [
-    { label: 'Admin', username: 'admin', password: 'saamx-event-2026', color: 'var(--color-fall, #EF4444)' },
-    { label: 'Exchange', username: 'exchange', password: 'exchange-event-2026', color: 'var(--color-accent, #00E5FF)' },
-    { label: 'Verification', username: 'verification', password: 'verification-desk-2026', color: 'var(--color-info, #3B82F6)' },
-    { label: 'SEBI', username: 'sebi', password: 'sebi-event-2026', color: 'var(--color-warn, #F59E0B)' },
-    { label: 'Advisor', username: 'advisor', password: 'advisor-desk-2026', color: '#8B5CF6' },
-    { label: 'Journalist', username: 'journalist', password: 'press-wire-2026', color: '#EC4899' },
-    { label: 'Super Admin', username: 'sridhara', password: '21112009', color: 'var(--color-warn, #F59E0B)' }
-  ]
-};
-
 export default function LoginPage({ onLoginSuccess }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -41,14 +23,6 @@ export default function LoginPage({ onLoginSuccess }) {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
-  const handleQuickFill = (preset) => {
-    setUsername(preset.username);
-    setPassword(preset.password || '');
-    setError('');
-    setPendingRegistrationInfo(null);
-  };
-
-  // Extract redirect parameter from hash if present (e.g. #/login?redirect=%23%2Fverification)
   const getRedirectDestination = (userRole) => {
     try {
       const hash = window.location.hash || '';
@@ -368,7 +342,7 @@ export default function LoginPage({ onLoginSuccess }) {
                 fontSize: '0.825rem',
                 cursor: 'pointer',
                 backgroundColor: portalMode === 'TEAM' ? 'var(--color-surface, #121722)' : 'transparent',
-                color: portalMode === 'TEAM' ? 'var(--color-accent, #00E5FF)' : 'var(--color-text-secondary, #94A3B8)',
+                color: portalMode === 'TEAM' ? 'var(--color-orange, #FF6800)' : 'var(--color-text-secondary, #94A3B8)',
                 boxShadow: portalMode === 'TEAM' ? 'var(--shadow-xs)' : 'none',
                 transition: 'all 0.15s ease'
               }}
@@ -388,60 +362,13 @@ export default function LoginPage({ onLoginSuccess }) {
                 fontSize: '0.825rem',
                 cursor: 'pointer',
                 backgroundColor: portalMode === 'STAFF' ? 'var(--color-surface, #121722)' : 'transparent',
-                color: portalMode === 'STAFF' ? 'var(--color-accent, #00E5FF)' : 'var(--color-text-secondary, #94A3B8)',
+                color: portalMode === 'STAFF' ? 'var(--color-orange, #FF6800)' : 'var(--color-text-secondary, #94A3B8)',
                 boxShadow: portalMode === 'STAFF' ? 'var(--shadow-xs)' : 'none',
                 transition: 'all 0.15s ease'
               }}
             >
               Staff & Officials
             </button>
-          </div>
-
-          {/* Quick-Fill Station Credentials Bar */}
-          <div style={{ marginBottom: '20px' }}>
-            <div
-              style={{
-                fontSize: '0.70rem',
-                fontWeight: 800,
-                textTransform: 'uppercase',
-                letterSpacing: '0.06em',
-                color: 'var(--color-text-muted, #64748B)',
-                marginBottom: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between'
-              }}
-            >
-              <span>Quick-Fill Station Credentials</span>
-              <span style={{ fontSize: '0.66rem', fontWeight: 600, color: 'var(--color-text-tertiary, #475569)' }}>Testing Shortcut</span>
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-              {QUICK_FILL_PRESETS[portalMode].map((preset) => (
-                <button
-                  key={preset.username}
-                  type="button"
-                  onClick={() => handleQuickFill(preset)}
-                  title={`Fill ${preset.label} credentials`}
-                  style={{
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
-                    padding: '4px 10px',
-                    borderRadius: 'var(--radius-full, 9999px)',
-                    backgroundColor: username === preset.username ? 'var(--color-surface-hover, #1A2234)' : 'var(--color-surface-2, #161D2B)',
-                    border: username === preset.username ? '1px solid var(--color-accent, #00E5FF)' : '1px solid var(--color-border)',
-                    color: username === preset.username ? 'var(--color-accent, #00E5FF)' : 'var(--color-text-secondary, #94A3B8)',
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '5px',
-                    transition: 'all 0.15s ease'
-                  }}
-                >
-                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: preset.color }} />
-                  <span>{preset.label}</span>
-                </button>
-              ))}
-            </div>
           </div>
 
           {/* Pending Registration Guidance Card */}
@@ -634,21 +561,6 @@ export default function LoginPage({ onLoginSuccess }) {
             </Button>
           </form>
 
-          {/* Registration Navigation Link */}
-          <div style={{ marginTop: '22px', textAlign: 'center', fontSize: '0.86rem', color: 'var(--color-ink-secondary, #475569)' }}>
-            Don't have an account?{' '}
-            <a
-              href="#/register"
-              style={{
-                color: 'var(--color-orange, #FF6800)',
-                fontWeight: 700,
-                textDecoration: 'none'
-              }}
-            >
-              Register here
-            </a>
-          </div>
-
           {/* Institutional Credentials Reference */}
           <div
             style={{
@@ -679,27 +591,34 @@ export default function LoginPage({ onLoginSuccess }) {
               <span>Institutional Credentials Guide</span>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '4px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '6px' }}>
               <div>
-                <strong style={{ color: 'var(--color-text-primary)' }}>Team Stations:</strong> Code{' '}
-                <code style={{ fontFamily: 'var(--font-mono)', padding: '1px 4px', backgroundColor: 'var(--color-surface)', borderRadius: '3px', border: '1px solid var(--color-border)' }}>T01</code>–
-                <code style={{ fontFamily: 'var(--font-mono)', padding: '1px 4px', backgroundColor: 'var(--color-surface)', borderRadius: '3px', border: '1px solid var(--color-border)' }}>T20</code> + designated PIN.
+                <strong style={{ color: 'var(--color-text-primary)' }}>10 Teams:</strong>{' '}
+                <span style={{ color: 'var(--color-ink-muted, #94A3B8)' }}>Use assigned Team Code (<code style={{ fontFamily: 'var(--font-mono)' }}>T01</code>–<code style={{ fontFamily: 'var(--font-mono)' }}>T10</code>) and private registration PIN.</span>
               </div>
               <div>
-                <strong style={{ color: 'var(--color-text-primary)' }}>Exchange Desks:</strong>{' '}
-                <code style={{ fontFamily: 'var(--font-mono)', padding: '1px 4px', backgroundColor: 'var(--color-surface)', borderRadius: '3px', border: '1px solid var(--color-border)' }}>verification</code>,{' '}
-                <code style={{ fontFamily: 'var(--font-mono)', padding: '1px 4px', backgroundColor: 'var(--color-surface)', borderRadius: '3px', border: '1px solid var(--color-border)' }}>exchange</code>.
+                <strong style={{ color: 'var(--color-text-primary)' }}>5 Exchange Desks:</strong>{' '}
+                <span style={{ color: 'var(--color-ink-muted, #94A3B8)' }}>Desks 1–5 sign in with official assigned operator credentials &bull; Portal: <code style={{ fontFamily: 'var(--font-mono)' }}>#/exchange</code></span>
               </div>
               <div>
-                <strong style={{ color: 'var(--color-text-primary)' }}>Regulator & Press:</strong>{' '}
-                <code style={{ fontFamily: 'var(--font-mono)', padding: '1px 4px', backgroundColor: 'var(--color-surface)', borderRadius: '3px', border: '1px solid var(--color-border)' }}>sebi</code>,{' '}
-                <code style={{ fontFamily: 'var(--font-mono)', padding: '1px 4px', backgroundColor: 'var(--color-surface)', borderRadius: '3px', border: '1px solid var(--color-border)' }}>journalist</code>,{' '}
-                <code style={{ fontFamily: 'var(--font-mono)', padding: '1px 4px', backgroundColor: 'var(--color-surface)', borderRadius: '3px', border: '1px solid var(--color-border)' }}>advisor</code>.
+                <strong style={{ color: 'var(--color-text-primary)' }}>4 Bank Desks:</strong>{' '}
+                <span style={{ color: 'var(--color-ink-muted, #94A3B8)' }}>Counters 1–4 sign in with teller access key &bull; Portal: <code style={{ fontFamily: 'var(--font-mono)' }}>#/bank</code></span>
               </div>
               <div>
-                <strong style={{ color: 'var(--color-text-primary)' }}>Administration:</strong>{' '}
-                <code style={{ fontFamily: 'var(--font-mono)', padding: '1px 4px', backgroundColor: 'var(--color-surface)', borderRadius: '3px', border: '1px solid var(--color-border)' }}>admin</code> or{' '}
-                <code style={{ fontFamily: 'var(--font-mono)', padding: '1px 4px', backgroundColor: 'var(--color-surface)', borderRadius: '3px', border: '1px solid var(--color-border)' }}>sridhara</code>.
+                <strong style={{ color: 'var(--color-text-primary)' }}>2 FX Desks:</strong>{' '}
+                <span style={{ color: 'var(--color-ink-muted, #94A3B8)' }}>Currency exchange operators sign in with FX desk key &bull; Portal: <code style={{ fontFamily: 'var(--font-mono)' }}>#/fx</code></span>
+              </div>
+              <div>
+                <strong style={{ color: 'var(--color-text-primary)' }}>3 News Operators:</strong>{' '}
+                <span style={{ color: 'var(--color-ink-muted, #94A3B8)' }}>Journalists & newsroom controllers sign in with newsroom credentials &bull; Portal: <code style={{ fontFamily: 'var(--font-mono)' }}>#/news-controller</code></span>
+              </div>
+              <div>
+                <strong style={{ color: 'var(--color-text-primary)' }}>3 Floor Operators & Admin:</strong>{' '}
+                <span style={{ color: 'var(--color-ink-muted, #94A3B8)' }}>Floor administrators sign in with floor supervisor passkey &bull; Portal: <code style={{ fontFamily: 'var(--font-mono)' }}>#/admin</code></span>
+              </div>
+              <div>
+                <strong style={{ color: 'var(--color-text-primary)' }}>4 Stock Broker Advisors:</strong>{' '}
+                <span style={{ color: 'var(--color-ink-muted, #94A3B8)' }}>Advisory desk operators sign in with accredited broker keys &bull; Portal: <code style={{ fontFamily: 'var(--font-mono)' }}>#/advisor</code></span>
               </div>
             </div>
           </div>

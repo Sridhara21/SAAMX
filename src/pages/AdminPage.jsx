@@ -3,6 +3,7 @@ import { apiFetch } from '../lib/api.js';
 import { db, ref, onValue } from '../lib/firebase.js';
 import MarketStorylineTimeline from '../components/MarketStorylineTimeline.jsx';
 import { MASTER_MARKET_EVENTS } from '../lib/marketEventsDataset.js';
+import { NEWS_PRESETS_LIBRARY, NEWS_PRESET_CATEGORIES } from '../lib/newsPresetsLibrary.js';
 import PersonnelManagementPage from './PersonnelManagementPage.jsx';
 import ResultsPage from './ResultsPage.jsx';
 import { useDensity } from '../context/DensityContext.jsx';
@@ -133,10 +134,11 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
   // Breaking News Composer State
   const [newsHeadline, setNewsHeadline] = useState('');
   const [newsDesc, setNewsDesc] = useState('');
-  const [newsCategory, setNewsCategory] = useState('CORPORATE');
+  const [newsCategory, setNewsCategory] = useState(NEWS_PRESET_CATEGORIES[0] || 'Corporate earnings');
   const [newsSeverity, setNewsSeverity] = useState('HIGH');
   const [newsImpactPct, setNewsImpactPct] = useState('5');
   const [newsTargetTicker, setNewsTargetTicker] = useState('');
+  const [selectedNewsPresetId, setSelectedNewsPresetId] = useState('');
 
   // Bull & Bear Editor State
   const [bullStance, setBullStance] = useState('STRONGLY BULLISH');
@@ -701,26 +703,56 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
     }
   };
 
+  const handleSelectNewsPreset = (presetId) => {
+    setSelectedNewsPresetId(presetId);
+    if (!presetId) return;
+    const p = NEWS_PRESETS_LIBRARY.find(item => item.id === presetId);
+    if (p) {
+      setNewsHeadline(p.headline);
+      setNewsDesc(p.description);
+      setNewsCategory(p.category);
+      setNewsSeverity(p.priority === 'CRITICAL' ? 'CRITICAL' : (p.priority === 'BREAKING' || p.priority === 'HIGH') ? 'HIGH' : 'MEDIUM');
+      setNewsImpactPct(String(p.impactMagnitude || 5));
+      setNewsTargetTicker(p.affectedAssets?.securities?.[0] || '');
+    }
+  };
+
   const handlePublishCustomNews = async () => {
     if (!newsHeadline) return alert('Headline required.');
     try {
-      const customEvt = {
-        id: `CUSTOM_EVT_${Date.now()}`,
-        title: newsHeadline,
-        description: newsDesc || newsHeadline,
-        category: newsCategory,
-        tier: newsSeverity === 'CRITICAL' ? 'TIER_1' : newsSeverity === 'HIGH' ? 'TIER_2' : 'TIER_3',
-        affectedSecurities: newsTargetTicker ? [{ ticker: newsTargetTicker.toUpperCase(), impactPercent: Number(newsImpactPct) || 0 }] : [],
-        projectorPriority: newsSeverity === 'CRITICAL' || newsSeverity === 'HIGH'
-      };
+      let res;
+      if (selectedNewsPresetId) {
+        res = await apiFetch('/api/news/publish', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
+          body: JSON.stringify({
+            triggerPresetId: selectedNewsPresetId,
+            overrideImpact: Number(newsImpactPct) || undefined
+          })
+        });
+      } else {
+        res = await apiFetch('/api/news', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
+          body: JSON.stringify({
+            headline: newsHeadline,
+            description: newsDesc || newsHeadline,
+            category: newsCategory,
+            priority: newsSeverity,
+            impactPercent: Number(newsImpactPct) || 0,
+            affectedSecurityIds: newsTargetTicker ? [newsTargetTicker.toUpperCase()] : []
+          })
+        });
+      }
 
-      await apiFetch('/api/events/trigger', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
-        body: JSON.stringify({ event: customEvt, actor: 'Newsroom Admin' })
-      });
+      if (res && !res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to dispatch news.');
+      }
+
       setNewsHeadline('');
       setNewsDesc('');
+      setSelectedNewsPresetId('');
       alert('Breaking news dispatched to market wire!');
     } catch (e) {
       alert('Error dispatching news: ' + e.message);
@@ -2335,6 +2367,22 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
 
           <div style={{ background: '#0F172A', border: '1px solid #334155', borderRadius: '8px', padding: '18px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div>
+              <label style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 800 }}>LOAD FROM CANONICAL INSTITUTIONAL PRESET LIBRARY</label>
+              <select
+                value={selectedNewsPresetId}
+                onChange={(e) => handleSelectNewsPreset(e.target.value)}
+                style={{ width: '100%', background: '#1E293B', border: '1px solid #334155', color: '#fff', padding: '10px', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 700, marginTop: '4px' }}
+              >
+                <option value="">-- Choose Canonical Preset (~400 Verified Presets) or Compose Below --</option>
+                {NEWS_PRESETS_LIBRARY.map(preset => (
+                  <option key={preset.id} value={preset.id}>
+                    [{preset.category}] {preset.headline.slice(0, 85)}...
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
               <label style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 800 }}>BREAKING HEADLINE</label>
               <input type="text" placeholder="e.g. RBI Announces Unexpected 25 bps Repo Rate Cut" value={newsHeadline} onChange={(e) => setNewsHeadline(e.target.value)} style={{ width: '100%', background: '#1E293B', border: '1px solid #334155', color: '#fff', padding: '10px', borderRadius: '4px', fontSize: '0.95rem', fontWeight: 800, marginTop: '4px' }} />
             </div>
@@ -2348,12 +2396,9 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
               <div>
                 <label style={{ fontSize: '0.72rem', color: '#94A3B8', fontWeight: 800 }}>CATEGORY</label>
                 <select value={newsCategory} onChange={(e) => setNewsCategory(e.target.value)} style={{ width: '100%', background: '#1E293B', border: '1px solid #334155', color: '#fff', padding: '8px', borderRadius: '4px', fontSize: '0.82rem', marginTop: '4px' }}>
-                  <option value="CORPORATE">Corporate</option>
-                  <option value="GLOBAL_MACRO">Global Macro</option>
-                  <option value="GOVERNMENT">Government</option>
-                  <option value="REGULATORY">Regulatory</option>
-                  <option value="CURRENCY">Currency</option>
-                  <option value="IPO">IPO</option>
+                  {NEWS_PRESET_CATEGORIES.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
                 </select>
               </div>
 
@@ -3087,7 +3132,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
               </span>
             </div>
             <a
-              href="#/register"
+              href="#/login"
               target="_blank"
               rel="noreferrer"
               style={{
@@ -3123,7 +3168,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
                 {Object.values(state?.registrations || {}).length === 0 ? (
                   <tr>
                     <td colSpan="8" style={{ padding: '30px', textAlign: 'center', color: '#64748B' }}>
-                      No incoming school registrations. Direct teams to #/register or seed rehearsal houses.
+                      No incoming school registrations. Teams access floor via #/login or seed rehearsal houses.
                     </td>
                   </tr>
                 ) : (

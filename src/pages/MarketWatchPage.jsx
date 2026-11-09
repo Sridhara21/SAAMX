@@ -388,7 +388,8 @@ export default function MarketWatchPage({ state, onOpenProfile, connected }) {
       });
     });
 
-    const news = Array.isArray(state?.newsEvents) ? state.newsEvents : Object.values(state?.newsEvents || {});
+    const news = (Array.isArray(state?.newsEvents) ? state.newsEvents : Object.values(state?.newsEvents || {}))
+      .filter(n => !n.dismissed && !n.corrected && !n.isCorrection);
     news.slice(-15).reverse().forEach(n => {
       items.push({
         id: n.id || `NEWS_${n.timestamp}`,

@@ -186,9 +186,7 @@ export default function Sidebar({
 
         {/* Bottom Actions & Sign Out */}
         <div className="saamx-sidebar-footer">
-          <div className="saamx-sidebar-theme-wrapper">
-            <ThemeToggle compact={isCollapsed} style={{ width: '100%', justifyContent: isCollapsed ? 'center' : 'flex-start' }} />
-          </div>
+          
 
           <button
             type="button"

@@ -6,7 +6,7 @@ export default function HomePage({ state, connected }) {
     {
       category: 'Event Onboarding',
       title: '🏛️ Event Registration Portal',
-      path: '#/register',
+      path: '#/login',
       desc: 'Collegiate onboarding portal. Register School Profile, Investment House identity, delegate roster, and receive dynamic credentials & PIN.',
       isProtected: false,
       badge: 'Open Registration',

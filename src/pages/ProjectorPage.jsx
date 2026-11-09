@@ -90,17 +90,48 @@ export default function ProjectorPage({
   const [currentTimeStr, setCurrentTimeStr] = useState('');
   const [activeTakeover, setActiveTakeover] = useState(null);
 
+  const handleDismissTakeover = (e) => {
+    if (e) e.stopPropagation();
+    const currentId = activeTakeover?.id || activeTakeover?.newsId || takeoverEvent?.id;
+    if (currentId) {
+      try {
+        const dismissed = JSON.parse(localStorage.getItem('saamx_dismissed_takeovers') || '[]');
+        if (!dismissed.includes(currentId)) {
+          dismissed.push(currentId);
+          localStorage.setItem('saamx_dismissed_takeovers', JSON.stringify(dismissed.slice(-100)));
+        }
+      } catch (err) {}
+    }
+    setActiveTakeover(null);
+    // Notify server to clear takeoverEvent state authoritatively
+    apiFetch('/api/news/dismiss', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ newsId: currentId })
+    }).catch(() => {});
+  };
+
   // Auto-dismiss breaking overlays after 8 seconds so overlays never get stuck on projector
   useEffect(() => {
     if (takeoverEvent && (takeoverEvent.headline || takeoverEvent.name || takeoverEvent.type || takeoverEvent.title)) {
+      const eventKey = takeoverEvent.id || takeoverEvent.eventId || `${takeoverEvent.headline}_${takeoverEvent.triggeredAt}`;
+      try {
+        const dismissed = JSON.parse(localStorage.getItem('saamx_dismissed_takeovers') || '[]');
+        if (dismissed.includes(eventKey)) {
+          setActiveTakeover(null);
+          return;
+        }
+      } catch (err) {}
+
       const normalized = {
         ...takeoverEvent,
+        id: eventKey,
         headline: takeoverEvent.headline || takeoverEvent.title || takeoverEvent.name,
         type: takeoverEvent.type || 'NEWS_FLASH'
       };
       setActiveTakeover(normalized);
       const timer = setTimeout(() => {
-        setActiveTakeover(null);
+        handleDismissTakeover();
       }, 8000);
       return () => clearTimeout(timer);
     } else {
@@ -111,11 +142,11 @@ export default function ProjectorPage({
   // Keyboard shortcut: ESC to dismiss takeover overlay
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') setActiveTakeover(null);
+      if (e.key === 'Escape') handleDismissTakeover();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [activeTakeover]);
 
   // Sync server clock offset
   useEffect(() => {
@@ -254,11 +285,13 @@ export default function ProjectorPage({
   }, [state?.transactions]);
 
   const newsEvents = useMemo(() => {
-    return Object.values(state?.newsEvents || []).sort((a, b) => (b.triggeredAt || 0) - (a.triggeredAt || 0));
+    return Object.values(state?.newsEvents || [])
+      .filter(n => !n.dismissed && !n.corrected && !n.isCorrection)
+      .sort((a, b) => (b.triggeredAt || 0) - (a.triggeredAt || 0));
   }, [state?.newsEvents]);
 
   const latestNews = useMemo(() => {
-    const triggered = newsEvents.filter(n => n.triggeredAt);
+    const triggered = newsEvents.filter(n => n.triggeredAt && !n.dismissed);
     return triggered.length > 0 ? triggered[0] : null;
   }, [newsEvents]);
 
@@ -476,7 +509,7 @@ export default function ProjectorPage({
         return (
           <div
             className="takeover-overlay"
-            onClick={() => setActiveTakeover(null)}
+            onClick={handleDismissTakeover}
             style={{
               position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
               backgroundColor: 'rgba(10, 13, 20, 0.90)',
@@ -504,7 +537,7 @@ export default function ProjectorPage({
             >
               <button
                 type="button"
-                onClick={() => setActiveTakeover(null)}
+                onClick={handleDismissTakeover}
                 style={{
                   position: 'absolute', top: '16px', right: '20px',
                   background: 'var(--color-surface-sunken, #F1F5F9)', border: '1px solid var(--color-border, #CBD5E1)',
@@ -584,7 +617,7 @@ export default function ProjectorPage({
         return (
           <div
             className="takeover-overlay"
-            onClick={() => setActiveTakeover(null)}
+            onClick={handleDismissTakeover}
             style={{
               position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
               backgroundColor: 'rgba(8, 10, 14, 0.90)',
@@ -611,7 +644,7 @@ export default function ProjectorPage({
             >
               <button
                 type="button"
-                onClick={() => setActiveTakeover(null)}
+                onClick={handleDismissTakeover}
                 style={{
                   position: 'absolute', top: '16px', right: '20px',
                   background: 'var(--color-surface-sunken, #F1F5F9)', border: '1px solid var(--color-border, #CBD5E1)',
@@ -643,7 +676,7 @@ export default function ProjectorPage({
         return (
           <div
             className="takeover-overlay"
-            onClick={() => setActiveTakeover(null)}
+            onClick={handleDismissTakeover}
             style={{
               position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
               backgroundColor: 'rgba(10, 15, 26, 0.90)',
@@ -671,7 +704,7 @@ export default function ProjectorPage({
             >
               <button
                 type="button"
-                onClick={() => setActiveTakeover(null)}
+                onClick={handleDismissTakeover}
                 style={{
                   position: 'absolute', top: '16px', right: '20px',
                   background: 'var(--color-surface-sunken, #F1F5F9)', border: '1px solid var(--color-border, #CBD5E1)',
@@ -707,7 +740,7 @@ export default function ProjectorPage({
         return (
           <div
             className="takeover-overlay"
-            onClick={() => setActiveTakeover(null)}
+            onClick={handleDismissTakeover}
             style={{
               position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
               backgroundColor: 'rgba(6, 40, 26, 0.90)',
@@ -735,7 +768,7 @@ export default function ProjectorPage({
             >
               <button
                 type="button"
-                onClick={() => setActiveTakeover(null)}
+                onClick={handleDismissTakeover}
                 style={{
                   position: 'absolute', top: '16px', right: '20px',
                   background: 'var(--color-surface-sunken, #F1F5F9)', border: '1px solid var(--color-border, #CBD5E1)',
@@ -772,7 +805,7 @@ export default function ProjectorPage({
         return (
           <div
             className="takeover-overlay"
-            onClick={() => setActiveTakeover(null)}
+            onClick={handleDismissTakeover}
             style={{
               position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
               backgroundColor: 'rgba(30, 8, 8, 0.92)',
@@ -800,7 +833,7 @@ export default function ProjectorPage({
             >
               <button
                 type="button"
-                onClick={() => setActiveTakeover(null)}
+                onClick={handleDismissTakeover}
                 style={{
                   position: 'absolute', top: '16px', right: '20px',
                   background: 'var(--color-surface-sunken, #F1F5F9)', border: '1px solid var(--color-border, #CBD5E1)',
@@ -836,7 +869,7 @@ export default function ProjectorPage({
         return (
           <div
             className="takeover-overlay"
-            onClick={() => setActiveTakeover(null)}
+            onClick={handleDismissTakeover}
             style={{
               position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
               backgroundColor: 'rgba(6, 40, 26, 0.92)',
@@ -863,7 +896,7 @@ export default function ProjectorPage({
             >
               <button
                 type="button"
-                onClick={() => setActiveTakeover(null)}
+                onClick={handleDismissTakeover}
                 style={{
                   position: 'absolute', top: '16px', right: '20px',
                   background: 'var(--color-surface-sunken, #F1F5F9)', border: '1px solid var(--color-border, #CBD5E1)',
@@ -894,7 +927,7 @@ export default function ProjectorPage({
         return (
           <div
             className="takeover-overlay"
-            onClick={() => setActiveTakeover(null)}
+            onClick={handleDismissTakeover}
             style={{
               position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
               backgroundColor: 'rgba(30, 8, 8, 0.92)',
@@ -921,7 +954,7 @@ export default function ProjectorPage({
             >
               <button
                 type="button"
-                onClick={() => setActiveTakeover(null)}
+                onClick={handleDismissTakeover}
                 style={{
                   position: 'absolute', top: '16px', right: '20px',
                   background: 'var(--color-surface-sunken, #F1F5F9)', border: '1px solid var(--color-border, #CBD5E1)',
@@ -950,7 +983,7 @@ export default function ProjectorPage({
 
       case 'STOCK_SPLIT':
         return (
-          <div className="takeover-overlay" onClick={() => setActiveTakeover(null)} style={{
+          <div className="takeover-overlay" onClick={handleDismissTakeover} style={{
             position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
             backgroundColor: 'rgba(10, 15, 26, 0.90)',
             zIndex: 100000,
@@ -968,7 +1001,7 @@ export default function ProjectorPage({
             }}>
               <button
                 type="button"
-                onClick={() => setActiveTakeover(null)}
+                onClick={handleDismissTakeover}
                 style={{
                   position: 'absolute', top: '16px', right: '20px',
                   background: 'var(--color-surface-sunken, #F1F5F9)', border: '1px solid var(--color-border, #CBD5E1)',
@@ -998,7 +1031,7 @@ export default function ProjectorPage({
       default:
         if (!headline && !name) return null;
         return (
-          <div className="takeover-overlay" onClick={() => setActiveTakeover(null)} style={{
+          <div className="takeover-overlay" onClick={handleDismissTakeover} style={{
             position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
             backgroundColor: 'rgba(10, 13, 20, 0.92)',
             backdropFilter: 'blur(8px)',
@@ -1020,7 +1053,7 @@ export default function ProjectorPage({
             }}>
               <button
                 type="button"
-                onClick={() => setActiveTakeover(null)}
+                onClick={handleDismissTakeover}
                 style={{
                   position: 'absolute', top: '16px', right: '20px',
                   background: 'var(--color-surface-sunken, #F1F5F9)', border: '1px solid var(--color-border, #CBD5E1)',

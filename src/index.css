@@ -181,132 +181,6 @@
 /* ==========================================================================
    DARK THEME ALTERNATIVE (Obsidian Terminal Mode)
    ========================================================================== */
-[data-theme="dark"] {
-  /* Canvas & Dark Layered Surfaces */
-  --color-canvas: #0B0F19;
-  --color-paper: #0B0F19;
-  --color-surface: #111827;
-  --color-surface-hover: #1F2937;
-  --color-surface-2: #1F2937;
-  --color-surface-3: #374151;
-  --color-surface-elevated: #1F2937;
-  --color-surface-sunken: #070A10;
-  --color-surface-glass: rgba(17, 24, 39, 0.85);
-  --color-surface-subtle: rgba(255, 255, 255, 0.04);
-
-  /* Hairline Borders & Dividers */
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-border-light: rgba(255, 255, 255, 0.05);
-  --color-border-subtle: #1F2937;
-  --color-border-strong: #374151;
-  --color-border-focus: #FF6800;
-  --color-glass-border: rgba(255, 255, 255, 0.12);
-
-  /* Typography & Text Hierarchy */
-  --color-text-primary: #F1F5F9;
-  --color-text-secondary: #94A3B8;
-  --color-text-muted: #64748B;
-  --color-text-tertiary: #475569;
-  --color-text-inverted: #0B0F19;
-
-  --color-ink: #F1F5F9;
-  --color-ink-2: #E2E8F0;
-  --color-ink-3: #94A3B8;
-  --color-ink-4: #64748B;
-  --color-ink-primary: #F1F5F9;
-  --color-ink-secondary: #94A3B8;
-  --color-ink-muted: #64748B;
-  --color-ink-inverted: #0B0F19;
-
-  /* Primary Brand Accent */
-  --color-accent: #FF6800;
-  --color-accent-blue: #3B82F6;
-  --color-accent-cyan: #00E5FF;
-  --color-accent-hover: #EA580C;
-  --color-accent-light: rgba(255, 104, 0, 0.15);
-  --color-accent-subtle: rgba(255, 104, 0, 0.08);
-  --color-accent-border: rgba(255, 104, 0, 0.35);
-  --color-accent-solid: #FF6800;
-  --color-accent-gradient: linear-gradient(135deg, #FF7700 0%, #EA580C 100%);
-
-  /* Market Dynamics & Status Indicators */
-  --color-rise: #10B981;
-  --color-rise-hover: #059669;
-  --color-rise-light: rgba(16, 185, 129, 0.14);
-  --color-rise-subtle: rgba(16, 185, 129, 0.08);
-  --color-rise-gradient: linear-gradient(135deg, #10B981 0%, #059669 100%);
-
-  --color-fall: #EF4444;
-  --color-fall-hover: #DC2626;
-  --color-fall-light: rgba(239, 68, 68, 0.14);
-  --color-fall-subtle: rgba(239, 68, 68, 0.08);
-  --color-fall-gradient: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
-
-  --color-gain: #10B981;
-  --color-gain-text: #34D399;
-  --color-gain-bg: rgba(16, 185, 129, 0.14);
-  --color-gain-border: rgba(16, 185, 129, 0.30);
-  --color-gain-solid: #10B981;
-  --color-gain-subtle: rgba(16, 185, 129, 0.08);
-
-  --color-loss: #EF4444;
-  --color-loss-text: #F87171;
-  --color-loss-bg: rgba(239, 68, 68, 0.14);
-  --color-loss-border: rgba(239, 68, 68, 0.30);
-  --color-loss-solid: #EF4444;
-  --color-loss-subtle: rgba(239, 68, 68, 0.08);
-
-  --color-warn: #F59E0B;
-  --color-warning: #F59E0B;
-  --color-warn-text: #FBBF24;
-  --color-warn-bg: rgba(245, 158, 11, 0.14);
-  --color-warn-border: rgba(245, 158, 11, 0.30);
-  --color-warn-solid: #F59E0B;
-  --color-warn-subtle: rgba(245, 158, 11, 0.08);
-
-  --color-info: #3B82F6;
-  --color-info-text: #60A5FA;
-  --color-info-bg: rgba(59, 130, 246, 0.14);
-  --color-info-border: rgba(59, 130, 246, 0.30);
-  --color-info-solid: #3B82F6;
-
-  --color-gold: #F59E0B;
-  --color-gold-hover: #FBBF24;
-  --color-gold-light: rgba(245, 158, 11, 0.14);
-  --color-gold-subtle: rgba(245, 158, 11, 0.08);
-  --color-gold-border: rgba(245, 158, 11, 0.30);
-  --color-gold-gradient: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
-
-  /* Backward Compatibility Aliases */
-  --color-brass: #3B82F6;
-  --color-brass-primary: #3B82F6;
-  --color-brass-hover: #60A5FA;
-  --color-brass-light: rgba(59, 130, 246, 0.12);
-  --color-brass-subtle: rgba(59, 130, 246, 0.08);
-  --color-brass-border: rgba(59, 130, 246, 0.30);
-  --color-brass-gradient: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
-  --color-accent-teal: #00E5FF;
-
-  --card-bg: var(--color-surface);
-  --border-soft: var(--color-border);
-  --navy-900: var(--color-ink);
-  --navy-800: var(--color-ink-2);
-  --text-muted: var(--color-text-muted);
-  --gold-royal: var(--color-gold);
-  --green-emerald: var(--color-rise);
-  --red-crimson: var(--color-fall);
-  --bg-warm: var(--color-canvas);
-  --color-paper-subtle: var(--color-surface-2);
-
-  /* Elevation Shadows for Dark Slate Surfaces */
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.35);
-  --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.35);
-  --shadow-card: 0 4px 16px -2px rgba(0, 0, 0, 0.55), 0 2px 6px -1px rgba(0, 0, 0, 0.35);
-  --shadow-card-hover: 0 12px 28px -4px rgba(0, 0, 0, 0.65), 0 4px 10px -2px rgba(0, 0, 0, 0.45);
-  --shadow-l1: 0 2px 8px rgba(0, 0, 0, 0.45);
-  --shadow-l2: 0 12px 32px rgba(0, 0, 0, 0.65);
-  --shadow-modal: 0 24px 48px -12px rgba(0, 0, 0, 0.85);
-}
 
 /* ==========================================================================
    ADAPTIVE DENSITY SCALING TOKENS (R3 Foundation)
@@ -450,7 +324,8 @@
 }
 
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
+  overflow-y: scroll;
 }
 
 body {
@@ -524,9 +399,9 @@ h1, h2, h3, h4, .slab-title {
 
 /* Accessibility: High-Contrast Electric Cyan Focus Rings */
 :focus-visible {
-  outline: 2px solid var(--color-accent, #00E5FF) !important;
+  outline: 2px solid var(--color-accent, #FF6800) !important;
   outline-offset: 2px !important;
-  box-shadow: 0 0 0 2px var(--color-canvas), 0 0 0 4px rgba(0, 229, 255, 0.45) !important;
+  box-shadow: 0 0 0 2px var(--color-canvas), 0 0 0 4px rgba(255, 104, 0, 0.35) !important;
 }
 
 /* Accessibility: Motion Sensitivity */
@@ -1152,148 +1027,38 @@ h1, h2, h3, h4, .slab-title {
    DARK THEME COMPONENT OVERRIDES
    Ensures complete dark styling across tables, forms, badges, modals, & cards
    ========================================================================== */
-[data-theme="dark"] ::-webkit-scrollbar-track {
-  background: var(--color-canvas);
-}
 
-[data-theme="dark"] ::-webkit-scrollbar-thumb {
-  background: var(--color-border-strong);
-}
 
-[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-accent);
-}
 
-[data-theme="dark"] h1,
-[data-theme="dark"] h2,
-[data-theme="dark"] h3,
-[data-theme="dark"] h4,
-[data-theme="dark"] .slab-title,
-[data-theme="dark"] .brand-heading,
-[data-theme="dark"] .font-data {
-  color: var(--color-ink);
-}
 
 /* Tables */
-[data-theme="dark"] .fms-table-container {
-  background: var(--color-surface);
-  border-color: var(--color-border);
-}
 
-[data-theme="dark"] .fms-table th {
-  background-color: var(--color-surface-2);
-  color: var(--color-ink-2) !important;
-  border-bottom: 1px solid var(--color-border);
-}
 
-[data-theme="dark"] .fms-table td {
-  border-bottom: 1px solid var(--color-border-light);
-  color: var(--color-ink);
-}
 
-[data-theme="dark"] .fms-table tr:hover td {
-  background-color: rgba(255, 255, 255, 0.03);
-}
 
 /* Forms & Inputs */
-[data-theme="dark"] .form-group label {
-  color: var(--color-ink-2);
-}
 
-[data-theme="dark"] .input-field {
-  background-color: var(--color-surface-2);
-  color: var(--color-ink);
-  border-color: var(--color-border);
-}
 
-[data-theme="dark"] .input-field:focus {
-  border-color: var(--color-border-focus);
-  box-shadow: 0 0 0 3px var(--color-accent-subtle);
-}
 
-[data-theme="dark"] .input-field::placeholder {
-  color: var(--color-ink-4);
-}
 
 /* Badges */
-[data-theme="dark"] .badge-public {
-  background-color: var(--color-gold-light);
-  color: var(--color-gold-hover) !important;
-  border-color: var(--color-gold-border);
-}
 
-[data-theme="dark"] .badge-rise {
-  background-color: var(--color-gain-bg);
-  color: var(--color-gain-text) !important;
-  border-color: var(--color-gain-border);
-}
 
-[data-theme="dark"] .badge-fall,
-[data-theme="dark"] .badge-protected {
-  background-color: var(--color-loss-bg);
-  color: var(--color-loss-text) !important;
-  border-color: var(--color-loss-border);
-}
 
-[data-theme="dark"] .badge-info {
-  background-color: var(--color-info-bg);
-  color: var(--color-info-text) !important;
-  border-color: var(--color-info-border);
-}
 
 /* Header & Navigation */
-[data-theme="dark"] .app-header {
-  background-color: rgba(17, 24, 39, 0.95);
-  border-bottom-color: var(--color-border);
-}
 
-[data-theme="dark"] .logo-title {
-  color: var(--color-ink);
-}
 
-[data-theme="dark"] .nav-link {
-  color: var(--color-ink-2) !important;
-}
 
-[data-theme="dark"] .nav-link:hover {
-  color: #FFFFFF !important;
-  background-color: rgba(255, 255, 255, 0.08);
-}
 
 /* Modals & Overlays */
-[data-theme="dark"] .takeover-overlay {
-  background-color: rgba(11, 15, 25, 0.96);
-}
 
-[data-theme="dark"] .takeover-title {
-  color: var(--color-ink);
-}
 
-[data-theme="dark"] .takeover-desc {
-  color: var(--color-ink-2);
-}
 
-[data-theme="dark"] .split-flap-char {
-  background: var(--color-surface-2);
-  color: var(--color-ink);
-  border-color: var(--color-border);
-}
 
 /* Card Archetypes */
-[data-theme="dark"] .card-hero {
-  background: linear-gradient(135deg, #111827 0%, #1F2937 100%);
-  border-color: var(--color-border);
-}
 
-[data-theme="dark"] .card-data {
-  background: var(--color-surface-2);
-  border-color: var(--color-border);
-}
 
-[data-theme="dark"] .card-alert {
-  background: var(--color-surface);
-  border-color: rgba(239, 68, 68, 0.3);
-}
 
 /* Media Print Optimization */
 @media print {

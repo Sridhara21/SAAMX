@@ -1,0 +1,17 @@
+.git/
+.firebase/
+node_modules/
+.DS_Store
+dist/
+build/
+.vscode/
+simulation_report_1hr.md
+backups/
+*.log
+fetch-live-state.js
+*.mjs
+*.tmp
+*.tmp.*
+*disposable*
+state.local-demo.json
+scratch/

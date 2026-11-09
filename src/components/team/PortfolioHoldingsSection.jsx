@@ -27,6 +27,7 @@ export default function PortfolioHoldingsSection({
   buyingPower,
   teamWallets,
   fxRates,
+  team,
   onOpenProfile,
   onNavigate
 }) {
@@ -646,7 +647,7 @@ export default function PortfolioHoldingsSection({
           isOpen={!!orderModalSecurity}
           onClose={() => setOrderModalSecurity(null)}
           security={orderModalSecurity}
-          team={{ teamCode: 'T01' }}
+          team={team || { teamCode: 'T01' }}
           defaultAction="SELL"
           fxRates={fxRates}
         />

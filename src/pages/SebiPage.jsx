@@ -212,23 +212,40 @@ export default function SebiPage({ state, onOpenProfile, adminPassword, connecte
     if (!confirmSend) return;
 
     try {
-      // 1. Dispatch news event via standard endpoint
-      const resNews = await apiFetch('/api/news', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-FMS-Password': adminPassword
-        },
-        body: JSON.stringify({
-          headline: preset.headline,
-          description: preset.description,
-          affectedSecurityIds: preset.affectedSecurityIds || [],
-          affectedSector: preset.affectedSector || null,
-          sentiment: preset.sentiment || 'Neutral',
-          impactPercent: preset.impactPercent || 0,
-          category: preset.category || 'Macro'
-        })
-      });
+      // 1. Dispatch news event via authoritative publish endpoint using canonical triggerPresetId
+      let resNews;
+      if (preset.v2?.id || preset.id) {
+        resNews = await apiFetch('/api/news/publish', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-FMS-Password': adminPassword
+          },
+          body: JSON.stringify({
+            triggerPresetId: preset.v2?.id || preset.id
+          })
+        });
+      }
+
+      // Fallback to /api/news if publish returns error
+      if (!resNews || !resNews.ok) {
+        resNews = await apiFetch('/api/news', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-FMS-Password': adminPassword
+          },
+          body: JSON.stringify({
+            headline: preset.headline,
+            description: preset.description,
+            affectedSecurityIds: preset.affectedSecurityIds || [],
+            affectedSector: preset.affectedSector || null,
+            sentiment: preset.sentiment || 'Neutral',
+            impactPercent: preset.impactPercent || 0,
+            category: preset.category || 'Macroeconomics / RBI'
+          })
+        });
+      }
 
       if (!resNews.ok) {
         throw new Error("Failed to dispatch news bulletin.");

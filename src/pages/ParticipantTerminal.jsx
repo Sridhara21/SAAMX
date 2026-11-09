@@ -478,6 +478,7 @@ export default function ParticipantTerminal({
             fxRates={fxRates}
             onOpenProfile={handleOpenProfile}
             teamCode={team.teamCode}
+            team={team}
           />
         )}
 
@@ -493,6 +494,7 @@ export default function ParticipantTerminal({
             buyingPower={buyingPower}
             teamWallets={teamWallets}
             fxRates={fxRates}
+            team={team}
             onOpenProfile={handleOpenProfile}
             onNavigate={handleSectionChange}
           />

@@ -80,7 +80,7 @@ function PageLoadingFallback() {
           width: '38px',
           height: '38px',
           border: '3px solid var(--color-border, #CBD5E1)',
-          borderTopColor: 'var(--color-accent, #2563EB)',
+          borderTopColor: 'var(--color-accent, #FF6800)',
           borderRadius: '50%',
           animation: 'saamx-spin 0.8s linear infinite'
         }}
@@ -584,7 +584,7 @@ export default function App() {
                          route === '#/directory' || route === '#directory' || route.startsWith('#/directory?') || route.startsWith('#/directory/');
   const isLoginRoute = route === '#/login' || route.startsWith('#/login?') || route.startsWith('#/login/');
   const isProjectorRoute = route === '#/projector' || route.startsWith('#/projector?') || route.startsWith('#/projector/');
-  const isRegisterRoute = route === '#/register' || route.startsWith('#/register?') || route.startsWith('#/register/');
+  const isRegisterRoute = false;
   const isPublicShell = isPublicRoute || isPortalsRoute || isLoginRoute || isProjectorRoute || isRegisterRoute;
 
   const normalizedState = {
@@ -620,9 +620,8 @@ export default function App() {
           isCoordinatorOffline={isCoordinatorOffline}
         />
       );
-    } else if (isRegisterRoute) {
-      // 3b. Public Team Registration Page
-      content = <RegistrationPage state={normalizedState} onNavigateHome={() => { window.location.hash = '#/'; }} />;
+    } else if (route.startsWith("#/register")) {
+      content = <LoginPage onLoginSuccess={handleLoginSuccess} />;
     } else if (!isAuthenticated) {
       // 4. All Other Internal Routes Require Authentication
       content = <LoginPage onLoginSuccess={handleLoginSuccess} />;
@@ -998,7 +997,7 @@ export default function App() {
                     )}
                   </button>
 
-                  <ThemeToggle />
+                  
 
                   {isAuthenticated && (() => {
                     const isMaster = sessionUsername?.toLowerCase() === 'sridhara' || sessionStorage.getItem('saamx_is_master') === 'true';

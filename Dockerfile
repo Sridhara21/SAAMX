@@ -40,6 +40,9 @@ ENV PORT=3000
 
 WORKDIR /app
 
+# Ensure /app and runtime writable directories are owned by node user
+RUN mkdir -p /app/backups && chown -R node:node /app
+
 # Ensure correct file permissions for unprivileged node user (UID 1000, GID 1000)
 COPY --chown=node:node --from=builder /app/node_modules ./node_modules
 COPY --chown=node:node --from=builder /app/dist ./dist
@@ -50,7 +53,6 @@ COPY --chown=node:node --from=builder /app/initial_securities.js ./initial_secur
 COPY --chown=node:node --from=builder /app/universe_generator.js ./universe_generator.js
 COPY --chown=node:node --from=builder /app/universe_data.js ./universe_data.js
 COPY --chown=node:node --from=builder /app/parsed_universe.json ./parsed_universe.json
-COPY --chown=node:node --from=builder /app/state.json ./state.json
 COPY --chown=node:node --from=builder /app/database ./database
 COPY --chown=node:node --from=builder /app/src ./src
 COPY --chown=node:node --from=builder /app/services ./services

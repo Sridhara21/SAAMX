@@ -5,7 +5,7 @@
 
 import { ALL_SECURITIES_DATA } from './universe_data.js';
 
-export const TARGET_SECURITY_COUNT = 2849;
+export const TARGET_SECURITY_COUNT = 3409;
 
 export const NEW_SIMULATED_IPOS = [
   {

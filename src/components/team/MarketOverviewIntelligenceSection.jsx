@@ -54,7 +54,8 @@ export default function MarketOverviewIntelligenceSection({
   clock,
   fxRates,
   onOpenProfile,
-  teamCode
+  teamCode,
+  team
 }) {
   const { isCompact } = useDensity();
   const [orderModalSecurity, setOrderModalSecurity] = useState(null);
@@ -1279,7 +1280,7 @@ export default function MarketOverviewIntelligenceSection({
           isOpen={!!orderModalSecurity}
           onClose={() => setOrderModalSecurity(null)}
           security={orderModalSecurity}
-          team={{ teamCode }}
+          team={team || { teamCode }}
           fxRates={fxRates}
         />
       )}

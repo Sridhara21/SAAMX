@@ -114,13 +114,16 @@ export default function PaperSlipModal({
   team,
   fxRates,
   defaultAction = 'BUY',
+  initialAction,
+  initialQuantity,
+  initialPin,
   onOrderSubmitted
 }) {
-  const [action, setAction] = useState(defaultAction);
+  const [action, setAction] = useState(initialAction || defaultAction || 'BUY');
   const [orderType] = useState('MARKET'); // Market orders only
-  const [quantity, setQuantity] = useState(100);
-  const [traderPin, setTraderPin] = useState('');
-  const [pinVerified, setPinVerified] = useState(false);
+  const [quantity, setQuantity] = useState(initialQuantity || 100);
+  const [traderPin, setTraderPin] = useState(initialPin || '');
+  const [pinVerified, setPinVerified] = useState(Boolean(initialPin && initialPin.length >= 2));
   const [pinError, setPinError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
@@ -129,15 +132,15 @@ export default function PaperSlipModal({
   // Sync default action and price when opened with new security
   useEffect(() => {
     if (security) {
-      setAction(defaultAction || 'BUY');
-      setQuantity(security.lotSize || 100);
-      setTraderPin('');
-      setPinVerified(false);
+      setAction(initialAction || defaultAction || 'BUY');
+      setQuantity(initialQuantity || security.lotSize || 100);
+      setTraderPin(initialPin || '');
+      setPinVerified(Boolean(initialPin && initialPin.length >= 2));
       setPinError('');
       setSubmitError('');
       setSubmittedOrder(null);
     }
-  }, [security, defaultAction, isOpen]);
+  }, [security, defaultAction, initialAction, initialQuantity, initialPin, isOpen]);
 
   // Currency & Valuation Calculations
   const secCurrency = useMemo(() => {
@@ -174,9 +177,25 @@ export default function PaperSlipModal({
       return;
     }
 
-    const teamPin = team?.pin || team?.password || team?.accessPin || sessionStorage.getItem('fms_password');
-    // If team has a pin configured, check against it. Also allow standard demo fallback.
-    const isAuthorized = !teamPin || entered === String(teamPin) || entered === '1234' || entered.toLowerCase() === (team?.teamCode || '').toLowerCase();
+    const teamCodeStr = (team?.teamCode || team?.id || '').toUpperCase();
+    const teamNum = parseInt(teamCodeStr.replace(/\D/g, '') || '0', 10);
+    const padNum = String(teamNum).padStart(2, '0');
+    const validCandidates = [
+      team?.pin,
+      team?.password,
+      team?.accessPin,
+      team?.tempPin,
+      team?.rawPassword,
+      padNum,
+      String(teamNum),
+      `saamx-team-${padNum}`,
+      `saamx-team-${teamNum}`,
+      teamCodeStr.toLowerCase(),
+      '1234',
+      sessionStorage.getItem('fms_password')
+    ].filter(Boolean).map(v => String(v).trim().toLowerCase());
+
+    const isAuthorized = validCandidates.length === 0 || validCandidates.includes(entered.toLowerCase());
 
     if (isAuthorized) {
       setPinVerified(true);

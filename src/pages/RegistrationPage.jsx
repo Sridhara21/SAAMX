@@ -202,8 +202,8 @@ export default function RegistrationPage({ state, onNavigateHome }) {
       className="saamx-registration-page"
       style={{
         minHeight: '100vh',
-        backgroundColor: 'var(--color-bg, #0B0E14)',
-        color: 'var(--color-text-primary, #F8FAFC)',
+        backgroundColor: 'var(--color-canvas, #F4F7FB)',
+        color: 'var(--color-ink, #0F172A)',
         padding: '32px 16px 64px 16px',
         fontFamily: 'var(--font-sans, system-ui, -apple-system, sans-serif)'
       }}
@@ -263,7 +263,7 @@ export default function RegistrationPage({ state, onNavigateHome }) {
               <IconShieldCheck size={14} />
               Official Registration Portal
             </span>
-            <ThemeToggle />
+            
           </div>
         </header>
 
@@ -274,7 +274,7 @@ export default function RegistrationPage({ state, onNavigateHome }) {
               fontFamily: 'var(--font-display, sans-serif)',
               fontSize: '2.25rem',
               fontWeight: 800,
-              color: 'var(--color-text-primary, #F8FAFC)',
+              color: 'var(--color-ink, #0F172A)',
               margin: '0 0 10px 0',
               letterSpacing: '-0.02em'
             }}
@@ -303,7 +303,7 @@ export default function RegistrationPage({ state, onNavigateHome }) {
               gap: '16px',
               padding: '10px 20px',
               borderRadius: 'var(--radius-md, 8px)',
-              background: 'var(--color-surface, #131822)',
+              background: 'var(--color-surface, #FFFFFF)',
               border: '1px solid var(--color-border-subtle, rgba(255,255,255,0.08))',
               fontSize: '0.85rem',
               color: 'var(--color-text-secondary, #94A3B8)'
@@ -320,7 +320,7 @@ export default function RegistrationPage({ state, onNavigateHome }) {
             </div>
             <span style={{ opacity: 0.3 }}>•</span>
             <div>
-              Delegation Format: <strong style={{ color: 'var(--color-text-primary, #F8FAFC)' }}>2 to 5 Members</strong>
+              Delegation Format: <strong style={{ color: 'var(--color-ink, #0F172A)' }}>2 to 5 Members</strong>
             </div>
             <span style={{ opacity: 0.3 }}>•</span>
             <div>
@@ -396,7 +396,7 @@ export default function RegistrationPage({ state, onNavigateHome }) {
                         ? 'var(--color-primary, #2563EB)'
                         : isDone
                         ? 'var(--color-rise, #10B981)'
-                        : 'var(--color-surface, #131822)',
+                        : 'var(--color-surface, #FFFFFF)',
                       color: '#FFFFFF',
                       display: 'flex',
                       alignItems: 'center',
@@ -450,7 +450,7 @@ export default function RegistrationPage({ state, onNavigateHome }) {
         {step === 1 && (
           <Card
             style={{
-              background: 'var(--color-surface, #131822)',
+              background: 'var(--color-surface, #FFFFFF)',
               border: '1px solid var(--color-border-subtle, rgba(255,255,255,0.08))',
               borderRadius: 'var(--radius-lg, 12px)',
               padding: '32px'
@@ -465,7 +465,7 @@ export default function RegistrationPage({ state, onNavigateHome }) {
                   style={{
                     fontSize: '1.3rem',
                     fontWeight: 700,
-                    color: 'var(--color-text-primary, #F8FAFC)',
+                    color: 'var(--color-ink, #0F172A)',
                     margin: 0
                   }}
                 >
@@ -593,7 +593,7 @@ export default function RegistrationPage({ state, onNavigateHome }) {
         {step === 2 && (
           <Card
             style={{
-              background: 'var(--color-surface, #131822)',
+              background: 'var(--color-surface, #FFFFFF)',
               border: '1px solid var(--color-border-subtle, rgba(255,255,255,0.08))',
               borderRadius: 'var(--radius-lg, 12px)',
               padding: '32px'
@@ -608,7 +608,7 @@ export default function RegistrationPage({ state, onNavigateHome }) {
                   style={{
                     fontSize: '1.3rem',
                     fontWeight: 700,
-                    color: 'var(--color-text-primary, #F8FAFC)',
+                    color: 'var(--color-ink, #0F172A)',
                     margin: 0
                   }}
                 >
@@ -710,7 +710,7 @@ export default function RegistrationPage({ state, onNavigateHome }) {
         {step === 3 && (
           <Card
             style={{
-              background: 'var(--color-surface, #131822)',
+              background: 'var(--color-surface, #FFFFFF)',
               border: '1px solid var(--color-border-subtle, rgba(255,255,255,0.08))',
               borderRadius: 'var(--radius-lg, 12px)',
               padding: '32px'
@@ -735,7 +735,7 @@ export default function RegistrationPage({ state, onNavigateHome }) {
                     style={{
                       fontSize: '1.3rem',
                       fontWeight: 700,
-                      color: 'var(--color-text-primary, #F8FAFC)',
+                      color: 'var(--color-ink, #0F172A)',
                       margin: 0
                     }}
                   >
@@ -863,7 +863,7 @@ export default function RegistrationPage({ state, onNavigateHome }) {
         {step === 4 && (
           <Card
             style={{
-              background: 'var(--color-surface, #131822)',
+              background: 'var(--color-surface, #FFFFFF)',
               border: '1px solid var(--color-border-subtle, rgba(255,255,255,0.08))',
               borderRadius: 'var(--radius-lg, 12px)',
               padding: '32px'
@@ -878,7 +878,7 @@ export default function RegistrationPage({ state, onNavigateHome }) {
                   style={{
                     fontSize: '1.3rem',
                     fontWeight: 700,
-                    color: 'var(--color-text-primary, #F8FAFC)',
+                    color: 'var(--color-ink, #0F172A)',
                     margin: 0
                   }}
                 >
@@ -916,11 +916,11 @@ export default function RegistrationPage({ state, onNavigateHome }) {
                 >
                   Educational Institution
                 </h3>
-                <div style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '6px', color: 'var(--color-text-primary, #F8FAFC)' }}>
+                <div style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '6px', color: 'var(--color-ink, #0F172A)' }}>
                   {schoolName}
                 </div>
                 <div style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary, #94A3B8)', marginBottom: '4px' }}>
-                  Curriculum: <strong style={{ color: 'var(--color-text-primary, #F8FAFC)' }}>{board}</strong> • City: {city || 'Not specified'}
+                  Curriculum: <strong style={{ color: 'var(--color-ink, #0F172A)' }}>{board}</strong> • City: {city || 'Not specified'}
                 </div>
                 <div style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary, #94A3B8)', marginBottom: '4px' }}>
                   Leader: {contactPerson || 'Lead Delegate'} {contactEmail && `(${contactEmail})`}
@@ -950,11 +950,11 @@ export default function RegistrationPage({ state, onNavigateHome }) {
                 >
                   Investment House Identity
                 </h3>
-                <div style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '6px', color: 'var(--color-text-primary, #F8FAFC)' }}>
+                <div style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '6px', color: 'var(--color-ink, #0F172A)' }}>
                   {investmentHouseName}
                 </div>
                 <div style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary, #94A3B8)', marginBottom: '4px' }}>
-                  Strategy: <strong style={{ color: 'var(--color-text-primary, #F8FAFC)' }}>{teamType}</strong>
+                  Strategy: <strong style={{ color: 'var(--color-ink, #0F172A)' }}>{teamType}</strong>
                 </div>
                 <div style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary, #94A3B8)', marginBottom: '4px' }}>
                   Allocated Code: <strong style={{ fontFamily: 'var(--font-mono, monospace)' }}>{preferredTeamCode || 'Auto-allocated (IH01..)'}</strong>
@@ -989,13 +989,13 @@ export default function RegistrationPage({ state, onNavigateHome }) {
                     <div
                       key={i}
                       style={{
-                        background: 'var(--color-surface, #131822)',
+                        background: 'var(--color-surface, #FFFFFF)',
                         padding: '10px 14px',
                         borderRadius: 'var(--radius-sm, 6px)',
                         border: '1px solid var(--color-border-subtle, rgba(255,255,255,0.08))'
                       }}
                     >
-                      <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--color-text-primary, #F8FAFC)' }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--color-ink, #0F172A)' }}>
                         {m.name}
                       </div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary, #94A3B8)', marginTop: '2px' }}>
@@ -1070,7 +1070,7 @@ export default function RegistrationPage({ state, onNavigateHome }) {
         {step === 5 && confirmationData && (
           <Card
             style={{
-              background: 'var(--color-surface, #131822)',
+              background: 'var(--color-surface, #FFFFFF)',
               border: '2px solid var(--color-rise, #10B981)',
               borderRadius: 'var(--radius-xl, 16px)',
               padding: '36px',
@@ -1098,7 +1098,7 @@ export default function RegistrationPage({ state, onNavigateHome }) {
               style={{
                 fontSize: '1.85rem',
                 fontWeight: 800,
-                color: 'var(--color-text-primary, #F8FAFC)',
+                color: 'var(--color-ink, #0F172A)',
                 margin: '0 0 8px 0',
                 letterSpacing: '-0.02em'
               }}
