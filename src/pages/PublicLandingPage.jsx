@@ -379,10 +379,7 @@ export default function PublicLandingPage() {
               </span>
             </h1>
 
-            {/* Hidden accessibility compliance taglines */}
-            <div style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', border: 0 }}>
-              Experience the market, don't just plan it. Experience the Market. Don't Just Learn It. Student Academic Asset Market eXchange
-            </div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '0.92rem', fontWeight: 700, color: '#0B192C', marginBottom: '16px', padding: '6px 14px', borderRadius: '8px', backgroundColor: 'rgba(255, 104, 0, 0.08)', border: '1px solid rgba(255, 104, 0, 0.2)' }}><span style={{ color: '#FF6800' }}>&ldquo;Experience the market, don&apos;t just plan it.&rdquo;</span></div>
 
             <p
               style={{

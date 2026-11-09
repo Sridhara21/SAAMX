@@ -1595,7 +1595,9 @@ const ALLOWED_ORIGINS = new Set([
   'https://fmos-a6573.web.app',
   'https://fmos-a6573.firebaseapp.com',
   'https://fmos.web.app',
-  'https://fmos.firebaseapp.com'
+  'https://fmos.firebaseapp.com',
+  'https://saamx26.web.app',
+  'https://saamx26.firebaseapp.com'
 ]);
 
 if (process.env.ALLOWED_ORIGINS) {
