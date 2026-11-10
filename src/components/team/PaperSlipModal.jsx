@@ -206,8 +206,8 @@ export default function PaperSlipModal({
     }
   };
 
-  // Submit & Print Action
-  const handlePrintAndSubmit = async () => {
+  // Submit & Generate Order Slip Action
+  const handleSubmitOrder = async () => {
     if (!pinVerified) {
       setPinError('Please enter and verify your Trader PIN first.');
       return;
@@ -257,10 +257,7 @@ export default function PaperSlipModal({
         onOrderSubmitted(data.order || payload);
       }
 
-      // Automatically trigger clean print layout
-      setTimeout(() => {
-        window.print();
-      }, 300);
+      // Order successfully registered in exchange queue for manual copying
     } catch (err) {
       console.error('Order slip submission error:', err);
       setSubmitError(err.message || 'Error dispatching order slip.');
@@ -553,7 +550,7 @@ export default function PaperSlipModal({
                 size="md"
                 disabled={!pinVerified || isSubmitting}
                 loading={isSubmitting}
-                onClick={handlePrintAndSubmit}
+                onClick={handleSubmitOrder}
                 style={{
                   flex: 1,
                   fontWeight: 800,
@@ -567,8 +564,8 @@ export default function PaperSlipModal({
                   gap: '8px'
                 }}
               >
-                <IconPrinter size={16} />
-                <span>Submit Order & Print Slip</span>
+                <IconCheck size={16} />
+                <span>Submit Order & Generate Slip</span>
               </Button>
 
               <Button variant="secondary" size="md" onClick={onClose}>
@@ -581,7 +578,7 @@ export default function PaperSlipModal({
           {/* RIGHT: Live 80mm Physical Thermal Receipt Specimen */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <div style={{ fontSize: '0.70rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 800, marginBottom: '8px' }}>
-              80mm Thermal Receipt Specimen Preview
+              Official Order Slip Details (Copy for Exchange Desk)
             </div>
 
             <div
@@ -703,7 +700,7 @@ export default function PaperSlipModal({
 
               {/* Bottom Receipt Notice */}
               <div style={{ textAlign: 'center', fontSize: '8px', color: '#555555', marginTop: '10px', borderTop: '1px dotted #CCCCCC', paddingTop: '4px' }}>
-                *** HAND DELIVER SLIP TO EXCHANGE DESK RUNNER ***
+                *** COPY TICKET NUMBER & SUBMIT TO EXCHANGE DESK RUNNER ***
               </div>
             </div>
           </div>

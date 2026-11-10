@@ -61,6 +61,7 @@ export default function TeamOverviewSection({
   // Place Order Card State
   const [orderAction, setOrderAction] = useState('BUY');
   const [orderSecurityTicker, setOrderSecurityTicker] = useState('RELIANCE');
+  const [securitySearchQuery, setSecuritySearchQuery] = useState('');
   const [orderQuantity, setOrderQuantity] = useState(10);
   const [traderPin, setTraderPin] = useState('');
   const [showPin, setShowPin] = useState(false);
@@ -207,6 +208,16 @@ export default function TeamOverviewSection({
     const list = state?.securities ? (Array.isArray(state.securities) ? state.securities : Object.values(state.securities)) : [];
     return list.filter(s => s.status === 'Active' || !s.status);
   }, [state?.securities]);
+
+  const filteredSecurities = useMemo(() => {
+    if (!securitySearchQuery.trim()) return activeSecurities.slice(0, 50);
+    const q = securitySearchQuery.trim().toLowerCase();
+    return activeSecurities.filter(s =>
+      (s.ticker && s.ticker.toLowerCase().includes(q)) ||
+      (s.name && s.name.toLowerCase().includes(q)) ||
+      (s.sector && s.sector.toLowerCase().includes(q))
+    ).slice(0, 50);
+  }, [activeSecurities, securitySearchQuery]);
 
   const selectedSecurityObj = useMemo(() => {
     return activeSecurities.find(s => s.ticker === orderSecurityTicker) || {
@@ -889,9 +900,45 @@ export default function TeamOverviewSection({
 
             {/* Security / Instrument Search & Selector */}
             <div style={{ marginBottom: '14px' }}>
-              <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--color-navy, #0B192C)', display: 'block', marginBottom: '6px' }}>
-                Security / Instrument
-              </label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--color-navy, #0B192C)' }}>
+                  Search & Select Security
+                </label>
+                <span style={{ fontSize: '0.70rem', color: 'var(--color-ink-muted, #64748B)' }}>
+                  {filteredSecurities.length} match(es)
+                </span>
+              </div>
+              <div style={{ position: 'relative', marginBottom: '8px' }}>
+                <input
+                  type="text"
+                  placeholder="Type ticker or company name (e.g. Reli, TCS, INFY)..."
+                  value={securitySearchQuery}
+                  onChange={(e) => setSecuritySearchQuery(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px 8px 34px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--color-border)',
+                    backgroundColor: '#FFFFFF',
+                    fontSize: '0.82rem',
+                    color: 'var(--color-navy, #0B192C)',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                />
+                <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-ink-muted, #94A3B8)' }}>
+                  <IconSearch size={14} />
+                </span>
+                {securitySearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSecuritySearchQuery('')}
+                    style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-ink-muted, #94A3B8)', fontSize: '0.80rem' }}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
               <select
                 value={orderSecurityTicker}
                 onChange={(e) => setOrderSecurityTicker(e.target.value)}
@@ -908,7 +955,7 @@ export default function TeamOverviewSection({
                   cursor: 'pointer'
                 }}
               >
-                {activeSecurities.slice(0, 30).map(s => (
+                {filteredSecurities.map(s => (
                   <option key={s.ticker} value={s.ticker}>
                     {s.ticker} &bull; {s.name} | {s.exchange || 'NSE'} | {s.currency || 'INR'}
                   </option>
@@ -1241,8 +1288,8 @@ export default function TeamOverviewSection({
 
       </div>
 
-      {/* 4. Bottom Row Showcase Cards (Matching Reference Image Bottom Row) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
+      {/* 4. Bottom Row Showcase Cards (Authoritative Banking, IPO, and Market News) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
 
         {/* 4.1 Banking Card */}
         <Card
@@ -1263,35 +1310,35 @@ export default function TeamOverviewSection({
                 Banking
               </h3>
             </div>
-            <div style={{ display: 'flex', gap: '4px' }}>
+            <div style={{ display: 'flex', gap: '6px' }}>
               <button
                 type="button"
                 onClick={() => setBankingTab('payin-payout')}
                 style={{
-                  padding: '2px 8px',
-                  borderRadius: '6px',
+                  background: 'none',
                   border: 'none',
-                  background: bankingTab === 'payin-payout' ? 'var(--color-orange, #FF6800)' : 'transparent',
-                  color: bankingTab === 'payin-payout' ? '#FFFFFF' : 'var(--color-ink-muted, #64748B)',
-                  fontSize: '0.70rem',
+                  fontSize: '0.72rem',
                   fontWeight: 700,
-                  cursor: 'pointer'
+                  color: bankingTab === 'payin-payout' ? 'var(--color-orange, #FF6800)' : 'var(--color-ink-muted, #64748B)',
+                  cursor: 'pointer',
+                  borderBottom: bankingTab === 'payin-payout' ? '2px solid var(--color-orange, #FF6800)' : 'none',
+                  paddingBottom: '2px'
                 }}
               >
-                Pay-in/Pay-out
+                Pay-in / Pay-out
               </button>
               <button
                 type="button"
                 onClick={() => setBankingTab('transactions')}
                 style={{
-                  padding: '2px 8px',
-                  borderRadius: '6px',
+                  background: 'none',
                   border: 'none',
-                  background: bankingTab === 'transactions' ? 'var(--color-orange, #FF6800)' : 'transparent',
-                  color: bankingTab === 'transactions' ? '#FFFFFF' : 'var(--color-ink-muted, #64748B)',
-                  fontSize: '0.70rem',
+                  fontSize: '0.72rem',
                   fontWeight: 700,
-                  cursor: 'pointer'
+                  color: bankingTab === 'transactions' ? 'var(--color-orange, #FF6800)' : 'var(--color-ink-muted, #64748B)',
+                  cursor: 'pointer',
+                  borderBottom: bankingTab === 'transactions' ? '2px solid var(--color-orange, #FF6800)' : 'none',
+                  paddingBottom: '2px'
                 }}
               >
                 Transactions
@@ -1299,30 +1346,31 @@ export default function TeamOverviewSection({
             </div>
           </div>
 
+          {/* Table */}
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem' }}>
+            <table style={{ width: '100%', fontSize: '0.74rem', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--color-border)', textAlign: 'left', color: 'var(--color-ink-muted, #64748B)' }}>
-                  <th style={{ padding: '6px 4px' }}>Type</th>
-                  <th style={{ padding: '6px 4px' }}>Ticker/Bank</th>
-                  <th style={{ padding: '6px 4px' }}>Team</th>
-                  <th style={{ padding: '6px 4px' }}>Amount</th>
-                  <th style={{ padding: '6px 4px' }}>Status</th>
-                  <th style={{ padding: '6px 4px' }}>Action</th>
+                <tr style={{ color: 'var(--color-ink-muted, #64748B)', borderBottom: '1px solid var(--color-border)', textAlign: 'left' }}>
+                  <th style={{ padding: '4px', fontWeight: 700 }}>Type</th>
+                  <th style={{ padding: '4px', fontWeight: 700 }}>Ticker / Bank</th>
+                  <th style={{ padding: '4px', fontWeight: 700 }}>Team</th>
+                  <th style={{ padding: '4px', fontWeight: 700 }}>Amount</th>
+                  <th style={{ padding: '4px', fontWeight: 700 }}>Status</th>
+                  <th style={{ padding: '4px', fontWeight: 700 }}>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {[
-                  { type: 'Pay-in', ticker: 'HDFC Bank', team: 'T01', amount: '₹ 2,40,500', status: 'Pending', color: 'var(--color-warn, #D97706)' },
-                  { type: 'Pay-out', ticker: 'TCS', team: 'T06', amount: '₹ 1,10,000', status: 'Processing', color: 'var(--color-info, #2563EB)' },
-                  { type: 'Pay-in', ticker: 'ICICI Bank', team: 'T01', amount: '₹ 3,50,000', status: 'Completed', color: 'var(--color-rise, #059669)' },
-                  { type: 'Pay-out', ticker: 'SBI', team: 'T08', amount: '₹ 90,000', status: 'Pending', color: 'var(--color-warn, #D97706)' }
+                  { type: 'Pay-in', name: 'HDFC Bank', team: 'T01', amount: '₹ 2,40,500', status: 'Pending', color: 'var(--color-orange, #FF6800)' },
+                  { type: 'Pay-out', name: 'TCS', team: 'T06', amount: '₹ 1,10,000', status: 'Processing', color: 'var(--color-primary, #2563EB)' },
+                  { type: 'Pay-in', name: 'ICICI Bank', team: 'T03', amount: '₹ 3,50,000', status: 'Completed', color: 'var(--color-rise, #059669)' },
+                  { type: 'Pay-out', name: 'SBI', team: 'T08', amount: '₹ 90,000', status: 'Pending', color: 'var(--color-orange, #FF6800)' }
                 ].map((row, idx) => (
                   <tr key={idx} style={{ borderBottom: '1px solid rgba(11, 25, 44, 0.04)' }}>
-                    <td style={{ padding: '6px 4px', fontWeight: 700, color: 'var(--color-navy, #0B192C)' }}>{row.type}</td>
-                    <td style={{ padding: '6px 4px', color: 'var(--color-ink-secondary, #475569)' }}>{row.ticker}</td>
-                    <td style={{ padding: '6px 4px', fontWeight: 700 }}>{row.team}</td>
-                    <td className="tabular-nums font-mono" style={{ padding: '6px 4px', fontWeight: 800 }}>{row.amount}</td>
+                    <td style={{ padding: '6px 4px', fontWeight: 600, color: 'var(--color-navy, #0B192C)' }}>{row.type}</td>
+                    <td style={{ padding: '6px 4px', color: 'var(--color-ink-secondary, #475569)' }}>{row.name}</td>
+                    <td style={{ padding: '6px 4px', color: 'var(--color-ink-secondary, #475569)' }}>{row.team}</td>
+                    <td style={{ padding: '6px 4px', fontWeight: 700 }} className="tabular-nums font-mono">{row.amount}</td>
                     <td style={{ padding: '6px 4px' }}>
                       <span style={{ fontSize: '0.68rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', backgroundColor: `${row.color}15`, color: row.color }}>
                         {row.status}
@@ -1344,104 +1392,7 @@ export default function TeamOverviewSection({
           </div>
         </Card>
 
-        {/* 4.2 FX Exchange Widget */}
-        <Card
-          style={{
-            padding: '18px 20px',
-            background: 'var(--glass-bg, rgba(255, 255, 255, 0.85))',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            border: '1px solid var(--glass-border, rgba(11, 25, 44, 0.08))',
-            borderRadius: 'var(--radius-lg, 16px)',
-            boxShadow: '0 4px 20px -2px rgba(11, 25, 44, 0.05)'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
-            <IconCurrencyExchange size={18} color="var(--color-orange, #FF6800)" />
-            <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: 'var(--color-navy, #0B192C)' }}>
-              FX Exchange
-            </h3>
-          </div>
-          <span style={{ fontSize: '0.72rem', color: 'var(--color-ink-muted, #64748B)', display: 'block', marginBottom: '12px' }}>
-            Foreign Exchange Conversion
-          </span>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
-            <div>
-              <label style={{ fontSize: '0.70rem', fontWeight: 700, color: 'var(--color-navy, #0B192C)', display: 'block', marginBottom: '4px' }}>
-                From Currency
-              </label>
-              <select
-                value={fxFrom}
-                onChange={(e) => setFxFrom(e.target.value)}
-                style={{ width: '100%', padding: '6px', borderRadius: '6px', border: '1px solid var(--color-border)', fontSize: '0.78rem', fontWeight: 700 }}
-              >
-                <option value="USD">USD</option>
-                <option value="GBP">GBP</option>
-                <option value="EUR">EUR</option>
-                <option value="INR">INR</option>
-              </select>
-            </div>
-            <div>
-              <label style={{ fontSize: '0.70rem', fontWeight: 700, color: 'var(--color-navy, #0B192C)', display: 'block', marginBottom: '4px' }}>
-                To Currency
-              </label>
-              <select
-                value={fxTo}
-                onChange={(e) => setFxTo(e.target.value)}
-                style={{ width: '100%', padding: '6px', borderRadius: '6px', border: '1px solid var(--color-border)', fontSize: '0.78rem', fontWeight: 700 }}
-              >
-                <option value="INR">INR</option>
-                <option value="USD">USD</option>
-                <option value="GBP">GBP</option>
-                <option value="EUR">EUR</option>
-              </select>
-            </div>
-          </div>
-
-          <div style={{ marginBottom: '10px' }}>
-            <label style={{ fontSize: '0.70rem', fontWeight: 700, color: 'var(--color-navy, #0B192C)', display: 'block', marginBottom: '4px' }}>
-              Amount
-            </label>
-            <input
-              type="text"
-              value={fxAmount}
-              onChange={(e) => setFxAmount(e.target.value)}
-              placeholder="Enter amount"
-              style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid var(--color-border)', fontSize: '0.80rem', fontWeight: 700, boxSizing: 'border-box' }}
-            />
-          </div>
-
-          <div style={{ fontSize: '0.72rem', color: 'var(--color-ink-muted, #64748B)', marginBottom: '12px' }}>
-            1 USD = 83.42 INR <span style={{ fontStyle: 'italic' }}>(Indicative rate)</span>
-          </div>
-
-          {fxSuccessMsg && (
-            <div style={{ fontSize: '0.72rem', color: 'var(--color-rise, #059669)', fontWeight: 700, marginBottom: '8px' }}>
-              {fxSuccessMsg}
-            </div>
-          )}
-
-          <Button
-            type="button"
-            variant="primary"
-            size="sm"
-            onClick={() => { setFxSuccessMsg(`Converted $${fxAmount} at 83.42 rate.`); setTimeout(() => setFxSuccessMsg(''), 3000); }}
-            style={{
-              width: '100%',
-              borderRadius: '8px',
-              padding: '8px',
-              fontWeight: 800,
-              fontSize: '0.82rem',
-              background: 'var(--color-orange-gradient, linear-gradient(135deg, #FF7700 0%, #EA580C 100%))',
-              color: '#FFFFFF'
-            }}
-          >
-            Convert
-          </Button>
-        </Card>
-
-        {/* 4.3 IPO Application Card */}
+        {/* 4.2 IPO Application Card */}
         <Card
           style={{
             padding: '18px 20px',
@@ -1536,7 +1487,7 @@ export default function TeamOverviewSection({
           </Button>
         </Card>
 
-        {/* 4.4 Market News Panel */}
+        {/* 4.3 Market News Panel */}
         <Card
           style={{
             padding: '18px 20px',
@@ -1617,79 +1568,6 @@ export default function TeamOverviewSection({
                 </div>
               ));
             })()}
-          </div>
-        </Card>
-
-        {/* 4.5 Mobile Responsive Preview Card */}
-        <Card
-          style={{
-            padding: '16px',
-            background: 'var(--glass-bg, rgba(255, 255, 255, 0.85))',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            border: '1px solid var(--glass-border, rgba(11, 25, 44, 0.08))',
-            borderRadius: 'var(--radius-lg, 16px)',
-            boxShadow: '0 4px 20px -2px rgba(11, 25, 44, 0.05)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center'
-          }}
-        >
-          <span style={{ fontSize: '0.70rem', fontWeight: 800, color: 'var(--color-ink-muted, #64748B)', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.04em' }}>
-            Mobile Viewport Preview
-          </span>
-
-          {/* Mini Phone Frame */}
-          <div
-            style={{
-              width: '180px',
-              borderRadius: '20px',
-              backgroundColor: '#FFFFFF',
-              border: '4px solid var(--color-navy, #0B192C)',
-              boxShadow: '0 8px 24px rgba(11, 25, 44, 0.12)',
-              overflow: 'hidden',
-              display: 'flex',
-              flexDirection: 'column'
-            }}
-          >
-            {/* Phone Top Bar */}
-            <div style={{ backgroundColor: 'var(--color-navy, #0B192C)', padding: '4px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ color: '#FFFFFF', fontSize: '0.60rem', fontWeight: 900 }}>SAAMX'26</span>
-              <span style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: 'var(--color-rise, #059669)' }} />
-            </div>
-
-            {/* Phone Body */}
-            <div style={{ padding: '8px', backgroundColor: '#F4F7FB', flex: 1 }}>
-              <div style={{ fontSize: '0.62rem', fontWeight: 800, color: 'var(--color-navy, #0B192C)', marginBottom: '2px' }}>
-                Good Morning,
-              </div>
-              <div style={{ fontSize: '0.58rem', color: 'var(--color-ink-muted, #64748B)', marginBottom: '6px' }}>
-                Team Phoenix.
-              </div>
-
-              {/* Mini Card */}
-              <div style={{ backgroundColor: '#FFFFFF', borderRadius: '8px', padding: '6px', border: '1px solid rgba(11, 25, 44, 0.06)', marginBottom: '6px' }}>
-                <span style={{ fontSize: '0.52rem', color: 'var(--color-ink-muted, #64748B)' }}>Portfolio Value</span>
-                <div style={{ fontSize: '0.72rem', fontWeight: 900, color: 'var(--color-navy, #0B192C)' }}>
-                  ₹ 12,48,530
-                </div>
-                <div style={{ fontSize: '0.55rem', color: 'var(--color-rise, #059669)', fontWeight: 800 }}>
-                  ↑ 2.4%
-                </div>
-                {/* Mini Sparkline */}
-                <svg viewBox="0 0 100 24" style={{ width: '100%', height: '14px', marginTop: '2px' }}>
-                  <path d="M 0 18 Q 25 14, 50 16 T 100 4" fill="none" stroke="#059669" strokeWidth="2" />
-                </svg>
-              </div>
-            </div>
-
-            {/* Mini Bottom Nav Bar */}
-            <div style={{ display: 'flex', justifyContent: 'space-around', padding: '6px 4px', backgroundColor: '#FFFFFF', borderTop: '1px solid var(--color-border)', fontSize: '0.55rem', fontWeight: 700 }}>
-              <span style={{ color: 'var(--color-orange, #FF6800)' }}>Home</span>
-              <span style={{ color: 'var(--color-ink-muted, #64748B)' }}>Trade</span>
-              <span style={{ color: 'var(--color-ink-muted, #64748B)' }}>Portfolio</span>
-              <span style={{ color: 'var(--color-ink-muted, #64748B)' }}>More</span>
-            </div>
           </div>
         </Card>
 

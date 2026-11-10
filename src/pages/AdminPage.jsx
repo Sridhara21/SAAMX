@@ -113,7 +113,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
   const isSuperAdmin = currentUserRole === 'super_admin' || sessionStorage.getItem('saamx_is_master') === 'true' || currentUsername === 'sridhara';
 
   // Command Center Navigation Tabs
-  const [activeTab, setActiveTab] = useState('timeline'); 
+  const [activeTab, setActiveTab] = useState('event-control'); 
   // 'timeline', 'vodafone', 'ipo', 'bullbear', 'broker', 'newsroom', 'polls', 'fx', 'regulatory', 'securities', 'teams', 'ledger', 'audit'
 
   // Search & Filter States
@@ -1753,23 +1753,13 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
       <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px', borderBottom: '1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.08))' }}>
         {[
           { id: 'event-control', label: 'Event Control Centre', icon: IconSettings },
+          { id: 'results-lifecycle', label: 'Results & Publication', icon: IconTrophy },
+          { id: 'teams', label: 'Teams & Portfolios', icon: IconUsers },
           { id: 'registrations', label: 'Registrations & Houses', icon: IconBuilding },
           { id: 'judging', label: 'Judging Console', icon: IconScale },
           { id: 'penalties', label: 'Penalties & Appeals', icon: IconShieldAlert },
-          { id: 'results-lifecycle', label: 'Results & Publication', icon: IconTrophy },
           { id: 'analytics', label: 'Event Analytics', icon: IconBarChart },
-          { id: 'timeline', label: 'Master Timeline (315 Evts)', icon: IconClock },
-          { id: 'vodafone', label: 'Vodafone Idea Crisis', icon: IconAlertTriangle },
-          { id: 'ipo', label: 'IPO Command Center', icon: IconTrendingUp },
-          { id: 'bullbear', label: 'Bull & Bear Arena', icon: IconActivity },
-          { id: 'broker', label: 'Broker Intelligence', icon: IconBriefcase },
-          { id: 'newsroom', label: 'Breaking News Wire', icon: IconNewspaper },
-          { id: 'polls', label: 'Polling Engine', icon: IconBarChart },
-          { id: 'fx', label: 'Forex Command', icon: IconCurrencyExchange },
-          { id: 'regulatory', label: 'SEBI Surveillance', icon: IconShieldCheck },
-          { id: 'securities', label: 'Securities Universe', icon: IconTrendingUp },
-          { id: 'teams', label: 'Teams & Portfolios', icon: IconUsers },
-          { id: 'ledger', label: 'Trade Ledger', icon: IconFolderOpen },
+          { id: 'timeline', label: 'Master Timeline', icon: IconClock },
           { id: 'audit', label: 'Audit & Reset', icon: IconLock }
         ].map(tab => {
           const isActive = activeTab === tab.id;

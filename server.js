@@ -882,7 +882,7 @@ const createInitialState = () => ({
   orders: [],
   settlements: [],
   settings: {
-    settlementMode: 'INSTANT'
+    settlementMode: 'TWO_PHASE_BANK'
   },
   personnel: getSeedPersonnel(),
   newsEvents: [],
@@ -8560,7 +8560,7 @@ app.post('/api/order/action', async (req, res) => {
     if (!team) return res.status(404).json({ error: `Team ${order.teamCode} not found.` });
     if (!security) return res.status(404).json({ error: `Security ${order.ticker} not found.` });
 
-    const isTwoPhaseBank = (actionType === 'ACCEPT') || (state.settings?.settlementMode === 'TWO_PHASE_BANK');
+    const isTwoPhaseBank = true; // Two-phase Exchange Approval -> Bank Settlement is mandatory
     const executionPrice = security.currentPrice;
     const secCurrency = security.currency || (security.exchange === 'NASDAQ' || security.exchange === 'NYSE' ? 'USD' : security.exchange === 'LSE' ? 'GBP' : 'INR');
     const isZeroDec = (secCurrency === 'JPY' || secCurrency === 'KRW');
