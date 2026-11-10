@@ -549,7 +549,7 @@ export default function BrokerAdvisoryTerminal({ state, onOpenProfile, initialVi
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div>
                     <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--color-brass, #845508)' }}>
-                      HOUSE: {ref.teamCode}
+                      HOUSE: {ref.teamCode} {ref.advisorName && <span>&bull; Targeted to: <strong>{ref.advisorName}</strong></span>}
                     </span>
                     <h4 style={{ margin: '2px 0 0 0', fontSize: '1.15rem', color: 'var(--color-ink, #1E232B)' }}>
                       {ref.ticker}

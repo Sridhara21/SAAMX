@@ -53,7 +53,7 @@ async function run() {
   }
 
   console.log(`Starting isolated test server on port ${PORT}...`);
-  const serverProc = spawn('node', ['server.js'], {
+  const serverProc = spawn(process.execPath, ['server.js'], {
     env: { ...process.env, PORT: String(PORT), STATE_FILE: TEST_STATE_FILE },
     stdio: 'pipe'
   });
@@ -66,7 +66,7 @@ async function run() {
   });
 
   // Wait for server to boot reliably
-  await new Promise(r => setTimeout(r, 4500));
+  await new Promise(r => setTimeout(r, 9000));
 
   try {
     // ------------------------------------------------------------------

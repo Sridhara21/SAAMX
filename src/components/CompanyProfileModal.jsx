@@ -13,11 +13,33 @@ export default function CompanyProfileModal({ securityId, securities, newsEvents
   const [activeModalTab, setActiveModalTab] = useState('chart'); // 'chart', 'fundamentals', 'news', 'calculator'
 
   // Advisor Referral State
+  const [selectedAdvisor, setSelectedAdvisor] = useState('Prerna');
   const [referStatus, setReferStatus] = useState(null);
   const [referLoading, setReferLoading] = useState(false);
+  const [advisorResponses, setAdvisorResponses] = useState([]);
+
+  // Fetch advisor responses for this security & team
+  const teamCode = sessionStorage.getItem('fms_username') || sessionStorage.getItem('saamx_team_code') || 'T01';
+
+  const loadAdvisorResponses = async () => {
+    try {
+      const res = await apiFetch(`/api/advisor/referrals?teamCode=${encodeURIComponent(teamCode)}`);
+      if (res.ok) {
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : (data.referrals || []);
+        const filtered = list.filter(r => (r.ticker === security.ticker || r.ticker === security.id));
+        setAdvisorResponses(filtered);
+      }
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    loadAdvisorResponses();
+    const interval = setInterval(loadAdvisorResponses, 5000);
+    return () => clearInterval(interval);
+  }, [security.ticker, teamCode]);
 
   const handleReferToAdvisor = async () => {
-    const teamCode = sessionStorage.getItem('fms_username') || sessionStorage.getItem('saamx_team_code') || 'T01';
     setReferLoading(true);
     setReferStatus(null);
     try {
@@ -25,16 +47,18 @@ export default function CompanyProfileModal({ securityId, securities, newsEvents
         method: 'POST',
         body: JSON.stringify({
           ticker: security.ticker,
-          teamCode
+          teamCode,
+          advisorName: selectedAdvisor
         })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Referral failed');
-      setReferStatus('✓ Referral submitted to Floor Advisor for BUY/HOLD/SELL review');
-      setTimeout(() => setReferStatus(null), 4000);
+      setReferStatus(`✓ Request sent to Floor Advisor ${selectedAdvisor} for BUY/HOLD/SELL review`);
+      loadAdvisorResponses();
+      setTimeout(() => setReferStatus(null), 5000);
     } catch (e) {
       setReferStatus(`⚠️ ${e.message}`);
-      setTimeout(() => setReferStatus(null), 4000);
+      setTimeout(() => setReferStatus(null), 5000);
     } finally {
       setReferLoading(false);
     }
@@ -342,7 +366,29 @@ export default function CompanyProfileModal({ securityId, securities, newsEvents
             <p style={{ color: 'var(--color-brass)', fontSize: '0.84rem', margin: '3px 0 0 0', fontWeight: 700 }}>
               {profile.tagline || `${security.sector} Constituent Asset`}
             </p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <label style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--color-ink-muted, #94A3B8)' }}>Choose Advisor:</label>
+                <select
+                  value={selectedAdvisor}
+                  onChange={(e) => setSelectedAdvisor(e.target.value)}
+                  style={{
+                    background: 'var(--color-surface, #1E293B)',
+                    border: '1px solid var(--color-border)',
+                    color: 'var(--color-ink, #FFFFFF)',
+                    borderRadius: '6px',
+                    padding: '4px 8px',
+                    fontSize: '0.75rem',
+                    fontWeight: 700
+                  }}
+                >
+                  <option value="Ayan">Ayan (Quant & Risk)</option>
+                  <option value="Prerna">Prerna (Growth & Momentum)</option>
+                  <option value="Chetan">Chetan (Value & Cyclicals)</option>
+                  <option value="Arman">Arman (Macro & Global FX)</option>
+                </select>
+              </div>
+
               <button
                 onClick={handleReferToAdvisor}
                 disabled={referLoading}
@@ -361,7 +407,7 @@ export default function CompanyProfileModal({ securityId, securities, newsEvents
                 }}
               >
                 <span>📢</span>
-                <span>Refer to Floor Advisor</span>
+                <span>Ask Floor Advisor</span>
               </button>
               {referStatus && (
                 <span style={{ fontSize: '0.72rem', color: referStatus.startsWith('✓') ? '#059669' : '#DC2626', fontWeight: 600 }}>
@@ -826,38 +872,124 @@ export default function CompanyProfileModal({ securityId, securities, newsEvents
           </div>
         )}
 
-        {/* TAB 3: Wire Bulletins */}
+        {/* TAB 3: Wire Bulletins & Advisor Consultations */}
         {activeModalTab === 'news' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {companyNews.length === 0 ? (
-              <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.88rem' }}>
-                No active regulatory or corporate wire dispatches for this security yet.
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {/* Advisor Response Card on Decision Page */}
+            <div style={{
+              background: '#0B132B',
+              border: '1px solid #1E3A8A',
+              borderRadius: '8px',
+              padding: '14px 16px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#60A5FA', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Floor Advisor Consultations for {security.ticker}
+                </span>
+                <span className="badge" style={{ backgroundColor: 'rgba(59, 130, 246, 0.2)', color: '#93C5FD', fontSize: '0.7rem' }}>
+                  {advisorResponses.length} Logged
+                </span>
               </div>
-            ) : (
-              companyNews.map((n, i) => (
-                <div key={i} style={{
-                  padding: '12px 16px',
-                  borderRadius: '8px',
-                  borderLeft: `4px solid ${n.sentiment === 'Positive' ? 'var(--green-emerald)' : 'var(--red-crimson)'}`,
-                  background: 'var(--bg-warm)',
-                  border: '1px solid var(--border-soft)'
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <strong style={{ fontSize: '0.88rem', color: 'var(--navy-900)' }}>{n.headline}</strong>
-                    <span style={{
-                      fontSize: '0.72rem',
-                      fontWeight: '700',
-                      color: n.sentiment === 'Positive' ? 'var(--green-emerald)' : 'var(--red-crimson)'
-                    }}>
-                      {n.sentiment === 'Positive' ? '▲ POSITIVE' : '▼ NEGATIVE'} ({n.impactPercent}%)
-                    </span>
-                  </div>
-                  <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
-                    {n.description}
-                  </p>
+
+              {advisorResponses.length === 0 ? (
+                <div style={{ fontSize: '0.8rem', color: '#94A3B8', fontStyle: 'italic', padding: '6px 0' }}>
+                  No advisor consultation submitted yet for {security.ticker}. Choose an advisor (Ayan, Prerna, Chetan, or Arman) and click "Ask Floor Advisor" to request BUY / HOLD / SELL guidance.
                 </div>
-              ))
-            )}
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {advisorResponses.map((ar, idx) => (
+                    <div key={idx} style={{
+                      background: 'rgba(15, 23, 42, 0.8)',
+                      border: '1px solid #334155',
+                      borderRadius: '6px',
+                      padding: '10px 12px'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                        <div>
+                          <span style={{ fontSize: '0.78rem', color: '#CBD5E1', fontWeight: 700 }}>Security: </span>
+                          <strong style={{ fontSize: '0.85rem', color: '#38BDF8' }}>{security.name || security.ticker}</strong>
+                          <span style={{ margin: '0 8px', color: '#64748B' }}>&bull;</span>
+                          <span style={{ fontSize: '0.78rem', color: '#CBD5E1', fontWeight: 700 }}>Floor Advisor: </span>
+                          <strong style={{ fontSize: '0.85rem', color: '#FBBF24' }}>{ar.advisorName || 'Floor Advisor'}</strong>
+                        </div>
+                        <div>
+                          {ar.status === 'COMPLETED' ? (
+                            <span style={{
+                              padding: '2px 8px',
+                              borderRadius: '4px',
+                              fontSize: '0.72rem',
+                              fontWeight: 900,
+                              background: ar.signal === 'BUY' ? 'rgba(16, 185, 129, 0.2)' : ar.signal === 'SELL' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(234, 179, 8, 0.2)',
+                              color: ar.signal === 'BUY' ? '#34D399' : ar.signal === 'SELL' ? '#F87171' : '#FBBF24'
+                            }}>
+                              {ar.signal}
+                            </span>
+                          ) : (
+                            <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 700, background: 'rgba(148, 163, 184, 0.2)', color: '#94A3B8' }}>
+                              ⏳ PENDING REVIEW
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <blockquote style={{
+                        margin: '6px 0 0 0',
+                        padding: '6px 10px',
+                        borderLeft: `3px solid ${ar.signal === 'BUY' ? '#10B981' : ar.signal === 'SELL' ? '#EF4444' : '#F59E0B'}`,
+                        background: 'rgba(30, 41, 59, 0.5)',
+                        color: '#F1F5F9',
+                        fontSize: '0.82rem',
+                        lineHeight: 1.45,
+                        fontStyle: 'italic'
+                      }}>
+                        {ar.commentary || ar.reasoning || (ar.signal ? `Advisor ${ar.advisorName || 'Floor Advisor'} issues official ${ar.signal} recommendation for ${security.ticker}.` : 'Review in progress by accredited floor analyst. Advice will appear here upon dispatch.')}
+                      </blockquote>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '0.68rem', color: '#64748B' }}>
+                        <span>Ref #{ar.id?.slice(-8)}</span>
+                        <span>{ar.answeredAt ? new Date(ar.answeredAt).toLocaleTimeString() : `Submitted ${new Date(ar.submittedAt || Date.now()).toLocaleTimeString()}`}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Regulatory and Market News */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--color-ink-muted, #94A3B8)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Wire News & Regulatory Dispatches
+              </div>
+              {companyNews.length === 0 ? (
+                <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.84rem' }}>
+                  No active regulatory or corporate wire dispatches for this security yet.
+                </div>
+              ) : (
+                companyNews.map((n, i) => (
+                  <div key={i} style={{
+                    padding: '12px 16px',
+                    borderRadius: '8px',
+                    borderLeft: `4px solid ${n.sentiment === 'Positive' ? 'var(--green-emerald)' : 'var(--red-crimson)'}`,
+                    background: 'var(--bg-warm)',
+                    border: '1px solid var(--border-soft)'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                      <strong style={{ fontSize: '0.88rem', color: 'var(--navy-900)' }}>{n.headline}</strong>
+                      <span style={{
+                        fontSize: '0.72rem',
+                        fontWeight: '700',
+                        color: n.sentiment === 'Positive' ? 'var(--green-emerald)' : 'var(--red-crimson)'
+                      }}>
+                        {n.sentiment === 'Positive' ? '▲ POSITIVE' : '▼ NEGATIVE'} ({n.impactPercent}%)
+                      </span>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+                      {n.description}
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         )}
 

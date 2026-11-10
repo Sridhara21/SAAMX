@@ -3,6 +3,10 @@ import { apiFetch } from '../lib/api';
 import { CURRENCY_DIRECTORY, CURRENCY_SYMBOLS, DEFAULT_FX_RATES, ACTIVE_CURRENCIES, ACTIVE_FOREIGN_CURRENCIES, formatCurrency, roundCurrency } from '../lib/formatters';
 
 export default function CurrencyExchangePage({ state, connected = true }) {
+  const userRole = (sessionStorage.getItem('saamx_role') || sessionStorage.getItem('fms_role') || '').toLowerCase();
+  const isStaffOperator = userRole === 'admin' || userRole === 'super_admin' || userRole === 'sebi' || userRole === 'operator_x' || userRole === 'exchange' || userRole === 'desk';
+  const isTeamStudent = userRole === 'team';
+
   const [selectedTeam, setSelectedTeam] = useState('T01');
   const [fromCurrency, setFromCurrency] = useState('INR');
   const [toCurrency, setToCurrency] = useState('USD');
@@ -475,52 +479,56 @@ export default function CurrencyExchangePage({ state, connected = true }) {
               </select>
             </div>
 
-            <button
-              onClick={() => {
-                setModPair('USDINR');
-                setNewMidRate(String(fxRates.USDINR?.midRate || 88.20));
-                setShowRateModal(true);
-              }}
-              style={{
-                background: 'var(--navy-900)',
-                color: '#fff',
-                border: 'none',
-                padding: '8px 14px',
-                borderRadius: '6px',
-                fontSize: '12px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
-            >
-              ⚙️ Modify FX Rates
-            </button>
+            {isStaffOperator && (
+              <>
+                <button
+                  onClick={() => {
+                    setModPair('USDINR');
+                    setNewMidRate(String(fxRates.USDINR?.midRate || 88.20));
+                    setShowRateModal(true);
+                  }}
+                  style={{
+                    background: 'var(--navy-900)',
+                    color: '#fff',
+                    border: 'none',
+                    padding: '8px 14px',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  ⚙️ Modify FX Rates
+                </button>
 
-            <button
-              onClick={() => {
-                setReplenishCurrency('USD');
-                setReplenishAmount('1000000');
-                setReplenishReason('Central bank liquidity support');
-                setShowReplenishModal(true);
-              }}
-              style={{
-                background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-                color: '#fff',
-                border: 'none',
-                padding: '8px 14px',
-                borderRadius: '6px',
-                fontSize: '12px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
-            >
-              🏦 Authorized Replenish
-            </button>
+                <button
+                  onClick={() => {
+                    setReplenishCurrency('USD');
+                    setReplenishAmount('1000000');
+                    setReplenishReason('Central bank liquidity support');
+                    setShowReplenishModal(true);
+                  }}
+                  style={{
+                    background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                    color: '#fff',
+                    border: 'none',
+                    padding: '8px 14px',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  🏦 Authorized Replenish
+                </button>
+              </>
+            )}
 
             <div style={{
               background: connected ? 'rgba(6, 95, 62, 0.08)' : 'rgba(147, 25, 19, 0.08)',
@@ -727,27 +735,29 @@ export default function CurrencyExchangePage({ state, connected = true }) {
                     <span style={{ color: 'var(--text-muted)' }}>
                       Desk Inv: <strong>{c.symbol}{currentInv.toLocaleString('en-US', { maximumFractionDigits: isZeroDec ? 0 : 2 })}</strong>
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setReplenishCurrency(c.code);
-                        setReplenishAmount(isZeroDec ? '100000000' : '1000000');
-                        setReplenishReason('Central bank liquidity support');
-                        setShowReplenishModal(true);
-                      }}
-                      style={{
-                        background: 'transparent',
-                        border: '1px solid var(--border-soft)',
-                        borderRadius: '4px',
-                        padding: '2px 6px',
-                        fontSize: '10px',
-                        fontWeight: '700',
-                        color: 'var(--navy-900)',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      + Replenish
-                    </button>
+                    {isStaffOperator && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setReplenishCurrency(c.code);
+                          setReplenishAmount(isZeroDec ? '100000000' : '1000000');
+                          setReplenishReason('Central bank liquidity support');
+                          setShowReplenishModal(true);
+                        }}
+                        style={{
+                          background: 'transparent',
+                          border: '1px solid var(--border-soft)',
+                          borderRadius: '4px',
+                          padding: '2px 6px',
+                          fontSize: '10px',
+                          fontWeight: '700',
+                          color: 'var(--navy-900)',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        + Replenish
+                      </button>
+                    )}
                   </div>
                 </div>
               );
@@ -1649,7 +1659,7 @@ export default function CurrencyExchangePage({ state, connected = true }) {
       </div>
 
       {/* Regulatory FX Rate Modification Modal */}
-      {showRateModal && (
+      {showRateModal && isStaffOperator && (
         <div style={{
           position: 'fixed',
           top: 0,
@@ -1812,7 +1822,7 @@ export default function CurrencyExchangePage({ state, connected = true }) {
       )}
 
       {/* Authorized Reserve Replenishment Modal */}
-      {showReplenishModal && (
+      {showReplenishModal && isStaffOperator && (
         <div style={{
           position: 'fixed',
           top: 0,

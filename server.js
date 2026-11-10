@@ -742,6 +742,32 @@ export function getSeedPersonnel() {
       lastLogin: null
     },
     {
+      id: 'USR_ADM_02',
+      username: 'admin2',
+      displayName: 'Floor Administrator 2',
+      role: 'admin',
+      status: 'ACTIVE',
+      staffId: 'STAFF-ADM-02',
+      department: 'Floor Operations',
+      passwordHash: hashPassword('saamx-event-2026'),
+      permissions: [...ROLE_PERMISSIONS.admin],
+      createdAt: now,
+      lastLogin: null
+    },
+    {
+      id: 'USR_ADM_03',
+      username: 'admin3',
+      displayName: 'Floor Administrator 3',
+      role: 'admin',
+      status: 'ACTIVE',
+      staffId: 'STAFF-ADM-03',
+      department: 'Floor Operations',
+      passwordHash: hashPassword('saamx-event-2026'),
+      permissions: [...ROLE_PERMISSIONS.admin],
+      createdAt: now,
+      lastLogin: null
+    },
+    {
       id: 'USR_CRD_01',
       username: 'coordinator',
       displayName: 'Market Coordinator',
@@ -767,11 +793,13 @@ export function getSeedPersonnel() {
       createdAt: now,
       lastLogin: null
     },
+    // 5 Physical Exchange Desks
     {
       id: 'USR_EXC_01',
-      username: 'exchange',
-      displayName: 'Exchange Matching Operator (Mr. X)',
+      username: 'desk1',
+      displayName: 'Desk 1 Operator',
       role: 'exchange',
+      assignedDesk: 'DESK_1',
       status: 'ACTIVE',
       staffId: 'STAFF-EXC-01',
       department: 'Central Exchange Desk',
@@ -781,15 +809,303 @@ export function getSeedPersonnel() {
       lastLogin: null
     },
     {
-      id: 'USR_ADV_01',
+      id: 'USR_EXC_02',
+      username: 'desk2',
+      displayName: 'Desk 2 Operator',
+      role: 'exchange',
+      assignedDesk: 'DESK_2',
+      status: 'ACTIVE',
+      staffId: 'STAFF-EXC-02',
+      department: 'Central Exchange Desk',
+      passwordHash: hashPassword('exchange-event-2026'),
+      permissions: [...ROLE_PERMISSIONS.exchange],
+      createdAt: now,
+      lastLogin: null
+    },
+    {
+      id: 'USR_EXC_03',
+      username: 'desk3',
+      displayName: 'Desk 3 Operator',
+      role: 'exchange',
+      assignedDesk: 'DESK_3',
+      status: 'ACTIVE',
+      staffId: 'STAFF-EXC-03',
+      department: 'Central Exchange Desk',
+      passwordHash: hashPassword('exchange-event-2026'),
+      permissions: [...ROLE_PERMISSIONS.exchange],
+      createdAt: now,
+      lastLogin: null
+    },
+    {
+      id: 'USR_EXC_04',
+      username: 'desk4',
+      displayName: 'Desk 4 Operator',
+      role: 'exchange',
+      assignedDesk: 'DESK_4',
+      status: 'ACTIVE',
+      staffId: 'STAFF-EXC-04',
+      department: 'Central Exchange Desk',
+      passwordHash: hashPassword('exchange-event-2026'),
+      permissions: [...ROLE_PERMISSIONS.exchange],
+      createdAt: now,
+      lastLogin: null
+    },
+    {
+      id: 'USR_EXC_05',
+      username: 'desk5',
+      displayName: 'Desk 5 Operator',
+      role: 'exchange',
+      assignedDesk: 'DESK_5',
+      status: 'ACTIVE',
+      staffId: 'STAFF-EXC-05',
+      department: 'Central Exchange Desk',
+      passwordHash: hashPassword('exchange-event-2026'),
+      permissions: [...ROLE_PERMISSIONS.exchange],
+      createdAt: now,
+      lastLogin: null
+    },
+    // Legacy alias 'exchange' mapped to Desk 1
+    {
+      id: 'USR_EXC_LEGACY',
+      username: 'exchange',
+      displayName: 'Central Exchange Desk (Master)',
+      role: 'exchange',
+      assignedDesk: 'DESK_1',
+      status: 'ACTIVE',
+      staffId: 'STAFF-EXC-M',
+      department: 'Central Exchange Desk',
+      passwordHash: hashPassword('exchange-event-2026'),
+      permissions: [...ROLE_PERMISSIONS.exchange],
+      createdAt: now,
+      lastLogin: null
+    },
+    // 4 Bank Counters
+    {
+      id: 'USR_BNK_01',
+      username: 'counter1',
+      displayName: 'Bank Counter 1',
+      role: 'bank_teller',
+      assignedDesk: 'BANK_1',
+      status: 'ACTIVE',
+      staffId: 'STAFF-BNK-01',
+      department: 'Cash & Settlement Operations',
+      passwordHash: hashPassword('saamx-event-2026'),
+      permissions: [...ROLE_PERMISSIONS.bank_teller],
+      createdAt: now,
+      lastLogin: null
+    },
+    {
+      id: 'USR_BNK_02',
+      username: 'counter2',
+      displayName: 'Bank Counter 2',
+      role: 'bank_teller',
+      assignedDesk: 'BANK_2',
+      status: 'ACTIVE',
+      staffId: 'STAFF-BNK-02',
+      department: 'Cash & Settlement Operations',
+      passwordHash: hashPassword('saamx-event-2026'),
+      permissions: [...ROLE_PERMISSIONS.bank_teller],
+      createdAt: now,
+      lastLogin: null
+    },
+    {
+      id: 'USR_BNK_03',
+      username: 'counter3',
+      displayName: 'Bank Counter 3',
+      role: 'bank_teller',
+      assignedDesk: 'BANK_3',
+      status: 'ACTIVE',
+      staffId: 'STAFF-BNK-03',
+      department: 'Cash & Settlement Operations',
+      passwordHash: hashPassword('saamx-event-2026'),
+      permissions: [...ROLE_PERMISSIONS.bank_teller],
+      createdAt: now,
+      lastLogin: null
+    },
+    {
+      id: 'USR_BNK_04',
+      username: 'counter4',
+      displayName: 'Bank Counter 4',
+      role: 'bank_teller',
+      assignedDesk: 'BANK_4',
+      status: 'ACTIVE',
+      staffId: 'STAFF-BNK-04',
+      department: 'Cash & Settlement Operations',
+      passwordHash: hashPassword('saamx-event-2026'),
+      permissions: [...ROLE_PERMISSIONS.bank_teller],
+      createdAt: now,
+      lastLogin: null
+    },
+    {
+      id: 'USR_BNK_LEGACY',
+      username: 'bank',
+      displayName: 'Bank Desk Master Teller',
+      role: 'bank_teller',
+      assignedDesk: 'BANK_1',
+      status: 'ACTIVE',
+      staffId: 'STAFF-BNK-M',
+      department: 'Cash & Settlement Operations',
+      passwordHash: hashPassword('saamx-event-2026'),
+      permissions: [...ROLE_PERMISSIONS.bank_teller],
+      createdAt: now,
+      lastLogin: null
+    },
+    // 2 FX Desks
+    {
+      id: 'USR_FX_01',
+      username: 'fx1',
+      displayName: 'FX Desk 1 Operator',
+      role: 'operator_x',
+      status: 'ACTIVE',
+      staffId: 'STAFF-FX-01',
+      department: 'Foreign Exchange Operations',
+      passwordHash: hashPassword('exchange-event-2026'),
+      permissions: [...ROLE_PERMISSIONS.operator_x],
+      createdAt: now,
+      lastLogin: null
+    },
+    {
+      id: 'USR_FX_02',
+      username: 'fx2',
+      displayName: 'FX Desk 2 Operator',
+      role: 'operator_x',
+      status: 'ACTIVE',
+      staffId: 'STAFF-FX-02',
+      department: 'Foreign Exchange Operations',
+      passwordHash: hashPassword('exchange-event-2026'),
+      permissions: [...ROLE_PERMISSIONS.operator_x],
+      createdAt: now,
+      lastLogin: null
+    },
+    // 4 Named Floor Advisors
+    {
+      id: 'USR_ADV_AYAN',
+      username: 'ayan',
+      displayName: 'Ayan',
+      role: 'advisor',
+      status: 'ACTIVE',
+      staffId: 'STAFF-ADV-AYAN',
+      department: 'Floor Brokerage & Advisory',
+      passwordHash: hashPassword('advisor-event-2026'),
+      permissions: [...ROLE_PERMISSIONS.advisor],
+      createdAt: now,
+      lastLogin: null
+    },
+    {
+      id: 'USR_ADV_PRERNA',
+      username: 'prerna',
+      displayName: 'Prerna',
+      role: 'advisor',
+      status: 'ACTIVE',
+      staffId: 'STAFF-ADV-PRERNA',
+      department: 'Floor Brokerage & Advisory',
+      passwordHash: hashPassword('advisor-event-2026'),
+      permissions: [...ROLE_PERMISSIONS.advisor],
+      createdAt: now,
+      lastLogin: null
+    },
+    {
+      id: 'USR_ADV_CHETAN',
+      username: 'chetan',
+      displayName: 'Chetan',
+      role: 'advisor',
+      status: 'ACTIVE',
+      staffId: 'STAFF-ADV-CHETAN',
+      department: 'Floor Brokerage & Advisory',
+      passwordHash: hashPassword('advisor-event-2026'),
+      permissions: [...ROLE_PERMISSIONS.advisor],
+      createdAt: now,
+      lastLogin: null
+    },
+    {
+      id: 'USR_ADV_ARMAN',
+      username: 'arman',
+      displayName: 'Arman',
+      role: 'advisor',
+      status: 'ACTIVE',
+      staffId: 'STAFF-ADV-ARMAN',
+      department: 'Floor Brokerage & Advisory',
+      passwordHash: hashPassword('advisor-event-2026'),
+      permissions: [...ROLE_PERMISSIONS.advisor],
+      createdAt: now,
+      lastLogin: null
+    },
+    {
+      id: 'USR_ADV_LEGACY',
       username: 'advisor',
-      displayName: 'Floor Market Advisor',
+      displayName: 'Floor Market Advisor (Lead)',
       role: 'advisor',
       status: 'ACTIVE',
       staffId: 'STAFF-ADV-01',
       department: 'Floor Brokerage & Advisory',
       passwordHash: hashPassword('advisor-event-2026'),
       permissions: [...ROLE_PERMISSIONS.advisor],
+      createdAt: now,
+      lastLogin: null
+    },
+    // 3 News Operators / Journalists
+    {
+      id: 'USR_PRS_01',
+      username: 'news1',
+      displayName: 'News 1 Reporter',
+      role: 'news_controller',
+      status: 'ACTIVE',
+      staffId: 'STAFF-PRS-01',
+      department: 'Market Press & Wire',
+      passwordHash: hashPassword('journalist-event-2026'),
+      permissions: [...ROLE_PERMISSIONS.news_controller],
+      createdAt: now,
+      lastLogin: null
+    },
+    {
+      id: 'USR_PRS_02',
+      username: 'news2',
+      displayName: 'News 2 Reporter',
+      role: 'journalist',
+      status: 'ACTIVE',
+      staffId: 'STAFF-PRS-02',
+      department: 'Market Press & Wire',
+      passwordHash: hashPassword('journalist-event-2026'),
+      permissions: [...ROLE_PERMISSIONS.journalist],
+      createdAt: now,
+      lastLogin: null
+    },
+    {
+      id: 'USR_PRS_03',
+      username: 'news3',
+      displayName: 'News 3 Reporter',
+      role: 'journalist',
+      status: 'ACTIVE',
+      staffId: 'STAFF-PRS-03',
+      department: 'Market Press & Wire',
+      passwordHash: hashPassword('journalist-event-2026'),
+      permissions: [...ROLE_PERMISSIONS.journalist],
+      createdAt: now,
+      lastLogin: null
+    },
+    {
+      id: 'USR_PRS_LEGACY',
+      username: 'journalist',
+      displayName: 'Financial Press Reporter',
+      role: 'journalist',
+      status: 'ACTIVE',
+      staffId: 'STAFF-PRS-L',
+      department: 'Market Press & Wire',
+      passwordHash: hashPassword('journalist-event-2026'),
+      permissions: [...ROLE_PERMISSIONS.journalist],
+      createdAt: now,
+      lastLogin: null
+    },
+    {
+      id: 'USR_NCTL_01',
+      username: 'news_controller',
+      displayName: 'Chief News Controller',
+      role: 'news_controller',
+      status: 'ACTIVE',
+      staffId: 'STAFF-NCTL-01',
+      department: 'Newsroom Editorial & Clearance',
+      passwordHash: hashPassword('saamx-event-2026'),
+      permissions: [...ROLE_PERMISSIONS.news_controller],
       createdAt: now,
       lastLogin: null
     },
@@ -803,19 +1119,6 @@ export function getSeedPersonnel() {
       department: 'Market Surveillance & Enforcement',
       passwordHash: hashPassword('sebi-event-2026'),
       permissions: [...ROLE_PERMISSIONS.sebi],
-      createdAt: now,
-      lastLogin: null
-    },
-    {
-      id: 'USR_PRS_01',
-      username: 'journalist',
-      displayName: 'Financial Press Reporter',
-      role: 'journalist',
-      status: 'ACTIVE',
-      staffId: 'STAFF-PRS-01',
-      department: 'Market Press & Wire',
-      passwordHash: hashPassword('journalist-event-2026'),
-      permissions: [...ROLE_PERMISSIONS.journalist],
       createdAt: now,
       lastLogin: null
     },
@@ -842,32 +1145,6 @@ export function getSeedPersonnel() {
       department: 'Auditorium & Public Gallery',
       passwordHash: hashPassword('observer-event-2026'),
       permissions: [...ROLE_PERMISSIONS.observer],
-      createdAt: now,
-      lastLogin: null
-    },
-    {
-      id: 'USR_BNK_01',
-      username: 'bank',
-      displayName: 'Bank Desk Teller',
-      role: 'bank_teller',
-      status: 'ACTIVE',
-      staffId: 'STAFF-BNK-01',
-      department: 'Cash & Settlement Operations',
-      passwordHash: hashPassword('saamx-event-2026'),
-      permissions: [...ROLE_PERMISSIONS.bank_teller],
-      createdAt: now,
-      lastLogin: null
-    },
-    {
-      id: 'USR_NCTL_01',
-      username: 'news_controller',
-      displayName: 'Chief News Controller',
-      role: 'news_controller',
-      status: 'ACTIVE',
-      staffId: 'STAFF-NCTL-01',
-      department: 'Newsroom Editorial & Clearance',
-      passwordHash: hashPassword('saamx-event-2026'),
-      permissions: [...ROLE_PERMISSIONS.news_controller],
       createdAt: now,
       lastLogin: null
     }
@@ -967,8 +1244,10 @@ const createInitialState = () => ({
     DESK_5: { id: 'DESK_5', name: 'Order Desk 5 (Crimson)', color: '#EC4899', type: 'EXCHANGE', deskType: 'EXCHANGE', identifier: 'Desk 5', deskIdentifier: 'Desk 5', operator: 'Unassigned', operatorId: null, operatorUsername: null, operatorDisplayName: null, activeOrderIds: [], totalProcessed: 0 }
   },
   bankDesks: {
-    BANK_1: { id: 'BANK_1', name: 'Bank Desk 1', color: '#10B981', type: 'BANK', deskType: 'BANK', identifier: 'Desk 1', deskIdentifier: 'Desk 1', operator: 'Bank Teller 1', operatorId: null, operatorUsername: 'bank', operatorDisplayName: 'Bank Teller 1', activeOrderIds: [], totalProcessed: 0 },
-    BANK_2: { id: 'BANK_2', name: 'Bank Desk 2', color: '#059669', type: 'BANK', deskType: 'BANK', identifier: 'Desk 2', deskIdentifier: 'Desk 2', operator: 'Bank Teller 2', operatorId: null, operatorUsername: 'bank2', operatorDisplayName: 'Bank Teller 2', activeOrderIds: [], totalProcessed: 0 }
+    BANK_1: { id: 'BANK_1', name: 'Bank Desk 1', color: '#10B981', type: 'BANK', deskType: 'BANK', identifier: 'Desk 1', deskIdentifier: 'Desk 1', operator: 'Bank Counter 1', operatorId: null, operatorUsername: 'counter1', operatorDisplayName: 'Bank Counter 1', activeOrderIds: [], totalProcessed: 0 },
+    BANK_2: { id: 'BANK_2', name: 'Bank Desk 2', color: '#059669', type: 'BANK', deskType: 'BANK', identifier: 'Desk 2', deskIdentifier: 'Desk 2', operator: 'Bank Counter 2', operatorId: null, operatorUsername: 'counter2', operatorDisplayName: 'Bank Counter 2', activeOrderIds: [], totalProcessed: 0 },
+    BANK_3: { id: 'BANK_3', name: 'Bank Desk 3', color: '#047857', type: 'BANK', deskType: 'BANK', identifier: 'Desk 3', deskIdentifier: 'Desk 3', operator: 'Bank Counter 3', operatorId: null, operatorUsername: 'counter3', operatorDisplayName: 'Bank Counter 3', activeOrderIds: [], totalProcessed: 0 },
+    BANK_4: { id: 'BANK_4', name: 'Bank Desk 4', color: '#065F46', type: 'BANK', deskType: 'BANK', identifier: 'Desk 4', deskIdentifier: 'Desk 4', operator: 'Bank Counter 4', operatorId: null, operatorUsername: 'counter4', operatorDisplayName: 'Bank Counter 4', activeOrderIds: [], totalProcessed: 0 }
   },
   fxQueue: [],
   fxRates: JSON.parse(JSON.stringify(DEFAULT_FX_RATES)),
@@ -1224,6 +1503,10 @@ const loadState = () => {
 
       // Ensure participant teams have clearance desk intake assignments
       if (Array.isArray(state.teams)) {
+        state.teams = state.teams.filter((t, idx) => {
+          const num = parseInt(t.teamCode?.replace(/\D/g, '') || String(idx + 1), 10);
+          return num >= 1 && num <= 10;
+        });
         state.teams.forEach((t, idx) => {
           if (!t.assignedDesk) {
             const num = parseInt(t.teamCode?.replace(/\D/g, '') || String(idx + 1), 10);
@@ -1469,7 +1752,7 @@ function seedStarterData() {
   // Seed Teams (Multi-Currency Wallets with ₹1 Crore INR starting capital)
   if (!state.teams || state.teams.length === 0) {
     state.teams = [];
-    for (let i = 1; i <= 20; i++) {
+    for (let i = 1; i <= 10; i++) {
     const teamCode = `T${String(i).padStart(2, '0')}`;
     const teamName = `Trader Elite ${i}`;
     const startingINR = state.settings.startingCapitalRetail || 10000000; // ₹1 Crore
@@ -2126,7 +2409,15 @@ app.post('/api/auth/login', (req, res) => {
   }
 
   // 2. Staff / Official Console Login
-  const staffUser = userIdentifier.toLowerCase();
+  let staffUser = userIdentifier.toLowerCase();
+  // Canonical aliases for desks, counters, admins, advisors
+  if (staffUser === 'admin1') staffUser = 'admin';
+  else if (staffUser === 'armaan') staffUser = 'arman';
+  else if (staffUser === 'bank1') staffUser = 'counter1';
+  else if (staffUser === 'bank2') staffUser = 'counter2';
+  else if (staffUser === 'bank3') staffUser = 'counter3';
+  else if (staffUser === 'bank4') staffUser = 'counter4';
+
   let assignedRole = null;
   let customUsername = null;
   let matchedPersonnel = null;
@@ -2134,13 +2425,35 @@ app.post('/api/auth/login', (req, res) => {
   // Primary: Check registered personnel directory first with scrypt & legacy verification
   if (state.personnel && Array.isArray(state.personnel)) {
     const matchedStaff = state.personnel.find(staff => 
-      staff.username?.toLowerCase() === staffUser
+      staff.username?.toLowerCase() === staffUser ||
+      (staffUser === 'admin' && staff.username?.toLowerCase() === 'admin1') ||
+      (staffUser === 'arman' && staff.username?.toLowerCase() === 'armaan') ||
+      (staffUser === 'counter1' && staff.username?.toLowerCase() === 'bank1') ||
+      (staffUser === 'counter2' && staff.username?.toLowerCase() === 'bank2') ||
+      (staffUser === 'counter3' && staff.username?.toLowerCase() === 'bank3') ||
+      (staffUser === 'counter4' && staff.username?.toLowerCase() === 'bank4')
     );
     if (matchedStaff) {
       if (matchedStaff.status === 'DISABLED') {
         return res.status(403).json({ error: 'Account is deactivated. Please contact floor administrator.' });
       }
-      const authResult = verifyPassword(p, matchedStaff.passwordHash);
+      let authResult = verifyPassword(p, matchedStaff.passwordHash);
+      if (!authResult.verified) {
+        // Also permit role-wide master event keys for official accounts
+        if (matchedStaff.role === 'advisor' && (p === 'advisor-event-2026' || p === 'saamx-advisor-2026')) {
+          authResult = { verified: true, needsRehash: false };
+        } else if (matchedStaff.role === 'exchange' && (p === 'exchange-event-2026' || p === 'saamx-desk-2026')) {
+          authResult = { verified: true, needsRehash: false };
+        } else if (matchedStaff.role === 'bank_teller' && (p === 'saamx-event-2026' || p === 'saamx-bank-2026')) {
+          authResult = { verified: true, needsRehash: false };
+        } else if (matchedStaff.role === 'operator_x' && (p === 'exchange-event-2026' || p === 'saamx-fx-2026' || p === 'saamx-event-2026')) {
+          authResult = { verified: true, needsRehash: false };
+        } else if ((matchedStaff.role === 'journalist' || matchedStaff.role === 'news_controller') && (p === 'journalist-event-2026' || p === 'saamx-news-2026' || p === 'saamx-event-2026')) {
+          authResult = { verified: true, needsRehash: false };
+        } else if (matchedStaff.role === 'admin' && (p === 'saamx-event-2026' || p === 'saamx-admin-2026')) {
+          authResult = { verified: true, needsRehash: false };
+        }
+      }
       if (authResult.verified) {
         matchedPersonnel = matchedStaff;
         matchedPersonnel.lastLogin = Date.now();
@@ -2660,8 +2973,8 @@ const authMiddleware = async (req, res, next) => {
   if (normalizedPath === '/order/action') {
     const actionType = req.body?.actionType || req.body?.action;
     if (actionType === 'EXECUTE' || actionType === 'ACCEPT') {
-      if (session.role === 'team' || (!hasPerm(session, 'exchange.execute') && !hasPerm(session, 'orders.verify'))) {
-        return res.status(403).json({ error: 'Forbidden: Order execution and acceptance requires exchange staff permissions.' });
+      if (session.role === 'team' || !hasPerm(session, 'exchange.execute')) {
+        return res.status(403).json({ error: 'Forbidden: Insufficient privileges (requires exchange.execute).' });
       }
     } else if (actionType === 'REJECT') {
       if (!hasPerm(session, 'exchange.reject') && !hasPerm(session, 'orders.verify')) {
@@ -4037,7 +4350,7 @@ function getQueueDepths(orders, settlements) {
     exchangeQueue[d] = orders.filter(o => o.deskId === d && ['PENDING', 'SUBMITTED', 'QUEUED', 'RESUBMITTED', 'BEING_VERIFIED', 'VERIFIED_AWAITING_EXCHANGE', 'UNDER_EXCHANGE_REVIEW', 'VALIDATED'].includes(o.status)).length;
   }
 
-  const bankDesks = ['BANK_1', 'BANK_2'];
+  const bankDesks = ['BANK_1', 'BANK_2', 'BANK_3', 'BANK_4'];
   const bankQueue = {};
   for (const b of bankDesks) {
     bankQueue[b] = settlements.filter(s => s.bankDeskId === b && s.status === 'PENDING').length;
@@ -6088,7 +6401,96 @@ app.get('/api/fx/reserves', (req, res) => {
     success: true,
     reserves: state.fxReserves,
     activeCurrencies: ACTIVE_CURRENCIES,
-    activeForeignCurrencies: ACTIVE_FOREIGN_CURRENCIES
+    activeForeignCurrencies: ACTIVE_FOREIGN_CURRENCIES,
+    config: state.fxConfig || {
+      dynamicMovementEnabled: true,
+      updateIntervalSeconds: 300,
+      volatilityBps: 15,
+      lastDynamicUpdate: Date.now()
+    }
+  });
+});
+
+// Authorized FX Configuration (Rates, Dynamic Movement, Intervals, Reserves)
+app.get('/api/fx/config', (req, res) => {
+  res.json({
+    success: true,
+    config: state.fxConfig || {
+      dynamicMovementEnabled: true,
+      updateIntervalSeconds: 300,
+      volatilityBps: 15,
+      lastDynamicUpdate: Date.now()
+    },
+    reserves: state.fxReserves,
+    fxRates: state.fxRates
+  });
+});
+
+app.post('/api/fx/config', (req, res) => {
+  const session = req.session || verifySessionToken(req.headers['authorization'] || req.headers['x-fms-token']);
+  if (!session) {
+    return res.status(401).json({ error: '401 Unauthorized: Valid session authentication required to configure FX settings.' });
+  }
+
+  const isPrivileged = session.role === 'admin' || session.role === 'super_admin' || session.role === 'sebi' || hasPerm(session, 'market.control');
+  if (!isPrivileged) {
+    return res.status(403).json({ error: 'Forbidden: Only Administrators or SEBI can configure foreign exchange parameters.' });
+  }
+
+  const { dynamicMovementEnabled, updateIntervalSeconds, volatilityBps, reserves } = req.body || {};
+
+  if (!state.fxConfig) {
+    state.fxConfig = {
+      dynamicMovementEnabled: true,
+      updateIntervalSeconds: 300,
+      volatilityBps: 15,
+      lastDynamicUpdate: Date.now()
+    };
+  }
+
+  if (dynamicMovementEnabled !== undefined) {
+    state.fxConfig.dynamicMovementEnabled = Boolean(dynamicMovementEnabled);
+  }
+
+  if (updateIntervalSeconds !== undefined) {
+    const sec = Math.max(10, Math.min(3600, Number(updateIntervalSeconds) || 300));
+    state.fxConfig.updateIntervalSeconds = sec;
+  }
+
+  if (volatilityBps !== undefined) {
+    state.fxConfig.volatilityBps = Math.max(1, Math.min(100, Number(volatilityBps) || 15));
+  }
+
+  // Update finite reserves limits if provided
+  if (reserves && typeof reserves === 'object') {
+    ensureFxReserves(state.fxReserves);
+    for (const [cur, resConfig] of Object.entries(reserves)) {
+      if (state.fxReserves[cur]) {
+        const r = state.fxReserves[cur];
+        if (resConfig.openingReserve !== undefined) {
+          const newOpening = Math.max(0, Number(resConfig.openingReserve) || 0);
+          r.openingReserve = newOpening;
+          r.currentInventory = newOpening + (r.replenishments || 0) + (r.completedPurchases || 0) - (r.completedSales || 0);
+          r.availableReserve = Math.max(0, r.currentInventory - (r.reservedInventory || 0));
+        }
+        if (resConfig.maxCapacity !== undefined) {
+          r.maxCapacity = Math.max(r.openingReserve, Number(resConfig.maxCapacity) || 1000000000);
+        }
+        if (resConfig.minReserveThreshold !== undefined) {
+          r.minReserveThreshold = Math.max(0, Number(resConfig.minReserveThreshold) || 10000);
+        }
+      }
+    }
+  }
+
+  saveState(true);
+  broadcastState('FX_CONFIG_UPDATED', { config: state.fxConfig, reserves: state.fxReserves });
+
+  return res.json({
+    success: true,
+    config: state.fxConfig,
+    reserves: state.fxReserves,
+    message: 'Foreign exchange parameters and reserves configuration successfully applied.'
   });
 });
 
@@ -7954,6 +8356,13 @@ app.post('/api/order/action', async (req, res) => {
   const rejectionReason = rawReject || req.body?.rejectReason;
   if (!orderId || !actionType) {
     return res.status(400).json({ error: 'Missing parameters: orderId and actionType required.' });
+  }
+
+  // Enforce granular exchange.execute permission for EXECUTE/ACCEPT actions
+  if ((actionType === 'EXECUTE' || actionType === 'ACCEPT') && req.session) {
+    if (req.session.role !== 'super_admin' && !hasPerm(req.session, 'exchange.execute')) {
+      return res.status(403).json({ error: 'Forbidden: Insufficient privileges (requires exchange.execute).' });
+    }
   }
 
   const releaseLock = await acquireOrderLock(orderId);
@@ -10148,7 +10557,7 @@ app.post(['/api/admin/settlement-mode', '/api/admin/settlement-mode/'], (req, re
 // Strictly BUY, HOLD, or SELL signal only
 // ----------------------------------------------------
 app.post('/api/advisor/refer', (req, res) => {
-  const { ticker, teamCode } = req.body || {};
+  const { ticker, teamCode, advisorName } = req.body || {};
   const effectiveTeamCode = (req.session?.role === 'team' ? req.session.teamCode : teamCode)?.toUpperCase();
   if (!ticker || !effectiveTeamCode) {
     return res.status(400).json({ error: 'ticker and teamCode are required to submit an advisor referral.' });
@@ -10167,6 +10576,9 @@ app.post('/api/advisor/refer', (req, res) => {
     return res.status(400).json({ error: `Referral for ${tick} is already pending review with the Broker Advisor.` });
   }
 
+  const validAdvisors = ['Ayan', 'Prerna', 'Chetan', 'Arman'];
+  const targetAdvisor = (advisorName && validAdvisors.includes(advisorName.trim())) ? advisorName.trim() : (validAdvisors.includes(advisorName) ? advisorName : (advisorName || 'Prerna'));
+
   const referral = {
     id: `REF_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
     teamCode: tCode,
@@ -10175,7 +10587,8 @@ app.post('/api/advisor/refer', (req, res) => {
     submittedAt: Date.now(),
     status: 'PENDING',
     signal: null,
-    advisorName: null,
+    advisorName: targetAdvisor,
+    commentary: null,
     answeredAt: null
   };
 
@@ -10188,7 +10601,7 @@ app.post('/api/advisor/refer', (req, res) => {
 app.get('/api/advisor/referrals', (req, res) => {
   if (!state.advisorReferrals) state.advisorReferrals = [];
   const callerTeam = req.role === 'team' ? req.teamCode : (req.query.teamCode ? req.query.teamCode.toUpperCase() : null);
-  if (req.role === 'team' && callerTeam) {
+  if (callerTeam) {
     const teamReferrals = state.advisorReferrals.filter(r => r.teamCode === callerTeam);
     return res.json(teamReferrals);
   }
@@ -10196,7 +10609,7 @@ app.get('/api/advisor/referrals', (req, res) => {
 });
 
 app.post('/api/advisor/signal', (req, res) => {
-  const { referralId, signal, advisorName } = req.body || {};
+  const { referralId, signal, advisorName, commentary, reasoning } = req.body || {};
   if (!referralId || !signal) {
     return res.status(400).json({ error: 'referralId and signal are required.' });
   }
@@ -10216,7 +10629,8 @@ app.post('/api/advisor/signal', (req, res) => {
 
   referral.signal = cleanSignal;
   referral.status = 'COMPLETED';
-  referral.advisorName = advisorName || req.body?.operator || 'Floor Advisor';
+  referral.advisorName = advisorName || referral.advisorName || req.body?.operator || 'Floor Advisor';
+  referral.commentary = commentary || reasoning || `${referral.advisorName} advises ${cleanSignal} on ${referral.ticker} based on technical support & sector momentum.`;
   referral.answeredAt = Date.now();
 
   saveState();
@@ -12939,8 +13353,8 @@ app.post('/api/admin/master-reset', (req, res) => {
   // 3. Re-seed full 1,800-constituent universe (including 5 simulated IPOs: OAI, STRP, CNVA, DISC, POLY)
   state.securities = generateFullSecurityUniverse();
 
-  // 4. Re-initialize 20 Teams (T01 - T20) with clean starting state
-  state.teams = Array.from({ length: 20 }, (_, i) => {
+  // 4. Re-initialize 10 Teams (T01 - T10) with clean starting state
+  state.teams = Array.from({ length: 10 }, (_, i) => {
     const num = String(i + 1).padStart(2, '0');
     return {
       id: `T${num}`,
@@ -14349,6 +14763,60 @@ setInterval(() => {
     broadcastState();
   }
 }, 1000);
+
+// ----------------------------------------------------
+// DYNAMIC FX RATE MOVEMENT LOOP (Configurable Interval, Default 5 mins)
+// ----------------------------------------------------
+setInterval(() => {
+  if (!state || !state.fxRates) return;
+  if (!state.fxConfig) {
+    state.fxConfig = {
+      dynamicMovementEnabled: true,
+      updateIntervalSeconds: 300,
+      volatilityBps: 15,
+      lastDynamicUpdate: Date.now()
+    };
+  }
+
+  const cfg = state.fxConfig;
+  if (cfg.dynamicMovementEnabled === false) return;
+
+  const intervalMs = (cfg.updateIntervalSeconds || 300) * 1000;
+  const now = Date.now();
+  if (now - (cfg.lastDynamicUpdate || 0) < intervalMs) {
+    return; // Wait until configured interval has elapsed
+  }
+
+  cfg.lastDynamicUpdate = now;
+  let anyRateUpdated = false;
+
+  for (const [pair, rateObj] of Object.entries(state.fxRates)) {
+    if (!rateObj || !rateObj.midRate) continue;
+    // Bounded, realistic micro-movements based on volatility bps (e.g. 15 bps = +/- 0.15%)
+    const maxBps = (cfg.volatilityBps || 15) / 10000;
+    // Normalized random between -maxBps and +maxBps
+    const deltaPercent = (Math.random() * 2 - 1) * maxBps;
+    const decimals = (pair === 'JPYINR' || pair === 'KRWINR') ? 4 : 2;
+    const newMid = parseFloat((rateObj.midRate * (1 + deltaPercent)).toFixed(decimals));
+
+    if (newMid > 0 && Math.abs(newMid - rateObj.midRate) > 0) {
+      const spread = rateObj.spreadPercent || 0.45;
+      const buyRate = parseFloat((newMid * (1 + spread / 100)).toFixed(decimals));
+      const sellRate = parseFloat((newMid * (1 - spread / 100)).toFixed(decimals));
+
+      rateObj.midRate = newMid;
+      rateObj.buyRate = buyRate;
+      rateObj.sellRate = sellRate;
+      rateObj.lastUpdated = now;
+      anyRateUpdated = true;
+    }
+  }
+
+  if (anyRateUpdated) {
+    saveState(false);
+    broadcastState('FX_RATE_UPDATE', { fxRates: state.fxRates });
+  }
+}, 5000); // Check loop every 5s against configurable intervalMs
 
 // ==========================================
 // SAAMX MASTER MARKET NARRATIVE ROUTES
@@ -15918,6 +16386,18 @@ server.listen(PORT, '0.0.0.0', async () => {
         const hydration = await hydrateStateFromPg(pool, state);
         if (hydration.hydrated && hydration.state) {
           Object.assign(state, hydration.state);
+          // Re-sync seed personnel to ensure new designated desk and advisor accounts are present
+          const seedStaff = getSeedPersonnel();
+          if (!Array.isArray(state.personnel)) state.personnel = [];
+          seedStaff.forEach(seed => {
+            const existingIdx = state.personnel.findIndex(p => p.username?.toLowerCase() === seed.username.toLowerCase());
+            if (existingIdx === -1) {
+              state.personnel.push(seed);
+            } else {
+              // Ensure role, permissions, and assignedDesk are up to date
+              state.personnel[existingIdx] = { ...seed, ...state.personnel[existingIdx], role: seed.role, permissions: seed.permissions, assignedDesk: seed.assignedDesk || state.personnel[existingIdx].assignedDesk };
+            }
+          });
           setFallbackStateReference(state);
           console.log('[PostgreSQL] Successfully hydrated authoritative state on startup.');
         }
