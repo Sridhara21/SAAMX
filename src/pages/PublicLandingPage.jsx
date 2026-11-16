@@ -363,10 +363,10 @@ export default function PublicLandingPage() {
                 color: 'var(--color-navy, #0B192C)',
                 fontFamily: "var(--font-display, 'Plus Jakarta Sans', sans-serif)",
                 letterSpacing: '-0.03em',
-                marginBottom: '18px'
+                marginBottom: '14px'
               }}
             >
-              The Simulated Market.<br />
+              SAAMX:<br />
               <span
                 style={{
                   background: 'linear-gradient(135deg, #FF6800 0%, #EA580C 100%)',
@@ -375,11 +375,13 @@ export default function PublicLandingPage() {
                   display: 'inline-block'
                 }}
               >
-                Real Decisions.
+                Student Academic Asset Market eXchange
               </span>
             </h1>
 
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '0.92rem', fontWeight: 700, color: '#0B192C', marginBottom: '16px', padding: '6px 14px', borderRadius: '8px', backgroundColor: 'rgba(255, 104, 0, 0.08)', border: '1px solid rgba(255, 104, 0, 0.2)' }}><span style={{ color: '#FF6800' }}>&ldquo;Experience the market, don&apos;t just plan it.&rdquo;</span></div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '1rem', fontWeight: 800, color: '#0B192C', marginBottom: '16px', padding: '8px 16px', borderRadius: '8px', backgroundColor: 'rgba(255, 104, 0, 0.08)', border: '1px solid rgba(255, 104, 0, 0.25)' }}>
+              <span style={{ color: '#FF6800' }}>&ldquo;Experience the market, don&apos;t just plan it.&rdquo;</span>
+            </div>
 
             <p
               style={{
@@ -387,11 +389,11 @@ export default function PublicLandingPage() {
                 lineHeight: 1.65,
                 color: 'var(--color-ink-secondary, #475569)',
                 maxWidth: '620px',
-                marginBottom: '32px',
+                marginBottom: '28px',
                 fontWeight: 400
               }}
             >
-              SAAMX is an inter-school financial market where student teams trade, invest and manage virtual capital across multiple asset classes — from stocks and bonds to currencies, IPOs and more.
+              SAAMX is an authentic financial market simulation where student teams analyze securities, consult floor advisors, manage multi-currency portfolios, and submit actionable physical order slips across dedicated Exchange, Bank, and IPO Desks.
             </p>
 
             {/* CTAs matching reference */}

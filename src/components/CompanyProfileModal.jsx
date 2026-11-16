@@ -12,8 +12,17 @@ export default function CompanyProfileModal({ securityId, securities, newsEvents
   // Active Tab state inside Modal Drawer
   const [activeModalTab, setActiveModalTab] = useState('chart'); // 'chart', 'fundamentals', 'news', 'calculator'
 
+  // Advisor Specialization Directory
+  const ADVISOR_SPECIALIZATIONS = {
+    Armaan: 'Domestic Equities & Sector Strategist',
+    Arman: 'Domestic Equities & Sector Strategist',
+    Prerna: 'Global Markets & Cross-Border Advisor',
+    Ayan: 'FX & Fixed Income Strategist',
+    Chetan: 'Risk & Portfolio Allocation Advisor'
+  };
+
   // Advisor Referral State
-  const [selectedAdvisor, setSelectedAdvisor] = useState('Prerna');
+  const [selectedAdvisor, setSelectedAdvisor] = useState('Armaan');
   const [referStatus, setReferStatus] = useState(null);
   const [referLoading, setReferLoading] = useState(false);
   const [advisorResponses, setAdvisorResponses] = useState([]);
@@ -53,7 +62,7 @@ export default function CompanyProfileModal({ securityId, securities, newsEvents
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Referral failed');
-      setReferStatus(`✓ Request sent to Floor Advisor ${selectedAdvisor} for BUY/HOLD/SELL review`);
+      setReferStatus(`✓ Request sent to Floor Advisor ${selectedAdvisor} for review`);
       loadAdvisorResponses();
       setTimeout(() => setReferStatus(null), 5000);
     } catch (e) {
@@ -64,9 +73,15 @@ export default function CompanyProfileModal({ securityId, securities, newsEvents
     }
   };
 
-  // Trade Calculator state
+  // Trade Calculator & Order Submission State
   const [calcAction, setCalcAction] = useState('BUY');
   const [calcQty, setCalcQty] = useState(100);
+  const [traderPin, setTraderPin] = useState(sessionStorage.getItem('fms_password') || '');
+  const [pinVerified, setPinVerified] = useState(Boolean(sessionStorage.getItem('fms_password')));
+  const [pinError, setPinError] = useState('');
+  const [orderSubmitting, setOrderSubmitting] = useState(false);
+  const [orderSubmitError, setOrderSubmitError] = useState('');
+  const [submittedOrder, setSubmittedOrder] = useState(null);
   const [copiedNotification, setCopiedNotification] = useState(false);
 
   // Lazy-load price history from Firebase RTDB
@@ -382,10 +397,10 @@ export default function CompanyProfileModal({ securityId, securities, newsEvents
                     fontWeight: 700
                   }}
                 >
-                  <option value="Ayan">Ayan (Quant & Risk)</option>
-                  <option value="Prerna">Prerna (Growth & Momentum)</option>
-                  <option value="Chetan">Chetan (Value & Cyclicals)</option>
-                  <option value="Arman">Arman (Macro & Global FX)</option>
+                  <option value="Armaan">Armaan — Domestic Equities & Sector Strategist</option>
+                  <option value="Prerna">Prerna — Global Markets & Cross-Border Advisor</option>
+                  <option value="Ayan">Ayan — FX & Fixed Income Strategist</option>
+                  <option value="Chetan">Chetan — Risk & Portfolio Allocation Advisor</option>
                 </select>
               </div>
 
@@ -431,21 +446,69 @@ export default function CompanyProfileModal({ securityId, securities, newsEvents
           fontSize: '0.75rem',
           fontWeight: 800
         }}>
-          <span style={{ color: activeModalTab === 'fundamentals' ? 'var(--color-brass)' : '#94A3B8' }}>
+          <button
+            type="button"
+            onClick={() => setActiveModalTab('fundamentals')}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: 0,
+              fontSize: 'inherit',
+              fontWeight: 'inherit',
+              color: activeModalTab === 'fundamentals' ? 'var(--color-brass)' : '#94A3B8'
+            }}
+          >
             1. RESEARCH {activeModalTab === 'fundamentals' ? '●' : ''}
-          </span>
+          </button>
           <span style={{ color: 'var(--color-border)' }}>➔</span>
-          <span style={{ color: activeModalTab === 'chart' ? 'var(--color-brass)' : '#94A3B8' }}>
+          <button
+            type="button"
+            onClick={() => setActiveModalTab('chart')}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: 0,
+              fontSize: 'inherit',
+              fontWeight: 'inherit',
+              color: activeModalTab === 'chart' ? 'var(--color-brass)' : '#94A3B8'
+            }}
+          >
             2. ANALYSIS {activeModalTab === 'chart' ? '●' : ''}
-          </span>
+          </button>
           <span style={{ color: 'var(--color-border)' }}>➔</span>
-          <span style={{ color: activeModalTab === 'news' ? 'var(--color-brass)' : '#94A3B8' }}>
+          <button
+            type="button"
+            onClick={() => setActiveModalTab('news')}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: 0,
+              fontSize: 'inherit',
+              fontWeight: 'inherit',
+              color: activeModalTab === 'news' ? 'var(--color-brass)' : '#94A3B8'
+            }}
+          >
             3. DECISION {activeModalTab === 'news' ? '●' : ''}
-          </span>
+          </button>
           <span style={{ color: 'var(--color-border)' }}>➔</span>
-          <span style={{ color: activeModalTab === 'calculator' ? 'var(--color-brass)' : '#94A3B8' }}>
+          <button
+            type="button"
+            onClick={() => setActiveModalTab('calculator')}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: 0,
+              fontSize: 'inherit',
+              fontWeight: 'inherit',
+              color: activeModalTab === 'calculator' ? 'var(--color-brass)' : '#94A3B8'
+            }}
+          >
             4. ORDER SLIP {activeModalTab === 'calculator' ? '●' : ''}
-          </span>
+          </button>
         </div>
 
         {/* 2. Global Price & Foreign Exchange Conversion Strip */}
@@ -893,64 +956,69 @@ export default function CompanyProfileModal({ securityId, securities, newsEvents
 
               {advisorResponses.length === 0 ? (
                 <div style={{ fontSize: '0.8rem', color: '#94A3B8', fontStyle: 'italic', padding: '6px 0' }}>
-                  No advisor consultation submitted yet for {security.ticker}. Choose an advisor (Ayan, Prerna, Chetan, or Arman) and click "Ask Floor Advisor" to request BUY / HOLD / SELL guidance.
+                  No advisor consultation submitted yet for {security.ticker}. Choose an advisor (Armaan, Prerna, Ayan, or Chetan) and click "Ask Floor Advisor" to request BUY / HOLD / SELL guidance.
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {advisorResponses.map((ar, idx) => (
-                    <div key={idx} style={{
-                      background: 'rgba(15, 23, 42, 0.8)',
-                      border: '1px solid #334155',
-                      borderRadius: '6px',
-                      padding: '10px 12px'
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                        <div>
-                          <span style={{ fontSize: '0.78rem', color: '#CBD5E1', fontWeight: 700 }}>Security: </span>
-                          <strong style={{ fontSize: '0.85rem', color: '#38BDF8' }}>{security.name || security.ticker}</strong>
-                          <span style={{ margin: '0 8px', color: '#64748B' }}>&bull;</span>
-                          <span style={{ fontSize: '0.78rem', color: '#CBD5E1', fontWeight: 700 }}>Floor Advisor: </span>
-                          <strong style={{ fontSize: '0.85rem', color: '#FBBF24' }}>{ar.advisorName || 'Floor Advisor'}</strong>
-                        </div>
-                        <div>
-                          {ar.status === 'COMPLETED' ? (
-                            <span style={{
-                              padding: '2px 8px',
-                              borderRadius: '4px',
-                              fontSize: '0.72rem',
-                              fontWeight: 900,
-                              background: ar.signal === 'BUY' ? 'rgba(16, 185, 129, 0.2)' : ar.signal === 'SELL' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(234, 179, 8, 0.2)',
-                              color: ar.signal === 'BUY' ? '#34D399' : ar.signal === 'SELL' ? '#F87171' : '#FBBF24'
-                            }}>
-                              {ar.signal}
-                            </span>
-                          ) : (
-                            <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 700, background: 'rgba(148, 163, 184, 0.2)', color: '#94A3B8' }}>
-                              ⏳ PENDING REVIEW
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <blockquote style={{
-                        margin: '6px 0 0 0',
-                        padding: '6px 10px',
-                        borderLeft: `3px solid ${ar.signal === 'BUY' ? '#10B981' : ar.signal === 'SELL' ? '#EF4444' : '#F59E0B'}`,
-                        background: 'rgba(30, 41, 59, 0.5)',
-                        color: '#F1F5F9',
-                        fontSize: '0.82rem',
-                        lineHeight: 1.45,
-                        fontStyle: 'italic'
+                  {advisorResponses.map((ar, idx) => {
+                    const advName = ar.advisorName || 'Floor Advisor';
+                    const specialization = ADVISOR_SPECIALIZATIONS[advName] || 'Market Strategist';
+                    return (
+                      <div key={idx} style={{
+                        background: 'rgba(15, 23, 42, 0.8)',
+                        border: '1px solid #334155',
+                        borderRadius: '6px',
+                        padding: '10px 12px'
                       }}>
-                        {ar.commentary || ar.reasoning || (ar.signal ? `Advisor ${ar.advisorName || 'Floor Advisor'} issues official ${ar.signal} recommendation for ${security.ticker}.` : 'Review in progress by accredited floor analyst. Advice will appear here upon dispatch.')}
-                      </blockquote>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                          <div>
+                            <span style={{ fontSize: '0.82rem', color: '#FBBF24', fontWeight: 900 }}>
+                              Advisor View — {advName}
+                            </span>
+                            <div style={{ fontSize: '0.72rem', color: '#94A3B8', fontWeight: 600 }}>
+                              {specialization} &bull; {security.name || security.ticker}
+                            </div>
+                          </div>
+                          <div>
+                            {ar.status === 'COMPLETED' ? (
+                              <span style={{
+                                padding: '2px 8px',
+                                borderRadius: '4px',
+                                fontSize: '0.72rem',
+                                fontWeight: 900,
+                                background: ar.signal === 'BUY' ? 'rgba(16, 185, 129, 0.2)' : ar.signal === 'SELL' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(234, 179, 8, 0.2)',
+                                color: ar.signal === 'BUY' ? '#34D399' : ar.signal === 'SELL' ? '#F87171' : '#FBBF24'
+                              }}>
+                                {ar.signal}
+                              </span>
+                            ) : (
+                              <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 700, background: 'rgba(148, 163, 184, 0.2)', color: '#94A3B8' }}>
+                                ⏳ PENDING REVIEW
+                              </span>
+                            )}
+                          </div>
+                        </div>
 
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '0.68rem', color: '#64748B' }}>
-                        <span>Ref #{ar.id?.slice(-8)}</span>
-                        <span>{ar.answeredAt ? new Date(ar.answeredAt).toLocaleTimeString() : `Submitted ${new Date(ar.submittedAt || Date.now()).toLocaleTimeString()}`}</span>
+                        <blockquote style={{
+                          margin: '6px 0 0 0',
+                          padding: '6px 10px',
+                          borderLeft: `3px solid ${ar.signal === 'BUY' ? '#10B981' : ar.signal === 'SELL' ? '#EF4444' : '#F59E0B'}`,
+                          background: 'rgba(30, 41, 59, 0.5)',
+                          color: '#F1F5F9',
+                          fontSize: '0.82rem',
+                          lineHeight: 1.45,
+                          fontStyle: 'italic'
+                        }}>
+                          {ar.commentary || ar.reasoning || (ar.signal ? `Advisor ${advName} issues official ${ar.signal} recommendation for ${security.ticker}.` : 'Review in progress by accredited floor analyst. Advice will appear here upon dispatch.')}
+                        </blockquote>
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '0.68rem', color: '#64748B' }}>
+                          <span>Ref #{ar.id?.slice(-8)}</span>
+                          <span>{ar.answeredAt ? new Date(ar.answeredAt).toLocaleTimeString() : `Submitted ${new Date(ar.submittedAt || Date.now()).toLocaleTimeString()}`}</span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -993,117 +1061,377 @@ export default function CompanyProfileModal({ securityId, securities, newsEvents
           </div>
         )}
 
-        {/* TAB 4: Fast Trade Calculator */}
+        {/* TAB 4: Actionable Order Slip Placement & Thermal Slip Generation */}
         {activeModalTab === 'calculator' && (
           <div className="card-primary" style={{ padding: '20px' }}>
-            <h4 style={{ fontSize: '0.9rem', fontWeight: 900, color: 'var(--color-ink)', margin: '0 0 14px 0', textTransform: 'uppercase' }}>
-              🧮 Fast Trade Margin Estimator
-            </h4>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 800, color: '#4A5568', marginBottom: '4px' }}>
-                  ACTION
-                </label>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  <button
-                    type="button"
-                    onClick={() => setCalcAction('BUY')}
-                    style={{
-                      flex: 1,
-                      padding: '8px',
-                      borderRadius: '6px',
-                      border: 'none',
-                      background: calcAction === 'BUY' ? 'var(--green-emerald)' : 'var(--color-surface-2)',
-                      color: calcAction === 'BUY' ? '#fff' : 'var(--navy-900)',
-                      fontWeight: 800,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    BUY
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCalcAction('SELL')}
-                    style={{
-                      flex: 1,
-                      padding: '8px',
-                      borderRadius: '6px',
-                      border: 'none',
-                      background: calcAction === 'SELL' ? 'var(--red-crimson)' : 'var(--color-surface-2)',
-                      color: calcAction === 'SELL' ? '#fff' : 'var(--navy-900)',
-                      fontWeight: 800,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    SELL
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 800, color: '#4A5568', marginBottom: '4px' }}>
-                  QUANTITY (UNITS)
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={calcQty}
-                  onChange={(e) => setCalcQty(Math.max(1, parseInt(e.target.value) || 1))}
-                  style={{
-                    width: '100%',
-                    padding: '8px 10px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--color-border)',
-                    fontSize: '0.9rem',
-                    fontWeight: 700,
-                    fontFamily: 'monospace'
-                  }}
-                />
-              </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <h4 style={{ fontSize: '0.9rem', fontWeight: 900, color: 'var(--color-ink)', margin: 0, textTransform: 'uppercase' }}>
+                📝 Order Slip Placement
+              </h4>
+              <span className="badge" style={{ backgroundColor: 'rgba(255, 104, 0, 0.1)', color: '#EA580C', fontWeight: 800, fontSize: '0.72rem' }}>
+                Exchange Desk Routing
+              </span>
             </div>
 
-            {/* Breakdown Result */}
-            <div style={{
-              background: 'var(--bg-warm)',
-              border: '1px solid var(--border-soft)',
-              borderRadius: '8px',
-              padding: '14px 16px',
-              marginBottom: '16px'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '0.82rem' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Native Order Value ({secCurrency}):</span>
-                <strong style={{ color: 'var(--navy-900)' }}>{curSym}{calcGrossNative.toLocaleString()}</strong>
-              </div>
-              {isForeign && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '0.82rem' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Consolidated INR Margin:</span>
-                  <strong style={{ color: 'var(--gold-royal)' }}>≈ ₹{calcGrossINR.toLocaleString(undefined, { minimumFractionDigits: 2 })}</strong>
-                </div>
-              )}
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Estimated Price Impact:</span>
-                <span style={{ color: 'var(--navy-900)', fontWeight: 700 }}>~{calcImpactPercent}%</span>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleCopyOrderSummary}
-              style={{
-                width: '100%',
-                background: 'var(--navy-900)',
-                color: '#fff',
-                border: 'none',
+            {submittedOrder ? (
+              /* Post-Submission Authoritative Order Slip Display */
+              <div style={{
+                background: '#FFFFFF',
+                color: '#0F172A',
+                border: '2px solid #0B192C',
                 borderRadius: '8px',
-                padding: '12px',
-                fontSize: '0.88rem',
-                fontWeight: 700,
-                cursor: 'pointer'
-              }}
-            >
-              {copiedNotification ? '✓ Order Summary Copied to Clipboard!' : '📋 Copy Order Slip Configuration'}
-            </button>
+                padding: '16px',
+                fontFamily: 'monospace'
+              }}>
+                <div style={{ textAlign: 'center', borderBottom: '1.5px dashed #CBD5E1', paddingBottom: '10px', marginBottom: '12px' }}>
+                  <div style={{ fontWeight: 900, fontSize: '1rem', letterSpacing: '0.05em' }}>SAAMX OFFICIAL ORDER SLIP</div>
+                  <div style={{ fontSize: '0.72rem', color: '#64748B' }}>EXCHANGE DESK VERIFICATION TICKET</div>
+                  <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#0284C7', marginTop: '4px' }}>
+                    TICKET: {submittedOrder.ticketNumber || submittedOrder.orderId}
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '0.8rem', marginBottom: '12px' }}>
+                  <div><strong>TEAM:</strong> {submittedOrder.teamCode}</div>
+                  <div><strong>DATE/TIME:</strong> {new Date(submittedOrder.submittedAt || Date.now()).toLocaleTimeString()}</div>
+                  <div><strong>SECURITY:</strong> {submittedOrder.ticker}</div>
+                  <div><strong>EXCHANGE:</strong> {security.exchange || 'SAAMX'}</div>
+                  <div>
+                    <strong>ACTION:</strong>{' '}
+                    <span style={{
+                      color: submittedOrder.action === 'BUY' ? '#16A34A' : '#DC2626',
+                      fontWeight: 900
+                    }}>
+                      {submittedOrder.action}
+                    </span>
+                  </div>
+                  <div><strong>QUANTITY:</strong> {submittedOrder.quantity} units</div>
+                  <div><strong>EXEC TYPE:</strong> MARKET</div>
+                  <div><strong>REF PRICE:</strong> {curSym}{effectivePrice.toLocaleString()}</div>
+                  <div><strong>CURRENCY:</strong> {secCurrency}</div>
+                  <div><strong>EST. VALUE:</strong> {curSym}{calcGrossNative.toLocaleString()}</div>
+                </div>
+
+                {isForeign && (
+                  <div style={{
+                    fontSize: '0.75rem',
+                    background: '#F8FAFC',
+                    padding: '6px 8px',
+                    borderRadius: '4px',
+                    border: '1px solid #E2E8F0',
+                    marginBottom: '10px'
+                  }}>
+                    <strong>Consolidated INR Value:</strong> ≈ ₹{calcGrossINR.toLocaleString(undefined, { minimumFractionDigits: 2 })} (Spot: ₹{currentFxRate.toFixed(2)})
+                  </div>
+                )}
+
+                <div style={{
+                  background: '#FEF3C7',
+                  color: '#92400E',
+                  padding: '8px 10px',
+                  borderRadius: '6px',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  marginBottom: '14px',
+                  lineHeight: 1.4
+                }}>
+                  ⏳ <strong>ORDER ROUTED TO EXCHANGE DESK:</strong> Present this ticket number to an authorized Exchange Operator on the floor for physical slip validation & Bank Desk voucher generation.
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const slipText = `[SAAMX ORDER SLIP]\nTicket: ${submittedOrder.ticketNumber || submittedOrder.orderId}\nTeam: ${submittedOrder.teamCode}\nSecurity: ${submittedOrder.ticker} (${security.name})\nAction: ${submittedOrder.action}\nQty: ${submittedOrder.quantity}\nRef Price: ${curSym}${effectivePrice}\nGross: ${curSym}${calcGrossNative.toLocaleString()}${isForeign ? ` (~₹${calcGrossINR.toLocaleString()})` : ''}\nStatus: SUBMITTED_TO_EXCHANGE\nTime: ${new Date(submittedOrder.submittedAt || Date.now()).toLocaleString()}`;
+                      navigator.clipboard.writeText(slipText);
+                      setCopiedNotification(true);
+                      setTimeout(() => setCopiedNotification(false), 2500);
+                    }}
+                    style={{
+                      flex: 1,
+                      background: '#0B192C',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '10px',
+                      fontSize: '0.8rem',
+                      fontWeight: 800,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {copiedNotification ? '✓ Slip Copied to Clipboard!' : '📋 Copy Slip Details'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSubmittedOrder(null);
+                      setOrderSubmitError('');
+                    }}
+                    style={{
+                      background: '#F1F5F9',
+                      color: '#0F172A',
+                      border: '1px solid #CBD5E1',
+                      borderRadius: '6px',
+                      padding: '10px 14px',
+                      fontSize: '0.8rem',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Place Another Order
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* Pre-Submission Order Creation Form */
+              <div>
+                <div style={{
+                  background: 'var(--color-surface-2)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: '8px',
+                  padding: '10px 14px',
+                  marginBottom: '14px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <div>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--color-ink-muted, #94A3B8)', fontWeight: 800, textTransform: 'uppercase' }}>Security</span>
+                    <div style={{ fontWeight: 800, fontSize: '0.92rem', color: 'var(--color-ink)' }}>{security.ticker} — {security.name}</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--color-ink-muted, #94A3B8)', fontWeight: 800, textTransform: 'uppercase' }}>Market Price</span>
+                    <div className="font-data" style={{ fontWeight: 800, fontSize: '0.92rem', color: 'var(--color-ink)' }}>{curSym}{effectivePrice.toLocaleString()} {secCurrency}</div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 800, color: 'var(--color-ink-muted, #4A5568)', marginBottom: '4px' }}>
+                      TRANSACTION ACTION
+                    </label>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setCalcAction('BUY')}
+                        style={{
+                          flex: 1,
+                          padding: '8px',
+                          borderRadius: '6px',
+                          border: 'none',
+                          background: calcAction === 'BUY' ? 'var(--green-emerald, #10B981)' : 'var(--color-surface-2)',
+                          color: calcAction === 'BUY' ? '#fff' : 'var(--color-ink)',
+                          fontWeight: 800,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        BUY
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCalcAction('SELL')}
+                        style={{
+                          flex: 1,
+                          padding: '8px',
+                          borderRadius: '6px',
+                          border: 'none',
+                          background: calcAction === 'SELL' ? 'var(--red-crimson, #EF4444)' : 'var(--color-surface-2)',
+                          color: calcAction === 'SELL' ? '#fff' : 'var(--color-ink)',
+                          fontWeight: 800,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        SELL
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 800, color: 'var(--color-ink-muted, #4A5568)', marginBottom: '4px' }}>
+                      QUANTITY (UNITS)
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={calcQty}
+                      onChange={(e) => setCalcQty(Math.max(1, parseInt(e.target.value) || 1))}
+                      style={{
+                        width: '100%',
+                        padding: '8px 10px',
+                        borderRadius: '6px',
+                        border: '1px solid var(--color-border)',
+                        background: 'var(--color-surface)',
+                        color: 'var(--color-ink)',
+                        fontSize: '0.9rem',
+                        fontWeight: 700,
+                        fontFamily: 'monospace'
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Trader PIN Input */}
+                <div style={{ marginBottom: '14px' }}>
+                  <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 800, color: 'var(--color-ink-muted, #4A5568)', marginBottom: '4px' }}>
+                    TRADER PIN / CREDENTIALS
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="Enter Trader PIN"
+                    value={traderPin}
+                    onChange={(e) => {
+                      setTraderPin(e.target.value);
+                      if (e.target.value.trim().length >= 2) {
+                        setPinVerified(true);
+                        setPinError('');
+                      }
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      borderRadius: '6px',
+                      border: '1px solid var(--color-border)',
+                      background: 'var(--color-surface)',
+                      color: 'var(--color-ink)',
+                      fontSize: '0.9rem',
+                      fontWeight: 700
+                    }}
+                  />
+                  {pinError && (
+                    <div style={{ fontSize: '0.74rem', color: '#DC2626', marginTop: '4px', fontWeight: 600 }}>
+                      ⚠️ {pinError}
+                    </div>
+                  )}
+                </div>
+
+                {/* Breakdown Result */}
+                <div style={{
+                  background: 'var(--bg-warm, rgba(255, 255, 255, 0.05))',
+                  border: '1px solid var(--border-soft, var(--color-border))',
+                  borderRadius: '8px',
+                  padding: '12px 14px',
+                  marginBottom: '16px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '0.82rem' }}>
+                    <span style={{ color: 'var(--text-muted, #94A3B8)' }}>Estimated Order Value ({secCurrency}):</span>
+                    <strong style={{ color: 'var(--color-ink)' }}>{curSym}{calcGrossNative.toLocaleString()}</strong>
+                  </div>
+                  {isForeign && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '0.82rem' }}>
+                      <span style={{ color: 'var(--text-muted, #94A3B8)' }}>Consolidated INR Margin:</span>
+                      <strong style={{ color: 'var(--gold-royal, #D97706)' }}>≈ ₹{calcGrossINR.toLocaleString(undefined, { minimumFractionDigits: 2 })}</strong>
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
+                    <span style={{ color: 'var(--text-muted, #94A3B8)' }}>Estimated Price Impact:</span>
+                    <span style={{ color: 'var(--color-ink)', fontWeight: 700 }}>~{calcImpactPercent}%</span>
+                  </div>
+                </div>
+
+                {orderSubmitError && (
+                  <div style={{
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    border: '1px solid #EF4444',
+                    color: '#DC2626',
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    marginBottom: '14px'
+                  }}>
+                    ⚠️ {orderSubmitError}
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    type="button"
+                    disabled={orderSubmitting}
+                    onClick={async () => {
+                      if (!traderPin || traderPin.trim().length === 0) {
+                        setPinError('Please enter your Trader PIN before placing order.');
+                        return;
+                      }
+                      setOrderSubmitting(true);
+                      setOrderSubmitError('');
+                      try {
+                        const ticketCode = `TKN-${teamCode}-${Date.now().toString().slice(-6)}`;
+                        const payload = {
+                          ticketNumber: ticketCode,
+                          teamCode,
+                          teamId: teamCode,
+                          ticker: security.ticker,
+                          securityName: security.name,
+                          exchange: security.exchange,
+                          currency: secCurrency,
+                          action: calcAction,
+                          orderType: 'MARKET',
+                          quantity: calcQty,
+                          limitPrice: null,
+                          currentPrice: effectivePrice,
+                          requestedValue: calcGrossINR,
+                          enteredBy: `Trader PIN [${teamCode}]`,
+                          submittedAt: new Date().toISOString()
+                        };
+
+                        const res = await apiFetch('/api/orders/submit', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify(payload)
+                        });
+
+                        const data = await res.json();
+                        if (!res.ok || data.error) {
+                          throw new Error(data.error || 'Failed to submit order to Exchange Desk.');
+                        }
+
+                        setSubmittedOrder(data.order || {
+                          ...payload,
+                          status: 'QUEUED',
+                          ticketNumber: ticketCode
+                        });
+                      } catch (err) {
+                        setOrderSubmitError(err.message || 'Submission error');
+                      } finally {
+                        setOrderSubmitting(false);
+                      }
+                    }}
+                    style={{
+                      flex: 2,
+                      background: 'var(--color-orange-gradient, linear-gradient(135deg, #FF7700 0%, #EA580C 100%))',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '12px',
+                      fontSize: '0.88rem',
+                      fontWeight: 800,
+                      cursor: orderSubmitting ? 'not-allowed' : 'pointer',
+                      opacity: orderSubmitting ? 0.7 : 1
+                    }}
+                  >
+                    {orderSubmitting ? 'Submitting to Exchange...' : '🚀 PLACE ORDER'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleCopyOrderSummary}
+                    style={{
+                      flex: 1,
+                      background: 'var(--color-surface-2)',
+                      color: 'var(--color-ink)',
+                      border: '1px solid var(--color-border)',
+                      borderRadius: '8px',
+                      padding: '12px',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {copiedNotification ? '✓ Copied' : '📋 Copy Slip'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

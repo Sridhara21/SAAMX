@@ -255,6 +255,8 @@ export default function DeskQueueDashboard({ state = {}, isEmbedded = false, onO
         if (dType !== 'BANK') return false;
       } else if (activeTab === 'FX') {
         if (dType !== 'FX') return false;
+      } else if (activeTab === 'IPO') {
+        if (dType !== 'IPO') return false;
       } else {
         // Specific desk ID tab (e.g. 'DESK_1')
         if (dId !== activeTab) return false;
@@ -652,6 +654,15 @@ export default function DeskQueueDashboard({ state = {}, isEmbedded = false, onO
             style={{ fontWeight: 800, borderColor: '#8B5CF6' }}
           >
             FX Currency Desk ({fxDeskData?.queueCount || 0})
+          </Button>
+
+          <Button
+            size="sm"
+            variant={activeTab === 'IPO' ? 'primary' : 'outline'}
+            onClick={() => setActiveTab('IPO')}
+            style={{ fontWeight: 800, borderColor: '#F59E0B' }}
+          >
+            IPO Desk ({allDesks.find(d => (d.deskType || d.type) === 'IPO')?.queueCount || 0})
           </Button>
         </div>
 

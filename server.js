@@ -7728,7 +7728,56 @@ function computeAllDeskMetrics() {
     }))
   };
 
-  return { exchangeDesks, bankDesks, fxDesk, queue, personnelList, teamsList };
+  // Dedicated IPO Desk (IPO_DESK_1) for Primary Market Subscriptions & Allotments
+  const ipoApplications = [];
+  (state.securities || []).forEach(sec => {
+    if (sec.bids) {
+      Object.entries(sec.bids).forEach(([tCode, bid]) => {
+        const isAllotted = sec.ipoStatus === 'ALLOTMENT_FINALIZED' || sec.ipoStatus === 'ACTIVE';
+        ipoApplications.push({
+          id: `IPO_APP_${sec.ticker}_${tCode}`,
+          orderId: `IPO_APP_${sec.ticker}_${tCode}`,
+          ticketNumber: `IPO-${sec.ticker}-${tCode}`,
+          teamCode: tCode,
+          ticker: sec.ticker,
+          securityName: sec.name,
+          action: 'IPO_SUBSCRIBE',
+          quantity: bid.quantity,
+          price: sec.issuePrice || sec.currentPrice || sec.basePrice || 100,
+          totalValue: bid.capitalReserved || (bid.quantity * (sec.issuePrice || sec.currentPrice || 100)),
+          currency: sec.currency || 'USD',
+          status: isAllotted ? 'ALLOTTED' : 'PENDING_VERIFICATION',
+          statusDisplay: isAllotted ? 'Allotted' : 'Pending IPO Verification',
+          deskId: 'IPO_DESK_1',
+          deskName: 'Primary Market IPO Desk',
+          assignmentTime: bid.timestamp || Date.now(),
+          operator: 'IPO Verification Officer'
+        });
+      });
+    }
+  });
+
+  const ipoDesk = {
+    id: 'IPO_DESK_1',
+    name: 'Primary Market IPO Desk',
+    deskName: 'Primary Market IPO Desk',
+    type: 'IPO',
+    deskType: 'IPO',
+    identifier: 'IPO Desk',
+    deskIdentifier: 'IPO Desk',
+    color: '#F59E0B',
+    operator: 'IPO Desk Officer',
+    status: 'ACTIVE',
+    operationalStatus: 'ACTIVE',
+    queueCount: ipoApplications.filter(a => a.status === 'PENDING_VERIFICATION').length,
+    activeQueueCount: ipoApplications.length,
+    isEmpty: ipoApplications.length === 0,
+    currentOrder: ipoApplications.find(a => a.status === 'PENDING_VERIFICATION') || null,
+    totalProcessed: ipoApplications.filter(a => a.status === 'ALLOTTED').length,
+    assignedOrders: ipoApplications
+  };
+
+  return { exchangeDesks, bankDesks, fxDesk, ipoDesk, queue, personnelList, teamsList };
 }
 
 // ----------------------------------------------------
@@ -7758,7 +7807,7 @@ app.get(['/api/order-desks', '/api/desks'], (req, res) => {
     return res.status(403).json({ error: 'Forbidden: Desk operator or supervisory authorization required.' });
   }
 
-  const { exchangeDesks, bankDesks, fxDesk, queue, personnelList, teamsList } = computeAllDeskMetrics();
+  const { exchangeDesks, bankDesks, fxDesk, ipoDesk, queue, personnelList, teamsList } = computeAllDeskMetrics();
 
   const unassignedCount = queue.filter(o => !o.deskId && ['QUEUED', 'SUBMITTED', 'PENDING'].includes(o.status)).length;
   const totalInFlight = queue.filter(o => ['QUEUED', 'SUBMITTED', 'PENDING', 'VERIFYING', 'VALIDATED'].includes(o.status)).length;
@@ -7771,7 +7820,8 @@ app.get(['/api/order-desks', '/api/desks'], (req, res) => {
     exchangeDesks,
     bankDesks,
     fxDesk,
-    allDesks: [...exchangeDesks, ...bankDesks],
+    ipoDesk,
+    allDesks: [...exchangeDesks, ...bankDesks, ipoDesk],
     totalUnassigned: unassignedCount,
     totalQueued: totalInFlight,
     unassignedStaff: unassignedStaff.map(s => ({ id: s.id, username: s.username, displayName: s.displayName, role: s.role })),
@@ -7804,7 +7854,7 @@ app.get('/api/desk-queue-dashboard', (req, res) => {
     return res.status(403).json({ error: 'Forbidden: Operator authorization required for queue dashboard.' });
   }
 
-  const { exchangeDesks, bankDesks, fxDesk, queue } = computeAllDeskMetrics();
+  const { exchangeDesks, bankDesks, fxDesk, ipoDesk, queue } = computeAllDeskMetrics();
 
   return res.json({
     success: true,
@@ -7812,7 +7862,8 @@ app.get('/api/desk-queue-dashboard', (req, res) => {
     exchangeDesks,
     bankDesks,
     fxDesk,
-    allDesks: [...exchangeDesks, ...bankDesks],
+    ipoDesk,
+    allDesks: [...exchangeDesks, ...bankDesks, ipoDesk],
     orders: queue
   });
 });
