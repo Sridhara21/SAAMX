@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Badge, Button, SaamxLogo } from '../components/ui/index.js';
-import ThemeToggle from '../components/ThemeToggle.jsx';
+import { SaamxLogo } from '../components/ui/index.js';
 import {
   IconBuilding,
   IconTrendingUp,
@@ -8,136 +7,119 @@ import {
   IconShieldCheck,
   IconNewspaper,
   IconTrophy,
-  IconClipboardList,
   IconArrowRight,
   IconTarget,
   IconBriefcase,
+  IconBarChart,
   IconCheck,
-  IconPlay,
-  IconX,
-  IconBarChart
+  IconX
 } from '../lib/icons.jsx';
 
 export default function PublicLandingPage() {
-  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
+  const [showExploreModal, setShowExploreModal] = useState(false);
 
-  const scheduleEvents = [
-    { time: '08:00', title: 'Reporting & Delegate Registration', desc: 'Teams receive physical trading kits, badge allocations, and initial credentials.' },
-    { time: '08:00 – 09:00', title: 'Floor Briefing & Strategic Setup', desc: 'Orientation on physical paper order execution, currency rules, and trading conduct.' },
-    { time: '09:00 – 09:30', title: 'Pre-Market Price Discovery', desc: 'Observation of market depth, baseline quotes, and corporate filings across floor monitors.' },
-    { time: '09:30', title: 'Official Market Opening Bell', desc: 'Commencement of live floor trading across all equity and debt counters.' },
-    { time: '10:00 – 12:00', title: 'Morning Trading Session', desc: 'Active execution of physical equity, foreign exchange spot, and institutional debt orders.' },
-    { time: '12:00 – 13:00', title: 'Market Recess & Mid-Day Rehearsal', desc: 'Order intake suspended; teams review book values, sector news, and cash reserves.' },
-    { time: '13:00 – 15:30', title: 'Afternoon Trading & Corporate Actions', desc: 'High-volatility phase: dynamic corporate bulletins, IPO tenders, and debate showdowns.' },
-    { time: '15:30', title: 'Final Bell & Immutable Valuation Freeze', desc: 'Trading halted. Portfolios snapshotted for certified reconciliation.' },
-    { time: '15:30 – 16:00', title: 'Audit Reconciliation & Regulatory Deliberation', desc: 'Regulatory compliance review, penalty adjudication, and score tabulation by SEBI.' },
-    { time: '16:00', title: 'Valediction & Champion Awards', desc: 'Announcement of overall return champions, best portfolio strategy, and awards.' }
-  ];
-
-  const featureCards = [
+  // Exact Official Event Schedule
+  const officialSchedule = [
     {
-      title: 'Trade',
-      subtitle: 'Financial Instruments',
-      icon: <IconTrendingUp size={20} />,
-      color: '#FF6800'
+      time: '8:00 AM – 8:30 AM',
+      title: 'Registration & Participant Verification',
+      desc: 'Official credential issuance, team registration and security verification at entry desks.'
     },
     {
-      title: 'Banking & Settlements',
-      subtitle: 'Physical Cash & Clearance',
-      icon: <IconBuilding size={20} />,
-      color: '#2563EB'
+      time: '8:30 AM – 9:00 AM',
+      title: 'Seating, Team Verification & Platform Briefing',
+      desc: 'Investment House station setup, floor rules orientation, and simulated market operational walkthrough.'
     },
     {
-      title: 'Currency Exchange',
-      subtitle: 'Spot Multi-Currency FX',
-      icon: <IconCurrencyExchange size={20} />,
-      color: '#0284C7'
+      time: '9:00 AM – 9:30 AM',
+      title: 'Opening Ceremony & Official Instructions',
+      desc: 'Directorate address, SEBI surveillance mandate announcement, and ceremonial opening procedures.'
     },
     {
-      title: 'IPO Applications',
-      subtitle: 'Primary Market Bidding',
-      icon: <IconTarget size={20} />,
-      color: '#10B981'
+      time: '9:30 AM – 12:15 PM',
+      title: 'Opening Market Session',
+      desc: 'Continuous live floor trading: primary intake, paper order matching, foreign exchange, and portfolio actions.'
     },
     {
-      title: 'Advisors & Fund Managers',
-      subtitle: 'Research & Guidance',
-      icon: <IconBriefcase size={20} />,
-      color: '#8B5CF6'
+      time: '12:15 PM – 12:45 PM',
+      title: 'Lunch Break',
+      desc: 'Trading paused; order queues held; investment houses conduct mid-session strategy review.'
+    },
+    {
+      time: '12:45 PM – 3:30 PM',
+      title: 'Afternoon Market Session',
+      desc: 'Dynamic corporate events, primary IPO window, macro news bulletins, and high-tempo position management.'
+    },
+    {
+      time: '3:30 PM – 4:00 PM',
+      title: 'Reconciliation, Results Announcement & Post-Event Sessions',
+      desc: 'Certified immutable valuation freeze, SEBI audit audit reconciliation, rankings announcement, and valediction.'
     }
   ];
 
-  const pillars = [
+  // 4 Core Stages of Student Experience
+  const studentJourney = [
     {
-      icon: <IconBuilding size={24} />,
-      title: 'Institutional Universe',
-      desc: 'Trade across an institutional universe of 2,000+ securities encompassing equities, sovereign debt, ETFs, and REITs.'
+      step: '01',
+      title: 'LEARN',
+      tagline: 'Understand the Foundations',
+      desc: 'Explore real-world market structures, multi-asset security valuation, capital allocation principles, and the role of regulatory oversight.'
     },
     {
-      icon: <IconClipboardList size={24} />,
-      title: 'Physical Paper Desks',
-      desc: 'True-to-life floor operations. Floor runners deliver standardized physical order slips to 5 synchronized Exchange Desks for atomic matching.'
+      step: '02',
+      title: 'ANALYZE',
+      tagline: 'Interpret Real-Time Signals',
+      desc: 'Examine live quotes across 3,000+ securities, synthesize breaking macroeconomic bulletins, evaluate corporate fundamentals, and assess risk.'
     },
     {
-      icon: <IconCurrencyExchange size={24} />,
-      title: 'Multi-Currency Settlement',
-      desc: 'Active foreign exchange spot conversions across INR, USD, GBP, and EUR to manage international equity positions and currency risks.'
+      step: '03',
+      title: 'DECIDE',
+      tagline: 'Formulate Floor Strategy',
+      desc: 'Collaborate as an Investment House team, allocate starting capital, weigh advice from Floor Advisors, and formulate agile responses to catalysts.'
     },
     {
-      icon: <IconShieldCheck size={24} />,
-      title: 'SEBI Regulatory Watch',
-      desc: 'Independent surveillance monitoring price-band circuit breakers, insider trade flags, front-running anomalies, and formal audits.'
-    },
-    {
-      icon: <IconNewspaper size={24} />,
-      title: 'Macro Intelligence Wire',
-      desc: 'Breaking news flashes, crisis acts, corporate mergers, and analyst bulletins that shift market sentiment in real time.'
-    },
-    {
-      icon: <IconTrophy size={24} />,
-      title: 'Certified Valuation Freeze',
-      desc: 'Idempotent 15:30 closing snapshots ensure zero post-bell tampering, producing audited scorecards for judicial evaluation.'
+      step: '04',
+      title: 'TRADE',
+      tagline: 'Execute Physical & Digital Orders',
+      desc: 'Deploy orders through Exchange matching desks, negotiate currency conversions at the FX counter, and clear physical settlement vouchers with the Bank.'
     }
   ];
 
-  const highlights = [
-    { value: '2,000+', label: 'Securities Directory', color: 'var(--color-navy, #0B192C)' },
-    { value: '10', label: 'Investment Houses', color: 'var(--color-orange, #FF6800)' },
-    { value: '₹1 Crore', label: 'Starting Capital / Team', color: 'var(--color-gain, #059669)' },
-    { value: '5', label: 'Physical Order Desks', color: 'var(--color-navy, #0B192C)' },
-    { value: 'SEBI', label: 'Surveillance & Oversight', color: '#0284C7' }
+  // Market Ecosystem supported by SAAMX
+  const marketEcosystem = [
+    { name: 'Equities', desc: 'Domestic & global blue-chip equities with real-time liquidity and price depth.' },
+    { name: 'ETFs', desc: 'Diversified thematic & index exchange-traded funds tracking international indices.' },
+    { name: 'Mutual Funds', desc: 'Active & passive institutional funds providing sectoral exposure.' },
+    { name: 'Corporate Bonds', desc: 'Fixed-income debentures with distinct yield curves and credit ratings.' },
+    { name: 'Government Bonds', desc: 'Sovereign treasury instruments providing capital stability.' },
+    { name: 'REITs & InvITs', desc: 'Real estate investment trusts and infrastructure investment trusts.' },
+    { name: 'Currency Exchange', desc: 'Live spot FX conversions across INR, USD, EUR, GBP, JPY, and AED.' },
+    { name: 'Primary IPOs', desc: 'Exclusive initial public offerings with subscription windows and allotment.' },
+    { name: 'Market News Wire', desc: 'Macro bulletins, corporate developments, and flash regulatory advisories.' },
+    { name: 'Floor Advisors', desc: 'Specialist floor advisors available for institutional research and second opinions.' }
   ];
 
-  const onboardingSteps = [
+  // Physical Floor Journey
+  const physicalFlow = [
     {
-      title: 'Trade diverse financial instruments',
-      desc: 'Stocks, ETFs, Bonds, Derivatives',
-      icon: <IconTrendingUp size={18} />
+      badge: 'Step 1',
+      title: 'Team Strategy & Order Slip',
+      desc: 'Teams analyze the market, select instruments, and prepare authorized physical order slips with execution parameters.'
     },
     {
-      title: 'Manage your portfolio',
-      desc: 'Track & Analyse real-time holdings and returns',
-      icon: <IconBarChart size={18} />
+      badge: 'Step 2',
+      title: 'Exchange Order Desk',
+      desc: 'Floor runners deliver slips to 5 physical Exchange Desks for compliance checking, price verification, and electronic entry.'
     },
     {
-      title: 'Respond to live market news',
-      desc: 'Real-time updates, flash catalysts & events',
-      icon: <IconNewspaper size={18} />
+      badge: 'Step 3',
+      title: 'Bank & Settlement Counter',
+      desc: 'Approved execution vouchers transfer to Bank Counters for cash settlement, funds verification, and portfolio reconciliation.'
     },
     {
-      title: 'Work with industry-like desks',
-      desc: 'Exchange, Bank, FX, and IPO counters',
-      icon: <IconBuilding size={18} />
-    },
-    {
-      title: 'Compete with teams across schools',
-      desc: 'Strategy, performance metrics & rankings',
-      icon: <IconTrophy size={18} />
-    },
-    {
-      title: 'Build real-world financial skills',
-      desc: 'Research, quantitative analysis & decision-making',
-      icon: <IconBriefcase size={18} />
+      badge: 'Step 4',
+      title: 'Portfolio & Market Impact',
+      desc: 'Holdings and balances update instantaneously in the team terminal while trade volume feeds market price action.'
     }
   ];
 
@@ -145,44 +127,42 @@ export default function PublicLandingPage() {
     <div
       style={{
         minHeight: '100vh',
-        backgroundColor: 'var(--color-canvas, #F4F7FB)',
-        backgroundImage: 'radial-gradient(circle at 80% 10%, rgba(255, 104, 0, 0.05) 0%, transparent 45%), radial-gradient(circle at 20% 40%, rgba(37, 99, 235, 0.05) 0%, transparent 45%)',
-        color: 'var(--color-ink, #0F172A)',
-        fontFamily: "var(--font-body, 'Inter', -apple-system, sans-serif)",
-        overflowX: 'hidden',
-        transition: 'background-color 0.25s ease, color 0.25s ease'
+        backgroundColor: '#F8FAFC',
+        color: '#0B192C',
+        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        overflowX: 'hidden'
       }}
     >
-      {/* Top Public Navigation Bar */}
+      {/* 1. Header / Navigation */}
       <header
         style={{
           position: 'sticky',
           top: 0,
           zIndex: 100,
-          backgroundColor: 'rgba(255, 255, 255, 0.85)',
+          backgroundColor: 'rgba(255, 255, 255, 0.94)',
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
-          borderBottom: '1px solid var(--color-border, #E2E8F0)',
-          boxShadow: '0 4px 20px -2px rgba(15, 23, 42, 0.03)',
+          borderBottom: '1px solid #E2E8F0',
+          boxShadow: '0 2px 12px rgba(11, 25, 44, 0.04)',
           padding: '14px 28px'
         }}
       >
         <div
           style={{
-            maxWidth: '1360px',
+            maxWidth: '1240px',
             margin: '0 auto',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '20px'
+            gap: '24px'
           }}
         >
-          {/* Logo & Brand Identity */}
-          <a href="#/" style={{ textDecoration: 'none' }}>
+          {/* Brand Logo */}
+          <a href="#/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
             <SaamxLogo size="md" showSubtitle={false} />
           </a>
 
-          {/* Center Navigation Links matching reference */}
+          {/* Simple Clean Navigation */}
           <nav
             style={{
               display: 'flex',
@@ -194,630 +174,983 @@ export default function PublicLandingPage() {
             <a
               href="#/"
               style={{
-                fontSize: '0.90rem',
+                fontSize: '0.92rem',
                 fontWeight: 700,
-                color: 'var(--color-navy, #0B192C)',
-                textDecoration: 'none',
-                transition: 'color 0.15s ease'
+                color: '#0B192C',
+                textDecoration: 'none'
               }}
             >
               Home
             </a>
             <button
               type="button"
-              onClick={() => {
-                document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
-              }}
+              onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
               style={{
                 background: 'none',
                 border: 'none',
                 padding: 0,
                 cursor: 'pointer',
-                fontSize: '0.90rem',
+                fontSize: '0.92rem',
                 fontWeight: 600,
-                color: 'var(--color-ink-secondary, #475569)',
-                transition: 'color 0.15s ease'
-              }}
-            >
-              Features
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              style={{
-                background: 'none',
-                border: 'none',
-                padding: 0,
-                cursor: 'pointer',
-                fontSize: '0.90rem',
-                fontWeight: 600,
-                color: 'var(--color-ink-secondary, #475569)',
-                transition: 'color 0.15s ease'
+                color: '#475569',
+                transition: 'color 0.15s'
               }}
             >
               How It Works
             </button>
             <button
               type="button"
-              onClick={() => {
-                document.getElementById('schedule')?.scrollIntoView({ behavior: 'smooth' });
-              }}
+              onClick={() => document.getElementById('schedule')?.scrollIntoView({ behavior: 'smooth' })}
               style={{
                 background: 'none',
                 border: 'none',
                 padding: 0,
                 cursor: 'pointer',
-                fontSize: '0.90rem',
+                fontSize: '0.92rem',
                 fontWeight: 600,
-                color: 'var(--color-ink-secondary, #475569)',
-                transition: 'color 0.15s ease'
+                color: '#475569',
+                transition: 'color 0.15s'
               }}
             >
               Schedule
             </button>
-            <a
-              href="#/portals"
+            <button
+              type="button"
+              onClick={() => document.getElementById('desks')?.scrollIntoView({ behavior: 'smooth' })}
               style={{
-                fontSize: '0.90rem',
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                cursor: 'pointer',
+                fontSize: '0.92rem',
                 fontWeight: 600,
-                color: 'var(--color-ink-secondary, #475569)',
-                textDecoration: 'none',
-                transition: 'color 0.15s ease'
+                color: '#475569',
+                transition: 'color 0.15s'
               }}
             >
-              Desks Directory
-            </a>
+              Desks
+            </button>
           </nav>
 
-          {/* Right Action Buttons */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {/* Primary Action Button */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
             <a href="#/login" style={{ textDecoration: 'none' }} className="desktop-only">
-              <Button
-                variant="secondary"
-                size="sm"
+              <span
                 style={{
-                  borderRadius: '9999px',
-                  fontWeight: 600,
-                  fontSize: '0.84rem',
-                  padding: '7px 16px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                  borderColor: 'var(--color-border)'
-                }}
-              >
-                Login
-              </Button>
-            </a>
-
-            <a href="#/login" style={{ textDecoration: 'none' }}>
-              <Button
-                variant="primary"
-                size="sm"
-                icon={<IconArrowRight size={14} />}
-                iconPosition="right"
-                style={{
-                  borderRadius: '9999px',
+                  fontSize: '0.88rem',
                   fontWeight: 700,
-                  fontSize: '0.86rem',
-                  padding: '8px 20px',
-                  background: 'var(--color-orange-gradient, linear-gradient(135deg, #FF7700 0%, #EA580C 100%))',
-                  boxShadow: '0 4px 14px -2px rgba(255, 104, 0, 0.35)',
-                  color: '#FFFFFF'
+                  color: '#475569',
+                  padding: '8px 16px',
+                  borderRadius: '6px'
                 }}
               >
-                Get Started
-              </Button>
+                Sign In
+              </span>
             </a>
-
-            
+            <a
+              href="#/login"
+              style={{
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '10px 22px',
+                backgroundColor: '#FF6800',
+                color: '#FFFFFF',
+                borderRadius: '8px',
+                fontWeight: 800,
+                fontSize: '0.92rem',
+                boxShadow: '0 4px 14px rgba(255, 104, 0, 0.35)',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <span>Enter Event Portal</span>
+              <IconArrowRight size={15} />
+            </a>
           </div>
         </div>
       </header>
 
-      {/* Hero Section */}
+      {/* 2. Hero Section */}
       <section
         style={{
           position: 'relative',
-          padding: '60px 28px 70px',
-          maxWidth: '1360px',
+          padding: '64px 28px 72px',
+          maxWidth: '1240px',
           margin: '0 auto'
         }}
       >
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
-            gap: '40px',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
+            gap: '48px',
             alignItems: 'center'
           }}
         >
-          {/* Left Column: Heading, Subtitle & Primary Actions */}
+          {/* Left Column: Event Identity & Clear Purpose */}
           <div>
             <div
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
+                padding: '6px 14px',
+                borderRadius: '9999px',
+                backgroundColor: '#EFF6FF',
+                border: '1px solid #BFDBFE',
+                color: '#1D4ED8',
                 fontSize: '0.78rem',
                 fontWeight: 800,
-                letterSpacing: '0.15em',
+                letterSpacing: '0.08em',
                 textTransform: 'uppercase',
-                color: 'var(--color-navy, #0B192C)',
-                marginBottom: '16px',
-                padding: '4px 14px',
-                borderRadius: '9999px',
-                backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                border: '1px solid rgba(226, 232, 240, 0.9)',
-                boxShadow: '0 2px 6px rgba(15, 23, 42, 0.03)'
+                marginBottom: '20px'
               }}
             >
-              SIMULATE &bull; TRADE &bull; INVEST &bull; LEAD
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#2563EB' }} />
+              Official Inter-School Financial Market Championship
             </div>
 
             <h1
               style={{
-                fontSize: 'clamp(2.4rem, 4.5vw, 3.8rem)',
+                fontSize: 'clamp(2.8rem, 5vw, 4.2rem)',
                 fontWeight: 900,
-                lineHeight: 1.14,
-                color: 'var(--color-navy, #0B192C)',
-                fontFamily: "var(--font-display, 'Plus Jakarta Sans', sans-serif)",
+                lineHeight: 1.08,
                 letterSpacing: '-0.03em',
-                marginBottom: '14px'
+                color: '#0B192C',
+                margin: '0 0 12px 0'
               }}
             >
-              SAAMX:<br />
-              <span
-                style={{
-                  background: 'linear-gradient(135deg, #FF6800 0%, #EA580C 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  display: 'inline-block'
-                }}
-              >
-                Student Academic Asset Market eXchange
-              </span>
+              SAAMX&apos;26
             </h1>
 
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '1rem', fontWeight: 800, color: '#0B192C', marginBottom: '16px', padding: '8px 16px', borderRadius: '8px', backgroundColor: 'rgba(255, 104, 0, 0.08)', border: '1px solid rgba(255, 104, 0, 0.25)' }}>
-              <span style={{ color: '#FF6800' }}>&ldquo;Experience the market, don&apos;t just plan it.&rdquo;</span>
+            <div
+              style={{
+                fontSize: 'clamp(1.2rem, 2.2vw, 1.6rem)',
+                fontWeight: 800,
+                color: '#FF6800',
+                lineHeight: 1.3,
+                marginBottom: '16px'
+              }}
+            >
+              Student Academic Asset Market eXchange
+            </div>
+
+            <div
+              style={{
+                display: 'inline-block',
+                padding: '10px 18px',
+                backgroundColor: 'rgba(255, 104, 0, 0.08)',
+                borderLeft: '4px solid #FF6800',
+                borderRadius: '0 8px 8px 0',
+                fontSize: '1.05rem',
+                fontWeight: 800,
+                color: '#0B192C',
+                marginBottom: '22px'
+              }}
+            >
+              &ldquo;Experience the market, don&apos;t just plan it.&rdquo;
             </div>
 
             <p
               style={{
-                fontSize: 'clamp(1rem, 1.4vw, 1.15rem)',
-                lineHeight: 1.65,
-                color: 'var(--color-ink-secondary, #475569)',
-                maxWidth: '620px',
-                marginBottom: '28px',
-                fontWeight: 400
+                fontSize: '1.08rem',
+                lineHeight: 1.68,
+                color: '#475569',
+                margin: '0 0 32px 0',
+                maxWidth: '560px'
               }}
             >
-              SAAMX is an authentic financial market simulation where student teams analyze securities, consult floor advisors, manage multi-currency portfolios, and submit actionable physical order slips across dedicated Exchange, Bank, and IPO Desks.
+              A live financial-market simulation where student teams analyze securities, react to market events, manage portfolios and make decisions under changing market conditions.
             </p>
 
-            {/* CTAs matching reference */}
-            <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '40px' }}>
-              <a href="#/login" style={{ textDecoration: 'none' }}>
-                <Button
-                  variant="primary"
-                  size="lg"
-                  icon={<IconArrowRight size={16} />}
-                  iconPosition="right"
-                  style={{
-                    borderRadius: '9999px',
-                    padding: '14px 34px',
-                    fontSize: '1rem',
-                    fontWeight: 700,
-                    background: 'var(--color-orange-gradient, linear-gradient(135deg, #FF7700 0%, #EA580C 100%))',
-                    boxShadow: '0 6px 20px -2px rgba(255, 104, 0, 0.45)',
-                    color: '#FFFFFF'
-                  }}
-                >
-                  Enter Event Portal
-                </Button>
+            {/* CTAs */}
+            <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <a
+                href="#/login"
+                style={{
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  padding: '14px 30px',
+                  backgroundColor: '#FF6800',
+                  color: '#FFFFFF',
+                  borderRadius: '8px',
+                  fontWeight: 800,
+                  fontSize: '1rem',
+                  boxShadow: '0 6px 20px rgba(255, 104, 0, 0.35)',
+                  transition: 'transform 0.15s ease'
+                }}
+              >
+                <span>Enter Event Portal</span>
+                <IconArrowRight size={16} />
               </a>
 
               <button
                 type="button"
-                onClick={() => setShowOnboardingModal(true)}
+                onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '8px',
-                  borderRadius: '9999px',
-                  padding: '13px 26px',
-                  fontSize: '0.98rem',
+                  padding: '14px 24px',
+                  backgroundColor: '#FFFFFF',
+                  border: '1px solid #CBD5E1',
+                  color: '#0B192C',
+                  borderRadius: '8px',
                   fontWeight: 700,
-                  backgroundColor: 'rgba(255, 255, 255, 0.85)',
-                  backdropFilter: 'blur(12px)',
-                  WebkitBackdropFilter: 'blur(12px)',
-                  color: 'var(--color-navy, #0B192C)',
-                  border: '1px solid rgba(226, 232, 240, 0.9)',
-                  boxShadow: '0 2px 8px rgba(15, 23, 42, 0.04)',
+                  fontSize: '0.98rem',
                   cursor: 'pointer',
-                  transition: 'all 0.18s ease'
+                  boxShadow: '0 2px 6px rgba(11, 25, 44, 0.04)'
                 }}
-                className="saamx-btn-glass"
               >
-                <span>Explore the Event</span>
-                <span
-                  style={{
-                    width: '24px',
-                    height: '24px',
-                    borderRadius: '50%',
-                    backgroundColor: 'rgba(11, 25, 44, 0.06)',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginLeft: '2px'
-                  }}
-                >
-                  <IconPlay size={12} style={{ fill: 'currentColor', marginLeft: '1px' }} />
-                </span>
+                <span>Explore SAAMX</span>
+                <span style={{ fontSize: '1.1rem' }}>&darr;</span>
               </button>
             </div>
           </div>
 
-          {/* Right Column: Architectural Cityscape Graphic with Upward Orange Line & Glass Quote */}
-          <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
+          {/* Right Column: Refined Live Market Experience Composition */}
+          <div>
             <div
-              className="saamx-glass-panel"
               style={{
-                position: 'relative',
-                width: '100%',
-                maxWidth: '540px',
-                height: '420px',
-                borderRadius: '24px',
-                overflow: 'hidden',
                 backgroundColor: '#FFFFFF',
-                boxShadow: '0 20px 48px -12px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(226, 232, 240, 0.8)'
+                borderRadius: '16px',
+                border: '1px solid #E2E8F0',
+                boxShadow: '0 20px 40px -12px rgba(11, 25, 44, 0.1)',
+                padding: '24px',
+                position: 'relative'
               }}
             >
-              <img
-                src="/saamx-concept-hero.jpg"
-                alt="SAAMX Financial Simulation"
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  objectPosition: 'center',
-                  display: 'block'
-                }}
-              />
-
-              {/* Floating Glass Quote Card matching reference bottom right */}
+              {/* Card Header: Live Trading Floor Status */}
               <div
                 style={{
-                  position: 'absolute',
-                  bottom: '24px',
-                  right: '24px',
-                  padding: '14px 20px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.92)',
-                  backdropFilter: 'blur(16px)',
-                  WebkitBackdropFilter: 'blur(16px)',
-                  borderRadius: '16px',
-                  border: '1px solid rgba(255, 255, 255, 0.95)',
-                  boxShadow: '0 12px 30px -4px rgba(15, 23, 42, 0.15)',
-                  maxWidth: '260px'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#FF6800' }} />
-                  <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--color-navy, #0B192C)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                    LIVE FLOOR SIMULATION
-                  </span>
-                </div>
-                <div style={{ fontSize: '0.90rem', fontWeight: 700, color: 'var(--color-ink, #0F172A)', lineHeight: 1.3 }}>
-                  Experience the market, don't just plan it.
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Horizontal Row of 5 Frosted Glass Feature Cards matching reference */}
-        <div
-          id="features"
-          style={{
-            marginTop: '50px',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-            gap: '16px'
-          }}
-        >
-          {featureCards.map((c, idx) => (
-            <div
-              key={idx}
-              className="saamx-glass-panel"
-              style={{
-                padding: '22px 20px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '14px',
-                cursor: 'pointer'
-              }}
-              onClick={() => setShowOnboardingModal(true)}
-            >
-              <div
-                style={{
-                  width: '42px',
-                  height: '42px',
-                  borderRadius: '12px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                  border: '1px solid rgba(226, 232, 240, 0.8)',
-                  color: c.color,
                   display: 'flex',
+                  justifyContent: 'space-between',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 2px 8px rgba(15, 23, 42, 0.05)',
-                  flexShrink: 0
-                }}
-              >
-                {c.icon}
-              </div>
-              <div>
-                <div
-                  style={{
-                    fontSize: '0.95rem',
-                    fontWeight: 800,
-                    color: 'var(--color-navy, #0B192C)',
-                    lineHeight: 1.2,
-                    marginBottom: '2px'
-                  }}
-                >
-                  {c.title}
-                </div>
-                <div
-                  style={{
-                    fontSize: '0.75rem',
-                    color: 'var(--color-ink-muted, #64748B)',
-                    fontWeight: 500
-                  }}
-                >
-                  {c.subtitle}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Key Championship Metrics Strip */}
-      <section
-        style={{
-          padding: '0 28px 60px',
-          maxWidth: '1360px',
-          margin: '0 auto'
-        }}
-      >
-        <div
-          className="saamx-glass-panel"
-          style={{
-            padding: '28px 24px',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
-            gap: '20px',
-            backgroundColor: 'rgba(255, 255, 255, 0.85)'
-          }}
-        >
-          {highlights.map((h, idx) => (
-            <div key={idx} style={{ textAlign: 'center' }}>
-              <div
-                className="tabular-nums"
-                style={{
-                  fontSize: '2.1rem',
-                  fontWeight: 900,
-                  color: h.color,
-                  fontFamily: 'var(--font-mono, monospace)',
-                  lineHeight: 1.15
-                }}
-              >
-                {h.value}
-              </div>
-              <div
-                style={{
-                  fontSize: '0.78rem',
-                  color: 'var(--color-ink-secondary, #475569)',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  marginTop: '6px'
-                }}
-              >
-                {h.label}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* How The SAAMX Exchange Operates (Pillars) */}
-      <section
-        id="how-it-works"
-        style={{
-          padding: '40px 28px 70px',
-          maxWidth: '1360px',
-          margin: '0 auto'
-        }}
-      >
-        <div style={{ textAlign: 'center', marginBottom: '44px' }}>
-          <div
-            style={{
-              color: 'var(--color-orange, #FF6800)',
-              fontSize: '0.80rem',
-              fontWeight: 800,
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-              marginBottom: '8px'
-            }}
-          >
-            Engineered For Authenticity
-          </div>
-          <h2
-            style={{
-              fontSize: '2.3rem',
-              fontWeight: 800,
-              color: 'var(--color-navy, #0B192C)',
-              fontFamily: "var(--font-display, 'Plus Jakarta Sans', sans-serif)",
-              letterSpacing: '-0.02em',
-              margin: 0
-            }}
-          >
-            How The SAAMX Exchange Operates
-          </h2>
-        </div>
-
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-            gap: '24px'
-          }}
-        >
-          {pillars.map((p, idx) => (
-            <div
-              key={idx}
-              className="saamx-glass-panel"
-              style={{
-                padding: '30px 26px',
-                backgroundColor: 'rgba(255, 255, 255, 0.85)'
-              }}
-            >
-              <div
-                style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '14px',
-                  backgroundColor: 'rgba(255, 104, 0, 0.08)',
-                  border: '1px solid rgba(255, 104, 0, 0.2)',
-                  color: 'var(--color-orange, #FF6800)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
+                  borderBottom: '1px solid #F1F5F9',
+                  paddingBottom: '16px',
                   marginBottom: '18px'
                 }}
               >
-                {p.icon}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span
+                    style={{
+                      width: '10px',
+                      height: '10px',
+                      borderRadius: '50%',
+                      backgroundColor: '#10B981',
+                      boxShadow: '0 0 0 3px rgba(16, 185, 129, 0.2)'
+                    }}
+                  />
+                  <div>
+                    <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Exchange Floor Status
+                    </div>
+                    <div style={{ fontSize: '0.98rem', fontWeight: 900, color: '#0B192C' }}>
+                      Continuous Trading &bull; Session Active
+                    </div>
+                  </div>
+                </div>
+                <div
+                  style={{
+                    backgroundColor: '#F8FAFC',
+                    border: '1px solid #E2E8F0',
+                    padding: '4px 10px',
+                    borderRadius: '6px',
+                    fontFamily: 'monospace',
+                    fontSize: '0.82rem',
+                    fontWeight: 700,
+                    color: '#0B192C'
+                  }}
+                >
+                  SAAMX-INDIA-50
+                </div>
+              </div>
+
+              {/* Visual Flow: Live Market -> News -> Decision -> Trade -> Portfolio */}
+              <div style={{ marginBottom: '20px' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>
+                  Operational Loop
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '6px',
+                    backgroundColor: '#F8FAFC',
+                    border: '1px solid #E2E8F0',
+                    borderRadius: '10px',
+                    padding: '10px 14px'
+                  }}
+                >
+                  {['LIVE MARKET', 'NEWS', 'DECISION', 'TRADE', 'PORTFOLIO'].map((step, idx) => (
+                    <React.Fragment key={step}>
+                      <span
+                        style={{
+                          fontSize: '0.74rem',
+                          fontWeight: 800,
+                          color: idx === 2 || idx === 3 ? '#FF6800' : '#0B192C',
+                          letterSpacing: '0.04em'
+                        }}
+                      >
+                        {step}
+                      </span>
+                      {idx < 4 && <span style={{ color: '#94A3B8', fontSize: '0.75rem' }}>&rarr;</span>}
+                    </React.Fragment>
+                  ))}
+                </div>
+              </div>
+
+              {/* Sample Market Indicator Strips */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '12px 14px',
+                    backgroundColor: '#F8FAFC',
+                    borderRadius: '8px',
+                    border: '1px solid #F1F5F9'
+                  }}
+                >
+                  <div>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#2563EB', backgroundColor: '#EFF6FF', padding: '2px 6px', borderRadius: '4px', marginRight: '8px' }}>
+                      EQUITY
+                    </span>
+                    <strong style={{ fontSize: '0.92rem', color: '#0B192C' }}>RELIANCE</strong>
+                    <span style={{ fontSize: '0.8rem', color: '#64748B', marginLeft: '6px' }}>Reliance Industries Ltd</span>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#0B192C' }}>₹2,845.50</div>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10B981' }}>+1.85% &uarr;</div>
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '12px 14px',
+                    backgroundColor: '#F8FAFC',
+                    borderRadius: '8px',
+                    border: '1px solid #F1F5F9'
+                  }}
+                >
+                  <div>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#059669', backgroundColor: '#ECFDF5', padding: '2px 6px', borderRadius: '4px', marginRight: '8px' }}>
+                      SPOT FX
+                    </span>
+                    <strong style={{ fontSize: '0.92rem', color: '#0B192C' }}>USD / INR</strong>
+                    <span style={{ fontSize: '0.8rem', color: '#64748B', marginLeft: '6px' }}>Reserve Counter 1</span>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#0B192C' }}>₹86.42</div>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#3B82F6' }}>Spread 0.45%</div>
+                  </div>
+                </div>
+
+                {/* Simulated Order Slip Badge */}
+                <div
+                  style={{
+                    padding: '12px 14px',
+                    backgroundColor: '#FFFBEB',
+                    borderRadius: '8px',
+                    border: '1px dashed #F59E0B',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#B45309', backgroundColor: '#FEF3C7', padding: '2px 8px', borderRadius: '4px' }}>
+                      ORDER SLIP
+                    </span>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#78350F' }}>
+                      BUY &bull; 100 INFY &bull; Exchange Desk 2
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#059669' }}>
+                    Verified &bull; Bank Settled
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. Authoritative Core Statistics Strip */}
+      <section
+        style={{
+          borderTop: '1px solid #E2E8F0',
+          borderBottom: '1px solid #E2E8F0',
+          backgroundColor: '#FFFFFF',
+          padding: '28px 28px'
+        }}
+      >
+        <div
+          style={{
+            maxWidth: '1240px',
+            margin: '0 auto',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+            gap: '24px',
+            textAlign: 'center'
+          }}
+        >
+          <div>
+            <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#0B192C', fontFamily: 'monospace', lineHeight: 1.1 }}>
+              3,000+
+            </div>
+            <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: '6px' }}>
+              Securities Universe
+            </div>
+          </div>
+
+          <div>
+            <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#FF6800', fontFamily: 'monospace', lineHeight: 1.1 }}>
+              10
+            </div>
+            <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: '6px' }}>
+              Investment Houses
+            </div>
+          </div>
+
+          <div>
+            <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#10B981', fontFamily: 'monospace', lineHeight: 1.1 }}>
+              ₹1 CRORE
+            </div>
+            <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: '6px' }}>
+              Starting Capital / Team
+            </div>
+          </div>
+
+          <div>
+            <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#2563EB', fontFamily: 'monospace', lineHeight: 1.1 }}>
+              5
+            </div>
+            <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: '6px' }}>
+              Physical Exchange Desks
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 4. The Complete Student Journey: Learn -> Analyze -> Decide -> Trade */}
+      <section
+        id="how-it-works"
+        style={{
+          padding: '80px 28px',
+          maxWidth: '1240px',
+          margin: '0 auto'
+        }}
+      >
+        <div style={{ textAlign: 'center', marginBottom: '50px' }}>
+          <div
+            style={{
+              color: '#FF6800',
+              fontSize: '0.82rem',
+              fontWeight: 800,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              marginBottom: '10px'
+            }}
+          >
+            The Participant Experience
+          </div>
+          <h2
+            style={{
+              fontSize: '2.4rem',
+              fontWeight: 900,
+              color: '#0B192C',
+              margin: '0 0 12px 0'
+            }}
+          >
+            Learn &bull; Analyze &bull; Decide &bull; Trade
+          </h2>
+          <p
+            style={{
+              fontSize: '1.05rem',
+              color: '#64748B',
+              maxWidth: '680px',
+              margin: '0 auto',
+              lineHeight: 1.6
+            }}
+          >
+            SAAMX immerses student teams in an end-to-end simulated market experience where textbook theory meets dynamic decision-making.
+          </p>
+        </div>
+
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+            gap: '24px'
+          }}
+        >
+          {studentJourney.map((card) => (
+            <div
+              key={card.step}
+              style={{
+                backgroundColor: '#FFFFFF',
+                borderRadius: '12px',
+                border: '1px solid #E2E8F0',
+                padding: '30px 24px',
+                boxShadow: '0 4px 12px rgba(11, 25, 44, 0.03)',
+                display: 'flex',
+                flexDirection: 'column'
+              }}
+            >
+              <div
+                style={{
+                  fontSize: '0.82rem',
+                  fontWeight: 900,
+                  color: '#FF6800',
+                  letterSpacing: '0.06em',
+                  marginBottom: '12px'
+                }}
+              >
+                PHASE {card.step}
               </div>
               <h3
                 style={{
-                  fontSize: '1.22rem',
-                  fontWeight: 800,
-                  color: 'var(--color-navy, #0B192C)',
-                  fontFamily: "var(--font-display, 'Plus Jakarta Sans', sans-serif)",
-                  marginBottom: '10px'
+                  fontSize: '1.5rem',
+                  fontWeight: 900,
+                  color: '#0B192C',
+                  margin: '0 0 6px 0'
                 }}
               >
-                {p.title}
+                {card.title}
               </h3>
+              <div
+                style={{
+                  fontSize: '0.85rem',
+                  fontWeight: 700,
+                  color: '#2563EB',
+                  marginBottom: '14px'
+                }}
+              >
+                {card.tagline}
+              </div>
               <p
                 style={{
                   fontSize: '0.92rem',
-                  color: 'var(--color-ink-secondary, #475569)',
+                  color: '#64748B',
                   lineHeight: 1.6,
                   margin: 0
                 }}
               >
-                {p.desc}
+                {card.desc}
               </p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Master Event Schedule & Canonical Rules */}
+      {/* 5. The Market is Live */}
       <section
-        id="schedule"
         style={{
-          padding: '60px 28px',
-          backgroundColor: 'rgba(255, 255, 255, 0.65)',
-          borderTop: '1px solid var(--color-border)',
-          borderBottom: '1px solid var(--color-border)'
+          backgroundColor: '#0B192C',
+          color: '#FFFFFF',
+          padding: '80px 28px'
         }}
       >
-        <div style={{ maxWidth: '1020px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+        <div style={{ maxWidth: '1240px', margin: '0 auto' }}>
+          <div style={{ maxWidth: '720px', marginBottom: '40px' }}>
             <div
               style={{
-                color: 'var(--color-orange, #FF6800)',
-                fontSize: '0.80rem',
+                color: '#FF6800',
+                fontSize: '0.82rem',
                 fontWeight: 800,
                 letterSpacing: '0.12em',
                 textTransform: 'uppercase',
-                marginBottom: '8px'
+                marginBottom: '10px'
               }}
             >
-              Canonical Competition Protocol
+              Real-Time Simulation Dynamic
             </div>
             <h2
               style={{
-                fontSize: '2.3rem',
-                fontWeight: 800,
-                color: 'var(--color-navy, #0B192C)',
-                fontFamily: "var(--font-display, 'Plus Jakarta Sans', sans-serif)",
-                letterSpacing: '-0.02em',
-                margin: '0 0 8px 0'
+                fontSize: '2.5rem',
+                fontWeight: 900,
+                color: '#FFFFFF',
+                margin: '0 0 16px 0',
+                lineHeight: 1.15
               }}
             >
-              Official Event Schedule
+              The Market is Live.
             </h2>
             <p
               style={{
-                color: 'var(--color-ink-secondary, #475569)',
-                fontSize: '0.90rem',
+                fontSize: '1.08rem',
+                color: '#94A3B8',
+                lineHeight: 1.68,
                 margin: 0
               }}
             >
-              Host Institution & Campus Date: Subject to Event Secretariat Announcement. Timings below indicate canonical operational flow.
+              Market prices are never static. In SAAMX, participant portfolios and positions continuously adapt as the trading environment reacts to dynamic events:
             </p>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {scheduleEvents.map((item, idx) => (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+              gap: '20px'
+            }}
+          >
+            {[
+              { title: 'Market Movements', desc: 'Price discovery driven by continuous institutional trading volume and market depth.' },
+              { title: 'Macro News Catalysts', desc: 'Fast-moving economic developments and corporate reports released to the market wire.' },
+              { title: 'Active Portfolio Positions', desc: 'Holdings fluctuate in value, requiring teams to manage cash reserves and sector exposure.' },
+              { title: 'Currency Fluctuations', desc: 'Dynamic exchange rates impacting international securities and cross-border settlement.' },
+              { title: 'Primary IPO Windows', desc: 'High-conviction tender opportunities with limited subscription windows.' },
+              { title: 'Changing Conditions', desc: 'Circuit breakers, regulatory notices, and changing liquidity across sectors.' }
+            ].map((item, idx) => (
               <div
                 key={idx}
-                className="saamx-glass-panel"
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '24px',
-                  padding: '18px 24px',
-                  flexWrap: 'wrap',
-                  backgroundColor: 'rgba(255, 255, 255, 0.9)'
+                  backgroundColor: '#1E293B',
+                  borderRadius: '10px',
+                  border: '1px solid #334155',
+                  padding: '22px 20px'
+                }}
+              >
+                <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '8px' }}>
+                  {item.title}
+                </div>
+                <div style={{ fontSize: '0.90rem', color: '#94A3B8', lineHeight: 1.55 }}>
+                  {item.desc}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 6. Physical Floor Experience: Desks & Settlement Flow */}
+      <section
+        id="desks"
+        style={{
+          padding: '80px 28px',
+          maxWidth: '1240px',
+          margin: '0 auto'
+        }}
+      >
+        <div style={{ textAlign: 'center', marginBottom: '50px' }}>
+          <div
+            style={{
+              color: '#FF6800',
+              fontSize: '0.82rem',
+              fontWeight: 800,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              marginBottom: '10px'
+            }}
+          >
+            Authentic Trading Floor Flow
+          </div>
+          <h2
+            style={{
+              fontSize: '2.4rem',
+              fontWeight: 900,
+              color: '#0B192C',
+              margin: '0 0 12px 0'
+            }}
+          >
+            Physical Floor &amp; Settlement Architecture
+          </h2>
+          <p
+            style={{
+              fontSize: '1.05rem',
+              color: '#64748B',
+              maxWidth: '680px',
+              margin: '0 auto',
+              lineHeight: 1.6
+            }}
+          >
+            SAAMX combines electronic decision terminals with physical floor desks, mirroring authentic institutional trading.
+          </p>
+        </div>
+
+        {/* 4-Step Physical Flow */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+            gap: '20px',
+            marginBottom: '40px'
+          }}
+        >
+          {physicalFlow.map((step, idx) => (
+            <div
+              key={idx}
+              style={{
+                backgroundColor: '#FFFFFF',
+                borderRadius: '12px',
+                border: '1px solid #E2E8F0',
+                padding: '26px 22px',
+                boxShadow: '0 4px 12px rgba(11, 25, 44, 0.03)'
+              }}
+            >
+              <span
+                style={{
+                  display: 'inline-block',
+                  backgroundColor: '#EFF6FF',
+                  color: '#2563EB',
+                  fontSize: '0.75rem',
+                  fontWeight: 900,
+                  padding: '3px 8px',
+                  borderRadius: '4px',
+                  textTransform: 'uppercase',
+                  marginBottom: '14px'
+                }}
+              >
+                {step.badge}
+              </span>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0B192C', margin: '0 0 8px 0' }}>
+                {step.title}
+              </h3>
+              <p style={{ fontSize: '0.90rem', color: '#64748B', lineHeight: 1.55, margin: 0 }}>
+                {step.desc}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* Specialized Desks Breakdown */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+            gap: '16px'
+          }}
+        >
+          {[
+            {
+              title: 'Exchange Desks (1–5)',
+              tag: 'Order Verification',
+              desc: 'Physical slip inspection, stamp checks, and electronic queue matching.'
+            },
+            {
+              title: 'Bank Counters (1–4)',
+              tag: 'Cash & Settlement',
+              desc: 'Trade clearance, voucher settlement, and portfolio cash debits/credits.'
+            },
+            {
+              title: 'Forex Desk (FX 1–2)',
+              tag: 'Currency Conversion',
+              desc: 'Spot currency exchange across 6 foreign currencies with finite reserves.'
+            },
+            {
+              title: 'IPO Order Desk',
+              tag: 'Primary Allotments',
+              desc: 'Dedicated subscription counters for primary public tenders and bids.'
+            }
+          ].map((desk, idx) => (
+            <div
+              key={idx}
+              style={{
+                backgroundColor: '#F8FAFC',
+                borderRadius: '10px',
+                border: '1px solid #E2E8F0',
+                padding: '20px 18px'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0B192C' }}>{desk.title}</span>
+                <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#FF6800', backgroundColor: 'rgba(255, 104, 0, 0.08)', padding: '2px 6px', borderRadius: '4px' }}>
+                  {desk.tag}
+                </span>
+              </div>
+              <div style={{ fontSize: '0.85rem', color: '#64748B', lineHeight: 1.5 }}>
+                {desk.desc}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 7. Market Ecosystem Supported by SAAMX */}
+      <section
+        style={{
+          backgroundColor: '#FFFFFF',
+          borderTop: '1px solid #E2E8F0',
+          borderBottom: '1px solid #E2E8F0',
+          padding: '80px 28px'
+        }}
+      >
+        <div style={{ maxWidth: '1240px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '44px' }}>
+            <div
+              style={{
+                color: '#FF6800',
+                fontSize: '0.82rem',
+                fontWeight: 800,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                marginBottom: '10px'
+              }}
+            >
+              Authorized Asset Classes
+            </div>
+            <h2
+              style={{
+                fontSize: '2.4rem',
+                fontWeight: 900,
+                color: '#0B192C',
+                margin: '0 0 12px 0'
+              }}
+            >
+              The SAAMX Market Ecosystem
+            </h2>
+            <p
+              style={{
+                fontSize: '1.02rem',
+                color: '#64748B',
+                maxWidth: '620px',
+                margin: '0 auto',
+                lineHeight: 1.6
+              }}
+            >
+              A multi-asset universe providing comprehensive exposure to modern capital markets.
+            </p>
+          </div>
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+              gap: '16px'
+            }}
+          >
+            {marketEcosystem.map((item, idx) => (
+              <div
+                key={idx}
+                style={{
+                  backgroundColor: '#F8FAFC',
+                  borderRadius: '10px',
+                  border: '1px solid #E2E8F0',
+                  padding: '20px 18px'
+                }}
+              >
+                <div style={{ fontSize: '1rem', fontWeight: 800, color: '#0B192C', marginBottom: '6px' }}>
+                  {item.name}
+                </div>
+                <div style={{ fontSize: '0.84rem', color: '#64748B', lineHeight: 1.5 }}>
+                  {item.desc}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 8. Official Event Schedule (Exact Official Format) */}
+      <section
+        id="schedule"
+        style={{
+          padding: '80px 28px',
+          maxWidth: '1020px',
+          margin: '0 auto'
+        }}
+      >
+        <div style={{ textAlign: 'center', marginBottom: '44px' }}>
+          <div
+            style={{
+              color: '#FF6800',
+              fontSize: '0.82rem',
+              fontWeight: 800,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              marginBottom: '10px'
+            }}
+          >
+            Official Competition Timeline
+          </div>
+          <h2
+            style={{
+              fontSize: '2.4rem',
+              fontWeight: 900,
+              color: '#0B192C',
+              margin: '0 0 10px 0'
+            }}
+          >
+            Official Event Schedule
+          </h2>
+          <p
+            style={{
+              fontSize: '0.98rem',
+              color: '#64748B',
+              margin: 0
+            }}
+          >
+            Standard Indian Standard Time (IST) operational sequence for the SAAMX championship floor.
+          </p>
+        </div>
+
+        {/* Schedule Table/Timeline */}
+        <div
+          style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: '12px',
+            border: '1px solid #E2E8F0',
+            overflow: 'hidden',
+            boxShadow: '0 4px 16px rgba(11, 25, 44, 0.04)'
+          }}
+        >
+          {/* Header Bar matching event official branding */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '240px 1fr',
+              backgroundColor: '#0B192C',
+              color: '#FFFFFF',
+              padding: '14px 24px',
+              fontWeight: 800,
+              fontSize: '0.92rem',
+              letterSpacing: '0.04em'
+            }}
+          >
+            <div>Time (IST)</div>
+            <div>Activity</div>
+          </div>
+
+          {/* Schedule Rows */}
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {officialSchedule.map((row, idx) => (
+              <div
+                key={idx}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '240px 1fr',
+                  padding: '20px 24px',
+                  borderBottom: idx < officialSchedule.length - 1 ? '1px solid #F1F5F9' : 'none',
+                  backgroundColor: idx % 2 === 1 ? '#F8FAFC' : '#FFFFFF',
+                  alignItems: 'baseline'
                 }}
               >
                 <div
-                  className="tabular-nums"
                   style={{
-                    minWidth: '130px',
+                    fontFamily: 'monospace',
                     fontWeight: 800,
-                    fontSize: '0.94rem',
-                    color: 'var(--color-navy, #0B192C)',
-                    fontFamily: 'var(--font-mono, monospace)'
+                    fontSize: '0.95rem',
+                    color: '#0B192C'
                   }}
                 >
-                  {item.time}
+                  {row.time}
                 </div>
-                <div style={{ flex: 1, minWidth: '240px' }}>
-                  <div
-                    style={{
-                      fontSize: '1rem',
-                      fontWeight: 800,
-                      color: 'var(--color-navy, #0B192C)',
-                      marginBottom: '3px'
-                    }}
-                  >
-                    {item.title}
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: '1rem', color: '#0B192C', marginBottom: '4px' }}>
+                    {row.title}
                   </div>
-                  <div
-                    style={{
-                      fontSize: '0.88rem',
-                      color: 'var(--color-ink-secondary, #475569)',
-                      lineHeight: 1.5
-                    }}
-                  >
-                    {item.desc}
+                  <div style={{ fontSize: '0.88rem', color: '#64748B', lineHeight: 1.5 }}>
+                    {row.desc}
                   </div>
                 </div>
               </div>
@@ -826,237 +1159,93 @@ export default function PublicLandingPage() {
         </div>
       </section>
 
-      {/* Entry CTA Banner */}
+      {/* 9. Final Call to Action */}
       <section
         style={{
           padding: '80px 28px',
+          backgroundColor: '#0B192C',
+          color: '#FFFFFF',
           textAlign: 'center'
         }}
       >
-        <div style={{ maxWidth: '840px', margin: '0 auto' }}>
+        <div style={{ maxWidth: '720px', margin: '0 auto' }}>
           <h2
             style={{
-              fontSize: '2.6rem',
+              fontSize: '2.5rem',
               fontWeight: 900,
-              color: 'var(--color-navy, #0B192C)',
-              fontFamily: "var(--font-display, 'Plus Jakarta Sans', sans-serif)",
-              letterSpacing: '-0.02em',
-              marginBottom: '16px'
+              color: '#FFFFFF',
+              margin: '0 0 16px 0'
             }}
           >
-            Ready For Market Open?
+            Enter the SAAMX Trading Floor
           </h2>
           <p
             style={{
-              color: 'var(--color-ink-secondary, #475569)',
-              fontSize: '1.05rem',
+              fontSize: '1.08rem',
+              color: '#94A3B8',
               lineHeight: 1.6,
               marginBottom: '36px'
             }}
           >
-            Registered Investment Houses, Verification Officers, Exchange Operators, and Regulatory Observers may access the floor below.
+            Authorized student investment houses, floor runners, exchange operators, and regulatory overseers may sign in to access their assigned stations.
           </p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
-            <a href="#/login" style={{ textDecoration: 'none' }}>
-              <Button
-                variant="primary"
-                size="lg"
-                icon={<IconArrowRight size={16} />}
-                iconPosition="right"
-                style={{
-                  borderRadius: '9999px',
-                  padding: '15px 36px',
-                  fontSize: '1rem',
-                  fontWeight: 700,
-                  background: 'var(--color-orange-gradient, linear-gradient(135deg, #FF7700 0%, #EA580C 100%))',
-                  boxShadow: '0 6px 20px -2px rgba(255, 104, 0, 0.45)',
-                  color: '#FFFFFF'
-                }}
-              >
-                Enter Event Portal
-              </Button>
+            <a
+              href="#/login"
+              style={{
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '10px',
+                padding: '14px 34px',
+                backgroundColor: '#FF6800',
+                color: '#FFFFFF',
+                borderRadius: '8px',
+                fontWeight: 800,
+                fontSize: '1rem',
+                boxShadow: '0 4px 16px rgba(255, 104, 0, 0.4)'
+              }}
+            >
+              <span>Enter Event Portal</span>
+              <IconArrowRight size={16} />
             </a>
-            <a href="#/login" style={{ textDecoration: 'none' }}>
-              <Button
-                variant="secondary"
-                size="lg"
-                style={{
-                  borderRadius: '9999px',
-                  padding: '15px 32px',
-                  fontSize: '1rem',
-                  fontWeight: 700,
-                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                  borderColor: 'var(--color-border)',
-                  color: 'var(--color-navy, #0B192C)'
-                }}
-              >
-                Floor Gateway Access →
-              </Button>
+
+            <a
+              href="#/portals"
+              style={{
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '14px 28px',
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                color: '#FFFFFF',
+                borderRadius: '8px',
+                fontWeight: 700,
+                fontSize: '1rem'
+              }}
+            >
+              <span>Desks Directory</span>
+              <IconArrowRight size={14} />
             </a>
           </div>
         </div>
       </section>
 
-      {/* Onboarding Interactive Modal matching top right reference image */}
-      {showOnboardingModal && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 1050,
-            backgroundColor: 'rgba(11, 25, 44, 0.45)',
-            backdropFilter: 'blur(10px)',
-            WebkitBackdropFilter: 'blur(10px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px'
-          }}
-          onClick={() => setShowOnboardingModal(false)}
-        >
-          <div
-            className="saamx-glass-panel"
-            style={{
-              maxWidth: '560px',
-              width: '100%',
-              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-              borderRadius: '24px',
-              padding: '36px',
-              boxShadow: '0 24px 60px -12px rgba(15, 23, 42, 0.25)',
-              position: 'relative'
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header with SAAMX logo and Skip button */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <SaamxLogo size="sm" />
-              <button
-                type="button"
-                onClick={() => setShowOnboardingModal(false)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  color: 'var(--color-ink-muted, #64748B)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}
-              >
-                <span>Skip</span>
-                <IconX size={16} />
-              </button>
-            </div>
-
-            <h2
-              style={{
-                fontSize: '1.85rem',
-                fontWeight: 900,
-                color: 'var(--color-navy, #0B192C)',
-                fontFamily: "var(--font-display, 'Plus Jakarta Sans', sans-serif)",
-                lineHeight: 1.2,
-                marginBottom: '24px'
-              }}
-            >
-              More than a simulation.<br />
-              A real-world experience.
-            </h2>
-
-            {/* List of 6 items with circular icons matching reference */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '32px' }}>
-              {onboardingSteps.map((step, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '16px',
-                    padding: '8px 12px',
-                    borderRadius: '12px',
-                    backgroundColor: 'rgba(240, 244, 249, 0.5)'
-                  }}
-                >
-                  <div
-                    style={{
-                      width: '38px',
-                      height: '38px',
-                      borderRadius: '50%',
-                      backgroundColor: 'var(--color-navy, #0B192C)',
-                      color: '#FFFFFF',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0
-                    }}
-                  >
-                    {step.icon}
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--color-navy, #0B192C)' }}>
-                      {step.title}
-                    </div>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--color-ink-muted, #64748B)' }}>
-                      {step.desc}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Modal Bottom Actions */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <a
-                href="#/login"
-                onClick={() => setShowOnboardingModal(false)}
-                style={{
-                  fontSize: '0.90rem',
-                  fontWeight: 700,
-                  color: 'var(--color-orange, #FF6800)',
-                  textDecoration: 'none'
-                }}
-              >
-                Register Your Team →
-              </a>
-
-              <a
-                href="#/login"
-                onClick={() => setShowOnboardingModal(false)}
-                style={{
-                  width: '46px',
-                  height: '46px',
-                  borderRadius: '50%',
-                  background: 'var(--color-orange-gradient, linear-gradient(135deg, #FF7700 0%, #EA580C 100%))',
-                  color: '#FFFFFF',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  textDecoration: 'none',
-                  boxShadow: '0 4px 14px -2px rgba(255, 104, 0, 0.45)'
-                }}
-                title="Enter Market Gateway"
-              >
-                <IconArrowRight size={20} />
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Footer */}
+      {/* 10. Clean Authoritative Footer */}
       <footer
         style={{
-          padding: '36px 32px 28px',
-          borderTop: '1px solid var(--color-border)',
-          backgroundColor: 'rgba(255, 255, 255, 0.8)',
-          fontSize: '0.84rem',
-          color: 'var(--color-ink-secondary, #475569)'
+          padding: '36px 28px 28px',
+          borderTop: '1px solid #E2E8F0',
+          backgroundColor: '#FFFFFF',
+          fontSize: '0.85rem',
+          color: '#64748B'
         }}
       >
         <div
           style={{
-            maxWidth: '1360px',
+            maxWidth: '1240px',
             margin: '0 auto',
             display: 'flex',
             justifyContent: 'space-between',
@@ -1068,21 +1257,29 @@ export default function PublicLandingPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <SaamxLogo size="sm" />
             <div>
-              <div style={{ fontWeight: 800, color: 'var(--color-navy, #0B192C)' }}>
+              <div style={{ fontWeight: 800, color: '#0B192C' }}>
                 Student Academic Asset Market eXchange
               </div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--color-ink-muted, #64748B)' }}>
-                Technical Directorate & Event Secretariat | Copyright © 2026 Medam Sridhara. All Rights Reserved.
+              <div style={{ fontSize: '0.78rem', color: '#94A3B8' }}>
+                Technical Directorate &bull; Official Inter-School Financial Simulation
               </div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '18px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <a href="#/login" style={{ color: 'var(--color-orange, #FF6800)', textDecoration: 'none', fontWeight: 700 }}>Floor Access</a>
-            <a href="#/login" style={{ color: 'var(--color-navy, #0B192C)', textDecoration: 'none', fontWeight: 600 }}>Staff & Team Login</a>
-            <a href="#/projector" style={{ color: 'var(--color-ink-secondary, #475569)', textDecoration: 'none', fontWeight: 600 }}>Public Projector</a>
-            <a href="#/portals" style={{ color: 'var(--color-ink-secondary, #475569)', textDecoration: 'none', fontWeight: 600 }}>Desks & Portals</a>
-            <span style={{ color: 'var(--color-ink-muted, #94A3B8)' }}>Private Academic Simulation</span>
+          <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <a href="#/login" style={{ color: '#FF6800', textDecoration: 'none', fontWeight: 700 }}>
+              Event Portal
+            </a>
+            <a href="#/portals" style={{ color: '#0B192C', textDecoration: 'none', fontWeight: 600 }}>
+              Desks Directory
+            </a>
+            <a href="#/projector" style={{ color: '#64748B', textDecoration: 'none', fontWeight: 600 }}>
+              Live Projector
+            </a>
+            <span style={{ color: '#CBD5E1' }}>&bull;</span>
+            <span style={{ color: '#94A3B8', fontSize: '0.78rem' }}>
+              SAAMX 2026
+            </span>
           </div>
         </div>
       </footer>
