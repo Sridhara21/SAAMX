@@ -83,7 +83,12 @@ const DESK_ASSIGN_OPTIONS = [
   { id: 'DESK_4', label: 'Order Desk 4 (Purple Station)' },
   { id: 'DESK_5', label: 'Order Desk 5 (Crimson Station)' },
   { id: 'BANK_1', label: 'Bank Desk 1 (Vault Station)' },
-  { id: 'BANK_2', label: 'Bank Desk 2 (Reserve Station)' }
+  { id: 'BANK_2', label: 'Bank Desk 2 (Reserve Station)' },
+  { id: 'BANK_3', label: 'Bank Desk 3 (Clearance Station)' },
+  { id: 'BANK_4', label: 'Bank Desk 4 (Settlement Station)' },
+  { id: 'FX_1', label: 'FX Desk 1 (Spot Conversion)' },
+  { id: 'FX_2', label: 'FX Desk 2 (Reserves Desk)' },
+  { id: 'IPO_DESK_1', label: 'IPO Order Desk (Primary Market)' }
 ];
 
 export default function PersonnelManagementPage({ state, adminPassword }) {

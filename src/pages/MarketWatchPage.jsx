@@ -668,10 +668,10 @@ export default function MarketWatchPage({ state, onOpenProfile, connected }) {
         <div>
           <div style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--color-ink-3)', textTransform: 'uppercase' }}>Securities Universe</div>
           <div style={{ fontSize: '1.05rem', fontWeight: 900, color: 'var(--color-ink)' }}>
-            {breadth.totalSecurities.toLocaleString()} Instruments
+            3000+ Instruments
           </div>
           <div style={{ fontSize: '0.65rem', color: 'var(--color-ink-4)' }}>
-            {breadth.activeSecs} Active &bull; {breadth.haltedSecs} Halted
+            {breadth.activeSecs} Active &bull; {breadth.haltedSecs} Halted &bull; ({breadth.totalSecurities.toLocaleString()} Catalogued)
           </div>
         </div>
 

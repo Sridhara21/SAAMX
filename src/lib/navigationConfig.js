@@ -69,7 +69,7 @@ export const NAVIGATION_SECTIONS = [
         routes: ['#/market-watch'],
         icon: 'bar-chart',
         roles: ['team', 'operator_x', 'verification', 'advisor', 'sebi', 'journalist', 'judge', 'portfolio', 'admin'],
-        description: '2,061 Securities Universe & Live Quotes'
+        description: '3,000+ Securities Universe & Live Quotes'
       },
       {
         id: 'market-intelligence',

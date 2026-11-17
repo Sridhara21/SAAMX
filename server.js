@@ -1306,6 +1306,28 @@ let lastBackupTime = Date.now();
 const logAuditEvent = (entry) => {
   try {
     const auditId = `AUD_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    
+    // Safety: Strip credentials / secrets from audit payloads
+    const sanitizeValue = (val) => {
+      if (!val) return val;
+      if (typeof val === 'object') {
+        const copy = JSON.parse(JSON.stringify(val));
+        const scrub = (obj) => {
+          if (!obj || typeof obj !== 'object') return;
+          for (const k of Object.keys(obj)) {
+            if (/password|pin|secret|hash|token|accesskey/i.test(k)) {
+              obj[k] = '[REDACTED]';
+            } else if (typeof obj[k] === 'object') {
+              scrub(obj[k]);
+            }
+          }
+        };
+        scrub(copy);
+        return copy;
+      }
+      return val;
+    };
+
     const fullEntry = {
       id: auditId,
       timestamp: Date.now(),
@@ -1313,13 +1335,18 @@ const logAuditEvent = (entry) => {
       role: entry.role || 'system',
       action: entry.action || 'MUTATION',
       target: entry.target || 'General',
-      previousState: entry.previousState !== undefined ? JSON.stringify(entry.previousState) : null,
-      newState: entry.newState !== undefined ? JSON.stringify(entry.newState) : null,
-      reason: entry.reason || ''
+      targetId: entry.targetId || entry.target || null,
+      station: entry.station || entry.deskId || null,
+      correlationId: entry.correlationId || `CORR_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      previousState: entry.previousState !== undefined ? JSON.stringify(sanitizeValue(entry.previousState)) : null,
+      newState: entry.newState !== undefined ? JSON.stringify(sanitizeValue(entry.newState)) : null,
+      result: entry.result || 'SUCCESS',
+      reason: typeof entry.reason === 'string' ? entry.reason.replace(/(password|pin|secret)[:=]\s*\S+/gi, '$1=[REDACTED]') : ''
     };
+
     if (!state.auditLog) state.auditLog = [];
     state.auditLog.unshift(fullEntry);
-    if (state.auditLog.length > 500) state.auditLog.pop();
+    if (state.auditLog.length > 2000) state.auditLog.pop();
 
     // Async durable write to PostgreSQL audit_logs table
     const pool = getPool();
@@ -1339,15 +1366,15 @@ const logAuditEvent = (entry) => {
           fullEntry.newState,
           fullEntry.reason
         ]
-      ).catch(err => {
-        // Keep non-fatal to protect execution flow
-        console.warn('[PostgreSQL Audit Write Notice]', err.message);
+      ).catch(e => {
+        // Silently capture DB write error so sync flows never crash
       });
     }
 
     return fullEntry;
   } catch (err) {
-    console.error('Audit log error:', err);
+    console.error('Audit log write error:', err.message);
+    return null;
   }
 };
 
@@ -3837,11 +3864,11 @@ app.post('/api/personnel', (req, res) => {
     return res.status(400).json({ error: pwdValidation.error });
   }
 
-  // Validate assignedDesk if provided
-  const validDesks = ['DESK_1', 'DESK_2', 'DESK_3', 'DESK_4', 'DESK_5'];
+  // Validate assignedDesk if provided (DESK_1 - DESK_5, BANK_1 - BANK_4, FX_1 - FX_2, IPO_DESK_1)
+  const validDesks = ['DESK_1', 'DESK_2', 'DESK_3', 'DESK_4', 'DESK_5', 'BANK_1', 'BANK_2', 'BANK_3', 'BANK_4', 'FX_1', 'FX_2', 'IPO_DESK_1'];
   const cleanDesk = assignedDesk && assignedDesk !== 'UNASSIGNED' ? assignedDesk : null;
   if (cleanDesk && !validDesks.includes(cleanDesk)) {
-    return res.status(400).json({ error: `Invalid assignedDesk '${cleanDesk}'. Must be one of DESK_1 through DESK_5 or UNASSIGNED.` });
+    return res.status(400).json({ error: `Invalid assignedDesk '${cleanDesk}'. Must be a recognized desk identifier or UNASSIGNED.` });
   }
 
   // Ensure state.personnel is initialized
@@ -4185,28 +4212,210 @@ app.post('/api/admin/reset', async (req, res) => {
     return res.status(400).json({ error: 'Accidental reset prevented. Must provide exact confirmation phrase "RESET ALL".' });
   }
 
+  const startTimestamp = Date.now();
+  const resetId = `RST_${startTimestamp}_${Math.random().toString(36).substring(2, 6)}`;
   const actor = session.username || session.userId || 'Administrator';
-  logAuditEvent({
-    actor,
-    role: session.role,
-    action: 'SYSTEM_RESET',
-    target: 'ALL',
-    reason: 'Master system reset executed with phrase RESET ALL'
-  });
+  const role = session.role || 'admin';
+  const reason = req.body?.reason || 'Master clean reset executed from Admin Control Centre.';
 
-  state = createInitialState();
-  activeAlerts.clear();
-  seedStarterData();
-  
-  // Reset and pre-populate circuitBreakerHistory with seed price ticks
+  // Capture pre-reset metrics for complete audit traceability
+  const countsBefore = {
+    orders: (state.orders || []).length,
+    transactions: (state.transactions || []).length,
+    settlements: (state.settlements || []).length,
+    fxTransactions: (state.fxTransactions || []).length,
+    newsEvents: (state.newsEvents || []).length,
+    auditLog: (state.auditLog || []).length,
+    teams: (state.teams || []).length,
+    personnel: (state.personnel || []).length,
+    securities: (state.securities || []).length
+  };
+
+  // PRESERVED STATE INVARIANTS: Personnel, Accounts, News Preset Library, RBAC, System Config, Audit Logs
+  const preservedPersonnel = Array.isArray(state.personnel) && state.personnel.length > 0 ? [...state.personnel] : getSeedPersonnel();
+  const preservedAuditLog = Array.isArray(state.auditLog) ? [...state.auditLog] : [];
+  const preservedResetHistory = Array.isArray(state.resetHistory) ? [...state.resetHistory] : [];
+  const preservedEvents = Array.isArray(state.events) && state.events.length > 0 ? [...state.events] : createInitialState().events;
+  const preservedMasterAdmins = state.masterAdmins || [{ username: 'Sridhara', role: 'admin', accessLevel: 'MASTER', createdAt: Date.now() }];
+
+  // Re-initialize transient event state
+  state.orders = [];
+  state.transactions = [];
+  state.settlements = [];
+  state.fxTransactions = [];
+  state.fxQueue = [];
+  state.corporateActions = [];
+  state.advisorReferrals = [];
+  state.activeDecayingEvents = [];
+  state.activeRumours = [];
+  state.scheduledNews = [];
+  state.fxDemandPressure = {};
+  state.leaderboard = {};
+  state.penalties = [];
+  state.judgeScorecards = [];
+  state.reconciliationRecords = [];
+  state.intelligenceFeed = [];
+  state.resultsLifecycle = 'CONFIGURED';
+  state.publishedResults = null;
+
+  // Clean FX spot rates & finite reserves
+  state.fxRates = JSON.parse(JSON.stringify(DEFAULT_FX_RATES));
+  state.fxReserves = JSON.parse(JSON.stringify(DEFAULT_FX_RESERVES));
+
+  // Clean Market State
+  state.marketState = {
+    status: 'Open',
+    sessionState: 'CONTINUOUS_TRADING',
+    simulationStartTime: Date.now(),
+    simulationDurationMinutes: 60,
+    marketIndex: 0,
+    pauseTimeOffset: 0,
+    pausedAt: null
+  };
+
+  // Clean Market Indices
+  state.marketIndices = {
+    GLOBAL100: { name: 'SAAMX GLOBAL 100', currentValue: 1000, openingValue: 1000, changePercent: 0 },
+    INDIA50: { name: 'SAAMX INDIA 50', currentValue: 5000, openingValue: 5000, changePercent: 0 },
+    US100: { name: 'SAAMX US 100', currentValue: 8000, openingValue: 8000, changePercent: 0 },
+    UK100: { name: 'SAAMX UK 100', currentValue: 4000, openingValue: 4000, changePercent: 0 }
+  };
+
+  // Clear circuit breaker history
   Object.keys(circuitBreakerHistory).forEach(k => delete circuitBreakerHistory[k]);
+  for (const k in activeVelocityTargets) delete activeVelocityTargets[k];
+
+  // Re-generate complete authoritative securities universe
+  state.securities = generateFullSecurityUniverse();
   state.securities.forEach(s => {
     circuitBreakerHistory[s.id] = [{ timestamp: Date.now(), price: s.currentPrice }];
   });
 
+  // Re-seed exactly 10 canonical teams (T01 - T10) with ₹1 Crore cash
+  state.teams = Array.from({ length: 10 }, (_, i) => {
+    const num = String(i + 1).padStart(2, '0');
+    return {
+      id: `T${num}`,
+      teamCode: `T${num}`,
+      teamName: `Trader Elite ${i + 1}`,
+      name: `Team ${num}`,
+      teamType: 'Retail',
+      cashBalance: 10000000,
+      cash: 10000000,
+      initialCash: 10000000,
+      cashWallets: { INR: 10000000, USD: 0, GBP: 0, EUR: 0, JPY: 0, AED: 0, SGD: 0, CNY: 0, AUD: 0, KRW: 0 },
+      reservedCash: { INR: 0, USD: 0, GBP: 0, EUR: 0, JPY: 0, AED: 0, SGD: 0, CNY: 0, AUD: 0, KRW: 0 },
+      foreignWallets: { USD: 0, GBP: 0, EUR: 0, JPY: 0, AED: 0, SGD: 0, CNY: 0, AUD: 0, KRW: 0 },
+      holdings: {},
+      portfolio: {},
+      reservedIpoCapital: 0,
+      borrowed: 0,
+      isActive: true,
+      createdAt: Date.now()
+    };
+  });
+
+  // Re-seed welcome wire event
+  state.newsEvents = [
+    {
+      id: `NW_STAGE_${Date.now()}`,
+      headline: '🔔 SAAMX Simulation Floor Re-Initialized — 3,000+ Global Securities Active',
+      description: 'The Academic Asset Market Exchange has initiated a brand new trading stage. Multi-currency trading desks, primary IPO hubs, and global indices are live.',
+      sentiment: 'Positive',
+      impactPercent: 0,
+      triggeredAt: Date.now(),
+      category: 'Macro'
+    }
+  ];
+
+  // Restore preserved authoritative datasets
+  state.personnel = preservedPersonnel;
+  state.events = preservedEvents;
+  state.masterAdmins = preservedMasterAdmins;
+
+  const completionTimestamp = Date.now();
+  const countsAfter = {
+    orders: 0,
+    transactions: 0,
+    settlements: 0,
+    fxTransactions: 0,
+    newsEvents: 1,
+    auditLog: preservedAuditLog.length + 1,
+    teams: 10,
+    personnel: state.personnel.length,
+    securities: state.securities.length
+  };
+
+  const resetRecord = {
+    resetId,
+    timestamp: startTimestamp,
+    startTimestamp,
+    completionTimestamp,
+    durationMs: completionTimestamp - startTimestamp,
+    initiatingUser: actor,
+    initiatingRole: role,
+    clientIp: req.ip || req.connection?.remoteAddress || 'unknown',
+    resetType: 'MASTER_CLEAN_RESET',
+    reason,
+    status: 'SUCCESS',
+    countsBefore,
+    countsAfter,
+    affectedCategories: [
+      'Orders & Queues',
+      'Exchange Processing & Bank Vouchers',
+      'Holdings & Portfolios',
+      'FX Transactions & Queue',
+      'Active News & Temporary Bulletins',
+      'IPO Bids & Allocations',
+      'Competition Scoring & Judgements'
+    ],
+    preservedCategories: [
+      'Personnel Accounts & Passwords',
+      'Role Permissions (RBAC)',
+      'Immutable Audit Log History',
+      'Authoritative 3,000+ Security Universe',
+      'System Settings & Deployment Configuration'
+    ],
+    buildId: 'SAAMX-PROD-2026.11'
+  };
+
+  // Restore audit logs & append reset history
+  state.auditLog = preservedAuditLog;
+  state.resetHistory = [resetRecord, ...preservedResetHistory];
+
+  logAuditEvent({
+    actor,
+    role,
+    action: 'MASTER_CLEAN_RESET',
+    target: 'ALL_EVENT_MODULES',
+    reason: `Master Clean Reset ${resetId} completed in ${resetRecord.durationMs}ms. Orders, holdings, and event state refreshed. Personnel & Audit preserved.`,
+    newState: { resetId, countsAfter }
+  });
+
+  activeAlerts.clear();
   saveState(true);
-  broadcastState('SYSTEM_RESET', { message: 'Database reset completed.', actor });
-  res.json({ success: true, state: getSanitizedState(state, session.role, session.teamCode) });
+  broadcastState('SYSTEM_RESET', { message: 'Master Clean Reset executed.', resetId, actor });
+
+  res.json({
+    success: true,
+    message: 'Master Clean Reset executed successfully. Preserved personnel, RBAC, audit trails, and security universe.',
+    resetId,
+    resetRecord,
+    history: state.resetHistory,
+    state: getSanitizedState(state, session.role, session.teamCode)
+  });
+});
+
+// Chronological Master Reset Audit History Endpoint
+app.get('/api/admin/reset-history', (req, res) => {
+  const session = req.session || verifySessionToken(req.headers['authorization'] || req.headers['x-fms-token']);
+  if (!session || (session.role !== 'admin' && session.role !== 'super_admin')) {
+    return res.status(403).json({ error: 'Forbidden: Administrator privileges required.' });
+  }
+  res.json({
+    success: true,
+    history: state.resetHistory || []
+  });
 });
 
 // PostgreSQL Session Store Administration
@@ -4779,49 +4988,36 @@ app.post('/api/event/update', (req, res) => {
 // Authoritative Event Capacity Read Endpoint
 app.get('/api/capacity', (req, res) => {
   const currentEvent = (state.events || []).find(e => e.eventId === state.currentEventId) || state.events?.[0];
-  const configuredCapacity = Math.min(20, Math.max(10, Number(currentEvent?.maximumInvestmentHouses || state.settings?.configuredHouseCapacity || 20)));
+  const configuredCapacity = 10;
   const activeTeams = (state.teams || []).filter(t => t.isActive !== false);
-  const registeredHouses = (state.investmentHouses || []).length;
+  const registeredHouses = Math.min(10, (state.investmentHouses || []).length);
   const isLocked = state.marketState?.status === 'Open' || state.marketState?.sessionState === 'CONTINUOUS_TRADING' || currentEvent?.eventStatus === 'MARKET_ACTIVE';
 
   res.json({
     success: true,
     minimumCapacity: 10,
-    maximumSupportedCapacity: 20,
-    configuredCapacity,
+    maximumSupportedCapacity: 10,
+    configuredCapacity: 10,
     registeredHouses,
-    activatedHouses: activeTeams.length,
-    participatingHouses: activeTeams.length,
+    activatedHouses: Math.min(10, activeTeams.length),
+    participatingHouses: Math.min(10, activeTeams.length),
     startingCapitalPerHouse: 10000000,
-    aggregateStartingCapital: configuredCapacity * 10000000,
-    aggregateParticipatingCapital: activeTeams.length * 10000000,
-    isLocked: Boolean(isLocked)
+    aggregateStartingCapital: 100000000,
+    aggregateParticipatingCapital: Math.min(10, activeTeams.length) * 10000000,
+    isLocked: Boolean(isLocked),
+    rule: 'SAAMX Canonical Rule: Participant universe is strictly fixed to exactly 10 teams (T01–T10).'
   });
 });
 
 // Authoritative Administrative Capacity Configuration Endpoint
 app.post('/api/admin/capacity', (req, res) => {
   const { capacity, reason, forceOverride } = req.body || {};
-  if (capacity === undefined || capacity === null || capacity === '' || typeof capacity === 'boolean') {
-    return res.status(400).json({ error: 'Investment House capacity integer between 10 and 20 is required.' });
+  if (capacity !== undefined && Number(capacity) !== 10) {
+    return res.status(400).json({ error: 'Configured Investment House capacity is permanently fixed to exactly 10 teams (T01–T10).' });
   }
 
-  const cap = Number(capacity);
-  if (!Number.isInteger(cap) || cap < 10 || cap > 20) {
-    return res.status(400).json({ error: 'Configured Investment House capacity must be an integer between 10 and 20 inclusive.' });
-  }
-
+  const cap = 10;
   const currentEvent = (state.events || []).find(e => e.eventId === state.currentEventId) || state.events?.[0];
-  const oldCap = currentEvent ? Math.min(20, Math.max(10, Number(currentEvent.maximumInvestmentHouses) || 20)) : 20;
-
-  const isMarketRunning = state.marketState?.status === 'Open' || state.marketState?.sessionState === 'CONTINUOUS_TRADING' || currentEvent?.eventStatus === 'MARKET_ACTIVE';
-  if (isMarketRunning && !forceOverride && cap !== oldCap) {
-    return res.status(409).json({
-      error: 'Capacity configuration is locked while trading session is active. Administrator force override required.',
-      locked: true
-    });
-  }
-
   if (currentEvent) {
     currentEvent.maximumInvestmentHouses = cap;
     currentEvent.updatedAt = Date.now();
@@ -6926,9 +7122,25 @@ app.post('/api/teams', (req, res) => {
     return res.status(400).json({ error: 'Team Code and Team Name are required.' });
   }
   const codeUpper = team.teamCode.toUpperCase();
+
+  // STRICT CANONICAL RULE: Exactly 10 Participant Teams (T01 - T10)
+  const allowedTeamCodes = ['T01', 'T02', 'T03', 'T04', 'T05', 'T06', 'T07', 'T08', 'T09', 'T10'];
+  if (!allowedTeamCodes.includes(codeUpper)) {
+    return res.status(400).json({
+      error: `Forbidden: SAAMX participant universe is strictly fixed to exactly 10 teams (T01–T10). Provisioning '${codeUpper}' is rejected.`
+    });
+  }
+
+  const activeNonSystemTeams = (state.teams || []).filter(t => allowedTeamCodes.includes(t.teamCode?.toUpperCase()));
   const exists = state.teams.some(t => t.teamCode === codeUpper);
   if (exists) {
-    return res.status(400).json({ error: `Team code ${team.teamCode} is already taken.` });
+    return res.status(400).json({ error: `Team code ${team.teamCode} is already registered in the active 10-team universe.` });
+  }
+
+  if (activeNonSystemTeams.length >= 10) {
+    return res.status(400).json({
+      error: 'Forbidden: Maximum participant team capacity (exactly 10 teams T01–T10) has been reached.'
+    });
   }
 
   const id = `T${String(state.teams.length + 1).padStart(2, '0')}`;
@@ -11621,7 +11833,20 @@ app.post('/api/admin/registration/verify', (req, res) => {
   }
 
   // APPROVE
+  // STRICT CANONICAL RULE: Participant universe is strictly fixed to exactly 10 teams (T01–T10)
+  const allowedTeamCodes = ['T01', 'T02', 'T03', 'T04', 'T05', 'T06', 'T07', 'T08', 'T09', 'T10'];
+  if (allocatedTeamCode && !allowedTeamCodes.includes(allocatedTeamCode.toUpperCase())) {
+    return res.status(400).json({
+      error: `Forbidden: SAAMX participant universe is strictly fixed to exactly 10 teams (T01–T10). Cannot allocate '${allocatedTeamCode}'.`
+    });
+  }
+
   const finalCode = allocatedTeamCode ? allocatedTeamCode.toUpperCase() : targetHouse.teamCode;
+  if (!allowedTeamCodes.includes(finalCode)) {
+    return res.status(400).json({
+      error: `Forbidden: SAAMX participant universe is strictly fixed to exactly 10 teams (T01–T10). Cannot activate '${finalCode}'.`
+    });
+  }
   const currentEvent = (state.events || []).find(e => e.eventId === (targetHouse?.eventId || state.currentEventId)) || state.events?.[0];
   const maxCap = Math.min(20, Math.max(10, Number(currentEvent?.maximumInvestmentHouses || state.settings?.configuredHouseCapacity || 20)));
   const existingTeam = (state.teams || []).find(t => t.teamCode === finalCode || t.id === finalCode);

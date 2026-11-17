@@ -175,6 +175,8 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
 
   const [resetPhrase, setResetPhrase] = useState('');
   const [resetMode, setResetMode] = useState('EVENT');
+  const [resetReason, setResetReason] = useState('Scheduled Production Re-initialization');
+  const [auditFilter, setAuditFilter] = useState('');
   const [teamFilter, setTeamFilter] = useState('ALL');
 
   // Judging Console State
@@ -783,15 +785,19 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
     }
     triggerConfirm(
       'MASTER STATE RESET',
-      `Erase active transactions and re-initialize the 2,061 security universe in ${resetMode} mode?`,
+      `Erase active transactions and re-initialize the 3,000+ security universe in ${resetMode} mode? Reason: ${resetReason}. Preserves: Personnel/Staff accounts, RBAC roles, audit logs, and 3000+ securities.`,
       async () => {
-        await apiFetch('/api/admin/reset', {
+        const res = await apiFetch('/api/admin/reset', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
-          body: JSON.stringify({ confirmText: resetPhrase, mode: resetMode })
+          body: JSON.stringify({ confirmText: resetPhrase, mode: resetMode, reason: resetReason })
         });
         setResetPhrase('');
-        alert('Database state re-seeded successfully!');
+        if (res.error) {
+          alert('Master reset failed: ' + res.error);
+        } else {
+          alert(`Master Clean Reset executed successfully! Reset ID: ${res.resetId || 'OK'}`);
+        }
       },
       true
     );
@@ -2485,7 +2491,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
           <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
             <button
               onClick={() => {
-                triggerConfirm('Market-Wide Freeze', 'Freeze trading across all 2,061 securities?', async () => {
+                triggerConfirm('Market-Wide Freeze', 'Freeze trading across all 3,000+ securities?', async () => {
                   await apiFetch('/api/admin/market-wide-action', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
@@ -2520,7 +2526,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
       {activeTab === 'securities' && (
         <div style={{ background: '#1E293B', border: '1px solid #334155', borderRadius: '12px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-            <h2 style={{ fontSize: '1.3rem', fontWeight: 900, color: '#fff' }}>2,061 Master Securities Directory</h2>
+            <h2 style={{ fontSize: '1.3rem', fontWeight: 900, color: '#fff' }}>3,000+ Master Securities Directory</h2>
             <input
               type="text"
               placeholder="Search ticker, company..."
@@ -2571,7 +2577,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
       {/* 11. TEAMS DIRECTORY */}
       {activeTab === 'teams' && (
         <div style={{ background: '#1E293B', border: '1px solid #334155', borderRadius: '12px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          <h2 style={{ fontSize: '1.3rem', fontWeight: 900, color: '#fff' }}>Participant Desks & Portfolios (20 Teams)</h2>
+          <h2 style={{ fontSize: '1.3rem', fontWeight: 900, color: '#fff' }}>Participant Desks & Portfolios (Exactly 10 Teams: T01–T10)</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
             {teams.map(t => {
               const deskForTeam = Object.keys(state?.orderDesks || {}).find(dId => (state?.orderDesks?.[dId]?.assignedTeams || []).includes(t.teamCode)) || t.assignedDesk || 'DESK_1';
@@ -2660,32 +2666,44 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
               </span>
             </div>
             <p style={{ fontSize: '0.82rem', color: '#94A3B8' }}>
-              Type <strong>RESET ALL</strong> below to wipe all transactions and restore the full 2,061 security universe. This action is restricted to the Master Floor Director.
+              Type <strong>RESET ALL</strong> below to execute a controlled Master Clean Reset of event queues, holdings, and trades while strictly preserving staff accounts, RBAC, audit records, and the 3,000+ security universe. This action is restricted to the Master Floor Director.
             </p>
 
             {isSuperAdmin ? (
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                <input
-                  type="text"
-                  placeholder="Type RESET ALL"
-                  value={resetPhrase}
-                  onChange={(e) => setResetPhrase(e.target.value)}
-                  style={{ flex: 1, background: '#1E293B', border: '1px solid #EF4444', color: '#fff', padding: '8px 12px', borderRadius: '4px', fontFamily: 'monospace' }}
-                />
-                <select
-                  value={resetMode}
-                  onChange={(e) => setResetMode(e.target.value)}
-                  style={{ background: '#1E293B', border: '1px solid #334155', color: '#fff', padding: '8px 12px', borderRadius: '4px', fontWeight: 800 }}
-                >
-                  <option value="EVENT">EVENT MODE (Full Day)</option>
-                  <option value="TEST">TEST / DEMO MODE</option>
-                </select>
-                <button
-                  onClick={handleMasterReset}
-                  style={{ padding: '8px 16px', background: '#DC2626', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 900, cursor: 'pointer' }}
-                >
-                  EXECUTE RESET
-                </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    placeholder="Type RESET ALL"
+                    value={resetPhrase}
+                    onChange={(e) => setResetPhrase(e.target.value)}
+                    style={{ flex: 1, background: '#1E293B', border: '1px solid #EF4444', color: '#fff', padding: '8px 12px', borderRadius: '4px', fontFamily: 'monospace' }}
+                  />
+                  <select
+                    value={resetMode}
+                    onChange={(e) => setResetMode(e.target.value)}
+                    style={{ background: '#1E293B', border: '1px solid #334155', color: '#fff', padding: '8px 12px', borderRadius: '4px', fontWeight: 800 }}
+                  >
+                    <option value="EVENT">EVENT MODE (Full Day)</option>
+                    <option value="TEST">TEST / DEMO MODE</option>
+                  </select>
+                  <button
+                    onClick={handleMasterReset}
+                    style={{ padding: '8px 16px', background: '#DC2626', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 900, cursor: 'pointer' }}
+                  >
+                    EXECUTE RESET
+                  </button>
+                </div>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <label style={{ fontSize: '0.78rem', color: '#94A3B8', fontWeight: 700, minWidth: '90px' }}>Reset Reason:</label>
+                  <input
+                    type="text"
+                    placeholder="Document audit reason for reset (e.g., Pre-competition dress rehearsal)"
+                    value={resetReason}
+                    onChange={(e) => setResetReason(e.target.value)}
+                    style={{ flex: 1, background: '#1E293B', border: '1px solid #334155', color: '#CBD5E1', padding: '6px 10px', borderRadius: '4px', fontSize: '0.8rem' }}
+                  />
+                </div>
               </div>
             ) : (
               <div style={{ background: '#1E293B', border: '1px solid #334155', borderRadius: '6px', padding: '10px 14px', color: '#FCA5A5', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -2694,15 +2712,80 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
             )}
           </div>
 
+          {/* Master Clean Reset Chronological History */}
+          {state?.resetHistory && state.resetHistory.length > 0 && (
+            <div style={{ background: '#0F172A', border: '1px solid #334155', borderRadius: '8px', padding: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 900, color: '#38BDF8', margin: 0 }}>
+                  Master Reset History ({state.resetHistory.length} Recorded)
+                </h3>
+                <span style={{ fontSize: '0.72rem', color: '#94A3B8' }}>Full Traceability Log (Who &bull; What &bull; When &bull; Why)</span>
+              </div>
+              <div style={{ maxHeight: '220px', overflowY: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ background: '#1E293B', color: '#94A3B8' }}>
+                      <th style={{ padding: '6px 8px' }}>Reset ID</th>
+                      <th style={{ padding: '6px 8px' }}>Timestamp</th>
+                      <th style={{ padding: '6px 8px' }}>Initiator</th>
+                      <th style={{ padding: '6px 8px' }}>Mode / Reason</th>
+                      <th style={{ padding: '6px 8px' }}>State Cleared</th>
+                      <th style={{ padding: '6px 8px' }}>Preserved</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {state.resetHistory.slice().reverse().map(rec => (
+                      <tr key={rec.resetId} style={{ borderBottom: '1px solid #1E293B' }}>
+                        <td style={{ padding: '6px 8px', fontFamily: 'monospace', color: '#F59E0B' }}>{rec.resetId}</td>
+                        <td style={{ padding: '6px 8px', color: '#CBD5E1' }}>{new Date(rec.timestamp).toLocaleString()}</td>
+                        <td style={{ padding: '6px 8px', color: '#38BDF8', fontWeight: 700 }}>{rec.initiatingUser} ({rec.initiatingRole})</td>
+                        <td style={{ padding: '6px 8px', color: '#E2E8F0' }}>
+                          <span style={{ fontWeight: 800 }}>[{rec.mode}]</span> {rec.reason}
+                        </td>
+                        <td style={{ padding: '6px 8px', color: '#EF4444' }}>
+                          Orders: {rec.countsBefore?.orders || 0} &bull; News: {rec.countsBefore?.news || 0} &bull; FX: {rec.countsBefore?.fxTransactions || 0}
+                        </td>
+                        <td style={{ padding: '6px 8px', color: '#10B981', fontWeight: 700 }}>
+                          Staff: {rec.countsAfter?.personnel || 0} &bull; Securities: {rec.countsAfter?.securities || 0}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           <div>
-            <h3 style={{ fontSize: '1rem', fontWeight: 900, marginBottom: '10px', color: '#fff' }}>Audit Trail Logs ({auditLogs.length})</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 900, margin: 0, color: '#fff' }}>Immutable Audit Trail Logs ({auditLogs.length})</h3>
+              <input
+                type="text"
+                placeholder="Search audit trail by actor, action, reason..."
+                value={auditFilter}
+                onChange={(e) => setAuditFilter(e.target.value)}
+                style={{ background: '#0F172A', border: '1px solid #334155', color: '#CBD5E1', padding: '4px 10px', borderRadius: '4px', fontSize: '0.78rem', width: '280px' }}
+              />
+            </div>
             <div style={{ maxHeight: '350px', overflowY: 'auto', background: '#0F172A', border: '1px solid #334155', borderRadius: '6px', padding: '10px' }}>
-              {auditLogs.map(log => (
-                <div key={log.id} style={{ fontSize: '0.78rem', padding: '6px 0', borderBottom: '1px solid #1E293B', color: '#94A3B8' }}>
-                  <span style={{ color: '#38BDF8', fontWeight: 700 }}>[{new Date(log.timestamp).toLocaleTimeString()}]</span>{' '}
-                  <strong style={{ color: '#fff' }}>{log.actor} ({log.role}):</strong> {log.action} &bull; {log.reason}
-                </div>
-              ))}
+              {auditLogs
+                .filter(log => {
+                  if (!auditFilter.trim()) return true;
+                  const q = auditFilter.toLowerCase();
+                  return (
+                    (log.actor || '').toLowerCase().includes(q) ||
+                    (log.role || '').toLowerCase().includes(q) ||
+                    (log.action || '').toLowerCase().includes(q) ||
+                    (log.reason || '').toLowerCase().includes(q) ||
+                    (log.target || '').toLowerCase().includes(q)
+                  );
+                })
+                .map(log => (
+                  <div key={log.id} style={{ fontSize: '0.78rem', padding: '6px 0', borderBottom: '1px solid #1E293B', color: '#94A3B8' }}>
+                    <span style={{ color: '#38BDF8', fontWeight: 700 }}>[{new Date(log.timestamp).toLocaleTimeString()}]</span>{' '}
+                    <strong style={{ color: '#fff' }}>{log.actor} ({log.role}):</strong> {log.action} &bull; {log.reason}
+                  </div>
+                ))}
             </div>
           </div>
         </div>
