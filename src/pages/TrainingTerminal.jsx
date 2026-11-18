@@ -8,6 +8,7 @@ import {
   Modal,
   Alert
 } from '../components/ui/index.js';
+import { DigitalTradeOrderSlip, DigitalBankSlip } from '../components/DigitalForms.jsx';
 import {
   IconTarget,
   IconPlay,
@@ -88,6 +89,7 @@ export default function TrainingTerminal({ state }) {
   const [loading, setLoading] = useState(false);
   const [currentOperator, setCurrentOperator] = useState('Operator 1');
   const [notification, setNotification] = useState(null);
+  const [viewingForm, setViewingForm] = useState(null);
 
   // Exchange Operator Form State
   const [returnModal, setReturnModal] = useState({ open: false, orderId: null, reason: '' });
@@ -852,6 +854,14 @@ export default function TrainingTerminal({ state }) {
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-sm font-bold text-amber-400">{order.ticketNumber || order.id}</span>
+                        <button
+                          type="button"
+                          onClick={() => setViewingForm({ type: 'TOS', data: order })}
+                          className="px-2 py-0.5 text-[10px] font-bold bg-slate-800 text-amber-300 border border-slate-700 rounded hover:bg-slate-700 transition"
+                          title="Inspect Digital Trade Order Slip"
+                        >
+                          📄 Digital Slip
+                        </button>
                         <span className={`px-2 py-0.5 text-[11px] font-bold rounded ${
                           order.action === 'BUY' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'
                         }`}>
@@ -966,6 +976,14 @@ export default function TrainingTerminal({ state }) {
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-sm font-bold text-emerald-400">{v.voucherReference}</span>
+                        <button
+                          type="button"
+                          onClick={() => setViewingForm({ type: 'PIS', data: v })}
+                          className="px-2 py-0.5 text-[10px] font-bold bg-slate-800 text-emerald-300 border border-slate-700 rounded hover:bg-slate-700 transition"
+                          title="Inspect Digital Bank Slip"
+                        >
+                          📄 Bank Voucher Slip
+                        </button>
                         <span className={`px-2 py-0.5 text-[11px] font-bold rounded ${
                           v.action === 'BUY' ? 'bg-cyan-500/20 text-cyan-300' : 'bg-purple-500/20 text-purple-300'
                         }`}>
@@ -1626,6 +1644,18 @@ export default function TrainingTerminal({ state }) {
                 Confirm Hold
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* DIGITAL PRACTICE FORM INSPECTION MODAL */}
+      {viewingForm && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur flex items-center justify-center p-4">
+          <div className="w-full max-w-xl max-h-[90vh] overflow-y-auto bg-white rounded-xl p-4 shadow-2xl">
+            {viewingForm.type === 'TOS' ? (
+              <DigitalTradeOrderSlip order={viewingForm.data} onClose={() => setViewingForm(null)} />
+            ) : (
+              <DigitalBankSlip voucher={viewingForm.data} onClose={() => setViewingForm(null)} />
+            )}
           </div>
         </div>
       )}

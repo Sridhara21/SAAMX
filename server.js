@@ -7619,10 +7619,51 @@ function isBankDeskId(id) {
   return Boolean(id && ((state.bankDesks && id in state.bankDesks) || /^BANK_\d+$/i.test(id)));
 }
 function isFxDeskId(id) {
-  return Boolean(id && (id === 'FX_DESK_1' || id === 'FX_DESK' || id === 'FX' || (state.fxDesks && id in state.fxDesks) || /^FX(_DESK)?_\d+$/i.test(id)));
+  return Boolean(id && (id === 'FX_DESK_1' || id === 'FX_DESK' || id === 'FX_1' || id === 'FX_2' || id === 'FX' || (state.fxDesks && id in state.fxDesks) || /^FX(_DESK)?_\d+$/i.test(id)));
 }
 function isValidDeskId(id) {
-  return isExchangeDeskId(id) || isBankDeskId(id) || isFxDeskId(id);
+  return isExchangeDeskId(id) || isBankDeskId(id) || isFxDeskId(id) || id === 'IPO_DESK_1';
+}
+
+/**
+ * Checks whether an operational desk is marked ACTIVE to accept new incoming work.
+ * Desks marked INACTIVE remain in draining state: existing queued orders remain intact,
+ * but no new incoming orders may be assigned to them.
+ */
+function isDeskActive(deskId) {
+  if (!deskId) return false;
+  if (!state.deskAvailability) state.deskAvailability = {};
+  // By default, all initialized desks are ACTIVE unless explicitly set to 'INACTIVE'
+  if (state.deskAvailability[deskId] !== undefined) {
+    return state.deskAvailability[deskId] === 'ACTIVE' || state.deskAvailability[deskId] === true;
+  }
+  if (state.orderDesks?.[deskId]?.availability !== undefined) {
+    return state.orderDesks[deskId].availability === 'ACTIVE';
+  }
+  if (state.bankDesks?.[deskId]?.availability !== undefined) {
+    return state.bankDesks[deskId].availability === 'ACTIVE';
+  }
+  return true;
+}
+
+function setDeskAvailabilityState(deskId, status) {
+  if (!deskId) return;
+  const normalized = (status || 'ACTIVE').toUpperCase() === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE';
+  if (!state.deskAvailability) state.deskAvailability = {};
+  state.deskAvailability[deskId] = normalized;
+
+  if (state.orderDesks?.[deskId]) {
+    state.orderDesks[deskId].availability = normalized;
+    state.orderDesks[deskId].isAcceptingNew = normalized === 'ACTIVE';
+  }
+  if (state.bankDesks?.[deskId]) {
+    state.bankDesks[deskId].availability = normalized;
+    state.bankDesks[deskId].isAcceptingNew = normalized === 'ACTIVE';
+  }
+  if (deskId === 'FX_1' || deskId === 'FX_2' || deskId === 'FX_DESK_1') {
+    if (!state.fxDeskAvailability) state.fxDeskAvailability = {};
+    state.fxDeskAvailability[deskId] = normalized;
+  }
 }
 function ensureDeskExists(deskId) {
   if (!deskId) return;
@@ -7719,7 +7760,8 @@ function computeAllDeskMetrics() {
     );
     const rejectedCount = rejectedOrders.length;
 
-    const operationalStatus = assigned.length >= 10 ? 'SATURATED' : (deskOperator === 'Unassigned' && assigned.length === 0 ? 'PAUSED' : 'ACTIVE');
+    const deskActive = isDeskActive(deskId);
+    const operationalStatus = !deskActive ? 'INACTIVE' : (assigned.length >= 10 ? 'SATURATED' : (deskOperator === 'Unassigned' && assigned.length === 0 ? 'PAUSED' : 'ACTIVE'));
 
     const formattedAssigned = assigned.map(o => {
       const matchingSettlement = (state.settlements || []).find(s => s.orderId === o.id || s.id === o.settlementId);
@@ -7782,6 +7824,8 @@ function computeAllDeskMetrics() {
       completedCount,
       rejectedCount,
       operationalStatus,
+      availability: deskActive ? 'ACTIVE' : 'INACTIVE',
+      isAcceptingNew: deskActive,
       activeOrders: formattedAssigned,
       assignedOrders: formattedAssigned,
       orderIds: assigned.map(o => o.id),
@@ -7811,7 +7855,8 @@ function computeAllDeskMetrics() {
     );
     const rejectedCount = rejectedBankOrders.length;
 
-    const operationalStatus = assignedBankOrders.length >= 10 ? 'SATURATED' : 'ACTIVE';
+    const bankActive = isDeskActive(bId);
+    const operationalStatus = !bankActive ? 'INACTIVE' : (assignedBankOrders.length >= 10 ? 'SATURATED' : 'ACTIVE');
 
     const formattedBankOrders = assignedBankOrders.map(o => {
       const matchingSettlement = (state.settlements || []).find(s => s.orderId === o.id || s.id === o.settlementId);
@@ -7871,6 +7916,8 @@ function computeAllDeskMetrics() {
       completedCount,
       rejectedCount,
       operationalStatus,
+      availability: bankActive ? 'ACTIVE' : 'INACTIVE',
+      isAcceptingNew: bankActive,
       activeOrders: formattedBankOrders,
       assignedOrders: formattedBankOrders,
       orderIds: assignedBankOrders.map(o => o.id),
@@ -7887,6 +7934,7 @@ function computeAllDeskMetrics() {
   const fxWaitTimes = fxPending.map(q => Math.max(0, Date.now() - (q.submittedAt || q.timestamp || q.createdAt || Date.now())));
   const fxAvgWait = fxWaitTimes.length > 0 ? Math.round(fxWaitTimes.reduce((a, b) => a + b, 0) / fxWaitTimes.length) : 0;
 
+  const fxActive = isDeskActive('FX_1') && isDeskActive('FX_DESK_1');
   const fxDesk = {
     id: 'FX_DESK_1',
     name: 'Foreign Exchange Desk',
@@ -7915,7 +7963,9 @@ function computeAllDeskMetrics() {
     averageWaitTimeMs: fxAvgWait,
     completedCount: fxCompleted,
     rejectedCount: fxRejected,
-    operationalStatus: fxPending.length >= 10 ? 'SATURATED' : 'ACTIVE',
+    operationalStatus: !fxActive ? 'INACTIVE' : (fxPending.length >= 10 ? 'SATURATED' : 'ACTIVE'),
+    availability: fxActive ? 'ACTIVE' : 'INACTIVE',
+    isAcceptingNew: fxActive,
     queueCount: fxPending.length + (fxProcessing ? 1 : 0),
     activeQueueCount: fxPending.length + (fxProcessing ? 1 : 0),
     isEmpty: (fxPending.length + (fxProcessing ? 1 : 0)) === 0,
@@ -8207,6 +8257,41 @@ app.post('/api/desks/assign', (req, res) => {
     return res.json({ success: true, teamCode: team.teamCode, assignedDesk: team.assignedDesk });
   }
 
+  // Desk Availability Toggle: ACTIVE <-> INACTIVE
+  if (action === 'TOGGLE_AVAILABILITY' || action === 'SET_STATUS' || req.body?.availability !== undefined) {
+    const targetDeskId = deskId;
+    if (!targetDeskId || !isValidDeskId(targetDeskId)) {
+      return res.status(400).json({ error: `Valid operational deskId required to set availability (received: '${targetDeskId}').` });
+    }
+    const requestedStatus = (req.body?.availability || req.body?.status || (isDeskActive(targetDeskId) ? 'INACTIVE' : 'ACTIVE')).toUpperCase();
+    const finalStatus = requestedStatus === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    setDeskAvailabilityState(targetDeskId, finalStatus);
+
+    logAuditEvent({
+      actor: req.session.username || req.session.displayName || 'Floor Supervisor',
+      role: req.session.role,
+      action: finalStatus === 'ACTIVE' ? 'DESK_ACTIVATED' : 'DESK_DEACTIVATED',
+      target: targetDeskId,
+      reason: req.body?.reason || (finalStatus === 'ACTIVE' ? `Desk ${targetDeskId} activated for new order intake` : `Desk ${targetDeskId} set to INACTIVE (draining existing queue, excluding from new orders)`)
+    });
+
+    saveState();
+    broadcastState('DESKS_UPDATED', {
+      deskId: targetDeskId,
+      availability: finalStatus,
+      isAcceptingNew: finalStatus === 'ACTIVE',
+      message: `Operational desk ${targetDeskId} is now ${finalStatus}`
+    });
+
+    return res.json({
+      success: true,
+      deskId: targetDeskId,
+      availability: finalStatus,
+      isAcceptingNew: finalStatus === 'ACTIVE',
+      message: `Desk ${targetDeskId} availability updated to ${finalStatus}.`
+    });
+  }
+
   return res.status(400).json({ error: 'Invalid assignment parameters. Provide personnelId/username for operator or teamCode for team.' });
 });
 
@@ -8477,17 +8562,23 @@ app.post(['/api/order/create', '/api/orders/submit', '/api/order/submit'], async
     }
   }
 
-  // Desk routing: Assign to designated desk or auto-balance across active exchange desks
+  // Dynamic Desk routing: Filter strictly for ACTIVE exchange desks
+  // If designated desk is inactive, dynamic rerouting automatically selects an active desk with the lowest queue.
   let assignedDesk = deskId;
   if (assignedDesk) {
     ensureDeskExists(assignedDesk);
+    if (!isDeskActive(assignedDesk)) {
+      assignedDesk = null; // Inactive desk cannot receive new assignments; auto-reroute
+    }
   }
+
   if (!assignedDesk || !isExchangeDeskId(assignedDesk)) {
-    if (team?.assignedDesk && isExchangeDeskId(team.assignedDesk)) {
+    if (team?.assignedDesk && isExchangeDeskId(team.assignedDesk) && isDeskActive(team.assignedDesk)) {
       assignedDesk = team.assignedDesk;
     } else {
-      const validDesks = Object.keys(state.orderDesks || {}).filter(isExchangeDeskId);
-      const fallbackDesks = validDesks.length > 0 ? validDesks : ['DESK_1', 'DESK_2', 'DESK_3', 'DESK_4', 'DESK_5'];
+      const allExchangeDesks = Object.keys(state.orderDesks || {}).filter(isExchangeDeskId);
+      const activeExchangeDesks = allExchangeDesks.filter(d => isDeskActive(d));
+      const fallbackDesks = activeExchangeDesks.length > 0 ? activeExchangeDesks : (allExchangeDesks.length > 0 ? allExchangeDesks : ['DESK_1', 'DESK_2', 'DESK_3', 'DESK_4', 'DESK_5']);
       const currentOrders = state.orders || [];
       let minCount = Infinity;
       let chosen = fallbackDesks[0];
@@ -9243,11 +9334,15 @@ app.post('/api/order/action', async (req, res) => {
     const pairKey = `${secCurrency}INR`;
     const fxRateAtExecution = secCurrency === 'INR' ? 1.0 : (state.fxRates?.[pairKey]?.midRate || DEFAULT_FX_RATES[pairKey]?.midRate || 1.0);
 
-    // Precompute synchronized Bank Desk and Voucher reference tokens
+    // Precompute synchronized Bank Desk (routing strictly to ACTIVE bank desks with draining fallback)
     let targetBankDesk = order.bankDeskId;
+    if (targetBankDesk && !isDeskActive(targetBankDesk)) {
+      targetBankDesk = null; // Inactive bank desk does not take new settlement vouchers
+    }
     if (!targetBankDesk || !isBankDeskId(targetBankDesk)) {
-      const activeBankDesks = Object.keys(state.bankDesks || {}).filter(isBankDeskId);
-      const fallbackBankDesks = activeBankDesks.length > 0 ? activeBankDesks : ['BANK_1', 'BANK_2'];
+      const allBankDesks = Object.keys(state.bankDesks || {}).filter(isBankDeskId);
+      const activeBankDesks = allBankDesks.filter(bId => isDeskActive(bId));
+      const fallbackBankDesks = activeBankDesks.length > 0 ? activeBankDesks : (allBankDesks.length > 0 ? allBankDesks : ['BANK_1', 'BANK_2']);
       const counts = fallbackBankDesks.map(bId => (state.orders || []).filter(o => o.bankDeskId === bId && o.status === 'EXECUTED_PENDING_SETTLEMENT').length);
       const minIdx = counts.indexOf(Math.min(...counts));
       targetBankDesk = fallbackBankDesks[minIdx >= 0 ? minIdx : 0] || 'BANK_1';

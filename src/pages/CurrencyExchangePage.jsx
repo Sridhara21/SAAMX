@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { apiFetch } from '../lib/api';
 import { CURRENCY_DIRECTORY, CURRENCY_SYMBOLS, DEFAULT_FX_RATES, ACTIVE_CURRENCIES, ACTIVE_FOREIGN_CURRENCIES, formatCurrency, roundCurrency } from '../lib/formatters';
+import { DigitalForexSlip } from '../components/DigitalForms.jsx';
 
 export default function CurrencyExchangePage({ state, connected = true }) {
   const userRole = (sessionStorage.getItem('saamx_role') || sessionStorage.getItem('fms_role') || '').toLowerCase();
@@ -15,6 +16,7 @@ export default function CurrencyExchangePage({ state, connected = true }) {
   const [notes, setNotes] = useState('Physical order slip request');
   const [simulationDurationSec, setSimulationDurationSec] = useState(120); // Phase D: 1-5 minute operational delay window (default 2 min)
   const [now, setNow] = useState(Date.now());
+  const [activeFxSlip, setActiveFxSlip] = useState(null);
   const [actionModal, setActionModal] = useState({
     isOpen: false,
     action: null, // 'HOLD' | 'REJECT' | 'RETURN_FOR_CORRECTION'
@@ -243,6 +245,18 @@ export default function CurrencyExchangePage({ state, connected = true }) {
         setStatusMessage({ type: 'error', text: res.error });
       } else {
         const item = res.request || res;
+        setActiveFxSlip({
+          fcfNumber: item.ticketNumber || item.id,
+          teamCode: selectedTeam,
+          fromCurrency,
+          toCurrency,
+          fromAmount: parseFloat(fromAmount),
+          toAmount: conversionQuote.toAmount,
+          rate: conversionQuote.effectiveRate,
+          representative: notes || `Representative (${selectedTeam})`,
+          createdAt: Date.now(),
+          deskId: operatorId
+        });
         setStatusMessage({
           type: 'success',
           text: `✓ FX TICKET QUEUED: #${item.ticketNumber || item.id} for Team ${selectedTeam}. Workflow Stage: QUEUED.`
@@ -284,6 +298,18 @@ export default function CurrencyExchangePage({ state, connected = true }) {
       } else {
         const tx = res.fxTransaction || res;
         setLastTicket(tx);
+        setActiveFxSlip({
+          fcfNumber: tx.ticketNumber || ticketNumber,
+          teamCode: selectedTeam,
+          fromCurrency,
+          toCurrency,
+          fromAmount: parseFloat(fromAmount),
+          toAmount: conversionQuote.toAmount,
+          rate: conversionQuote.effectiveRate,
+          representative: notes || `Representative (${selectedTeam})`,
+          createdAt: Date.now(),
+          deskId: operatorId
+        });
         setStatusMessage({
           type: 'success',
           text: `✓ SPOT FX CLEARED IMMEDIATELY: Ticket ${tx.ticketNumber || ticketNumber} — ${fromCurrency} ${Number(fromAmount).toLocaleString()} ➔ ${toCurrency} ${Number(conversionQuote.toAmount).toLocaleString()}`
@@ -1388,6 +1414,34 @@ export default function CurrencyExchangePage({ state, connected = true }) {
                             </td>
                             <td style={{ padding: '10px', textAlign: 'right' }}>
                               <div style={{ display: 'flex', justifyContent: 'flex-end', flexWrap: 'wrap', gap: '4px' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => setActiveFxSlip({
+                                    fcfNumber: item.ticketNumber || item.id,
+                                    teamCode: item.teamCode,
+                                    fromCurrency: item.fromCurrency,
+                                    toCurrency: item.toCurrency,
+                                    fromAmount: item.fromAmount,
+                                    toAmount: item.toAmount || item.estimatedToAmount,
+                                    rate: item.effectiveRate || item.rate,
+                                    representative: item.notes || `Representative (${item.teamCode})`,
+                                    createdAt: item.submittedAt || item.timestamp,
+                                    deskId: item.deskId || item.lockedByOperator || 'FX-DESK'
+                                  })}
+                                  style={{
+                                    padding: '4px 8px',
+                                    background: '#f1f5f9',
+                                    color: '#0f172a',
+                                    border: '1px solid #cbd5e1',
+                                    borderRadius: '4px',
+                                    fontSize: '11px',
+                                    fontWeight: '700',
+                                    cursor: 'pointer'
+                                  }}
+                                  title="View Forex Conversion Form (FCF)"
+                                >
+                                  📄 Slip
+                                </button>
                                 {isTerminal ? (
                                   <div>
                                     {['approved', 'SETTLED', 'settled'].includes(item.status) && (
@@ -1614,7 +1668,25 @@ export default function CurrencyExchangePage({ state, connected = true }) {
                       fxTransactions.map((tx) => (
                         <tr key={tx.id || tx.ticketNumber} style={{ borderBottom: '1px solid var(--border-soft)' }}>
                           <td style={{ padding: '8px', fontFamily: 'monospace', fontWeight: '700', color: 'var(--gold-royal)' }}>
-                            {tx.ticketNumber || tx.id}
+                            <button
+                              type="button"
+                              onClick={() => setActiveFxSlip({
+                                fcfNumber: tx.ticketNumber || tx.id,
+                                teamCode: tx.teamCode,
+                                fromCurrency: tx.fromCurrency,
+                                toCurrency: tx.toCurrency,
+                                fromAmount: tx.fromAmount,
+                                toAmount: tx.toAmount,
+                                rate: tx.effectiveRate,
+                                representative: tx.notes || `Representative (${tx.teamCode})`,
+                                createdAt: tx.timestamp,
+                                deskId: tx.operatorId || 'FX-DESK'
+                              })}
+                              style={{ background: 'none', border: 'none', padding: 0, color: 'inherit', font: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}
+                              title="View Forex Conversion Slip (FCF)"
+                            >
+                              📄 {tx.ticketNumber || tx.id}
+                            </button>
                           </td>
                           <td style={{ padding: '8px', fontWeight: '700' }}>
                             {tx.teamCode}
@@ -2065,6 +2137,24 @@ export default function CurrencyExchangePage({ state, connected = true }) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* DIGITAL FOREX CONVERSION FORM MODAL */}
+      {activeFxSlip && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.65)',
+          backdropFilter: 'blur(3px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000,
+          padding: '16px'
+        }}>
+          <div style={{ maxWidth: '640px', width: '100%', maxHeight: '90vh', overflowY: 'auto', background: '#FFFFFF', borderRadius: '12px', padding: '16px', boxShadow: '0 20px 40px rgba(0,0,0,0.25)' }}>
+            <DigitalForexSlip fxItem={activeFxSlip} onClose={() => setActiveFxSlip(null)} />
           </div>
         </div>
       )}

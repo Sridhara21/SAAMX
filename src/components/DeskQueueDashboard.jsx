@@ -61,6 +61,35 @@ export default function DeskQueueDashboard({ state = {}, isEmbedded = false, onO
     }
   }, []);
 
+  const handleToggleDeskAvailability = async (deskId, e) => {
+    if (e) e.stopPropagation();
+    try {
+      setActionLoading(true);
+      const res = await apiFetch('/api/desks/assign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'TOGGLE_AVAILABILITY',
+          deskId
+        })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        setActionSuccess(`Desk ${deskId} is now ${data.desk?.availability || 'UPDATED'}`);
+        setTimeout(() => setActionSuccess(null), 3000);
+        fetchDashboard();
+      } else {
+        setActionError(data.error || 'Failed to toggle desk status');
+        setTimeout(() => setActionError(null), 4000);
+      }
+    } catch (err) {
+      setActionError(err.message || 'Error toggling desk status');
+      setTimeout(() => setActionError(null), 4000);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchDashboard();
     const interval = setInterval(fetchDashboard, 4000);
@@ -729,12 +758,31 @@ export default function DeskQueueDashboard({ state = {}, isEmbedded = false, onO
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <Badge
-                        variant={desk.operationalStatus === 'SATURATED' ? 'danger' : desk.operationalStatus === 'PAUSED' ? 'warn' : 'success'}
+                        variant={desk.availability === 'INACTIVE' || desk.operationalStatus === 'INACTIVE' ? 'secondary' : desk.operationalStatus === 'SATURATED' ? 'danger' : desk.operationalStatus === 'PAUSED' ? 'warn' : 'success'}
                         size="sm"
                         style={{ fontWeight: 800 }}
                       >
-                        {desk.operationalStatus || 'ACTIVE'}
+                        {desk.availability === 'INACTIVE' || desk.operationalStatus === 'INACTIVE' ? '● INACTIVE' : '● ACTIVE'}
                       </Badge>
+                      <button
+                        type="button"
+                        onClick={(e) => handleToggleDeskAvailability(desk.id, e)}
+                        disabled={actionLoading}
+                        style={{
+                          background: desk.availability === 'INACTIVE' || desk.operationalStatus === 'INACTIVE' ? '#10B981' : '#F1F5F9',
+                          color: desk.availability === 'INACTIVE' || desk.operationalStatus === 'INACTIVE' ? '#FFFFFF' : '#475569',
+                          border: '1px solid #CBD5E1',
+                          borderRadius: '4px',
+                          padding: '2px 8px',
+                          fontSize: '0.7rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease'
+                        }}
+                        title={desk.availability === 'INACTIVE' || desk.operationalStatus === 'INACTIVE' ? "Activate Desk to accept new incoming orders" : "Deactivate Desk: stop accepting new orders (queued orders remain to drain)"}
+                      >
+                        {desk.availability === 'INACTIVE' || desk.operationalStatus === 'INACTIVE' ? 'Activate' : 'Deactivate'}
+                      </button>
                       <Badge
                         variant={isBank ? 'success' : isFx ? 'warning' : 'primary'}
                         size="sm"
@@ -757,6 +805,11 @@ export default function DeskQueueDashboard({ state = {}, isEmbedded = false, onO
               />
 
               <div style={{ padding: '0 16px 16px 16px', display: 'flex', flexDirection: 'column', flex: 1, gap: '10px' }}>
+                {(desk.availability === 'INACTIVE' || desk.operationalStatus === 'INACTIVE') && (
+                  <div style={{ padding: '6px 10px', backgroundColor: '#FEF2F2', border: '1px dashed #F87171', borderRadius: '4px', fontSize: '0.74rem', color: '#991B1B', fontWeight: 600 }}>
+                    ⚠ Desk Inactive: Bypassed for new incoming work. {desk.pendingCount !== undefined ? desk.pendingCount : queueCount} order(s) remaining can still be drained.
+                  </div>
+                )}
                 {/* Desk Metrics Micro-Strip */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', padding: '8px 10px', backgroundColor: 'var(--color-surface-subtle)', borderRadius: '6px', fontSize: '0.75rem' }}>
                   <div>

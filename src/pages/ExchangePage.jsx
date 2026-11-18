@@ -43,6 +43,7 @@ import {
 } from '../lib/icons.jsx';
 import { CURRENCY_SYMBOLS } from '../lib/formatters.js';
 import PrintableVoucherModal from '../components/PrintableVoucherModal.jsx';
+import { DigitalTradeOrderSlip, DigitalBankSlip } from '../components/DigitalForms.jsx';
 
 export default function ExchangePage({ state, onOpenProfile, adminPassword, connected, isCoordinatorOffline }) {
   const { density } = useDensity();
@@ -1506,7 +1507,8 @@ export default function ExchangePage({ state, onOpenProfile, adminPassword, conn
 
           return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {/* Order Summary Grid */}
+              {/* Digital Form Matching Physical Trade Order Slip */}
+              <DigitalTradeOrderSlip order={reviewOrder} />
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', padding: '14px', backgroundColor: 'var(--color-surface-subtle)', borderRadius: 'var(--radius-sm, 6px)', border: '1px solid var(--color-border-subtle)', fontSize: '0.86rem' }}>
                 <div>
                   <span style={{ color: 'var(--color-text-secondary)', fontWeight: 600 }}>Investment House:</span>

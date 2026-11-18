@@ -29,6 +29,7 @@ import {
   IconPrinter
 } from '../lib/icons.jsx';
 import PrintableVoucherModal from '../components/PrintableVoucherModal.jsx';
+import { DigitalBankSlip } from '../components/DigitalForms.jsx';
 
 export default function BankPage({ state, connected }) {
   const { density } = useDensity();
@@ -1201,6 +1202,7 @@ export default function BankPage({ state, connected }) {
           title={`Confirm Bank Settlement: Ticket #${settleModalItem.ticketNumber}`}
         >
           <div style={{ marginBottom: '16px' }}>
+            <DigitalBankSlip voucher={settleModalItem} />
             <p style={{ margin: '0 0 12px 0', fontSize: '0.95rem', color: 'var(--color-text-primary)' }}>
               Confirm physical processing for <strong>Team {settleModalItem.teamCode}</strong>:
             </p>
@@ -1347,6 +1349,7 @@ export default function BankPage({ state, connected }) {
           title={`Settlement Details: ${inspectModalItem.voucherReference || inspectModalItem.id}`}
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <DigitalBankSlip voucher={inspectModalItem} />
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: 'var(--color-text-secondary)' }}>Status:</span>
               <span>{renderStatusBadge(inspectModalItem.status)}</span>

@@ -8,6 +8,7 @@ import { Input, SearchInput } from '../ui/Input.jsx';
 import { Modal } from '../ui/Modal.jsx';
 import { Alert, EmptyState } from '../ui/States.jsx';
 import { CurrencyDisplay, PriceDisplay, QuantityDisplay } from '../ui/FinancialFormatters.jsx';
+import { DigitalTradeOrderSlip, DigitalBankSlip } from '../DigitalForms.jsx';
 import {
   IconClipboardList,
   IconClock,
@@ -170,6 +171,10 @@ export default function OrderHistorySection({
   const [resubmitLoading, setResubmitLoading] = useState(false);
   const [resubmitError, setResubmitError] = useState('');
   const [resubmitSuccess, setResubmitSuccess] = useState('');
+
+  // Selected Order for Digital Slip/Voucher View
+  const [activeDigitalSlip, setActiveDigitalSlip] = useState(null);
+  const [activeBankVoucher, setActiveBankVoucher] = useState(null);
 
   // Summary Metrics
   const metrics = useMemo(() => {
@@ -469,9 +474,33 @@ export default function OrderHistorySection({
                     )}
                   </div>
 
-                  {/* Status Badge & Resubmit Button */}
+                  {/* Status Badge, Digital Slip & Resubmit Button */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <OrderStatusBadge status={order.status} />
+
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setActiveDigitalSlip(order)}
+                      style={{ fontWeight: 800, fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                      title="View Official Digital Trade Order Slip"
+                    >
+                      <IconFileText size={13} />
+                      <span>View Slip</span>
+                    </Button>
+
+                    {(order.voucherReference || order.status === 'EXCHANGE_APPROVED' || order.status === 'AWAITING_BANK_SETTLEMENT' || order.status === 'SETTLED') && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => setActiveBankVoucher(order)}
+                        style={{ fontWeight: 800, fontSize: '0.75rem', color: '#047857', borderColor: '#A7F3D0', backgroundColor: '#ECFDF5', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                        title="View Official Bank Pay-In / Pay-Out Slip"
+                      >
+                        <IconFileText size={13} />
+                        <span>Bank Slip</span>
+                      </Button>
+                    )}
 
                     {isReturned && (
                       <div style={{ display: 'inline-flex', gap: '6px' }}>
@@ -479,13 +508,13 @@ export default function OrderHistorySection({
                           variant="secondary"
                           size="sm"
                           onClick={() => {
-                            window.print();
+                            setActiveDigitalSlip(order);
                           }}
                           style={{ fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                          title="Print / Reprint Paper Slip"
+                          title="View Digital Paper Slip"
                         >
                           <IconFileText size={13} />
-                          <span>Reprint Slip</span>
+                          <span>View Slip</span>
                         </Button>
                         <Button
                           variant="primary"
@@ -710,6 +739,36 @@ export default function OrderHistorySection({
               </div>
             </form>
           </div>
+        </Modal>
+      )}
+
+      {/* Digital Trade Order Slip Modal */}
+      {activeDigitalSlip && (
+        <Modal
+          isOpen={!!activeDigitalSlip}
+          onClose={() => setActiveDigitalSlip(null)}
+          title="Official Trade Order Slip (TOS)"
+          maxWidth="720px"
+        >
+          <DigitalTradeOrderSlip
+            order={activeDigitalSlip}
+            onClose={() => setActiveDigitalSlip(null)}
+          />
+        </Modal>
+      )}
+
+      {/* Digital Bank Pay-In / Pay-Out Slip Modal */}
+      {activeBankVoucher && (
+        <Modal
+          isOpen={!!activeBankVoucher}
+          onClose={() => setActiveBankVoucher(null)}
+          title="Official Bank Pay-In / Pay-Out Slip (PIS/POS)"
+          maxWidth="720px"
+        >
+          <DigitalBankSlip
+            voucher={activeBankVoucher}
+            onClose={() => setActiveBankVoucher(null)}
+          />
         </Modal>
       )}
 

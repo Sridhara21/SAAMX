@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { db, ref, onValue } from '../lib/firebase.js';
 import { apiFetch } from '../lib/api.js';
 import { CURRENCY_DIRECTORY, CURRENCY_SYMBOLS, DEFAULT_FX_RATES } from '../lib/formatters.js';
+import { DigitalTradeOrderSlip } from './DigitalForms.jsx';
 
 export default function CompanyProfileModal({ securityId, securities, newsEvents, onClose }) {
   const security = Array.isArray(securities)
@@ -1074,93 +1075,21 @@ export default function CompanyProfileModal({ securityId, securities, newsEvents
             </div>
 
             {submittedOrder ? (
-              /* Post-Submission Authoritative Order Slip Display */
-              <div style={{
-                background: '#FFFFFF',
-                color: '#0F172A',
-                border: '2px solid #0B192C',
-                borderRadius: '8px',
-                padding: '16px',
-                fontFamily: 'monospace'
-              }}>
-                <div style={{ textAlign: 'center', borderBottom: '1.5px dashed #CBD5E1', paddingBottom: '10px', marginBottom: '12px' }}>
-                  <div style={{ fontWeight: 900, fontSize: '1rem', letterSpacing: '0.05em' }}>SAAMX OFFICIAL ORDER SLIP</div>
-                  <div style={{ fontSize: '0.72rem', color: '#64748B' }}>EXCHANGE DESK VERIFICATION TICKET</div>
-                  <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#0284C7', marginTop: '4px' }}>
-                    TICKET: {submittedOrder.ticketNumber || submittedOrder.orderId}
-                  </div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '0.8rem', marginBottom: '12px' }}>
-                  <div><strong>TEAM:</strong> {submittedOrder.teamCode}</div>
-                  <div><strong>DATE/TIME:</strong> {new Date(submittedOrder.submittedAt || Date.now()).toLocaleTimeString()}</div>
-                  <div><strong>SECURITY:</strong> {submittedOrder.ticker}</div>
-                  <div><strong>EXCHANGE:</strong> {security.exchange || 'SAAMX'}</div>
-                  <div>
-                    <strong>ACTION:</strong>{' '}
-                    <span style={{
-                      color: submittedOrder.action === 'BUY' ? '#16A34A' : '#DC2626',
-                      fontWeight: 900
-                    }}>
-                      {submittedOrder.action}
-                    </span>
-                  </div>
-                  <div><strong>QUANTITY:</strong> {submittedOrder.quantity} units</div>
-                  <div><strong>EXEC TYPE:</strong> MARKET</div>
-                  <div><strong>REF PRICE:</strong> {curSym}{effectivePrice.toLocaleString()}</div>
-                  <div><strong>CURRENCY:</strong> {secCurrency}</div>
-                  <div><strong>EST. VALUE:</strong> {curSym}{calcGrossNative.toLocaleString()}</div>
-                </div>
-
-                {isForeign && (
-                  <div style={{
-                    fontSize: '0.75rem',
-                    background: '#F8FAFC',
-                    padding: '6px 8px',
-                    borderRadius: '4px',
-                    border: '1px solid #E2E8F0',
-                    marginBottom: '10px'
-                  }}>
-                    <strong>Consolidated INR Value:</strong> ≈ ₹{calcGrossINR.toLocaleString(undefined, { minimumFractionDigits: 2 })} (Spot: ₹{currentFxRate.toFixed(2)})
-                  </div>
-                )}
-
-                <div style={{
-                  background: '#FEF3C7',
-                  color: '#92400E',
-                  padding: '8px 10px',
-                  borderRadius: '6px',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  marginBottom: '14px',
-                  lineHeight: 1.4
-                }}>
-                  ⏳ <strong>ORDER ROUTED TO EXCHANGE DESK:</strong> Present this ticket number to an authorized Exchange Operator on the floor for physical slip validation & Bank Desk voucher generation.
-                </div>
-
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const slipText = `[SAAMX ORDER SLIP]\nTicket: ${submittedOrder.ticketNumber || submittedOrder.orderId}\nTeam: ${submittedOrder.teamCode}\nSecurity: ${submittedOrder.ticker} (${security.name})\nAction: ${submittedOrder.action}\nQty: ${submittedOrder.quantity}\nRef Price: ${curSym}${effectivePrice}\nGross: ${curSym}${calcGrossNative.toLocaleString()}${isForeign ? ` (~₹${calcGrossINR.toLocaleString()})` : ''}\nStatus: SUBMITTED_TO_EXCHANGE\nTime: ${new Date(submittedOrder.submittedAt || Date.now()).toLocaleString()}`;
-                      navigator.clipboard.writeText(slipText);
-                      setCopiedNotification(true);
-                      setTimeout(() => setCopiedNotification(false), 2500);
-                    }}
-                    style={{
-                      flex: 1,
-                      background: '#0B192C',
-                      color: '#FFFFFF',
-                      border: 'none',
-                      borderRadius: '6px',
-                      padding: '10px',
-                      fontSize: '0.8rem',
-                      fontWeight: 800,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {copiedNotification ? '✓ Slip Copied to Clipboard!' : '📋 Copy Slip Details'}
-                  </button>
+              /* Post-Submission Authoritative Digital Trade Order Slip */
+              <div>
+                <DigitalTradeOrderSlip
+                  order={{
+                    ...submittedOrder,
+                    securityName: security.name,
+                    price: effectivePrice,
+                    currency: secCurrency,
+                    unitPrice: `${curSym}${effectivePrice.toLocaleString()}`,
+                    requestedValue: calcGrossNative,
+                    estimatedValue: calcGrossNative
+                  }}
+                  showHeaderClose={false}
+                />
+                <div style={{ marginTop: '12px', textAlign: 'right' }}>
                   <button
                     type="button"
                     onClick={() => {
@@ -1172,7 +1101,7 @@ export default function CompanyProfileModal({ securityId, securities, newsEvents
                       color: '#0F172A',
                       border: '1px solid #CBD5E1',
                       borderRadius: '6px',
-                      padding: '10px 14px',
+                      padding: '8px 16px',
                       fontSize: '0.8rem',
                       fontWeight: 700,
                       cursor: 'pointer'
