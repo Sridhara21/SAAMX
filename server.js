@@ -2283,6 +2283,8 @@ function verifyTeamPassword(team, password) {
     team.credentials?.password,
     team.credentials?.tempPin,
     team.tempPin,
+    padNum,
+    String(teamNum),
     `saamx-team-${padNum}`,
     `saamx-team-${teamNum}`,
     `team-${padNum}`,
@@ -8146,6 +8148,42 @@ app.post('/api/desks/assign', (req, res) => {
   const { type = 'OPERATOR', deskId, personnelId, username: rawUser, operatorUsername, teamCode, action } = req.body || {};
   const username = rawUser || operatorUsername;
 
+  // Desk Availability Toggle: ACTIVE <-> INACTIVE (Prioritized above operator/team assignments)
+  if (action === 'TOGGLE_AVAILABILITY' || action === 'SET_STATUS' || req.body?.availability !== undefined) {
+    const targetDeskId = deskId;
+    if (!targetDeskId || !isValidDeskId(targetDeskId)) {
+      return res.status(400).json({ error: `Valid operational deskId required to set availability (received: '${targetDeskId}').` });
+    }
+    const requestedStatus = (req.body?.availability || req.body?.status || (isDeskActive(targetDeskId) ? 'INACTIVE' : 'ACTIVE')).toUpperCase();
+    const finalStatus = requestedStatus === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    setDeskAvailabilityState(targetDeskId, finalStatus);
+
+    logAuditEvent({
+      actor: req.session.username || req.session.displayName || 'Floor Supervisor',
+      role: req.session.role,
+      action: finalStatus === 'ACTIVE' ? 'DESK_ACTIVATED' : 'DESK_DEACTIVATED',
+      target: targetDeskId,
+      reason: req.body?.reason || (finalStatus === 'ACTIVE' ? `Desk ${targetDeskId} activated for new order intake` : `Desk ${targetDeskId} set to INACTIVE (draining existing queue, excluding from new orders)`)
+    });
+
+    saveState();
+    broadcastState('DESKS_UPDATED', {
+      deskId: targetDeskId,
+      availability: finalStatus,
+      isAcceptingNew: finalStatus === 'ACTIVE',
+      message: `Operational desk ${targetDeskId} is now ${finalStatus}`
+    });
+
+    return res.json({
+      success: true,
+      deskId: targetDeskId,
+      availability: finalStatus,
+      isAcceptingNew: finalStatus === 'ACTIVE',
+      desk: { id: targetDeskId, availability: finalStatus, isAcceptingNew: finalStatus === 'ACTIVE' },
+      message: `Desk ${targetDeskId} availability updated to ${finalStatus}.`
+    });
+  }
+
   // Auto-balance teams across desks action
   if (action === 'AUTO_BALANCE_TEAMS' || type === 'AUTO_BALANCE') {
     const teamsList = state.teams ? (Array.isArray(state.teams) ? state.teams : Object.values(state.teams)) : [];
@@ -8263,41 +8301,6 @@ app.post('/api/desks/assign', (req, res) => {
     saveState();
     broadcastState('DESKS_UPDATED', { message: `Intake clearance desk for ${team.teamCode} updated to ${targetDeskId || 'Unassigned'}` });
     return res.json({ success: true, teamCode: team.teamCode, assignedDesk: team.assignedDesk });
-  }
-
-  // Desk Availability Toggle: ACTIVE <-> INACTIVE
-  if (action === 'TOGGLE_AVAILABILITY' || action === 'SET_STATUS' || req.body?.availability !== undefined) {
-    const targetDeskId = deskId;
-    if (!targetDeskId || !isValidDeskId(targetDeskId)) {
-      return res.status(400).json({ error: `Valid operational deskId required to set availability (received: '${targetDeskId}').` });
-    }
-    const requestedStatus = (req.body?.availability || req.body?.status || (isDeskActive(targetDeskId) ? 'INACTIVE' : 'ACTIVE')).toUpperCase();
-    const finalStatus = requestedStatus === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE';
-    setDeskAvailabilityState(targetDeskId, finalStatus);
-
-    logAuditEvent({
-      actor: req.session.username || req.session.displayName || 'Floor Supervisor',
-      role: req.session.role,
-      action: finalStatus === 'ACTIVE' ? 'DESK_ACTIVATED' : 'DESK_DEACTIVATED',
-      target: targetDeskId,
-      reason: req.body?.reason || (finalStatus === 'ACTIVE' ? `Desk ${targetDeskId} activated for new order intake` : `Desk ${targetDeskId} set to INACTIVE (draining existing queue, excluding from new orders)`)
-    });
-
-    saveState();
-    broadcastState('DESKS_UPDATED', {
-      deskId: targetDeskId,
-      availability: finalStatus,
-      isAcceptingNew: finalStatus === 'ACTIVE',
-      message: `Operational desk ${targetDeskId} is now ${finalStatus}`
-    });
-
-    return res.json({
-      success: true,
-      deskId: targetDeskId,
-      availability: finalStatus,
-      isAcceptingNew: finalStatus === 'ACTIVE',
-      message: `Desk ${targetDeskId} availability updated to ${finalStatus}.`
-    });
   }
 
   return res.status(400).json({ error: 'Invalid assignment parameters. Provide personnelId/username for operator or teamCode for team.' });
