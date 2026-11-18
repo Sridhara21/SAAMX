@@ -7622,7 +7622,7 @@ function isFxDeskId(id) {
   return Boolean(id && (id === 'FX_DESK_1' || id === 'FX_DESK' || id === 'FX_1' || id === 'FX_2' || id === 'FX' || (state.fxDesks && id in state.fxDesks) || /^FX(_DESK)?_\d+$/i.test(id)));
 }
 function isValidDeskId(id) {
-  return isExchangeDeskId(id) || isBankDeskId(id) || isFxDeskId(id) || id === 'IPO_DESK_1';
+  return isExchangeDeskId(id) || isBankDeskId(id) || isFxDeskId(id) || id === 'IPO_DESK_1' || id === 'IPO_DESK' || id === 'NEWS_DESK_1' || id === 'NEWS_1';
 }
 
 /**
@@ -7660,9 +7660,17 @@ function setDeskAvailabilityState(deskId, status) {
     state.bankDesks[deskId].availability = normalized;
     state.bankDesks[deskId].isAcceptingNew = normalized === 'ACTIVE';
   }
-  if (deskId === 'FX_1' || deskId === 'FX_2' || deskId === 'FX_DESK_1') {
+  if (deskId === 'FX_1' || deskId === 'FX_2' || deskId === 'FX_DESK_1' || deskId === 'FX_DESK') {
     if (!state.fxDeskAvailability) state.fxDeskAvailability = {};
     state.fxDeskAvailability[deskId] = normalized;
+    state.deskAvailability['FX_DESK_1'] = normalized;
+    state.deskAvailability['FX_1'] = normalized;
+  }
+  if (deskId === 'IPO_DESK_1' || deskId === 'IPO_DESK') {
+    if (!state.ipoDeskAvailability) state.ipoDeskAvailability = {};
+    state.ipoDeskAvailability[deskId] = normalized;
+    state.deskAvailability['IPO_DESK_1'] = normalized;
+    state.deskAvailability['IPO_DESK'] = normalized;
   }
 }
 function ensureDeskExists(deskId) {
@@ -11240,6 +11248,11 @@ app.post('/api/fx/request', async (req, res) => {
     }
   }
 
+  const anyFxActive = isDeskActive('FX_DESK_1') || isDeskActive('FX_1');
+  if (!anyFxActive) {
+    return res.status(400).json({ error: 'FX Desk is currently INACTIVE and paused for new currency conversion requests. Existing queued requests continue to drain.' });
+  }
+
   const effectiveTeamCode = (session?.role === 'team' ? session.teamCode : teamCode)?.toUpperCase();
   if (!effectiveTeamCode || !fromCurrency || !toCurrency || isNaN(amount) || amount <= 0 || !Number.isFinite(amount)) {
     return res.status(400).json({ error: 'Missing or invalid parameters: teamCode, fromCurrency, toCurrency, and positive finite fromAmount required.' });
@@ -13815,6 +13828,11 @@ app.get('/api/ipos', (req, res) => {
 });
 
 app.post('/api/ipo/bid', (req, res) => {
+  const ipoDeskActive = isDeskActive('IPO_DESK_1') && isDeskActive('IPO_DESK');
+  if (!ipoDeskActive) {
+    return res.status(400).json({ error: 'IPO Desk is currently INACTIVE and paused for new subscription applications. Existing applications continue to be processed.' });
+  }
+
   const { ticker, quantity, teamCode } = req.body || {};
   const Q = Number(quantity);
 
@@ -13907,6 +13925,11 @@ app.post('/api/ipo/bid', (req, res) => {
 });
 
 app.post('/api/ipo/subscribe', (req, res) => {
+  const ipoDeskActive = isDeskActive('IPO_DESK_1') && isDeskActive('IPO_DESK');
+  if (!ipoDeskActive) {
+    return res.status(400).json({ error: 'IPO Desk is currently INACTIVE and paused for new subscription applications. Existing applications continue to be processed.' });
+  }
+
   const { ticker, quantity, teamCode } = req.body || {};
   const Q = Number(quantity);
 
