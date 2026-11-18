@@ -102,15 +102,15 @@ export {
 export const activeFxLocks = new Set();
 
 export const DEFAULT_FX_RESERVES = {
-  USD: { currency: 'USD', openingReserve: 10000000, replenishments: 0, completedPurchases: 0, completedSales: 0, reservedInventory: 0, availableReserve: 10000000, currentInventory: 10000000, deskInrCash: 5000000000, minReserveThreshold: 1000000, maxCapacity: 1000000000, updatedAt: new Date().toISOString() },
-  EUR: { currency: 'EUR', openingReserve: 9000000, replenishments: 0, completedPurchases: 0, completedSales: 0, reservedInventory: 0, availableReserve: 9000000, currentInventory: 9000000, deskInrCash: 5000000000, minReserveThreshold: 900000, maxCapacity: 1000000000, updatedAt: new Date().toISOString() },
-  GBP: { currency: 'GBP', openingReserve: 8000000, replenishments: 0, completedPurchases: 0, completedSales: 0, reservedInventory: 0, availableReserve: 8000000, currentInventory: 8000000, deskInrCash: 5000000000, minReserveThreshold: 800000, maxCapacity: 1000000000, updatedAt: new Date().toISOString() },
-  JPY: { currency: 'JPY', openingReserve: 1500000000, replenishments: 0, completedPurchases: 0, completedSales: 0, reservedInventory: 0, availableReserve: 1500000000, currentInventory: 1500000000, deskInrCash: 5000000000, minReserveThreshold: 150000000, maxCapacity: 100000000000, updatedAt: new Date().toISOString() },
-  AED: { currency: 'AED', openingReserve: 36000000, replenishments: 0, completedPurchases: 0, completedSales: 0, reservedInventory: 0, availableReserve: 36000000, currentInventory: 36000000, deskInrCash: 5000000000, minReserveThreshold: 3600000, maxCapacity: 1000000000, updatedAt: new Date().toISOString() },
-  SGD: { currency: 'SGD', openingReserve: 13000000, replenishments: 0, completedPurchases: 0, completedSales: 0, reservedInventory: 0, availableReserve: 13000000, currentInventory: 13000000, deskInrCash: 5000000000, minReserveThreshold: 1300000, maxCapacity: 1000000000, updatedAt: new Date().toISOString() },
-  CNY: { currency: 'CNY', openingReserve: 70000000, replenishments: 0, completedPurchases: 0, completedSales: 0, reservedInventory: 0, availableReserve: 70000000, currentInventory: 70000000, deskInrCash: 5000000000, minReserveThreshold: 7000000, maxCapacity: 1000000000, updatedAt: new Date().toISOString() },
-  AUD: { currency: 'AUD', openingReserve: 15000000, replenishments: 0, completedPurchases: 0, completedSales: 0, reservedInventory: 0, availableReserve: 15000000, currentInventory: 15000000, deskInrCash: 5000000000, minReserveThreshold: 1500000, maxCapacity: 1000000000, updatedAt: new Date().toISOString() },
-  KRW: { currency: 'KRW', openingReserve: 13000000000, replenishments: 0, completedPurchases: 0, completedSales: 0, reservedInventory: 0, availableReserve: 13000000000, currentInventory: 13000000000, deskInrCash: 5000000000, minReserveThreshold: 1300000000, maxCapacity: 100000000000, updatedAt: new Date().toISOString() }
+  USD: { currency: 'USD', openingReserve: 210000, replenishments: 0, completedPurchases: 0, completedSales: 0, reservedInventory: 0, availableReserve: 210000, currentInventory: 210000, deskInrCash: 50000000, minReserveThreshold: 20000, maxCapacity: 10000000, updatedAt: new Date().toISOString() },
+  EUR: { currency: 'EUR', openingReserve: 120000, replenishments: 0, completedPurchases: 0, completedSales: 0, reservedInventory: 0, availableReserve: 120000, currentInventory: 120000, deskInrCash: 50000000, minReserveThreshold: 12000, maxCapacity: 10000000, updatedAt: new Date().toISOString() },
+  GBP: { currency: 'GBP', openingReserve: 80000, replenishments: 0, completedPurchases: 0, completedSales: 0, reservedInventory: 0, availableReserve: 80000, currentInventory: 80000, deskInrCash: 50000000, minReserveThreshold: 8000, maxCapacity: 10000000, updatedAt: new Date().toISOString() },
+  JPY: { currency: 'JPY', openingReserve: 5000000, replenishments: 0, completedPurchases: 0, completedSales: 0, reservedInventory: 0, availableReserve: 5000000, currentInventory: 5000000, deskInrCash: 50000000, minReserveThreshold: 500000, maxCapacity: 1000000000, updatedAt: new Date().toISOString() },
+  AED: { currency: 'AED', openingReserve: 200000, replenishments: 0, completedPurchases: 0, completedSales: 0, reservedInventory: 0, availableReserve: 200000, currentInventory: 200000, deskInrCash: 50000000, minReserveThreshold: 20000, maxCapacity: 10000000, updatedAt: new Date().toISOString() },
+  SGD: { currency: 'SGD', openingReserve: 100000, replenishments: 0, completedPurchases: 0, completedSales: 0, reservedInventory: 0, availableReserve: 100000, currentInventory: 100000, deskInrCash: 50000000, minReserveThreshold: 10000, maxCapacity: 10000000, updatedAt: new Date().toISOString() },
+  CNY: { currency: 'CNY', openingReserve: 300000, replenishments: 0, completedPurchases: 0, completedSales: 0, reservedInventory: 0, availableReserve: 300000, currentInventory: 300000, deskInrCash: 50000000, minReserveThreshold: 30000, maxCapacity: 10000000, updatedAt: new Date().toISOString() },
+  AUD: { currency: 'AUD', openingReserve: 80000, replenishments: 0, completedPurchases: 0, completedSales: 0, reservedInventory: 0, availableReserve: 80000, currentInventory: 80000, deskInrCash: 50000000, minReserveThreshold: 8000, maxCapacity: 10000000, updatedAt: new Date().toISOString() },
+  KRW: { currency: 'KRW', openingReserve: 20000000, replenishments: 0, completedPurchases: 0, completedSales: 0, reservedInventory: 0, availableReserve: 20000000, currentInventory: 20000000, deskInrCash: 50000000, minReserveThreshold: 2000000, maxCapacity: 1000000000, updatedAt: new Date().toISOString() }
 };
 
 export function ensureFxReserves(reservesObj = state?.fxReserves) {
@@ -122,13 +122,18 @@ export function ensureFxReserves(reservesObj = state?.fxReserves) {
     } else {
       const r = target[cur];
       r.currency = cur;
-      r.openingReserve = Number(r.openingReserve ?? r.opening_reserve ?? def.openingReserve);
+      const existingOpening = Number(r.openingReserve ?? r.opening_reserve ?? def.openingReserve);
+      if (existingOpening > def.openingReserve * 2) {
+        r.openingReserve = def.openingReserve;
+      } else {
+        r.openingReserve = existingOpening;
+      }
       r.replenishments = Number(r.replenishments ?? 0);
       r.completedPurchases = Number(r.completedPurchases ?? r.completed_purchases ?? 0);
       r.completedSales = Number(r.completedSales ?? r.completed_sales ?? 0);
       r.reservedInventory = Number(r.reservedInventory ?? r.reserved_inventory ?? 0);
-      r.currentInventory = r.openingReserve + r.replenishments + r.completedPurchases - r.completedSales;
-      r.availableReserve = r.currentInventory - r.reservedInventory;
+      r.currentInventory = roundCurrency(r.openingReserve + r.replenishments + r.completedPurchases - r.completedSales, cur);
+      r.availableReserve = roundCurrency(r.currentInventory - r.reservedInventory, cur);
       r.deskInrCash = Number(r.deskInrCash ?? r.desk_inr_cash ?? def.deskInrCash);
       r.minReserveThreshold = Number(r.minReserveThreshold ?? r.min_reserve_threshold ?? def.minReserveThreshold);
       r.maxCapacity = Number(r.maxCapacity ?? r.max_capacity ?? def.maxCapacity);
@@ -1252,6 +1257,18 @@ const createInitialState = () => ({
   fxQueue: [],
   fxRates: JSON.parse(JSON.stringify(DEFAULT_FX_RATES)),
   fxReserves: JSON.parse(JSON.stringify(DEFAULT_FX_RESERVES)),
+  fxDesks: {
+    FX_1: { id: 'FX_1', name: 'FX Desk 1 (Primary)', availability: 'ACTIVE' },
+    FX_2: { id: 'FX_2', name: 'FX Desk 2 (Secondary)', availability: 'ACTIVE' }
+  },
+  fxMarketState: {
+    status: 'OPEN',
+    pausedReason: null,
+    pausedAt: null,
+    pausedBy: null,
+    marketWideTransactionLimitINR: null,
+    updatedAt: Date.now()
+  },
   fxTransactions: [],
   marketIndices: {
     GLOBAL100: { name: 'SAAMX GLOBAL 100', currentValue: 1000.0, openingValue: 1000.0, changePercent: 0.0 },
@@ -1299,7 +1316,7 @@ const createInitialState = () => ({
   }
 });
 
-let state = createInitialState();
+export let state = createInitialState();
 let transactionsSinceLastBackup = 0;
 let lastBackupTime = Date.now();
 
@@ -1494,6 +1511,22 @@ const loadState = () => {
       if (!state.fxQueue) state.fxQueue = [];
       if (!state.fxReserves) state.fxReserves = JSON.parse(JSON.stringify(DEFAULT_FX_RESERVES));
       ensureFxReserves(state.fxReserves);
+      if (!state.fxMarketState) {
+        state.fxMarketState = {
+          status: 'OPEN',
+          pausedReason: null,
+          pausedAt: null,
+          pausedBy: null,
+          marketWideTransactionLimitINR: null,
+          updatedAt: Date.now()
+        };
+      }
+      if (!state.fxDesks) {
+        state.fxDesks = {
+          FX_1: { id: 'FX_1', name: 'FX Desk 1 (Primary)', availability: 'ACTIVE' },
+          FX_2: { id: 'FX_2', name: 'FX Desk 2 (Secondary)', availability: 'ACTIVE' }
+        };
+      }
       if (!state.masterAdmins) {
         state.masterAdmins = [
           { username: 'Sridhara', role: 'admin', accessLevel: 'MASTER', createdAt: Date.now() }
@@ -1952,7 +1985,7 @@ const corsOptions = {
 let isShuttingDown = false;
 let isServerReady = !isPgConfigured();
 
-const app = express();
+export const app = express();
 app.use(cors(corsOptions));
 app.use(express.json());
 
@@ -3192,7 +3225,7 @@ const authMiddleware = async (req, res, next) => {
 
 app.use('/api', authMiddleware);
 
-const server = http.createServer(app);
+export const server = http.createServer(app);
 const wss = new WebSocketServer({ noServer: true });
 const clients = new Set();
 const activeAlerts = new Set();
@@ -4263,6 +4296,18 @@ app.post('/api/admin/reset', async (req, res) => {
   // Clean FX spot rates & finite reserves
   state.fxRates = JSON.parse(JSON.stringify(DEFAULT_FX_RATES));
   state.fxReserves = JSON.parse(JSON.stringify(DEFAULT_FX_RESERVES));
+  state.fxMarketState = {
+    status: 'OPEN',
+    pausedReason: null,
+    pausedAt: null,
+    pausedBy: null,
+    marketWideTransactionLimitINR: null,
+    updatedAt: Date.now()
+  };
+  state.fxDesks = {
+    FX_1: { id: 'FX_1', name: 'FX Desk 1 (Primary)', availability: 'ACTIVE' },
+    FX_2: { id: 'FX_2', name: 'FX Desk 2 (Secondary)', availability: 'ACTIVE' }
+  };
 
   // Clean Market State
   state.marketState = {
@@ -6797,9 +6842,287 @@ async function handleFxReplenish(req, res) {
 app.post('/api/fx/reserves/replenish', handleFxReplenish);
 app.post('/api/fx/replenish', handleFxReplenish);
 
+// FX Market Status & Global Controls (OPEN / PAUSED, Limits)
+app.get('/api/fx/market-status', (req, res) => {
+  if (!state.fxMarketState) {
+    state.fxMarketState = {
+      status: 'OPEN',
+      pausedReason: null,
+      pausedAt: null,
+      pausedBy: null,
+      marketWideTransactionLimitINR: null,
+      updatedAt: Date.now()
+    };
+  }
+  return res.json({
+    success: true,
+    fxMarketState: state.fxMarketState,
+    fxDesks: state.fxDesks || {
+      FX_1: { id: 'FX_1', name: 'FX Desk 1 (Primary)', availability: isDeskActive('FX_1') ? 'ACTIVE' : 'INACTIVE' },
+      FX_2: { id: 'FX_2', name: 'FX Desk 2 (Secondary)', availability: isDeskActive('FX_2') ? 'ACTIVE' : 'INACTIVE' }
+    }
+  });
+});
+
+app.post('/api/fx/market-status', (req, res) => {
+  const session = req.session || verifySessionToken(req.headers['authorization'] || req.headers['x-fms-token']);
+  if (!session) {
+    return res.status(401).json({ error: '401 Unauthorized: Valid session authentication required.' });
+  }
+
+  const isAuthorized = session.role === 'admin' || session.role === 'super_admin' || session.role === 'sebi' || session.role === 'floor_admin' || session.role === 'operator_x' || hasPerm(session, 'market.control') || hasPerm(session, 'exchange.execute');
+  if (!isAuthorized) {
+    return res.status(403).json({ error: 'Forbidden: Only authorized personnel (Super Admin, Floor Admin, or FX Operator) can manage FX Market status.' });
+  }
+
+  if (!state.fxMarketState) {
+    state.fxMarketState = {
+      status: 'OPEN',
+      pausedReason: null,
+      pausedAt: null,
+      pausedBy: null,
+      marketWideTransactionLimitINR: null,
+      updatedAt: Date.now()
+    };
+  }
+
+  const { action, reason, limit } = req.body || {};
+  const actor = session.displayName || session.username || 'Authorized Personnel';
+
+  if (action === 'PAUSE') {
+    if (!reason || reason.trim().length < 3) {
+      return res.status(400).json({ error: 'A valid pause reason (minimum 3 characters) is required to pause the FX Market.' });
+    }
+    state.fxMarketState.status = 'PAUSED';
+    state.fxMarketState.pausedReason = reason.trim();
+    state.fxMarketState.pausedAt = Date.now();
+    state.fxMarketState.pausedBy = actor;
+    state.fxMarketState.updatedAt = Date.now();
+
+    logAuditEvent({
+      actor,
+      role: session.role,
+      action: 'FX_MARKET_PAUSED',
+      target: 'FX_MARKET',
+      reason: reason.trim(),
+      newState: { status: 'PAUSED', pausedReason: reason.trim(), pausedAt: state.fxMarketState.pausedAt }
+    });
+
+    saveState(true);
+    broadcastState('FX_MARKET_STATE_UPDATED', { fxMarketState: state.fxMarketState });
+
+    return res.json({
+      success: true,
+      message: `FX Market successfully PAUSED: ${reason.trim()}`,
+      fxMarketState: state.fxMarketState
+    });
+  }
+
+  if (action === 'RESUME') {
+    state.fxMarketState.status = 'OPEN';
+    state.fxMarketState.pausedReason = null;
+    state.fxMarketState.pausedAt = null;
+    state.fxMarketState.pausedBy = null;
+    state.fxMarketState.updatedAt = Date.now();
+
+    logAuditEvent({
+      actor,
+      role: session.role,
+      action: 'FX_MARKET_RESUMED',
+      target: 'FX_MARKET',
+      reason: reason || 'Normal market resumption',
+      newState: { status: 'OPEN' }
+    });
+
+    saveState(true);
+    broadcastState('FX_MARKET_STATE_UPDATED', { fxMarketState: state.fxMarketState });
+
+    return res.json({
+      success: true,
+      message: 'FX Market successfully RESUMED to OPEN.',
+      fxMarketState: state.fxMarketState
+    });
+  }
+
+  if (action === 'SET_TRANSACTION_LIMIT') {
+    const parsedLimit = limit !== null && limit !== undefined && limit !== '' ? Number(limit) : null;
+    if (parsedLimit !== null && (isNaN(parsedLimit) || parsedLimit <= 0)) {
+      return res.status(400).json({ error: 'Market-wide transaction limit must be a positive number in INR or null/empty to disable.' });
+    }
+    state.fxMarketState.marketWideTransactionLimitINR = parsedLimit;
+    state.fxMarketState.updatedAt = Date.now();
+
+    logAuditEvent({
+      actor,
+      role: session.role,
+      action: 'FX_TRANSACTION_LIMIT_SET',
+      target: 'FX_MARKET',
+      reason: reason || (parsedLimit ? `Configured global cap of ₹${parsedLimit.toLocaleString('en-IN')}` : 'Cleared global transaction cap'),
+      newState: { marketWideTransactionLimitINR: parsedLimit }
+    });
+
+    saveState(true);
+    broadcastState('FX_MARKET_STATE_UPDATED', { fxMarketState: state.fxMarketState });
+
+    return res.json({
+      success: true,
+      message: parsedLimit ? `Market-wide transaction limit set to ₹${parsedLimit.toLocaleString('en-IN')}` : 'Market-wide transaction limit disabled (unrestricted).',
+      fxMarketState: state.fxMarketState
+    });
+  }
+
+  return res.status(400).json({ error: `Unknown action '${action}'. Valid actions: PAUSE, RESUME, SET_TRANSACTION_LIMIT.` });
+});
+
+// Authorized FX Reserve Adjustment (ADD / REDUCE with commitment protection & intervention audit)
+app.post('/api/fx/reserves/adjust', async (req, res) => {
+  const session = req.session || verifySessionToken(req.headers['authorization'] || req.headers['x-fms-token']);
+  if (!session) {
+    return res.status(401).json({ error: '401 Unauthorized: Valid session authentication required.' });
+  }
+
+  const isPrivileged = session.role === 'admin' || session.role === 'super_admin' || session.role === 'sebi' || session.role === 'floor_admin' || session.role === 'operator_x' || hasPerm(session, 'market.control') || hasPerm(session, 'exchange.execute');
+  if (!isPrivileged) {
+    return res.status(403).json({ error: 'Forbidden: Only authorized FX or Admin operators can adjust reserve levels.' });
+  }
+
+  const { currency: rawCur, action: rawAction, amount: rawAmount, reason: rawReason } = req.body || {};
+  const cur = (rawCur || '').toUpperCase();
+  const action = (rawAction || '').toUpperCase();
+  const qty = Number(rawAmount);
+  const reason = (rawReason || '').trim();
+
+  if (!ACTIVE_FOREIGN_CURRENCIES.includes(cur)) {
+    return res.status(400).json({ error: `Unsupported foreign currency for reserve adjustment. Supported: ${ACTIVE_FOREIGN_CURRENCIES.join(', ')}` });
+  }
+
+  if (action !== 'ADD' && action !== 'REDUCE') {
+    return res.status(400).json({ error: `Invalid adjustment action '${action}'. Valid actions are 'ADD' or 'REDUCE'.` });
+  }
+
+  if (isNaN(qty) || qty <= 0 || !Number.isFinite(qty)) {
+    return res.status(400).json({ error: 'Adjustment amount must be a positive finite number.' });
+  }
+
+  if (!reason || reason.length < 3) {
+    return res.status(400).json({ error: 'A valid reason (minimum 3 characters) is required for authorized reserve adjustments.' });
+  }
+
+  ensureFxReserves(state.fxReserves);
+  const reserve = state.fxReserves[cur];
+  if (!reserve) {
+    return res.status(404).json({ error: `Reserve for ${cur} not found.` });
+  }
+
+  const prevReserve = reserve.currentInventory;
+  const prevAvailable = reserve.availableReserve;
+  const committed = reserve.reservedInventory || 0;
+
+  if (action === 'REDUCE') {
+    if (qty > prevAvailable) {
+      return res.status(400).json({
+        error: `Cannot reduce ${cur} reserve by ${qty.toLocaleString()}. Maximum allowable reduction is ${prevAvailable.toLocaleString()} to preserve committed liquidity for pending conversions (${committed.toLocaleString()} ${cur} currently reserved).`,
+        currency: cur,
+        requestedReduction: qty,
+        maxReductionAllowed: prevAvailable,
+        committedLiquidity: committed
+      });
+    }
+
+    if (prevReserve - qty < 0) {
+      return res.status(400).json({
+        error: `Reserve reduction of ${qty.toLocaleString()} ${cur} would cause negative total inventory. Current: ${prevReserve.toLocaleString()}.`,
+        currency: cur,
+        currentInventory: prevReserve
+      });
+    }
+
+    reserve.replenishments = roundCurrency((reserve.replenishments || 0) - qty, cur);
+  } else {
+    // action === 'ADD'
+    reserve.replenishments = roundCurrency((reserve.replenishments || 0) + qty, cur);
+  }
+
+  reserve.currentInventory = roundCurrency(reserve.openingReserve + reserve.replenishments + reserve.completedPurchases - reserve.completedSales, cur);
+  reserve.availableReserve = roundCurrency(reserve.currentInventory - reserve.reservedInventory, cur);
+  reserve.updatedAt = new Date().toISOString();
+  assertSolvencyInvariant(reserve);
+
+  // Get current market state and FX rate for audit log
+  const pairKey = `${cur}INR`;
+  const currentRate = state.fxRates?.[pairKey]?.midRate || DEFAULT_FX_RATES[pairKey]?.midRate || 1.0;
+  const marketStatus = state.fxMarketState?.status || 'OPEN';
+  const actor = session.displayName || session.username || 'Authorized Operator';
+
+  // Audit event with complete market intervention metadata
+  logAuditEvent({
+    actor,
+    role: session.role,
+    action: action === 'ADD' ? 'FX_RESERVE_INCREASED' : 'FX_RESERVE_REDUCED',
+    target: cur,
+    reason,
+    metadata: {
+      currency: cur,
+      previousReserve: prevReserve,
+      newReserve: reserve.currentInventory,
+      previousAvailable: prevAvailable,
+      newAvailable: reserve.availableReserve,
+      committedLiquidity: committed,
+      absoluteChange: qty,
+      direction: action,
+      operator: actor,
+      timestamp: Date.now(),
+      marketStatus,
+      currentFxRate: currentRate
+    }
+  });
+
+  const pool = getPool();
+  if (pool) {
+    try {
+      await pool.query(
+        `UPDATE fx_reserves
+         SET opening_reserve = $1, current_inventory = $2, available_reserve = $3, updated_at = NOW()
+         WHERE currency = $4`,
+        [reserve.openingReserve + reserve.replenishments, reserve.currentInventory, reserve.availableReserve, cur]
+      );
+    } catch (pgErr) {
+      console.warn('[PostgreSQL Reserve Update Notice]', pgErr.message);
+    }
+  }
+
+  saveState(true);
+  broadcastState('FX_RESERVE_ADJUSTED', {
+    currency: cur,
+    action,
+    amount: qty,
+    reserve,
+    marketStatus,
+    currentFxRate: currentRate
+  });
+
+  return res.json({
+    success: true,
+    message: `Successfully ${action === 'ADD' ? 'increased' : 'reduced'} ${cur} reserve by ${qty.toLocaleString()}. New Available: ${reserve.availableReserve.toLocaleString()} (Committed: ${committed.toLocaleString()}).`,
+    currency: cur,
+    action,
+    amount: qty,
+    reserve
+  });
+});
+
 app.post('/api/fx/exchange', async (req, res) => {
   if (state.marketState.status === 'Closed') {
     return res.status(400).json({ error: 'Currency exchange is closed because trading has concluded.' });
+  }
+
+  if (state.fxMarketState?.status === 'PAUSED') {
+    return res.status(400).json({
+      error: `FX Market is temporarily PAUSED: ${state.fxMarketState.pausedReason || 'Operational halt'}`,
+      paused: true,
+      reason: state.fxMarketState.pausedReason,
+      pausedAt: state.fxMarketState.pausedAt
+    });
   }
 
   const session = req.session || verifySessionToken(req.headers['authorization'] || req.headers['x-fms-token']);
@@ -6814,6 +7137,21 @@ app.post('/api/fx/exchange', async (req, res) => {
 
   const { teamCode, fromCurrency, toCurrency, fromAmount, operatorId, notes, ticketNumber } = req.body || {};
   const amount = Number(fromAmount);
+
+  // Market-wide transaction limit check (if configured)
+  const globalCap = state.fxMarketState?.marketWideTransactionLimitINR;
+  if (globalCap && Number(globalCap) > 0 && fromCurrency && amount > 0) {
+    const pairKey = `${fromCurrency}INR`;
+    const rateInr = fromCurrency === 'INR' ? 1.0 : (state.fxRates?.[pairKey]?.midRate || DEFAULT_FX_RATES[pairKey]?.midRate || 1.0);
+    const totalInrEquivalent = amount * rateInr;
+    if (totalInrEquivalent > Number(globalCap)) {
+      return res.status(400).json({
+        error: `Transaction value of ₹${Math.round(totalInrEquivalent).toLocaleString('en-IN')} exceeds current global FX market limit of ₹${Number(globalCap).toLocaleString('en-IN')}.`,
+        transactionInr: totalInrEquivalent,
+        globalLimitInr: Number(globalCap)
+      });
+    }
+  }
 
   if (!teamCode || !fromCurrency || !toCurrency || isNaN(amount) || amount <= 0 || !Number.isFinite(amount)) {
     return res.status(400).json({ error: 'Invalid exchange parameters: teamCode, fromCurrency, toCurrency, and positive finite fromAmount are required.' });
@@ -7639,6 +7977,9 @@ function isDeskActive(deskId) {
   if (state.deskAvailability[deskId] !== undefined) {
     return state.deskAvailability[deskId] === 'ACTIVE' || state.deskAvailability[deskId] === true;
   }
+  if (state.fxDesks?.[deskId]?.availability !== undefined) {
+    return state.fxDesks[deskId].availability === 'ACTIVE';
+  }
   if (state.orderDesks?.[deskId]?.availability !== undefined) {
     return state.orderDesks[deskId].availability === 'ACTIVE';
   }
@@ -7662,11 +8003,25 @@ function setDeskAvailabilityState(deskId, status) {
     state.bankDesks[deskId].availability = normalized;
     state.bankDesks[deskId].isAcceptingNew = normalized === 'ACTIVE';
   }
-  if (deskId === 'FX_1' || deskId === 'FX_2' || deskId === 'FX_DESK_1' || deskId === 'FX_DESK') {
+  if (state.fxDesks?.[deskId]) {
+    state.fxDesks[deskId].availability = normalized;
+    state.fxDesks[deskId].isAcceptingNew = normalized === 'ACTIVE';
+  }
+  if (deskId === 'FX_1' || deskId === 'FX_DESK_1' || deskId === 'FX_DESK') {
     if (!state.fxDeskAvailability) state.fxDeskAvailability = {};
-    state.fxDeskAvailability[deskId] = normalized;
-    state.deskAvailability['FX_DESK_1'] = normalized;
+    state.fxDeskAvailability['FX_1'] = normalized;
+    state.fxDeskAvailability['FX_DESK_1'] = normalized;
     state.deskAvailability['FX_1'] = normalized;
+    state.deskAvailability['FX_DESK_1'] = normalized;
+    if (state.fxDesks?.FX_1) state.fxDesks.FX_1.availability = normalized;
+  }
+  if (deskId === 'FX_2' || deskId === 'FX_DESK_2') {
+    if (!state.fxDeskAvailability) state.fxDeskAvailability = {};
+    state.fxDeskAvailability['FX_2'] = normalized;
+    state.fxDeskAvailability['FX_DESK_2'] = normalized;
+    state.deskAvailability['FX_2'] = normalized;
+    state.deskAvailability['FX_DESK_2'] = normalized;
+    if (state.fxDesks?.FX_2) state.fxDesks.FX_2.availability = normalized;
   }
   if (deskId === 'IPO_DESK_1' || deskId === 'IPO_DESK') {
     if (!state.ipoDeskAvailability) state.ipoDeskAvailability = {};
@@ -11251,9 +11606,46 @@ app.post('/api/fx/request', async (req, res) => {
     }
   }
 
-  const anyFxActive = isDeskActive('FX_DESK_1') || isDeskActive('FX_1');
-  if (!anyFxActive) {
-    return res.status(400).json({ error: 'FX Desk is currently INACTIVE and paused for new currency conversion requests. Existing queued requests continue to drain.' });
+  if (state.fxMarketState?.status === 'PAUSED') {
+    return res.status(400).json({
+      error: `FX Market is temporarily PAUSED: ${state.fxMarketState.pausedReason || 'Operational halt'}`,
+      paused: true,
+      reason: state.fxMarketState.pausedReason,
+      pausedAt: state.fxMarketState.pausedAt
+    });
+  }
+
+  // Market-wide transaction limit check (if configured)
+  const globalCap = state.fxMarketState?.marketWideTransactionLimitINR;
+  if (globalCap && Number(globalCap) > 0) {
+    const pairKey = `${fromCurrency}INR`;
+    const rateInr = fromCurrency === 'INR' ? 1.0 : (state.fxRates?.[pairKey]?.midRate || DEFAULT_FX_RATES[pairKey]?.midRate || 1.0);
+    const totalInrEquivalent = amount * rateInr;
+    if (totalInrEquivalent > Number(globalCap)) {
+      return res.status(400).json({
+        error: `Transaction value of ₹${Math.round(totalInrEquivalent).toLocaleString('en-IN')} exceeds current global FX market limit of ₹${Number(globalCap).toLocaleString('en-IN')}.`,
+        transactionInr: totalInrEquivalent,
+        globalLimitInr: Number(globalCap)
+      });
+    }
+  }
+
+  const candidateDesks = ['FX_1', 'FX_2'].filter(d => isDeskActive(d));
+  if (candidateDesks.length === 0) {
+    return res.status(400).json({ error: 'All FX Desks are currently INACTIVE and paused for new currency conversion requests. Existing queued requests continue to drain.' });
+  }
+
+  let assignedDesk = candidateDesks[0];
+  if (candidateDesks.length > 1) {
+    const deskCounts = { FX_1: 0, FX_2: 0 };
+    (state.fxQueue || []).forEach(q => {
+      const d = q.deskId || 'FX_1';
+      if (deskCounts[d] !== undefined && !['SETTLED', 'settled', 'REJECTED', 'rejected', 'CANCELLED', 'cancelled', 'EXPIRED', 'expired'].includes(q.status)) {
+        deskCounts[d]++;
+      }
+    });
+    candidateDesks.sort((a, b) => (deskCounts[a] || 0) - (deskCounts[b] || 0));
+    assignedDesk = candidateDesks[0];
   }
 
   const effectiveTeamCode = (session?.role === 'team' ? session.teamCode : teamCode)?.toUpperCase();
@@ -11317,7 +11709,7 @@ app.post('/api/fx/request', async (req, res) => {
   team.reservedCash[fromCurrency] = roundCurrency((team.reservedCash[fromCurrency] || 0) + amount, fromCurrency);
 
   const requestId = `FX_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
-  const effectiveOperator = session?.username || session?.userId || operatorId || 'FX-DESK-01';
+  const effectiveOperator = session?.username || session?.userId || operatorId || (assignedDesk === 'FX_2' ? 'FX-DESK-02' : 'FX-DESK-01');
 
   // Persist reservations and queue record to PostgreSQL if connected
   const pool = getPool();
@@ -11352,6 +11744,8 @@ app.post('/api/fx/request', async (req, res) => {
   const fxItem = {
     id: requestId,
     requestId,
+    deskId: assignedDesk,
+    deskName: assignedDesk === 'FX_2' ? 'FX Desk 2 (Secondary)' : 'FX Desk 1 (Primary)',
     teamCode: team.teamCode,
     teamName: team.teamName,
     eventId: state.currentEventId || 'EVT_LIVE_MAIN',
@@ -13775,6 +14169,18 @@ app.post('/api/admin/master-reset', (req, res) => {
   // 6. Clean FX Spot Rates & Finite Reserves
   state.fxRates = JSON.parse(JSON.stringify(DEFAULT_FX_RATES));
   state.fxReserves = JSON.parse(JSON.stringify(DEFAULT_FX_RESERVES));
+  state.fxDesks = {
+    FX_1: { id: 'FX_1', name: 'FX Desk 1 (Primary)', availability: 'ACTIVE' },
+    FX_2: { id: 'FX_2', name: 'FX Desk 2 (Secondary)', availability: 'ACTIVE' }
+  };
+  state.fxMarketState = {
+    status: 'OPEN',
+    pausedReason: null,
+    pausedAt: null,
+    pausedBy: null,
+    marketWideTransactionLimitINR: null,
+    updatedAt: Date.now()
+  };
 
   // 7. Reset Market State to Fresh Simulation Stage
   state.marketState = {

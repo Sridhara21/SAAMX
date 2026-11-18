@@ -47,6 +47,24 @@ export default function CurrencyExchangePage({ state, connected = true }) {
   const [replenishReason, setReplenishReason] = useState('Central bank liquidity support');
   const [isReplenishing, setIsReplenishing] = useState(false);
 
+  // FX Market Control & Pause/Resume
+  const [showPauseModal, setShowPauseModal] = useState(false);
+  const [pauseReason, setPauseReason] = useState('Liquidity adjustment');
+  const [isPausing, setIsPausing] = useState(false);
+
+  // Market-Wide Transaction Limit Modal
+  const [showLimitModal, setShowLimitModal] = useState(false);
+  const [globalLimitInput, setGlobalLimitInput] = useState('');
+  const [isSettingLimit, setIsSettingLimit] = useState(false);
+
+  // Reserve Intervention Modal (ADD & REDUCE)
+  const [showInterventionModal, setShowInterventionModal] = useState(false);
+  const [interventionCurrency, setInterventionCurrency] = useState('USD');
+  const [interventionAction, setInterventionAction] = useState('ADD'); // 'ADD' | 'REDUCE'
+  const [interventionAmount, setInterventionAmount] = useState('50000');
+  const [interventionReason, setInterventionReason] = useState('Central bank market intervention');
+  const [isIntervening, setIsIntervening] = useState(false);
+
   // Tradable active reference currencies (excluding legacy CAD/CHF)
   const tradableCurrencies = useMemo(() => {
     return Object.values(CURRENCY_DIRECTORY).filter(c => !c.isLegacy && c.tradable !== false);
@@ -443,6 +461,148 @@ export default function CurrencyExchangePage({ state, connected = true }) {
 
   const currencySymbols = CURRENCY_SYMBOLS;
 
+  const isFxMarketPaused = state?.fxMarketState?.status === 'PAUSED';
+  const fxMarketReason = state?.fxMarketState?.pausedReason;
+  const fxMarketPausedAt = state?.fxMarketState?.pausedAt;
+  const marketWideLimit = state?.fxMarketState?.marketWideTransactionLimitINR;
+
+  const fx1Active = state?.deskAvailability?.FX_1 !== 'INACTIVE' && state?.fxDesks?.FX_1?.availability !== 'INACTIVE';
+  const fx2Active = state?.deskAvailability?.FX_2 !== 'INACTIVE' && state?.fxDesks?.FX_2?.availability !== 'INACTIVE';
+
+  const handlePauseMarket = async (e) => {
+    e.preventDefault();
+    if (!pauseReason || pauseReason.trim().length < 3) {
+      alert('Please provide a valid pause reason (minimum 3 characters).');
+      return;
+    }
+    setIsPausing(true);
+    try {
+      const res = await apiFetch('/api/fx/market-status', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'PAUSE', reason: pauseReason.trim() })
+      });
+      if (res.error) {
+        alert(`Failed to pause FX market: ${res.error}`);
+      } else {
+        setShowPauseModal(false);
+        setStatusMessage({ type: 'warning', text: `⏸ FX MARKET PAUSED: ${pauseReason.trim()}` });
+      }
+    } catch (err) {
+      alert('Network error pausing FX market.');
+    } finally {
+      setIsPausing(false);
+    }
+  };
+
+  const handleResumeMarket = async () => {
+    if (!window.confirm('Resume FX Market now? Normal conversions will be accepted.')) return;
+    try {
+      const res = await apiFetch('/api/fx/market-status', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'RESUME' })
+      });
+      if (res.error) {
+        alert(`Failed to resume FX market: ${res.error}`);
+      } else {
+        setStatusMessage({ type: 'success', text: '▶ FX MARKET RESUMED: Normal conversions are now active.' });
+      }
+    } catch (err) {
+      alert('Network error resuming FX market.');
+    }
+  };
+
+  const handleSetLimit = async (e) => {
+    e.preventDefault();
+    setIsSettingLimit(true);
+    try {
+      const val = globalLimitInput.trim() === '' ? null : Number(globalLimitInput);
+      const res = await apiFetch('/api/fx/market-status', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'SET_TRANSACTION_LIMIT', limit: val })
+      });
+      if (res.error) {
+        alert(`Failed to set limit: ${res.error}`);
+      } else {
+        setShowLimitModal(false);
+        setStatusMessage({
+          type: 'success',
+          text: val ? `✓ FX Market Transaction Cap set to ₹${val.toLocaleString('en-IN')}` : '✓ FX Market Transaction Cap cleared (unrestricted).'
+        });
+      }
+    } catch (err) {
+      alert('Network error updating FX transaction limit.');
+    } finally {
+      setIsSettingLimit(false);
+    }
+  };
+
+  const handleToggleDesk = async (deskId) => {
+    try {
+      const currentActive = deskId === 'FX_1' ? fx1Active : fx2Active;
+      const nextStatus = currentActive ? 'INACTIVE' : 'ACTIVE';
+      const res = await apiFetch('/api/desks/assign', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'TOGGLE_AVAILABILITY', deskId, availability: nextStatus })
+      });
+      if (res.error) {
+        alert(`Failed to toggle desk: ${res.error}`);
+      } else {
+        setStatusMessage({
+          type: 'success',
+          text: `✓ Desk ${deskId} is now ${nextStatus}`
+        });
+      }
+    } catch (err) {
+      alert(`Network error toggling desk ${deskId}`);
+    }
+  };
+
+  const handleReserveIntervention = async (e) => {
+    e.preventDefault();
+    const qty = parseFloat(interventionAmount);
+    if (!qty || qty <= 0) {
+      alert('Intervention amount must be a positive number.');
+      return;
+    }
+    if (!interventionReason || interventionReason.trim().length < 3) {
+      alert('A valid reason (minimum 3 characters) is required for authorized reserve adjustments.');
+      return;
+    }
+
+    const resObj = fxReserves[interventionCurrency] || {};
+    const avail = Number(resObj.availableReserve ?? 0);
+    if (interventionAction === 'REDUCE' && qty > avail) {
+      alert(`Cannot reduce ${interventionCurrency} reserve by ${qty.toLocaleString()}. Maximum allowable reduction is ${avail.toLocaleString()} to preserve committed liquidity for pending conversions.`);
+      return;
+    }
+
+    setIsIntervening(true);
+    try {
+      const res = await apiFetch('/api/fx/reserves/adjust', {
+        method: 'POST',
+        body: JSON.stringify({
+          currency: interventionCurrency,
+          action: interventionAction,
+          amount: qty,
+          reason: interventionReason.trim()
+        })
+      });
+      if (res.error) {
+        alert(`Reserve adjustment rejected: ${res.error}`);
+      } else {
+        setShowInterventionModal(false);
+        setStatusMessage({
+          type: 'success',
+          text: `✓ FX RESERVE ${interventionAction === 'ADD' ? 'INCREASED' : 'REDUCED'}: ${interventionAction === 'ADD' ? '+' : '-'}${CURRENCY_SYMBOLS[interventionCurrency] || ''}${qty.toLocaleString()} (${interventionCurrency}).`
+        });
+      }
+    } catch (err) {
+      alert('Network error adjusting FX reserve.');
+    } finally {
+      setIsIntervening(false);
+    }
+  };
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-warm)', color: 'var(--navy-900)' }}>
       <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '24px 20px' }}>
@@ -569,6 +729,237 @@ export default function CurrencyExchangePage({ state, connected = true }) {
             </div>
           </div>
         </div>
+
+        {/* FX Market Status Banner when PAUSED */}
+        {isFxMarketPaused && (
+          <div style={{
+            background: '#FEF2F2',
+            border: '2px solid #EF4444',
+            borderRadius: '10px',
+            padding: '16px 20px',
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '16px',
+            boxShadow: '0 4px 12px rgba(239, 68, 68, 0.15)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <span style={{ fontSize: '28px' }}>⏸️</span>
+              <div>
+                <div style={{ fontWeight: '800', color: '#991B1B', fontSize: '16px', letterSpacing: '0.02em' }}>
+                  FX MARKET TEMPORARILY PAUSED
+                </div>
+                <div style={{ fontSize: '13px', color: '#B91C1C', marginTop: '2px' }}>
+                  <strong>Reason:</strong> {fxMarketReason || 'Operational halt / Liquidity recalibration'}
+                  {fxMarketPausedAt && (
+                    <span style={{ marginLeft: '12px' }}>
+                      <strong>Paused at:</strong> {new Date(fxMarketPausedAt).toLocaleTimeString()}
+                    </span>
+                  )}
+                </div>
+                <div style={{ fontSize: '12px', color: '#7F1D1D', marginTop: '4px' }}>
+                  New currency conversion requests cannot be submitted at this time. Outstanding queued tickets remain safe and continue to drain.
+                </div>
+              </div>
+            </div>
+            <span style={{
+              background: '#DC2626',
+              color: '#fff',
+              padding: '6px 12px',
+              borderRadius: '6px',
+              fontSize: '11px',
+              fontWeight: '800',
+              letterSpacing: '0.5px'
+            }}>
+              CONVERSIONS SUSPENDED
+            </span>
+          </div>
+        )}
+
+        {/* Authorized FX Staff Control Bar */}
+        {isStaffOperator && (
+          <div style={{
+            background: 'var(--card-bg)',
+            border: '1px solid var(--border-soft)',
+            borderRadius: '10px',
+            padding: '14px 18px',
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
+          }}>
+            {/* FX Market Status & Controls */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  FX Market:
+                </span>
+                <span style={{
+                  background: isFxMarketPaused ? '#FEE2E2' : '#DCFCE7',
+                  color: isFxMarketPaused ? '#991B1B' : '#166534',
+                  border: `1px solid ${isFxMarketPaused ? '#FCA5A5' : '#86EFAC'}`,
+                  fontSize: '11px',
+                  fontWeight: '800',
+                  padding: '3px 8px',
+                  borderRadius: '4px'
+                }}>
+                  {isFxMarketPaused ? '● PAUSED' : '● OPEN'}
+                </span>
+              </div>
+
+              {isFxMarketPaused ? (
+                <button
+                  type="button"
+                  onClick={handleResumeMarket}
+                  style={{
+                    background: '#16A34A',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '6px 12px',
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  ▶ Resume FX Market
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPauseReason('Liquidity adjustment');
+                    setShowPauseModal(true);
+                  }}
+                  style={{
+                    background: '#DC2626',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '6px 12px',
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  ⏸ Pause FX Market
+                </button>
+              )}
+
+              {/* Market-wide Transaction Limit */}
+              <button
+                type="button"
+                onClick={() => {
+                  setGlobalLimitInput(marketWideLimit ? String(marketWideLimit) : '');
+                  setShowLimitModal(true);
+                }}
+                style={{
+                  background: marketWideLimit ? '#FEF3C7' : 'var(--bg-warm)',
+                  color: marketWideLimit ? '#92400E' : 'var(--navy-900)',
+                  border: `1px solid ${marketWideLimit ? '#FCD34D' : 'var(--border-soft)'}`,
+                  borderRadius: '6px',
+                  padding: '6px 12px',
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                🛡 {marketWideLimit ? `Global Cap: ₹${Number(marketWideLimit).toLocaleString('en-IN')}` : 'Global Cap: None (Configure)'}
+              </button>
+            </div>
+
+            {/* FX Desks Active/Inactive Toggles */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                FX Desks:
+              </span>
+              
+              {/* Desk 1 */}
+              <button
+                type="button"
+                onClick={() => handleToggleDesk('FX_1')}
+                style={{
+                  background: fx1Active ? '#EFF6FF' : '#F3F4F6',
+                  color: fx1Active ? '#1D4ED8' : '#6B7280',
+                  border: `1px solid ${fx1Active ? '#93C5FD' : '#D1D5DB'}`,
+                  borderRadius: '6px',
+                  padding: '5px 10px',
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px'
+                }}
+              >
+                <span>FX 1 (Primary):</span>
+                <strong style={{ color: fx1Active ? '#15803D' : '#DC2626' }}>{fx1Active ? 'ACTIVE' : 'INACTIVE'}</strong>
+              </button>
+
+              {/* Desk 2 */}
+              <button
+                type="button"
+                onClick={() => handleToggleDesk('FX_2')}
+                style={{
+                  background: fx2Active ? '#FAF5FF' : '#F3F4F6',
+                  color: fx2Active ? '#7E22CE' : '#6B7280',
+                  border: `1px solid ${fx2Active ? '#D8B4FE' : '#D1D5DB'}`,
+                  borderRadius: '6px',
+                  padding: '5px 10px',
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px'
+                }}
+              >
+                <span>FX 2 (Secondary):</span>
+                <strong style={{ color: fx2Active ? '#15803D' : '#DC2626' }}>{fx2Active ? 'ACTIVE' : 'INACTIVE'}</strong>
+              </button>
+
+              {/* Reserve Intervention Trigger */}
+              <button
+                type="button"
+                onClick={() => {
+                  setInterventionCurrency('USD');
+                  setInterventionAction('ADD');
+                  setInterventionAmount('50000');
+                  setInterventionReason('Central bank market intervention');
+                  setShowInterventionModal(true);
+                }}
+                style={{
+                  background: 'var(--navy-900)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '6px 12px',
+                  fontSize: '11px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                ⚖️ Reserve Intervention
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Live FX Rates Board */}
         <div style={{
@@ -700,15 +1091,16 @@ export default function CurrencyExchangePage({ state, connected = true }) {
               const avail = Number(res.availableReserve ?? 0);
               const reserved = Number(res.reservedInventory ?? 0);
               const currentInv = Number(res.currentInventory ?? (avail + reserved));
-              const initialPool = Number(res.initialPool ?? 0);
-              const totalReplenished = Number(res.totalReplenished ?? 0);
-              const netPurchased = Number(res.netProceedsPurchased ?? 0);
-              const poolCap = Math.max(1, initialPool + totalReplenished + netPurchased);
-              const utilization = Math.min(1, Math.max(0, 1 - (avail / poolCap)));
-              const uPct = (utilization * 100).toFixed(1);
-              const isCritical = utilization > 0.85 || avail <= 0;
-              const isElevated = utilization > 0.50 && !isCritical;
+              const initialOpening = Number(res.openingReserve ?? 0);
               const isZeroDec = c.code === 'JPY' || c.code === 'KRW';
+              const pairKey = `${c.code}INR`;
+              const pairMidRate = Number(fxRates[pairKey]?.midRate || DEFAULT_FX_RATES[pairKey]?.midRate || 1.0);
+              const inrEquivalent = Math.round(currentInv * pairMidRate);
+
+              const utilization = currentInv > 0 ? (reserved / currentInv) : 0;
+              const uPct = (utilization * 100).toFixed(1);
+              const isCritical = avail <= 0;
+              const isElevated = utilization > 0.50 && !isCritical;
 
               return (
                 <div key={c.code} style={{
@@ -717,9 +1109,9 @@ export default function CurrencyExchangePage({ state, connected = true }) {
                   borderRadius: '8px',
                   padding: '12px 14px'
                 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: '15px' }}>{c.flag}</span>
+                      <span style={{ fontSize: '16px' }}>{c.flag}</span>
                       <strong style={{ fontSize: '13px', color: 'var(--navy-900)' }}>{c.code}</strong>
                       <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>({c.symbol})</span>
                     </div>
@@ -728,24 +1120,36 @@ export default function CurrencyExchangePage({ state, connected = true }) {
                       fontWeight: '800',
                       padding: '2px 6px',
                       borderRadius: '4px',
-                      background: isCritical ? 'rgba(220, 38, 38, 0.15)' : isElevated ? 'rgba(255, 104, 0, 0.15)' : 'rgba(16, 185, 129, 0.15)',
-                      color: isCritical ? 'var(--red-crimson)' : isElevated ? '#D97706' : 'var(--green-emerald)'
+                      background: isFxMarketPaused ? 'rgba(239, 68, 68, 0.15)' : (isCritical ? 'rgba(220, 38, 38, 0.15)' : isElevated ? 'rgba(255, 104, 0, 0.15)' : 'rgba(16, 185, 129, 0.15)'),
+                      color: isFxMarketPaused ? '#DC2626' : (isCritical ? 'var(--red-crimson)' : isElevated ? '#D97706' : 'var(--green-emerald)')
                     }}>
-                      {isCritical ? `CRITICAL (${uPct}%)` : isElevated ? `ELEVATED (${uPct}%)` : `NORMAL (${uPct}%)`}
+                      {isFxMarketPaused ? 'PAUSED' : isCritical ? `DEPLETED` : isElevated ? `HIGH DEMAND` : `NORMAL`}
                     </span>
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', fontSize: '11px', marginBottom: '8px' }}>
                     <div>
-                      <div style={{ color: 'var(--text-muted)', fontSize: '10px' }}>Available (A)</div>
-                      <div style={{ fontWeight: '800', fontFamily: 'monospace', color: 'var(--navy-900)' }}>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '10px' }}>Available Reserve</div>
+                      <div style={{ fontWeight: '800', fontFamily: 'monospace', color: 'var(--navy-900)', fontSize: '12px' }}>
                         {c.symbol}{avail.toLocaleString('en-US', { maximumFractionDigits: isZeroDec ? 0 : 2 })}
                       </div>
                     </div>
                     <div>
-                      <div style={{ color: 'var(--text-muted)', fontSize: '10px' }}>In Queue (Res)</div>
-                      <div style={{ fontWeight: '800', fontFamily: 'monospace', color: reserved > 0 ? 'var(--gold-royal)' : 'var(--text-muted)' }}>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '10px' }}>Reserved / In Queue</div>
+                      <div style={{ fontWeight: '800', fontFamily: 'monospace', color: reserved > 0 ? '#B45309' : 'var(--text-muted)', fontSize: '12px' }}>
                         {c.symbol}{reserved.toLocaleString('en-US', { maximumFractionDigits: isZeroDec ? 0 : 2 })}
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '10px' }}>Current Total</div>
+                      <div style={{ fontWeight: '700', fontFamily: 'monospace', color: 'var(--navy-900)' }}>
+                        {c.symbol}{currentInv.toLocaleString('en-US', { maximumFractionDigits: isZeroDec ? 0 : 2 })}
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '10px' }}>Initial Event Reserve</div>
+                      <div style={{ fontWeight: '600', fontFamily: 'monospace', color: 'var(--text-muted)' }}>
+                        {c.symbol}{initialOpening.toLocaleString('en-US', { maximumFractionDigits: isZeroDec ? 0 : 2 })}
                       </div>
                     </div>
                   </div>
@@ -754,35 +1158,61 @@ export default function CurrencyExchangePage({ state, connected = true }) {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    paddingTop: '6px',
+                    paddingTop: '8px',
                     borderTop: '1px solid var(--border-soft)',
                     fontSize: '10px'
                   }}>
                     <span style={{ color: 'var(--text-muted)' }}>
-                      Desk Inv: <strong>{c.symbol}{currentInv.toLocaleString('en-US', { maximumFractionDigits: isZeroDec ? 0 : 2 })}</strong>
+                      Mid: <strong>₹{pairMidRate.toFixed(2)}</strong> &nbsp;|&nbsp;
+                      INR Eq: <strong>₹{inrEquivalent.toLocaleString('en-IN')}</strong>
                     </span>
                     {isStaffOperator && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setReplenishCurrency(c.code);
-                          setReplenishAmount(isZeroDec ? '100000000' : '1000000');
-                          setReplenishReason('Central bank liquidity support');
-                          setShowReplenishModal(true);
-                        }}
-                        style={{
-                          background: 'transparent',
-                          border: '1px solid var(--border-soft)',
-                          borderRadius: '4px',
-                          padding: '2px 6px',
-                          fontSize: '10px',
-                          fontWeight: '700',
-                          color: 'var(--navy-900)',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        + Replenish
-                      </button>
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setInterventionCurrency(c.code);
+                            setInterventionAction('ADD');
+                            setInterventionAmount(isZeroDec ? '1000000' : '10000');
+                            setInterventionReason('Market liquidity injection');
+                            setShowInterventionModal(true);
+                          }}
+                          style={{
+                            background: '#DCFCE7',
+                            border: '1px solid #86EFAC',
+                            borderRadius: '4px',
+                            padding: '3px 7px',
+                            fontSize: '10px',
+                            fontWeight: '700',
+                            color: '#15803D',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          + Add
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setInterventionCurrency(c.code);
+                            setInterventionAction('REDUCE');
+                            setInterventionAmount(isZeroDec ? '500000' : '5000');
+                            setInterventionReason('Market liquidity absorption');
+                            setShowInterventionModal(true);
+                          }}
+                          style={{
+                            background: '#FEE2E2',
+                            border: '1px solid #FCA5A5',
+                            borderRadius: '4px',
+                            padding: '3px 7px',
+                            fontSize: '10px',
+                            fontWeight: '700',
+                            color: '#B91C1C',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          - Reduce
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -1176,42 +1606,46 @@ export default function CurrencyExchangePage({ state, connected = true }) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <button
                   type="submit"
-                  disabled={!conversionQuote.valid || isSubmitting}
+                  disabled={!conversionQuote.valid || isSubmitting || isFxMarketPaused}
                   style={{
                     width: '100%',
-                    background: conversionQuote.valid ? 'linear-gradient(135deg, #FF6800 0%, #E65100 100%)' : '#ccc',
+                    background: isFxMarketPaused ? '#9CA3AF' : (conversionQuote.valid ? 'linear-gradient(135deg, #FF6800 0%, #E65100 100%)' : '#ccc'),
                     color: '#fff',
                     border: 'none',
                     borderRadius: '9999px',
                     padding: '12px',
                     fontSize: '13px',
                     fontWeight: '800',
-                    cursor: conversionQuote.valid ? 'pointer' : 'not-allowed',
-                    boxShadow: conversionQuote.valid ? '0 4px 14px rgba(255, 104, 0, 0.35)' : 'none',
+                    cursor: (!isFxMarketPaused && conversionQuote.valid) ? 'pointer' : 'not-allowed',
+                    boxShadow: (!isFxMarketPaused && conversionQuote.valid) ? '0 4px 14px rgba(255, 104, 0, 0.35)' : 'none',
                     transition: 'all 0.2s',
                     letterSpacing: '0.02em'
                   }}
                 >
-                  {isSubmitting ? 'Submitting...' : `Convert & Submit to FX Queue (${simulationDurationSec}s)`}
+                  {isFxMarketPaused
+                    ? '⏸ FX Market Paused — Submissions Suspended'
+                    : isSubmitting
+                      ? 'Submitting...'
+                      : `Convert & Submit to FX Queue (${simulationDurationSec}s)`}
                 </button>
 
                 <button
                   type="button"
                   onClick={handleInstantExecution}
-                  disabled={!conversionQuote.valid || isSubmitting}
+                  disabled={!conversionQuote.valid || isSubmitting || isFxMarketPaused}
                   style={{
                     width: '100%',
-                    background: conversionQuote.valid ? 'var(--color-navy, #0B192C)' : '#e5e7eb',
-                    color: conversionQuote.valid ? '#fff' : '#9ca3af',
+                    background: (!isFxMarketPaused && conversionQuote.valid) ? 'var(--color-navy, #0B192C)' : '#e5e7eb',
+                    color: (!isFxMarketPaused && conversionQuote.valid) ? '#fff' : '#9ca3af',
                     border: 'none',
                     borderRadius: '9999px',
                     padding: '10px',
                     fontSize: '12px',
                     fontWeight: '700',
-                    cursor: conversionQuote.valid ? 'pointer' : 'not-allowed'
+                    cursor: (!isFxMarketPaused && conversionQuote.valid) ? 'pointer' : 'not-allowed'
                   }}
                 >
-                  ⚡ Direct Clearance (Instant Spot Execution)
+                  {isFxMarketPaused ? '⏸ FX Market Paused' : '⚡ Direct Clearance (Instant Spot Execution)'}
                 </button>
               </div>
 
@@ -1893,8 +2327,230 @@ export default function CurrencyExchangePage({ state, connected = true }) {
         </div>
       )}
 
-      {/* Authorized Reserve Replenishment Modal */}
-      {showReplenishModal && isStaffOperator && (
+      {/* Authorized Reserve Intervention Modal (ADD & REDUCE with Commitment Protection) */}
+      {showInterventionModal && isStaffOperator && (() => {
+        const selectedRes = fxReserves[interventionCurrency] || {};
+        const avail = Number(selectedRes.availableReserve ?? 0);
+        const committed = Number(selectedRes.reservedInventory ?? 0);
+        const currentInv = Number(selectedRes.currentInventory ?? (avail + committed));
+        const isZeroDec = interventionCurrency === 'JPY' || interventionCurrency === 'KRW';
+        const numAmount = parseFloat(interventionAmount) || 0;
+        const isUnsafeReduction = interventionAction === 'REDUCE' && numAmount > avail;
+
+        return (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '20px'
+          }}>
+            <div style={{
+              background: 'var(--card-bg)',
+              border: '1px solid var(--border-soft)',
+              borderRadius: '12px',
+              width: '100%',
+              maxWidth: '480px',
+              padding: '24px',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.15)'
+            }}>
+              <h3 style={{ margin: '0 0 12px', fontSize: '17px', color: 'var(--navy-900)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>⚖️</span> FX Reserve Intervention Control
+              </h3>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 16px' }}>
+                Authorized central desk intervention to increase or decrease foreign currency liquidity. Every change is audited as a market event.
+              </p>
+
+              <form onSubmit={handleReserveIntervention}>
+                {/* Intervention Direction (ADD vs REDUCE) */}
+                <div style={{ marginBottom: '14px' }}>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: 'var(--navy-800)', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    Intervention Type
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setInterventionAction('ADD')}
+                      style={{
+                        padding: '10px',
+                        borderRadius: '6px',
+                        border: interventionAction === 'ADD' ? '2px solid #16A34A' : '1px solid var(--border-soft)',
+                        background: interventionAction === 'ADD' ? '#DCFCE7' : 'var(--bg-warm)',
+                        color: interventionAction === 'ADD' ? '#15803D' : 'var(--navy-900)',
+                        fontWeight: '800',
+                        fontSize: '12px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      + ADD RESERVE (Inject)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInterventionAction('REDUCE')}
+                      style={{
+                        padding: '10px',
+                        borderRadius: '6px',
+                        border: interventionAction === 'REDUCE' ? '2px solid #DC2626' : '1px solid var(--border-soft)',
+                        background: interventionAction === 'REDUCE' ? '#FEE2E2' : 'var(--bg-warm)',
+                        color: interventionAction === 'REDUCE' ? '#991B1B' : 'var(--navy-900)',
+                        fontWeight: '800',
+                        fontSize: '12px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      - REDUCE RESERVE (Absorb)
+                    </button>
+                  </div>
+                </div>
+
+                {/* Target Foreign Currency */}
+                <div style={{ marginBottom: '14px' }}>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: 'var(--navy-800)', marginBottom: '4px', textTransform: 'uppercase' }}>
+                    Target Currency
+                  </label>
+                  <select
+                    value={interventionCurrency}
+                    onChange={(e) => setInterventionCurrency(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      borderRadius: '6px',
+                      border: '1px solid var(--border-soft)',
+                      fontSize: '13px',
+                      fontWeight: '700'
+                    }}
+                  >
+                    {foreignTradableCurrencies.map(c => (
+                      <option key={c.code} value={c.code}>
+                        {c.flag} {c.code} ({c.symbol}) — {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Live Reserve State Display */}
+                <div style={{
+                  background: 'var(--bg-warm)',
+                  borderRadius: '6px',
+                  padding: '10px 12px',
+                  marginBottom: '14px',
+                  border: '1px solid var(--border-soft)',
+                  fontSize: '11px',
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '6px'
+                }}>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Current Total:</span>{' '}
+                    <strong>{CURRENCY_SYMBOLS[interventionCurrency]}{currentInv.toLocaleString('en-US', { maximumFractionDigits: isZeroDec ? 0 : 2 })}</strong>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)' }}>Committed / In Queue:</span>{' '}
+                    <strong style={{ color: committed > 0 ? '#B45309' : 'inherit' }}>{CURRENCY_SYMBOLS[interventionCurrency]}{committed.toLocaleString('en-US', { maximumFractionDigits: isZeroDec ? 0 : 2 })}</strong>
+                  </div>
+                  <div style={{ gridColumn: 'span 2', borderTop: '1px solid var(--border-soft)', paddingTop: '4px' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Maximum Safe Reduction:</span>{' '}
+                    <strong style={{ color: '#16A34A' }}>{CURRENCY_SYMBOLS[interventionCurrency]}{avail.toLocaleString('en-US', { maximumFractionDigits: isZeroDec ? 0 : 2 })}</strong>
+                  </div>
+                </div>
+
+                {/* Amount */}
+                <div style={{ marginBottom: '14px' }}>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: 'var(--navy-800)', marginBottom: '4px', textTransform: 'uppercase' }}>
+                    Intervention Amount ({interventionCurrency})
+                  </label>
+                  <input
+                    type="number"
+                    step={isZeroDec ? '1' : '0.01'}
+                    value={interventionAmount}
+                    onChange={(e) => setInterventionAmount(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      borderRadius: '6px',
+                      border: isUnsafeReduction ? '2px solid #DC2626' : '1px solid var(--border-soft)',
+                      fontSize: '14px',
+                      fontWeight: '700',
+                      fontFamily: 'monospace'
+                    }}
+                    required
+                  />
+                  {isUnsafeReduction && (
+                    <div style={{ marginTop: '5px', fontSize: '11px', color: '#DC2626', fontWeight: '700' }}>
+                      ⚠️ Unsafe Reduction: Amount exceeds available reserve ({avail.toLocaleString()}). Reduction cannot violate committed liquidity ({committed.toLocaleString()} reserved for pending conversions).
+                    </div>
+                  )}
+                </div>
+
+                {/* Reason */}
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: 'var(--navy-800)', marginBottom: '4px', textTransform: 'uppercase' }}>
+                    Audit Justification / Market Reason (Mandatory)
+                  </label>
+                  <input
+                    type="text"
+                    value={interventionReason}
+                    onChange={(e) => setInterventionReason(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      borderRadius: '6px',
+                      border: '1px solid var(--border-soft)',
+                      fontSize: '13px'
+                    }}
+                    placeholder="e.g. Central bank liquidity support"
+                    required
+                  />
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowInterventionModal(false)}
+                    disabled={isIntervening}
+                    style={{
+                      background: 'var(--bg-warm)',
+                      border: '1px solid var(--border-soft)',
+                      borderRadius: '6px',
+                      padding: '8px 14px',
+                      fontSize: '13px',
+                      fontWeight: '600',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isIntervening || isUnsafeReduction}
+                    style={{
+                      background: isUnsafeReduction ? '#9CA3AF' : (interventionAction === 'ADD' ? '#16A34A' : '#DC2626'),
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '8px 16px',
+                      fontSize: '13px',
+                      fontWeight: '700',
+                      cursor: (isIntervening || isUnsafeReduction) ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    {isIntervening ? 'Executing...' : (interventionAction === 'ADD' ? 'Authorize Reserve Increase' : 'Authorize Safe Reduction')}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Market Pause Modal */}
+      {showPauseModal && isStaffOperator && (
         <div style={{
           position: 'fixed',
           top: 0,
@@ -1913,72 +2569,26 @@ export default function CurrencyExchangePage({ state, connected = true }) {
             border: '1px solid var(--border-soft)',
             borderRadius: '12px',
             width: '100%',
-            maxWidth: '460px',
+            maxWidth: '440px',
             padding: '24px',
             boxShadow: '0 8px 32px rgba(0,0,0,0.15)'
           }}>
-            <h3 style={{ margin: '0 0 16px', fontSize: '17px', color: 'var(--navy-900)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>🏦</span> Authorized FX Reserve Replenishment
+            <h3 style={{ margin: '0 0 10px', fontSize: '17px', color: '#DC2626', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>⏸️</span> Pause Foreign Exchange Market
             </h3>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '-10px 0 16px' }}>
-              Inject foreign liquidity into desk reserves. Balanced double-entry equity line will be posted to the system treasury ledger.
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 14px', lineHeight: '1.4' }}>
+              Temporarily halt all new foreign exchange conversions across SAAMX. Outstanding queue requests remain intact and will continue to drain and settle normally.
             </p>
 
-            <form onSubmit={handleReplenishReserve}>
+            <form onSubmit={handlePauseMarket}>
               <div style={{ marginBottom: '14px' }}>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: 'var(--navy-800)', marginBottom: '4px' }}>
-                  Target Foreign Currency
-                </label>
-                <select
-                  value={replenishCurrency}
-                  onChange={(e) => setReplenishCurrency(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '8px 10px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--border-soft)',
-                    fontSize: '13px',
-                    fontWeight: '700'
-                  }}
-                >
-                  {foreignTradableCurrencies.map(c => (
-                    <option key={c.code} value={c.code}>
-                      {c.flag} {c.code} ({c.symbol}) — {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div style={{ marginBottom: '14px' }}>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: 'var(--navy-800)', marginBottom: '4px' }}>
-                  Replenishment Amount ({replenishCurrency})
-                </label>
-                <input
-                  type="number"
-                  step={(replenishCurrency === 'JPY' || replenishCurrency === 'KRW') ? '1' : '0.01'}
-                  value={replenishAmount}
-                  onChange={(e) => setReplenishAmount(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '8px 10px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--border-soft)',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    fontFamily: 'monospace'
-                  }}
-                  required
-                />
-              </div>
-
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: 'var(--navy-800)', marginBottom: '4px' }}>
-                  Audit Justification / Central Bank Authorization Reason
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: 'var(--navy-800)', marginBottom: '5px', textTransform: 'uppercase' }}>
+                  Pause Reason (Visible to Teams & Logged in Audit)
                 </label>
                 <input
                   type="text"
-                  value={replenishReason}
-                  onChange={(e) => setReplenishReason(e.target.value)}
+                  value={pauseReason}
+                  onChange={(e) => setPauseReason(e.target.value)}
                   style={{
                     width: '100%',
                     padding: '8px 10px',
@@ -1986,16 +2596,37 @@ export default function CurrencyExchangePage({ state, connected = true }) {
                     border: '1px solid var(--border-soft)',
                     fontSize: '13px'
                   }}
-                  placeholder="e.g. Bilateral currency swap allocation"
+                  placeholder="e.g. Liquidity adjustment / Central bank rate check"
                   required
                 />
+                {/* Reason Quick Pills */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '6px' }}>
+                  {['Liquidity adjustment', 'Rate recalibration', 'Market event', 'Temporary operational halt', 'Reserve intervention'].map(r => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setPauseReason(r)}
+                      style={{
+                        background: pauseReason === r ? 'var(--navy-900)' : 'var(--bg-warm)',
+                        color: pauseReason === r ? '#fff' : 'var(--navy-900)',
+                        border: '1px solid var(--border-soft)',
+                        borderRadius: '4px',
+                        padding: '2px 6px',
+                        fontSize: '10px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                 <button
                   type="button"
-                  onClick={() => setShowReplenishModal(false)}
-                  disabled={isReplenishing}
+                  onClick={() => setShowPauseModal(false)}
+                  disabled={isPausing}
                   style={{
                     background: 'var(--bg-warm)',
                     border: '1px solid var(--border-soft)',
@@ -2010,19 +2641,137 @@ export default function CurrencyExchangePage({ state, connected = true }) {
                 </button>
                 <button
                   type="submit"
-                  disabled={isReplenishing}
+                  disabled={isPausing}
                   style={{
-                    background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                    background: '#DC2626',
                     color: '#fff',
                     border: 'none',
                     borderRadius: '6px',
                     padding: '8px 16px',
                     fontSize: '13px',
                     fontWeight: '700',
-                    cursor: isReplenishing ? 'not-allowed' : 'pointer'
+                    cursor: isPausing ? 'not-allowed' : 'pointer'
                   }}
                 >
-                  {isReplenishing ? 'Replenishing...' : 'Authorize & Post Replenishment'}
+                  {isPausing ? 'Pausing...' : 'Confirm Market Pause'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Market-Wide Transaction Limit Modal */}
+      {showLimitModal && isStaffOperator && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: 'var(--card-bg)',
+            border: '1px solid var(--border-soft)',
+            borderRadius: '12px',
+            width: '100%',
+            maxWidth: '440px',
+            padding: '24px',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.15)'
+          }}>
+            <h3 style={{ margin: '0 0 10px', fontSize: '17px', color: 'var(--navy-900)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>🛡️</span> Market-Wide FX Transaction Limit
+            </h3>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 14px', lineHeight: '1.4' }}>
+              Configure a global per-transaction cap in INR applied equally to all participant teams. By default, there is NO cap. Enter 0 or leave empty to disable.
+            </p>
+
+            <form onSubmit={handleSetLimit}>
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: 'var(--navy-800)', marginBottom: '5px', textTransform: 'uppercase' }}>
+                  Maximum Transaction Value (INR)
+                </label>
+                <input
+                  type="number"
+                  value={globalLimitInput}
+                  onChange={(e) => setGlobalLimitInput(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 10px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-soft)',
+                    fontSize: '14px',
+                    fontWeight: '700',
+                    fontFamily: 'monospace'
+                  }}
+                  placeholder="e.g. 5000000 (or empty for unrestricted)"
+                />
+                {/* Presets */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '6px' }}>
+                  {[
+                    { label: '₹25 Lakh', val: '2500000' },
+                    { label: '₹50 Lakh', val: '5000000' },
+                    { label: '₹1 Crore', val: '10000000' },
+                    { label: 'No Limit (Clear)', val: '' }
+                  ].map(p => (
+                    <button
+                      key={p.label}
+                      type="button"
+                      onClick={() => setGlobalLimitInput(p.val)}
+                      style={{
+                        background: globalLimitInput === p.val ? 'var(--navy-900)' : 'var(--bg-warm)',
+                        color: globalLimitInput === p.val ? '#fff' : 'var(--navy-900)',
+                        border: '1px solid var(--border-soft)',
+                        borderRadius: '4px',
+                        padding: '2px 6px',
+                        fontSize: '10px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowLimitModal(false)}
+                  disabled={isSettingLimit}
+                  style={{
+                    background: 'var(--bg-warm)',
+                    border: '1px solid var(--border-soft)',
+                    borderRadius: '6px',
+                    padding: '8px 14px',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSettingLimit}
+                  style={{
+                    background: 'var(--navy-900)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '8px 16px',
+                    fontSize: '13px',
+                    fontWeight: '700',
+                    cursor: isSettingLimit ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {isSettingLimit ? 'Applying...' : 'Save Configuration'}
                 </button>
               </div>
             </form>
