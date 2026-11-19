@@ -55,7 +55,8 @@ export default function MarketOverviewIntelligenceSection({
   fxRates,
   onOpenProfile,
   teamCode,
-  team
+  team,
+  onNavigate
 }) {
   const { isCompact } = useDensity();
   const [orderModalSecurity, setOrderModalSecurity] = useState(null);
@@ -393,6 +394,64 @@ export default function MarketOverviewIntelligenceSection({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       
+      {/* Quick Market Switcher */}
+      {onNavigate && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          background: 'var(--color-surface, #FFFFFF)',
+          padding: '12px 18px',
+          borderRadius: '12px',
+          border: '1px solid var(--color-border, #E2E8F0)',
+          flexWrap: 'wrap',
+          gap: '12px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-secondary, #64748B)' }}>
+              Market Floor View:
+            </span>
+            <div style={{ display: 'inline-flex', background: 'var(--color-surface-subtle, #F1F5F9)', padding: '3px', borderRadius: '8px', gap: '4px' }}>
+              <span
+                style={{
+                  background: 'var(--color-surface, #FFFFFF)',
+                  color: 'var(--color-text-primary, #0F172A)',
+                  fontWeight: 700,
+                  fontSize: '0.82rem',
+                  padding: '6px 14px',
+                  borderRadius: '6px',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.06)'
+                }}
+              >
+                📈 Securities Universe (Active)
+              </span>
+              <button
+                type="button"
+                onClick={() => onNavigate('fx')}
+                style={{
+                  background: 'transparent',
+                  color: 'var(--color-primary, #2563EB)',
+                  fontWeight: 600,
+                  fontSize: '0.82rem',
+                  padding: '6px 14px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                💱 Foreign Exchange Desk &rarr;
+              </button>
+            </div>
+          </div>
+          <div style={{ fontSize: '0.82rem', color: 'var(--color-text-secondary, #64748B)' }}>
+            Institutional FX: <strong style={{ color: 'var(--color-text-primary, #0F172A)' }}>USD ₹{Number(usdRate).toFixed(2)}</strong> &bull; <strong style={{ color: 'var(--color-text-primary, #0F172A)' }}>EUR ₹{Number(eurRate).toFixed(2)}</strong> &bull; <strong style={{ color: 'var(--color-text-primary, #0F172A)' }}>GBP ₹{Number(gbpRate).toFixed(2)}</strong>
+          </div>
+        </div>
+      )}
+
       {/* 1. Market Overview Card & Live Interactive Area Chart (Reference Image Composition) */}
       <Card
         style={{

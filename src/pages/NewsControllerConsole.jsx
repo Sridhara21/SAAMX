@@ -608,8 +608,8 @@ export default function NewsControllerConsole({ state, adminPassword }) {
                     <Badge variant={selectedPresetDetail.scope === 'INDIA' ? 'success' : 'primary'}>
                       {selectedPresetDetail.scope} &bull; {selectedPresetDetail.country}
                     </Badge>
-                    <span className="font-mono" style={{ fontSize: '0.75rem', fontWeight: 800, color: '#4F46E5' }}>
-                      {selectedPresetDetail.id}
+                    <span className="font-mono" style={{ fontSize: '0.85rem', fontWeight: 900, color: '#4F46E5' }}>
+                      #{selectedPresetDetail.sequence} &bull; {selectedPresetDetail.presetId || selectedPresetDetail.id}
                     </span>
                     <span style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 700 }}>
                       Category: {selectedPresetDetail.category}
@@ -694,8 +694,8 @@ export default function NewsControllerConsole({ state, adminPassword }) {
                 >
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <span className="font-mono" style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--color-ink-2)' }}>
-                        {p.id} &bull; <span style={{ color: p.scope === 'INDIA' ? '#065F3E' : '#4F46E5' }}>{p.scope}</span>
+                      <span className="font-mono" style={{ fontSize: '0.78rem', fontWeight: 900, color: 'var(--color-brass, #845508)' }}>
+                        #{p.sequence} &bull; {p.presetId || p.id} &bull; <span style={{ color: p.scope === 'INDIA' ? '#065F3E' : '#4F46E5' }}>{p.scope}</span>
                       </span>
                       <span style={{
                         fontSize: '0.72rem',

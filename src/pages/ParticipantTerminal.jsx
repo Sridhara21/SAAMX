@@ -5,13 +5,15 @@ import TeamOverviewSection from '../components/team/TeamOverviewSection.jsx';
 import MarketOverviewIntelligenceSection from '../components/team/MarketOverviewIntelligenceSection.jsx';
 import PortfolioHoldingsSection from '../components/team/PortfolioHoldingsSection.jsx';
 import OrderHistorySection from '../components/team/OrderHistorySection.jsx';
+import FxMarketSection from '../components/team/FxMarketSection.jsx';
 import { Button, Card, Badge, Alert } from '../components/ui/index.js';
 import {
   IconBarChart,
   IconGlobe,
   IconBriefcase,
   IconClipboardList,
-  IconShieldAlert
+  IconShieldAlert,
+  IconCurrencyExchange
 } from '../lib/icons.jsx';
 import { CURRENCY_DIRECTORY, CURRENCY_SYMBOLS, DEFAULT_FX_RATES } from '../lib/formatters.js';
 
@@ -24,11 +26,12 @@ export default function ParticipantTerminal({
 }) {
   const teamCode = propTeamCode || sessionStorage.getItem('fms_username') || sessionStorage.getItem('saamx_team_code') || 'T01';
 
-  // Four Primary Sections: 'overview', 'market', 'portfolio', 'orders'
+  // Primary Sections: 'overview', 'market', 'fx', 'portfolio', 'orders'
   const [activeSection, setActiveSection] = useState(() => {
     if (typeof window !== 'undefined') {
       const hash = window.location.hash || '';
       if (hash.includes('tab=market') || hash.includes('section=market')) return 'market';
+      if (hash.includes('tab=fx') || hash.includes('section=fx')) return 'fx';
       if (hash.includes('tab=portfolio') || hash.includes('section=portfolio')) return 'portfolio';
       if (hash.includes('tab=orders') || hash.includes('section=orders')) return 'orders';
     }
@@ -384,6 +387,25 @@ export default function ParticipantTerminal({
             <Button
               type="button"
               role="tab"
+              aria-selected={activeSection === 'fx'}
+              aria-controls="section-fx"
+              variant={activeSection === 'fx' ? 'primary' : 'secondary'}
+              size="md"
+              onClick={() => handleSectionChange('fx')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontWeight: 700
+              }}
+            >
+              <IconCurrencyExchange size={16} />
+              <span>FX Currency Desk</span>
+            </Button>
+
+            <Button
+              type="button"
+              role="tab"
               aria-selected={activeSection === 'portfolio'}
               aria-controls="section-portfolio"
               variant={activeSection === 'portfolio' ? 'primary' : 'secondary'}
@@ -479,6 +501,15 @@ export default function ParticipantTerminal({
             onOpenProfile={handleOpenProfile}
             teamCode={team.teamCode}
             team={team}
+            onNavigate={handleSectionChange}
+          />
+        )}
+
+        {activeSection === 'fx' && (
+          <FxMarketSection
+            state={state}
+            teamCode={team?.teamCode || teamCode}
+            onOpenProfile={handleOpenProfile}
           />
         )}
 

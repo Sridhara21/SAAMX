@@ -13225,6 +13225,8 @@ app.post('/api/news/publish', (req, res) => {
     if (!preset) return res.status(404).json({ error: `Preset ${triggerPresetId} not found in library.` });
     payload = {
       id: preset.id,
+      presetId: preset.presetId || preset.id,
+      sequence: preset.sequence,
       headline: preset.headline,
       shortHeadline: preset.shortHeadline,
       description: preset.description,
@@ -13320,6 +13322,9 @@ app.post('/api/news/publish', (req, res) => {
   const newsId = `NW${String((state.newsEvents || []).length + 1).padStart(3, '0')}`;
   const newsItem = {
     id: newsId,
+    eventId: newsId,
+    presetId: payload.presetId || payload.id || null,
+    sequence: payload.sequence || null,
     headline: payload.headline,
     shortHeadline: payload.shortHeadline || payload.headline,
     description: payload.description,
@@ -13370,6 +13375,9 @@ app.post('/api/news/publish', (req, res) => {
     if (!state.marketState) state.marketState = {};
     state.marketState.takeoverEvent = {
       id: newsItem.id,
+      eventId: newsItem.id,
+      presetId: newsItem.presetId,
+      sequence: newsItem.sequence,
       headline: newsItem.headline,
       shortHeadline: newsItem.shortHeadline,
       category: newsItem.category,

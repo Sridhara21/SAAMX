@@ -8,7 +8,9 @@ import { NEWS_PRESETS_LIBRARY } from './newsPresetsLibrary.js';
 
 export const NEWS_PRESETS = NEWS_PRESETS_LIBRARY.map((preset, index) => ({
   id: preset.id,
-  step: index + 1,
+  presetId: preset.presetId || preset.id,
+  sequence: preset.sequence || index + 1,
+  step: preset.sequence || index + 1,
   headline: preset.headline,
   shortHeadline: preset.shortHeadline || preset.headline,
   title: preset.headline,
@@ -35,11 +37,20 @@ export const NEWS_PRESETS = NEWS_PRESETS_LIBRARY.map((preset, index) => ({
   operatorNotes: preset.operatorNotes,
   debateRelevance: preset.debateRelevance,
   ipoRelevance: preset.ipoRelevance,
+  targetClassifications: preset.targetClassifications || [],
   v2: preset
 }));
 
 export function getPresetById(id) {
-  return NEWS_PRESETS.find(p => p.id === id || p.v2?.id === id || p.step === Number(id));
+  if (!id) return null;
+  const target = String(id).toUpperCase().trim();
+  return NEWS_PRESETS.find(p => 
+    p.id.toUpperCase() === target || 
+    p.presetId.toUpperCase() === target ||
+    (p.v2?.legacyId && p.v2.legacyId.toUpperCase() === target) ||
+    String(p.sequence) === target || 
+    String(p.step) === target
+  );
 }
 
 export function getPresetsByStep(step) {

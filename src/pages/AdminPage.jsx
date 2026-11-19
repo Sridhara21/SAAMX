@@ -708,14 +708,14 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
   const handleSelectNewsPreset = (presetId) => {
     setSelectedNewsPresetId(presetId);
     if (!presetId) return;
-    const p = NEWS_PRESETS_LIBRARY.find(item => item.id === presetId);
+    const p = NEWS_PRESETS_LIBRARY.find(item => item.id === presetId || item.presetId === presetId || item.legacyId === presetId || String(item.sequence) === String(presetId));
     if (p) {
       setNewsHeadline(p.headline);
       setNewsDesc(p.description);
       setNewsCategory(p.category);
       setNewsSeverity(p.priority === 'CRITICAL' ? 'CRITICAL' : (p.priority === 'BREAKING' || p.priority === 'HIGH') ? 'HIGH' : 'MEDIUM');
       setNewsImpactPct(String(p.impactMagnitude || 5));
-      setNewsTargetTicker(p.affectedAssets?.securities?.[0] || '');
+      setNewsTargetTicker(p.affectedTickers?.[0] || p.affectedSecurityIds?.[0] || p.affectedAssets?.securities?.[0] || '');
     }
   };
 

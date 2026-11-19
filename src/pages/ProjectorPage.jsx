@@ -552,20 +552,36 @@ export default function ProjectorPage({
                 ✕ CLOSE [ESC]
               </button>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '10px' }}>
-                <span style={{
-                  backgroundColor: severity === 'CRITICAL' || Math.abs(impactPercent || 0) >= 10 ? 'var(--color-fall, #931913)' : 'var(--color-brass, #845508)',
-                  color: '#FFFFFF',
-                  padding: '6px 16px',
-                  borderRadius: '6px',
-                  fontWeight: 900,
-                  fontSize: '0.92rem',
-                  letterSpacing: '1px',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}>
-                  <IconZap size={16} color="#FFFFFF" /> 🚨 BREAKING NEWS
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{
+                    backgroundColor: severity === 'CRITICAL' || Math.abs(impactPercent || 0) >= 10 ? 'var(--color-fall, #931913)' : 'var(--color-brass, #845508)',
+                    color: '#FFFFFF',
+                    padding: '6px 16px',
+                    borderRadius: '6px',
+                    fontWeight: 900,
+                    fontSize: '0.92rem',
+                    letterSpacing: '1px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <IconZap size={16} color="#FFFFFF" /> 🚨 BREAKING NEWS
+                  </span>
+                  {(activeTakeover.presetId || activeTakeover.sequence) && (
+                    <span style={{
+                      backgroundColor: 'var(--color-surface-sunken, #F1F5F9)',
+                      color: 'var(--color-brass, #845508)',
+                      border: '1.5px solid var(--color-border, #CBD5E1)',
+                      padding: '5px 12px',
+                      borderRadius: '6px',
+                      fontWeight: 900,
+                      fontFamily: 'var(--font-mono, monospace)',
+                      fontSize: '0.88rem'
+                    }}>
+                      {activeTakeover.presetId || `NEWS-${String(activeTakeover.sequence).padStart(3, '0')}`}
+                    </span>
+                  )}
+                </div>
                 <span style={{ color: 'var(--color-brass, #845508)', fontSize: '0.88rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px' }}>
                   CATEGORY: {category || 'GLOBAL MACRO'}
                 </span>
