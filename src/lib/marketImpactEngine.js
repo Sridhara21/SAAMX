@@ -27,7 +27,7 @@ export function calculateMarketImpact(event, securities, options = {}) {
   }
 
   // Determine sentiment direction
-  const sentiment = (event.sentiment || '').toUpperCase();
+  const sentiment = (event.sentiment || event.primaryDirection || '').toUpperCase();
   const sentimentMultiplier =
     (sentiment === 'POSITIVE' || sentiment === 'BULLISH') ? 1 :
     (sentiment === 'NEGATIVE' || sentiment === 'BEARISH') ? -1 : 0;
@@ -42,10 +42,15 @@ export function calculateMarketImpact(event, securities, options = {}) {
     rawMagnitude = Number(event.impactPercent) * (sentimentMultiplier || 1);
   }
 
-  let primaryDeltaPct = rawMagnitude * multiplier;
+  // Adjust for confidence if provided
+  let confidenceMultiplier = 1.0;
+  if (event.confidence === 'MEDIUM') confidenceMultiplier = 0.85;
+  if (event.confidence === 'SPECULATIVE') confidenceMultiplier = 0.60;
+
+  let primaryDeltaPct = rawMagnitude * multiplier * confidenceMultiplier;
 
   // Rumour uncertainty discount: rumours begin with a 50% discount until confirmed/debunked
-  const isRumour = event.classification === 'rumour' || event.category === 'Speculation / rumours';
+  const isRumour = event.classification === 'rumour' || event.category === 'Speculation / rumours' || (event.category && event.category.toLowerCase().includes('rumour'));
   if (isRumour && !event.isResolution) {
     primaryDeltaPct = parseFloat((primaryDeltaPct * 0.50).toFixed(2));
   }
@@ -53,6 +58,7 @@ export function calculateMarketImpact(event, securities, options = {}) {
   // Extract affected asset identifiers
   const affectedSecurityIds = new Set([
     ...(event.affectedSecurityIds || []),
+    ...(event.affectedTickers || []),
     ...((event.affectedAssets && event.affectedAssets.securities) || [])
   ]);
 

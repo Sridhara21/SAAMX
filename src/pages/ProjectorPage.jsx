@@ -506,14 +506,15 @@ export default function ProjectorPage({
 
     switch (type) {
       case 'NEWS_FLASH':
+      case 'BREAKING_NEWS':
         return (
           <div
             className="takeover-overlay"
             onClick={handleDismissTakeover}
             style={{
               position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-              backgroundColor: 'rgba(10, 13, 20, 0.90)',
-              backdropFilter: 'blur(8px)',
+              backgroundColor: 'rgba(10, 13, 20, 0.92)',
+              backdropFilter: 'blur(10px)',
               zIndex: 100000,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               padding: '24px',
@@ -524,12 +525,12 @@ export default function ProjectorPage({
               onClick={(e) => e.stopPropagation()}
               style={{
                 backgroundColor: 'var(--color-surface, #FFFFFF)',
-                border: `4px solid ${severity === 'CRITICAL' ? 'var(--color-fall, #931913)' : 'var(--color-brass, #845508)'}`,
+                border: `4px solid ${severity === 'CRITICAL' || Math.abs(impactPercent || 0) >= 10 ? 'var(--color-fall, #931913)' : 'var(--color-brass, #845508)'}`,
                 borderRadius: '16px',
-                maxWidth: '840px',
+                maxWidth: '880px',
                 width: '100%',
                 padding: '36px 44px',
-                boxShadow: '0 25px 70px rgba(0, 0, 0, 0.6)',
+                boxShadow: '0 25px 70px rgba(0, 0, 0, 0.7)',
                 position: 'relative',
                 animation: 'slideUpModal 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
                 cursor: 'default'
@@ -548,9 +549,9 @@ export default function ProjectorPage({
               >
                 ✕ CLOSE [ESC]
               </button>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '10px' }}>
                 <span style={{
-                  backgroundColor: severity === 'CRITICAL' ? 'var(--color-fall, #931913)' : 'var(--color-brass, #845508)',
+                  backgroundColor: severity === 'CRITICAL' || Math.abs(impactPercent || 0) >= 10 ? 'var(--color-fall, #931913)' : 'var(--color-brass, #845508)',
                   color: '#FFFFFF',
                   padding: '6px 16px',
                   borderRadius: '6px',
@@ -561,7 +562,7 @@ export default function ProjectorPage({
                   alignItems: 'center',
                   gap: '8px'
                 }}>
-                  <IconZap size={16} color="#FFFFFF" /> {severity || 'BREAKING'} MARKET NEWS
+                  <IconZap size={16} color="#FFFFFF" /> 🚨 BREAKING NEWS
                 </span>
                 <span style={{ color: 'var(--color-brass, #845508)', fontSize: '0.88rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px' }}>
                   CATEGORY: {category || 'GLOBAL MACRO'}
@@ -579,13 +580,28 @@ export default function ProjectorPage({
                 {headline || name}
               </h1>
 
+              {/* Target Security & Sector Badge */}
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--color-ink-muted, #6B6863)', textTransform: 'uppercase' }}>
+                  AFFECTED ASSETS:
+                </span>
+                <strong style={{ fontSize: '0.9rem', color: 'var(--color-brass, #845508)', background: 'rgba(132, 85, 8, 0.08)', padding: '2px 8px', borderRadius: '4px' }}>
+                  {(activeTakeover.affectedTickers && activeTakeover.affectedTickers.length > 0) ? activeTakeover.affectedTickers.join(', ') : (ticker || 'Broad Market')}
+                </strong>
+                {activeTakeover.affectedSectors && activeTakeover.affectedSectors.length > 0 && (
+                  <span style={{ fontSize: '0.8rem', color: 'var(--color-ink-muted, #4A5568)', background: 'var(--color-surface-sunken, #F1F5F9)', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                    {activeTakeover.affectedSectors.join(', ')}
+                  </span>
+                )}
+              </div>
+
               <p style={{
-                fontSize: '1.2rem',
+                fontSize: '1.15rem',
                 color: 'var(--color-ink-muted, #4A5568)',
                 lineHeight: 1.5,
                 margin: '0 0 24px 0'
               }}>
-                {description || ticker}
+                {description || activeTakeover.summary || ticker}
               </p>
 
               <div style={{
@@ -593,21 +609,27 @@ export default function ProjectorPage({
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 paddingTop: '16px',
-                borderTop: '1.5px solid var(--color-border, #E2DBD0)'
+                borderTop: '1.5px solid var(--color-border, #E2DBD0)',
+                flexWrap: 'wrap',
+                gap: '12px'
               }}>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--color-ink-muted, #6B6863)', fontWeight: 800 }}>MARKET REACTION:</span>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--color-ink-muted, #6B6863)', fontWeight: 800 }}>DIRECTION:</span>
+                  <Badge variant={activeTakeover.primaryDirection === 'BEARISH' || (impactPercent && impactPercent < 0) ? 'danger' : 'success'} style={{ fontSize: '0.85rem', fontWeight: 900 }}>
+                    {activeTakeover.primaryDirection || (impactPercent && impactPercent < 0 ? 'BEARISH' : 'BULLISH')}
+                  </Badge>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--color-ink-muted, #6B6863)', fontWeight: 800, marginLeft: '12px' }}>IMPACT LEVEL:</span>
                   <span className="font-mono tabular-nums" style={{
-                    color: (impactPercent || 0) >= 0 ? 'var(--color-rise, #065F3E)' : 'var(--color-fall, #931913)',
+                    fontSize: '1.15rem',
                     fontWeight: 900,
-                    fontSize: '1.2rem'
+                    color: impactPercent < 0 ? 'var(--color-fall, #931913)' : 'var(--color-rise, #065F3E)'
                   }}>
-                    {(impactPercent !== undefined && impactPercent !== 0) ? `${impactPercent > 0 ? '▲ +' : '▼ '}${Math.abs(impactPercent)}%` : 'HIGH VOLATILITY'}
+                    {impactPercent > 0 ? '+' : ''}{impactPercent}% Primary Shock
                   </span>
                 </div>
-                <span style={{ color: 'var(--color-ink-muted, #6B6863)', fontSize: '0.8rem', fontWeight: 700 }}>
-                  SAAMX FINANCIAL NEWS WIRE &bull; DISPATCHED TO ALL TRADING FLOORS
-                </span>
+                <div style={{ fontSize: '0.78rem', color: 'var(--color-ink-muted, #94A3B8)', fontStyle: 'italic' }}>
+                  Auto-dismissing in 8 seconds &bull; Click anywhere to dismiss
+                </div>
               </div>
             </div>
           </div>
@@ -1343,43 +1365,85 @@ export default function ProjectorPage({
                 margin: 0,
                 letterSpacing: '0.04em'
               }}>
-                MARKET INTELLIGENCE CENTER
+                SAAMX LIVE MARKET
               </h1>
               <span style={{ fontSize: '0.74rem', color: 'var(--color-brass, #845508)', fontWeight: 800, letterSpacing: '0.04em' }}>
                 &bull; "Experience the Market. Don’t Just Learn It."
               </span>
             </div>
             <span style={{ fontSize: '0.68rem', color: 'var(--color-ink-muted, #6B6863)', letterSpacing: '0.04em', textTransform: 'uppercase', fontWeight: 600 }}>
-              LIVE MARKET SNAPSHOT &bull; 2,000+ CONSTITUENTS &bull; GLOBAL MULTI-CURRENCY EXCHANGE
+              OFFICIAL EXCHANGE DISPLAY &bull; 2,800+ CONSTITUENTS &bull; GLOBAL MULTI-CURRENCY
             </span>
           </div>
         </div>
 
-        {/* Center Live Session Badge */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        {/* Center Live Session & Telemetry Status Badges */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {/* Market Status */}
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '8px',
-            background: sessionState === 'CONTINUOUS_TRADING' || sessionState === 'OPEN' ? 'rgba(6, 95, 62, 0.08)' : 'rgba(147, 25, 19, 0.08)',
-            border: `1px solid ${sessionState === 'CONTINUOUS_TRADING' || sessionState === 'OPEN' ? 'rgba(6, 95, 62, 0.3)' : 'rgba(147, 25, 19, 0.3)'}`,
-            padding: '4px 14px',
+            gap: '6px',
+            background: marketStatus === 'Open' ? 'rgba(6, 95, 62, 0.08)' : 'rgba(147, 25, 19, 0.08)',
+            border: `1px solid ${marketStatus === 'Open' ? 'rgba(6, 95, 62, 0.3)' : 'rgba(147, 25, 19, 0.3)'}`,
+            padding: '3px 10px',
             borderRadius: '20px'
           }}>
             <span style={{
-              width: '8px',
-              height: '8px',
+              width: '7px',
+              height: '7px',
               borderRadius: '50%',
-              backgroundColor: sessionState === 'CONTINUOUS_TRADING' || sessionState === 'OPEN' ? 'var(--color-rise, #065F3E)' : 'var(--color-fall, #931913)',
+              backgroundColor: marketStatus === 'Open' ? 'var(--color-rise, #065F3E)' : 'var(--color-fall, #931913)',
               animation: 'pulseBlink 1.5s infinite'
             }} />
             <span style={{
-              fontSize: '0.78rem',
-              fontWeight: 800,
-              color: sessionState === 'CONTINUOUS_TRADING' || sessionState === 'OPEN' ? 'var(--color-rise, #065F3E)' : 'var(--color-fall, #931913)',
+              fontSize: '0.74rem',
+              fontWeight: 900,
+              color: marketStatus === 'Open' ? 'var(--color-rise, #065F3E)' : 'var(--color-fall, #931913)',
               letterSpacing: '0.5px'
             }}>
-              {sessionState.replace('_', ' ')}
+              MARKET {marketStatus?.toUpperCase() || 'OPEN'}
+            </span>
+          </div>
+
+          {/* Current Session */}
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            background: 'var(--color-surface-sunken, #FAF8F3)',
+            border: '1px solid var(--color-border, #E2DBD0)',
+            padding: '3px 10px',
+            borderRadius: '20px'
+          }}>
+            <span style={{
+              fontSize: '0.74rem',
+              fontWeight: 800,
+              color: 'var(--color-ink, #1E232B)',
+              letterSpacing: '0.5px'
+            }}>
+              SESSION: {sessionState.replace(/_/g, ' ')}
+            </span>
+          </div>
+
+          {/* News Status */}
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            background: state?.newsEngineState?.status === 'PAUSED' ? 'rgba(147, 25, 19, 0.08)' : 'rgba(132, 85, 8, 0.08)',
+            border: `1px solid ${state?.newsEngineState?.status === 'PAUSED' ? 'rgba(147, 25, 19, 0.3)' : 'rgba(132, 85, 8, 0.3)'}`,
+            padding: '3px 10px',
+            borderRadius: '20px'
+          }}>
+            <IconZap size={13} color="var(--color-brass, #845508)" />
+            <span style={{
+              fontSize: '0.74rem',
+              fontWeight: 800,
+              color: state?.newsEngineState?.status === 'PAUSED' ? 'var(--color-fall, #931913)' : 'var(--color-brass, #845508)',
+              letterSpacing: '0.5px'
+            }}>
+              NEWS: {state?.newsEngineState?.status || 'ACTIVE'}
             </span>
           </div>
         </div>

@@ -65,8 +65,13 @@ import {
   getPresetById,
   validateNewsPreset,
   NEWS_PRESETS_LIBRARY,
-  NEWS_PRESET_CATEGORIES
+  NEWS_PRESET_CATEGORIES,
+  getPresetsByScope
 } from './src/lib/newsPresetsLibrary.js';
+import { MORNING_MARKET_BULLETIN, getMorningBulletin } from './src/lib/morningNewsBulletin.js';
+import { generateEveningBulletin } from './src/lib/eveningNewsBulletin.js';
+import { SAAMX_MARKET_HERALD, getNewspaperData } from './src/lib/newspaperData.js';
+import { DEBATE_BANK, getDebateById, getDebatesByCategory, getDebatesByScope } from './src/lib/debateBank.js';
 
 export {
   CURRENCY_DIRECTORY,
@@ -12594,9 +12599,12 @@ app.post('/api/admin/rehearsal/reset', (req, res) => {
 
 // Canonical News Presets Endpoint (Authoritative Single Source for Admin, SEBI, Newsroom, Journalists)
 app.get('/api/news/presets', (req, res) => {
-  const { category, search, sentiment, priority } = req.query || {};
+  const { category, search, sentiment, priority, scope } = req.query || {};
   let list = NEWS_PRESETS_LIBRARY;
 
+  if (scope && scope !== 'All') {
+    list = list.filter(p => p.scope?.toUpperCase() === scope.toUpperCase());
+  }
   if (category && category !== 'All') {
     list = list.filter(p => p.category === category);
   }
@@ -12609,18 +12617,126 @@ app.get('/api/news/presets', (req, res) => {
   if (search) {
     const q = search.toLowerCase();
     list = list.filter(p =>
-      p.headline.toLowerCase().includes(q) ||
-      p.description.toLowerCase().includes(q) ||
-      (p.affectedAssets?.securities || []).some(s => s.toLowerCase().includes(q))
+      (p.headline && p.headline.toLowerCase().includes(q)) ||
+      (p.shortHeadline && p.shortHeadline.toLowerCase().includes(q)) ||
+      (p.description && p.description.toLowerCase().includes(q)) ||
+      (p.category && p.category.toLowerCase().includes(q)) ||
+      (p.affectedTickers && p.affectedTickers.some(s => s.toLowerCase().includes(q))) ||
+      (p.affectedSecurityIds && p.affectedSecurityIds.some(s => s.toLowerCase().includes(q)))
     );
   }
+
+  const indiaCount = NEWS_PRESETS_LIBRARY.filter(p => p.scope === 'INDIA').length;
+  const globalCount = NEWS_PRESETS_LIBRARY.filter(p => p.scope === 'GLOBAL').length;
 
   res.json({
     success: true,
     totalCount: NEWS_PRESETS_LIBRARY.length,
+    indiaCount,
+    globalCount,
     filteredCount: list.length,
     categories: NEWS_PRESET_CATEGORIES,
     presets: list
+  });
+});
+
+// News Engine Operational State Management (OFF, READY, RUNNING, PAUSED, COMPLETED)
+app.get('/api/news/state', (req, res) => {
+  if (!state.newsEngineState) {
+    state.newsEngineState = {
+      status: 'READY',
+      publishedCount: (state.newsEvents || []).length,
+      activeCount: (state.newsEvents || []).filter(n => !n.dismissed && n.active !== false).length,
+      updatedAt: Date.now(),
+      updatedBy: 'system'
+    };
+  }
+  state.newsEngineState.publishedCount = (state.newsEvents || []).length;
+  state.newsEngineState.activeCount = (state.newsEvents || []).filter(n => !n.dismissed && n.active !== false).length;
+
+  res.json({
+    success: true,
+    newsEngineState: state.newsEngineState
+  });
+});
+
+app.post('/api/news/state', (req, res) => {
+  const session = req.session || verifySessionToken(req.headers['authorization'] || req.headers['x-fms-token']);
+  if (!session || (session.role !== 'admin' && session.role !== 'super_admin' && session.role !== 'news_controller' && !hasPerm(session, 'news.publish'))) {
+    return res.status(403).json({ error: 'Forbidden: Controlling News Engine state requires News Controller or Administrator authorization.' });
+  }
+
+  const { status, reason } = req.body || {};
+  const validStatuses = ['OFF', 'READY', 'RUNNING', 'PAUSED', 'COMPLETED'];
+  if (!status || !validStatuses.includes(status)) {
+    return res.status(400).json({ error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` });
+  }
+
+  if (!state.newsEngineState) state.newsEngineState = {};
+  state.newsEngineState.status = status;
+  state.newsEngineState.reason = reason || null;
+  state.newsEngineState.updatedAt = Date.now();
+  state.newsEngineState.updatedBy = session.username || 'operator';
+
+  logAuditEvent({
+    actor: session.username,
+    role: session.role,
+    action: `NEWS_ENGINE_STATE_CHANGED: ${status}`,
+    target: 'newsEngineState',
+    reason: reason || 'Operator action'
+  });
+
+  saveState(true);
+  broadcastState('NEWS_ENGINE_STATE_UPDATED', { newsEngineState: state.newsEngineState });
+
+  res.json({
+    success: true,
+    newsEngineState: state.newsEngineState
+  });
+});
+
+// Structured Morning Market Bulletin Endpoint
+app.get('/api/news/bulletin/morning', (req, res) => {
+  res.json({
+    success: true,
+    bulletin: MORNING_MARKET_BULLETIN
+  });
+});
+
+// Structured Evening Market Bulletin Endpoint (Dynamically Generated from Actual Market Events)
+app.get('/api/news/bulletin/evening', (req, res) => {
+  const bulletin = generateEveningBulletin(state);
+  res.json({
+    success: true,
+    bulletin
+  });
+});
+
+// SAAMX Market Herald Newspaper Endpoint
+app.get('/api/news/newspaper', (req, res) => {
+  res.json({
+    success: true,
+    newspaper: SAAMX_MARKET_HERALD
+  });
+});
+
+// News Debate Bank Endpoint (40 Structured Topics)
+app.get('/api/news/debates', (req, res) => {
+  const { category, scope } = req.query || {};
+  let list = DEBATE_BANK;
+  if (scope && scope !== 'All') {
+    list = list.filter(d => d.scope.toUpperCase() === scope.toUpperCase());
+  }
+  if (category && category !== 'All') {
+    list = list.filter(d => d.category.toLowerCase().includes(category.toLowerCase()));
+  }
+  res.json({
+    success: true,
+    totalCount: DEBATE_BANK.length,
+    indiaCount: DEBATE_BANK.filter(d => d.scope === 'INDIA').length,
+    globalCount: DEBATE_BANK.filter(d => d.scope === 'GLOBAL').length,
+    filteredCount: list.length,
+    debates: list
   });
 });
 
@@ -13108,19 +13224,34 @@ app.post('/api/news/publish', (req, res) => {
     const preset = getPresetById(triggerPresetId);
     if (!preset) return res.status(404).json({ error: `Preset ${triggerPresetId} not found in library.` });
     payload = {
+      id: preset.id,
       headline: preset.headline,
+      shortHeadline: preset.shortHeadline,
       description: preset.description,
       category: preset.category,
       subcategory: preset.subcategory,
+      scope: preset.scope,
+      country: preset.country,
+      region: preset.region,
+      primaryDirection: preset.primaryDirection,
+      secondaryDirection: preset.secondaryDirection,
       priority: preset.priority,
       sentiment: preset.sentiment,
+      confidence: preset.confidence,
       impactMagnitude: overrideImpact !== undefined ? Number(overrideImpact) : preset.impactMagnitude,
-      affectedSecurityIds: preset.affectedAssets.securities,
-      affectedSectors: preset.affectedAssets.sectors,
+      affectedSecurityIds: preset.affectedSecurityIds || (preset.affectedAssets && preset.affectedAssets.securities) || [],
+      affectedTickers: preset.affectedTickers || preset.affectedSecurityIds || [],
+      affectedSectors: preset.affectedSectors || (preset.affectedAssets && preset.affectedAssets.sectors) || [],
+      affectedCurrencies: preset.affectedCurrencies || (preset.affectedAssets && preset.affectedAssets.currencies) || [],
       classification: preset.classification,
       impactParameters: preset.impactParameters,
-      duration: preset.duration,
-      expiryRules: preset.expiryRules
+      duration: preset.duration || preset.expectedDuration || 30,
+      expiryRules: preset.expiryRules,
+      directImpact: preset.directImpact,
+      secondOrderImpact: preset.secondOrderImpact,
+      crossMarketImpact: preset.crossMarketImpact,
+      debateRelevance: preset.debateRelevance,
+      ipoRelevance: preset.ipoRelevance
     };
   } else if (customPayload) {
     const val = validateNewsPreset(customPayload);
@@ -13190,16 +13321,28 @@ app.post('/api/news/publish', (req, res) => {
   const newsItem = {
     id: newsId,
     headline: payload.headline,
+    shortHeadline: payload.shortHeadline || payload.headline,
     description: payload.description,
     summary: payload.description,
     category: payload.category,
     subcategory: payload.subcategory,
+    scope: payload.scope || 'INDIA',
+    country: payload.country || 'India',
+    region: payload.region || 'Domestic',
     priority: payload.priority,
     sentiment: payload.sentiment,
+    primaryDirection: payload.primaryDirection || (payload.sentiment === 'Negative' ? 'BEARISH' : 'BULLISH'),
+    secondaryDirection: payload.secondaryDirection || null,
     impactPercent: payload.impactMagnitude,
     classification: payload.classification,
     affectedSecurityIds: impactResult.modifications.map(m => m.ticker),
+    affectedTickers: impactResult.modifications.map(m => m.ticker),
     affectedSectors: payload.affectedSectors || [],
+    directImpact: payload.directImpact || null,
+    secondOrderImpact: payload.secondOrderImpact || null,
+    crossMarketImpact: payload.crossMarketImpact || null,
+    debateRelevance: payload.debateRelevance || null,
+    ipoRelevance: payload.ipoRelevance || null,
     modifications: impactResult.modifications,
     circuitHalts: impactResult.circuitHalts,
     durationSeconds: (payload.duration || 5) * 60,
@@ -13221,6 +13364,25 @@ app.post('/api/news/publish', (req, res) => {
     reversionFloor: 0.40,
     modifications: impactResult.modifications
   });
+
+  // Trigger Projector Breaking News animation for significant news events
+  if (payload.priority === 'CRITICAL' || payload.priority === 'BREAKING' || Math.abs(payload.impactMagnitude || 0) >= 4.0) {
+    if (!state.marketState) state.marketState = {};
+    state.marketState.takeoverEvent = {
+      id: newsItem.id,
+      headline: newsItem.headline,
+      shortHeadline: newsItem.shortHeadline,
+      category: newsItem.category,
+      sentiment: newsItem.sentiment,
+      primaryDirection: newsItem.primaryDirection,
+      impactPercent: newsItem.impactPercent,
+      affectedTickers: newsItem.affectedSecurityIds,
+      affectedSectors: newsItem.affectedSectors,
+      triggeredAt: newsItem.triggeredAt,
+      type: 'BREAKING_NEWS'
+    };
+    broadcastState('TAKEOVER_TRIGGER', { takeoverEvent: state.marketState.takeoverEvent });
+  }
 
   updateMarketIndex();
 
