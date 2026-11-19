@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { db, ref, onValue } from '../lib/firebase.js';
+import { apiFetch } from '../lib/api.js';
 import { Card, Badge, Button } from '../components/ui/index.js';
 import {
   IconBuilding,
@@ -490,7 +491,8 @@ export default function ProjectorPage({
     return '₹';
   };
 
-  const sessionState = state?.marketState?.sessionState || (state?.marketState?.status === 'Open' ? 'CONTINUOUS_TRADING' : 'PRE_OPEN');
+  const marketStatus = state?.marketState?.status || 'Open';
+  const sessionState = state?.marketState?.sessionState || (marketStatus === 'Open' ? 'CONTINUOUS_TRADING' : 'PRE_OPEN');
   const leaderboard = useMemo(() => {
     const raw = state?.leaderboard;
     const list = Array.isArray(raw) ? raw : Object.values(raw || {});
