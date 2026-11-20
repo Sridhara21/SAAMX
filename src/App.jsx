@@ -390,30 +390,39 @@ export default function App() {
     if (grantedPages && grantedPages.length > 0) {
       return grantedPages[0];
     }
-    switch (role) {
-      case 'team': return '#/team';
+    const r = (role || '').toLowerCase();
+    switch (r) {
+      case 'super_admin':
       case 'admin': return '#/admin';
+      case 'coordinator': return '#/floor-ops';
+      case 'team': return '#/team';
       case 'bank_teller': return '#/bank';
+      case 'exchange':
       case 'verification': return '#/exchange';
-      case 'operator_x': return '#/exchange';
+      case 'operator_x': return '#/fx';
       case 'advisor': return '#/advisor';
       case 'sebi': return '#/sebi';
       case 'news_controller': return '#/news-controller';
       case 'journalist': return '#/journalist';
       case 'judge': return '#/results';
+      case 'observer': return '#/projector';
       case 'portfolio': return '#/portfolio';
-      default: return '#/';
+      default: return '#/team';
     }
   };
 
   const isRouteAuthorized = (role, currentRoute) => {
-    if (role === 'admin' || role === 'super_admin') return true;
+    if (!role) return false;
+    const r = role.toLowerCase();
+    if (r === 'admin' || r === 'super_admin' || r === 'coordinator') return true;
 
-    // Public portals & directory are authorized for all roles
+    // Public portals & directory & projector are authorized for all roles
     if (currentRoute === '#/portals' || currentRoute === '#portals' ||
         currentRoute.startsWith('#/portals?') || currentRoute.startsWith('#/portals/') ||
         currentRoute === '#/directory' || currentRoute === '#directory' ||
-        currentRoute.startsWith('#/directory?') || currentRoute.startsWith('#/directory/')) {
+        currentRoute.startsWith('#/directory?') || currentRoute.startsWith('#/directory/') ||
+        currentRoute === '#/projector' || currentRoute === '#projector' ||
+        currentRoute.startsWith('#/projector?') || currentRoute.startsWith('#/projector/')) {
       return true;
     }
 
@@ -431,19 +440,64 @@ export default function App() {
     }
 
     const roleDeskMap = {
-      team: ['#/team', '#/bank', '#/bank-desk', '#/settlement', '#/advisor', '#/broker', '#/bull', '#/bear', '#/bull-terminal', '#/bear-terminal', '#/market-watch', '#/market-intelligence', '#/results', '#/training'],
-      bank_teller: ['#/bank', '#/bank-desk', '#/settlement', '#/desk-queues', '#/desk-dashboard', '#/queue-dashboard', '#/desk-queue', '#/market-watch', '#/results', '#/training'],
-      verification: ['#/exchange', '#/verification', '#/verification-desk', '#/desk-queues', '#/desk-dashboard', '#/queue-dashboard', '#/desk-queue', '#/market-watch', '#/results', '#/training'],
-      operator_x: ['#/exchange', '#/fx', '#/floor-ops', '#/verification', '#/desk-queues', '#/desk-dashboard', '#/queue-dashboard', '#/desk-queue', '#/market-watch', '#/portfolio', '#/results', '#/training'],
-      advisor: ['#/advisor', '#/broker', '#/bull', '#/bear', '#/bull-terminal', '#/bear-terminal', '#/debate', '#/market-watch', '#/results', '#/training'],
-      sebi: ['#/sebi', '#/tech-ops', '#/monitoring', '#/bank', '#/bank-desk', '#/settlement', '#/floor-ops', '#/desk-queues', '#/desk-dashboard', '#/queue-dashboard', '#/desk-queue', '#/market-watch', '#/portfolio', '#/results', '#/training'],
-      news_controller: ['#/news-controller', '#/news-control', '#/journalist', '#/news', '#/anchor', '#/market-watch', '#/results', '#/training'],
-      journalist: ['#/journalist', '#/news', '#/newsroom', '#/news-room', '#/anchor', '#/market-watch', '#/results', '#/training'],
-      judge: ['#/results', '#/market-watch', '#/training'],
-      portfolio: ['#/portfolio', '#/floor-ops', '#/desk-queues', '#/desk-dashboard', '#/queue-dashboard', '#/desk-queue', '#/market-watch', '#/results', '#/training']
+      team: [
+        '#/team', '#/terminal', '#/portfolio', '#/fx', '#/bank', '#/bank-desk', '#/settlement',
+        '#/advisor', '#/broker', '#/bull', '#/bear', '#/bull-terminal', '#/bear-terminal',
+        '#/debate', '#/bull-bear', '#/market-watch', '#/market-intelligence', '#/results', '#/training', '#/projector'
+      ],
+      exchange: [
+        '#/exchange', '#/verification', '#/verification-desk', '#/desk-queues', '#/desk-dashboard',
+        '#/queue-dashboard', '#/desk-queue', '#/floor-ops', '#/market-watch', '#/market-intelligence',
+        '#/results', '#/training', '#/projector'
+      ],
+      verification: [
+        '#/exchange', '#/verification', '#/verification-desk', '#/desk-queues', '#/desk-dashboard',
+        '#/queue-dashboard', '#/desk-queue', '#/floor-ops', '#/market-watch', '#/market-intelligence',
+        '#/results', '#/training', '#/projector'
+      ],
+      bank_teller: [
+        '#/bank', '#/bank-desk', '#/settlement', '#/desk-queues', '#/desk-dashboard',
+        '#/queue-dashboard', '#/desk-queue', '#/market-watch', '#/market-intelligence',
+        '#/results', '#/training', '#/projector'
+      ],
+      operator_x: [
+        '#/fx', '#/exchange', '#/floor-ops', '#/verification', '#/desk-queues', '#/desk-dashboard',
+        '#/queue-dashboard', '#/desk-queue', '#/market-watch', '#/portfolio',
+        '#/results', '#/training', '#/projector'
+      ],
+      advisor: [
+        '#/advisor', '#/broker', '#/broker-desk', '#/bull', '#/bear', '#/bull-terminal',
+        '#/bear-terminal', '#/debate', '#/bull-bear', '#/market-watch', '#/market-intelligence',
+        '#/results', '#/training', '#/projector'
+      ],
+      sebi: [
+        '#/sebi', '#/tech-ops', '#/monitoring', '#/bank', '#/bank-desk', '#/settlement',
+        '#/floor-ops', '#/desk-queues', '#/desk-dashboard', '#/queue-dashboard',
+        '#/desk-queue', '#/market-watch', '#/portfolio', '#/results', '#/training', '#/projector'
+      ],
+      news_controller: [
+        '#/news-controller', '#/news-control', '#/journalist', '#/news', '#/anchor',
+        '#/newsroom', '#/news-room', '#/market-watch', '#/market-intelligence',
+        '#/results', '#/training', '#/projector'
+      ],
+      journalist: [
+        '#/journalist', '#/news', '#/newsroom', '#/news-room', '#/anchor',
+        '#/news-controller', '#/market-watch', '#/market-intelligence',
+        '#/results', '#/training', '#/projector'
+      ],
+      judge: [
+        '#/results', '#/market-watch', '#/training', '#/projector'
+      ],
+      observer: [
+        '#/projector', '#/market-watch', '#/results', '#/training'
+      ],
+      portfolio: [
+        '#/portfolio', '#/floor-ops', '#/desk-queues', '#/desk-dashboard',
+        '#/queue-dashboard', '#/desk-queue', '#/market-watch', '#/results', '#/training', '#/projector'
+      ]
     };
 
-    const allowedRoutes = roleDeskMap[role] || [];
+    const allowedRoutes = roleDeskMap[r] || [];
     return allowedRoutes.some(p => currentRoute === p || currentRoute.startsWith(p + '/') || currentRoute.startsWith(p + '?'));
   };
 

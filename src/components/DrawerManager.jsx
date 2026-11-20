@@ -651,7 +651,7 @@ export default function DrawerManager({
 
           {/* Team Selector (for Admin/Officials) or Team Badge (for Traders) */}
           <div className="saamx-portfolio-team-bar">
-            {userRole === 'admin' || userRole === 'operator_x' || userRole === 'sebi' ? (
+            {['admin', 'super_admin', 'coordinator', 'operator_x', 'exchange', 'verification', 'bank_teller', 'sebi'].includes((userRole || '').toLowerCase()) ? (
               <div className="saamx-team-picker-wrap">
                 <label className="saamx-label-sub">Inspect Trading House:</label>
                 <select

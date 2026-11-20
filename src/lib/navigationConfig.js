@@ -13,7 +13,7 @@ export const NAVIGATION_SECTIONS = [
         path: '#/team',
         routes: ['#/team', '#/terminal'],
         icon: 'trending-up',
-        roles: ['team', 'admin'],
+        roles: ['team', 'admin', 'super_admin'],
         badge: 'PORTFOLIO',
         description: 'Investment House Portfolio & Orders'
       },
@@ -23,7 +23,7 @@ export const NAVIGATION_SECTIONS = [
         path: '#/exchange',
         routes: ['#/exchange', '#/verification', '#/verification-desk'],
         icon: 'exchange',
-        roles: ['operator_x', 'verification', 'admin'],
+        roles: ['exchange', 'verification', 'operator_x', 'admin', 'super_admin'],
         badge: 'CLEARANCE',
         description: 'Unified Intake, Slip Review & Bank Routing'
       },
@@ -33,7 +33,7 @@ export const NAVIGATION_SECTIONS = [
         path: '#/desk-queues',
         routes: ['#/desk-queues', '#/desk-dashboard', '#/queue-dashboard', '#/desk-queue'],
         icon: 'layers',
-        roles: ['operator_x', 'verification', 'bank_teller', 'admin', 'sebi', 'portfolio'],
+        roles: ['exchange', 'verification', 'operator_x', 'bank_teller', 'admin', 'super_admin', 'sebi', 'portfolio', 'coordinator'],
         badge: 'PORTAL #11',
         description: 'Multi-Desk Assignment & Live Queue Telemetry'
       },
@@ -43,7 +43,7 @@ export const NAVIGATION_SECTIONS = [
         path: '#/fx',
         routes: ['#/fx'],
         icon: 'currency',
-        roles: ['operator_x', 'admin'],
+        roles: ['operator_x', 'exchange', 'team', 'admin', 'super_admin'],
         description: 'Spot FX Exchange (INR/USD/GBP/EUR)'
       },
       {
@@ -52,7 +52,7 @@ export const NAVIGATION_SECTIONS = [
         path: '#/bank',
         routes: ['#/bank', '#/bank-desk', '#/settlement'],
         icon: 'bank',
-        roles: ['bank_teller', 'admin', 'sebi', 'team'],
+        roles: ['bank_teller', 'admin', 'super_admin', 'sebi', 'team'],
         badge: 'SETTLEMENT',
         description: 'Physical Cash Desk & Two-Phase Settlement'
       }
@@ -68,7 +68,7 @@ export const NAVIGATION_SECTIONS = [
         path: '#/market-watch',
         routes: ['#/market-watch'],
         icon: 'bar-chart',
-        roles: ['team', 'operator_x', 'verification', 'advisor', 'sebi', 'journalist', 'judge', 'portfolio', 'admin'],
+        roles: ['team', 'exchange', 'operator_x', 'verification', 'bank_teller', 'advisor', 'sebi', 'journalist', 'news_controller', 'judge', 'observer', 'portfolio', 'admin', 'super_admin', 'coordinator'],
         description: '3,000+ Securities Universe & Live Quotes'
       },
       {
@@ -77,16 +77,16 @@ export const NAVIGATION_SECTIONS = [
         path: '#/market-intelligence',
         routes: ['#/market-intelligence'],
         icon: 'search',
-        roles: ['team', 'journalist', 'admin'],
+        roles: ['team', 'exchange', 'bank_teller', 'advisor', 'journalist', 'news_controller', 'admin', 'super_admin', 'sebi', 'coordinator'],
         description: 'News Catalysts & Sentiment Radar'
       },
       {
         id: 'broker-advisor',
         name: 'Broker Advisor',
         path: '#/advisor',
-        routes: ['#/advisor', '#/broker', '#/broker-desk', '#/bull', '#/bear', '#/bull-terminal', '#/bear-terminal'],
+        routes: ['#/advisor', '#/broker', '#/broker-desk', '#/bull', '#/bear', '#/bull-terminal', '#/bear-terminal', '#/debate', '#/bull-bear'],
         icon: 'briefcase',
-        roles: ['team', 'advisor', 'admin'],
+        roles: ['team', 'advisor', 'admin', 'super_admin', 'coordinator'],
         description: 'Floor Advisor Research, Bull Momentum & Bear Risk Scanners'
       }
     ]
@@ -101,7 +101,7 @@ export const NAVIGATION_SECTIONS = [
         path: '#/sebi',
         routes: ['#/sebi'],
         icon: 'shield-check',
-        roles: ['sebi', 'admin'],
+        roles: ['sebi', 'admin', 'super_admin'],
         badge: 'REGULATOR',
         description: 'Surveillance, Circuit Limits & Penalties'
       },
@@ -111,7 +111,7 @@ export const NAVIGATION_SECTIONS = [
         path: '#/portfolio',
         routes: ['#/portfolio'],
         icon: 'folder-open',
-        roles: ['operator_x', 'sebi', 'portfolio', 'admin'],
+        roles: ['operator_x', 'exchange', 'sebi', 'portfolio', 'admin', 'super_admin', 'coordinator'],
         description: 'Multi-House Valuation Ledger & Positions'
       },
       {
@@ -120,7 +120,7 @@ export const NAVIGATION_SECTIONS = [
         path: '#/journalist',
         routes: ['#/journalist', '#/news', '#/newsroom', '#/news-room', '#/anchor'],
         icon: 'newspaper',
-        roles: ['journalist', 'admin'],
+        roles: ['journalist', 'news_controller', 'admin', 'super_admin'],
         description: 'Press Wire Dispatch & Live Stage Broadcast Teleprompter'
       },
       {
@@ -129,7 +129,7 @@ export const NAVIGATION_SECTIONS = [
         path: '#/news-controller',
         routes: ['#/news-controller', '#/news-control'],
         icon: 'newspaper',
-        roles: ['news_controller', 'admin'],
+        roles: ['news_controller', 'journalist', 'admin', 'super_admin'],
         badge: 'PORTAL #10',
         description: 'News Draft Review, ~400 Presets & Live Market Impact Engine'
       }
@@ -145,7 +145,7 @@ export const NAVIGATION_SECTIONS = [
         path: '#/training',
         routes: ['#/training'],
         icon: 'target',
-        roles: ['team', 'operator_x', 'verification', 'bank_teller', 'advisor', 'sebi', 'journalist', 'news_controller', 'judge', 'portfolio', 'admin', 'super_admin'],
+        roles: ['team', 'exchange', 'operator_x', 'verification', 'bank_teller', 'advisor', 'sebi', 'journalist', 'news_controller', 'judge', 'observer', 'portfolio', 'admin', 'super_admin', 'coordinator'],
         badge: 'SANDBOX',
         description: 'Multi-Role Rehearsal Simulator & Operator Performance Scorecard'
       },
@@ -155,7 +155,7 @@ export const NAVIGATION_SECTIONS = [
         path: '#/floor-ops',
         routes: ['#/floor-ops'],
         icon: 'clipboard-list',
-        roles: ['operator_x', 'sebi', 'portfolio', 'admin'],
+        roles: ['coordinator', 'operator_x', 'exchange', 'verification', 'sebi', 'portfolio', 'admin', 'super_admin'],
         description: 'Runner Logistics & Physical Slip Routing'
       },
       {
@@ -164,7 +164,7 @@ export const NAVIGATION_SECTIONS = [
         path: '#/admin',
         routes: ['#/admin', '#/personnel', '#/personnel-management'],
         icon: 'settings',
-        roles: ['admin'],
+        roles: ['admin', 'super_admin'],
         badge: 'COMMAND',
         description: 'Executive Orchestrator, Personnel, Market Controls & Backups'
       },
@@ -174,7 +174,7 @@ export const NAVIGATION_SECTIONS = [
         path: '#/tech-ops',
         routes: ['#/tech-ops', '#/monitoring'],
         icon: 'activity',
-        roles: ['admin', 'super_admin', 'sebi'],
+        roles: ['admin', 'super_admin', 'sebi', 'coordinator'],
         badge: 'TELEMETRY',
         description: 'Real-time System Health, Throughput, Latency & Error Logs'
       }
@@ -190,7 +190,7 @@ export const NAVIGATION_SECTIONS = [
         path: '#/results',
         routes: ['#/results'],
         icon: 'trophy',
-        roles: ['team', 'operator_x', 'verification', 'advisor', 'sebi', 'journalist', 'judge', 'portfolio', 'admin'],
+        roles: ['team', 'exchange', 'operator_x', 'verification', 'bank_teller', 'advisor', 'sebi', 'journalist', 'news_controller', 'judge', 'observer', 'portfolio', 'admin', 'super_admin', 'coordinator'],
         description: '1,000-Point Scorecard & Awards Podium'
       },
       {
@@ -199,7 +199,7 @@ export const NAVIGATION_SECTIONS = [
         path: '#/portals',
         routes: ['#/portals', '#/directory'],
         icon: 'globe',
-        roles: ['admin'],
+        roles: ['team', 'exchange', 'operator_x', 'verification', 'bank_teller', 'advisor', 'sebi', 'journalist', 'news_controller', 'judge', 'observer', 'portfolio', 'admin', 'super_admin', 'coordinator'],
         description: 'Directory of All Terminal Portals'
       },
       {
@@ -208,7 +208,7 @@ export const NAVIGATION_SECTIONS = [
         path: '#/projector',
         routes: ['#/projector'],
         icon: 'monitor',
-        roles: ['team', 'operator_x', 'verification', 'advisor', 'sebi', 'journalist', 'judge', 'portfolio', 'admin'],
+        roles: ['team', 'exchange', 'operator_x', 'verification', 'bank_teller', 'advisor', 'sebi', 'journalist', 'news_controller', 'judge', 'observer', 'portfolio', 'admin', 'super_admin', 'coordinator'],
         description: 'Public Big-Screen & Split-Flap Board'
       }
     ]
@@ -221,7 +221,7 @@ export function getFilteredNavSections(userRole, grantedPermissions = [], grante
 
   return NAVIGATION_SECTIONS.map(section => {
     const visibleItems = section.items.filter(item => {
-      if (normalizedRole === 'admin' || normalizedRole === 'super_admin') return true;
+      if (normalizedRole === 'admin' || normalizedRole === 'super_admin' || normalizedRole === 'coordinator') return true;
       if (item.roles.includes(normalizedRole)) return true;
       if (Array.isArray(grantedPages) && grantedPages.length > 0) {
         if (grantedPages.includes(item.path) || item.routes?.some(r => grantedPages.includes(r))) {

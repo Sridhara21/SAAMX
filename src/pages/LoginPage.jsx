@@ -24,45 +24,64 @@ export default function LoginPage({ onLoginSuccess }) {
   const [rememberMe, setRememberMe] = useState(false);
 
   const getRedirectDestination = (userRole) => {
+    const r = (userRole || '').toLowerCase();
     try {
       const hash = window.location.hash || '';
+
+      // 1. Explicit redirect query parameter ?redirect=#/...
       const queryIdx = hash.indexOf('?');
       if (queryIdx !== -1) {
         const query = new URLSearchParams(hash.substring(queryIdx + 1));
         const redirect = query.get('redirect');
         if (redirect && redirect.startsWith('#/')) {
-          const safeDesks = {
-            admin: true,
-            team: ['#/team', '#/advisor', '#/market-watch', '#/market-intelligence', '#/results', '#/projector'],
-            verification: ['#/exchange', '#/verification', '#/verification-desk', '#/desk-queues', '#/desk-dashboard', '#/queue-dashboard', '#/desk-queue', '#/market-watch', '#/results', '#/projector'],
-            operator_x: ['#/exchange', '#/fx', '#/floor-ops', '#/verification', '#/desk-queues', '#/desk-dashboard', '#/queue-dashboard', '#/desk-queue', '#/market-watch', '#/results', '#/projector'],
-            bank_teller: ['#/bank', '#/bank-desk', '#/settlement', '#/desk-queues', '#/desk-dashboard', '#/queue-dashboard', '#/desk-queue', '#/market-watch', '#/results', '#/projector'],
-            advisor: ['#/advisor', '#/broker', '#/market-watch', '#/results', '#/projector'],
-            sebi: ['#/sebi', '#/audit-log', '#/market-watch', '#/floor-ops', '#/desk-queues', '#/desk-dashboard', '#/queue-dashboard', '#/desk-queue', '#/results', '#/projector'],
-            journalist: ['#/journalist', '#/news', '#/market-watch', '#/results', '#/projector'],
-            judge: ['#/results', '#/projector'],
-            portfolio: ['#/portfolio', '#/floor-ops', '#/desk-queues', '#/desk-dashboard', '#/queue-dashboard', '#/desk-queue', '#/market-watch', '#/results', '#/projector']
-          };
+          return redirect;
+        }
+      }
 
-          const allowed = safeDesks[userRole];
-          if (allowed === true || (Array.isArray(allowed) && allowed.some(p => redirect.startsWith(p)))) {
-            return redirect;
-          }
+      // 2. Preserve already navigated desk route if valid and not a public gateway
+      const cleanHash = hash.split('?')[0];
+      if (cleanHash && cleanHash !== '#/' && cleanHash !== '#/login' && cleanHash !== '#/home' && cleanHash !== '#/register') {
+        const safeDesks = {
+          super_admin: true,
+          admin: true,
+          coordinator: true,
+          team: ['#/team', '#/portfolio', '#/fx', '#/bank', '#/advisor', '#/market-watch', '#/market-intelligence', '#/results', '#/projector'],
+          exchange: ['#/exchange', '#/verification', '#/verification-desk', '#/desk-queues', '#/desk-dashboard', '#/queue-dashboard', '#/desk-queue', '#/floor-ops', '#/market-watch', '#/market-intelligence', '#/results', '#/projector'],
+          verification: ['#/exchange', '#/verification', '#/verification-desk', '#/desk-queues', '#/desk-dashboard', '#/queue-dashboard', '#/desk-queue', '#/floor-ops', '#/market-watch', '#/market-intelligence', '#/results', '#/projector'],
+          operator_x: ['#/fx', '#/exchange', '#/floor-ops', '#/verification', '#/desk-queues', '#/desk-dashboard', '#/queue-dashboard', '#/desk-queue', '#/market-watch', '#/portfolio', '#/results', '#/projector'],
+          bank_teller: ['#/bank', '#/bank-desk', '#/settlement', '#/desk-queues', '#/desk-dashboard', '#/queue-dashboard', '#/desk-queue', '#/market-watch', '#/market-intelligence', '#/results', '#/projector'],
+          advisor: ['#/advisor', '#/broker', '#/broker-desk', '#/bull', '#/bear', '#/bull-terminal', '#/bear-terminal', '#/debate', '#/bull-bear', '#/market-watch', '#/market-intelligence', '#/results', '#/projector'],
+          sebi: ['#/sebi', '#/audit-log', '#/tech-ops', '#/monitoring', '#/bank', '#/floor-ops', '#/desk-queues', '#/desk-dashboard', '#/queue-dashboard', '#/desk-queue', '#/market-watch', '#/portfolio', '#/results', '#/projector'],
+          news_controller: ['#/news-controller', '#/news-control', '#/journalist', '#/news', '#/anchor', '#/newsroom', '#/market-watch', '#/market-intelligence', '#/results', '#/projector'],
+          journalist: ['#/journalist', '#/news', '#/newsroom', '#/news-room', '#/anchor', '#/news-controller', '#/market-watch', '#/market-intelligence', '#/results', '#/projector'],
+          judge: ['#/results', '#/market-watch', '#/projector'],
+          observer: ['#/projector', '#/market-watch', '#/results'],
+          portfolio: ['#/portfolio', '#/floor-ops', '#/desk-queues', '#/desk-dashboard', '#/queue-dashboard', '#/desk-queue', '#/market-watch', '#/results', '#/projector']
+        };
+
+        const allowed = safeDesks[r];
+        if (allowed === true || (Array.isArray(allowed) && allowed.some(p => cleanHash.startsWith(p)))) {
+          return cleanHash;
         }
       }
     } catch (e) {}
 
-    // Default destinations per role
-    switch (userRole) {
-      case 'team': return '#/team';
+    // 3. Default authoritative destinations per role
+    switch (r) {
+      case 'super_admin':
       case 'admin': return '#/admin';
+      case 'coordinator': return '#/floor-ops';
+      case 'team': return '#/team';
+      case 'exchange':
       case 'verification': return '#/exchange';
-      case 'operator_x': return '#/exchange';
+      case 'operator_x': return '#/fx';
       case 'bank_teller': return '#/bank';
       case 'advisor': return '#/advisor';
       case 'sebi': return '#/sebi';
+      case 'news_controller': return '#/news-controller';
       case 'journalist': return '#/journalist';
       case 'judge': return '#/results';
+      case 'observer': return '#/projector';
       case 'portfolio': return '#/portfolio';
       default: return '#/team';
     }
