@@ -74,12 +74,11 @@ export function DigitalTradeOrderSlip({ order, onClose, showHeaderClose = true }
         {/* Top Header Logos */}
         <div style={headerRowStyle}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontWeight: 900, color: '#0B192C', fontSize: '1.05rem', letterSpacing: '-0.02em' }}>
-              8 GATIK
-            </span>
-            <span style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>
-              JUNIOR COLLEGE
-            </span>
+            <img
+              src="/gatik-logo.png"
+              alt="Gatik Junior College"
+              style={{ height: '36px', width: 'auto', objectFit: 'contain' }}
+            />
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -89,13 +88,12 @@ export function DigitalTradeOrderSlip({ order, onClose, showHeaderClose = true }
             </span>
           </div>
 
-          <div style={{ textAlign: 'right' }}>
-            <span style={{ fontSize: '0.62rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase', display: 'block' }}>
-              Industry Partner
-            </span>
-            <span style={{ fontWeight: 900, color: '#0B192C', fontSize: '1rem', letterSpacing: '0.04em' }}>
-              CADFEM
-            </span>
+          <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+            <img
+              src="/cadfem-partner-logo.png"
+              alt="Industry Partner CADFEM"
+              style={{ height: '32px', width: 'auto', objectFit: 'contain' }}
+            />
           </div>
         </div>
 
@@ -362,12 +360,11 @@ export function DigitalBankSlip({ voucher, onClose, showHeaderClose = true }) {
       <div style={slipCardStyle}>
         <div style={headerRowStyle}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontWeight: 900, color: '#0B192C', fontSize: '1.05rem', letterSpacing: '-0.02em' }}>
-              8 GATIK
-            </span>
-            <span style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>
-              JUNIOR COLLEGE
-            </span>
+            <img
+              src="/gatik-logo.png"
+              alt="Gatik Junior College"
+              style={{ height: '36px', width: 'auto', objectFit: 'contain' }}
+            />
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -377,13 +374,12 @@ export function DigitalBankSlip({ voucher, onClose, showHeaderClose = true }) {
             </span>
           </div>
 
-          <div style={{ textAlign: 'right' }}>
-            <span style={{ fontSize: '0.62rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase', display: 'block' }}>
-              Industry Partner
-            </span>
-            <span style={{ fontWeight: 900, color: '#0B192C', fontSize: '1rem', letterSpacing: '0.04em' }}>
-              CADFEM
-            </span>
+          <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+            <img
+              src="/cadfem-partner-logo.png"
+              alt="Industry Partner CADFEM"
+              style={{ height: '32px', width: 'auto', objectFit: 'contain' }}
+            />
           </div>
         </div>
 
@@ -635,12 +631,11 @@ export function DigitalForexSlip({ fxItem, onClose, showHeaderClose = true }) {
       <div style={slipCardStyle}>
         <div style={headerRowStyle}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontWeight: 900, color: '#0B192C', fontSize: '1.05rem', letterSpacing: '-0.02em' }}>
-              8 GATIK
-            </span>
-            <span style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>
-              JUNIOR COLLEGE
-            </span>
+            <img
+              src="/gatik-logo.png"
+              alt="Gatik Junior College"
+              style={{ height: '36px', width: 'auto', objectFit: 'contain' }}
+            />
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -650,13 +645,12 @@ export function DigitalForexSlip({ fxItem, onClose, showHeaderClose = true }) {
             </span>
           </div>
 
-          <div style={{ textAlign: 'right' }}>
-            <span style={{ fontSize: '0.62rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase', display: 'block' }}>
-              Industry Partner
-            </span>
-            <span style={{ fontWeight: 900, color: '#0B192C', fontSize: '1rem', letterSpacing: '0.04em' }}>
-              CADFEM
-            </span>
+          <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+            <img
+              src="/cadfem-partner-logo.png"
+              alt="Industry Partner CADFEM"
+              style={{ height: '32px', width: 'auto', objectFit: 'contain' }}
+            />
           </div>
         </div>
 
@@ -855,12 +849,11 @@ export function DigitalIpoSlip({ ipoBid, onClose, showHeaderClose = true }) {
       <div style={slipCardStyle}>
         <div style={headerRowStyle}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontWeight: 900, color: '#0B192C', fontSize: '1.05rem', letterSpacing: '-0.02em' }}>
-              8 GATIK
-            </span>
-            <span style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>
-              JUNIOR COLLEGE
-            </span>
+            <img
+              src="/gatik-logo.png"
+              alt="Gatik Junior College"
+              style={{ height: '36px', width: 'auto', objectFit: 'contain' }}
+            />
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -870,13 +863,12 @@ export function DigitalIpoSlip({ ipoBid, onClose, showHeaderClose = true }) {
             </span>
           </div>
 
-          <div style={{ textAlign: 'right' }}>
-            <span style={{ fontSize: '0.62rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase', display: 'block' }}>
-              Industry Partner
-            </span>
-            <span style={{ fontWeight: 900, color: '#0B192C', fontSize: '1rem', letterSpacing: '0.04em' }}>
-              CADFEM
-            </span>
+          <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+            <img
+              src="/cadfem-partner-logo.png"
+              alt="Industry Partner CADFEM"
+              style={{ height: '32px', width: 'auto', objectFit: 'contain' }}
+            />
           </div>
         </div>
 

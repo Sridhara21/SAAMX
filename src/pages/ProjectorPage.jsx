@@ -1360,20 +1360,22 @@ export default function ProjectorPage({
         boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{
-            background: 'linear-gradient(135deg, #845508, #b27a1b)',
-            color: '#FFFFFF',
-            fontWeight: 900,
-            fontSize: '1.1rem',
-            padding: '4px 10px',
-            borderRadius: '6px',
-            fontFamily: "var(--font-display, 'Cinzel', serif)",
-            letterSpacing: '1px',
-            boxShadow: '0 2px 6px rgba(132, 85, 8, 0.25)'
-          }}>
-            SAAMX
-          </div>
-          <div>
+          <img
+            src="/gatik-logo.png"
+            alt="Gatik Junior College"
+            style={{ height: '38px', width: 'auto', objectFit: 'contain' }}
+          />
+          <img
+            src="/saamx-logo.png"
+            alt="SAAMX '26"
+            style={{ height: '36px', width: 'auto', objectFit: 'contain' }}
+          />
+          <img
+            src="/cadfem-partner-logo.png"
+            alt="Industry Partner CADFEM"
+            style={{ height: '32px', width: 'auto', objectFit: 'contain' }}
+          />
+          <div style={{ borderLeft: '1px solid var(--color-border, #E2DBD0)', paddingLeft: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
               <h1 style={{
                 fontSize: '1.25rem',

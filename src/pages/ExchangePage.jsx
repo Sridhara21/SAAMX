@@ -47,8 +47,9 @@ import { DigitalTradeOrderSlip, DigitalBankSlip } from '../components/DigitalFor
 
 export default function ExchangePage({ state, onOpenProfile, adminPassword, connected, isCoordinatorOffline }) {
   const { density } = useDensity();
-  const sessionState = state?.marketState?.sessionState || 'PRE_OPEN';
-  const isTradingDisabled = !connected || isCoordinatorOffline || sessionState !== 'CONTINUOUS_TRADING';
+  const sessionState = state?.marketState?.sessionState || 'CONTINUOUS_TRADING';
+  const marketStatus = state?.marketState?.status || 'Open';
+  const isTradingDisabled = !connected || (marketStatus === 'Closed' && state?.marketState?.isFrozen);
 
   const [activeDeskId, setActiveDeskId] = useState('DESK_1');
   const [staffName, setStaffName] = useState('Desk Operator');
@@ -325,7 +326,7 @@ export default function ExchangePage({ state, onOpenProfile, adminPassword, conn
   // Open detailed review & physical slip inspection modal
   const openReviewModal = (order) => {
     setReviewOrder(order);
-    setPhysicalSlipChecked(Boolean(order.physicalSlipChecked));
+    setPhysicalSlipChecked(true); // Default to verified when inspecting digital slip
     setShowReviewModal(true);
   };
 
@@ -399,10 +400,11 @@ export default function ExchangePage({ state, onOpenProfile, adminPassword, conn
   };
 
   // 3b. Accept Order & Route to Bank (Merged Desk Review)
-  const handleAcceptOrder = async (orderId, confirmedSlip = null) => {
+  const handleAcceptOrder = async (orderId, confirmedSlip = true) => {
     if (processingOrderIds.has(orderId)) return;
     setOrderProcessing(orderId, true);
-    const isSlipConfirmed = confirmedSlip !== null ? confirmedSlip : physicalSlipChecked;
+    const targetOrder = (state?.orders || []).find(o => o.id === orderId) || reviewOrder;
+    const isSlipConfirmed = confirmedSlip !== null ? confirmedSlip : (targetOrder?.physicalSlipChecked ?? true);
     try {
       const res = await apiFetch('/api/order/action', {
         method: 'POST',
@@ -1116,30 +1118,32 @@ export default function ExchangePage({ state, onOpenProfile, adminPassword, conn
                       </div>
                     )}
 
-                    {/* Stage 1: Awaiting Intake / Claim */}
+                    {/* Stage 1: Awaiting Intake / Review */}
                     {['QUEUED', 'SUBMITTED', 'PENDING', 'AWAITING_PHYSICAL_SLIP'].includes(o.status) && (
-                      <div style={{ display: 'flex', gap: '8px', marginTop: '10px', paddingTop: '8px', borderTop: '1px solid var(--color-border-subtle)' }}>
+                      <div style={{ display: 'flex', gap: '8px', marginTop: '10px', paddingTop: '8px', borderTop: '1px solid var(--color-border-subtle)', flexWrap: 'wrap' }}>
                         <Button
                           variant="primary"
                           size="sm"
                           loading={isProcessing}
                           disabled={isTradingDisabled}
-                          onClick={() => handleClaimOrder(o.id)}
-                          style={{ flex: 1, fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                          onClick={() => openReviewModal(o)}
+                          style={{ flex: 1, minWidth: '150px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                          title="Review digital slip and risk metrics"
                         >
-                          <IconZap size={14} />
-                          <span>Claim Ticket ({dynamicDesks[activeDeskId]?.name || activeDeskId})</span>
+                          <IconShieldCheck size={14} />
+                          <span>Review &amp; Validate Slip</span>
                         </Button>
                         <Button
-                          variant="secondary"
+                          variant="success"
                           size="sm"
-                          disabled={isProcessing}
-                          onClick={() => openReviewModal(o)}
-                          style={{ fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                          title="Inspect digital order slip and team balance"
+                          loading={isProcessing}
+                          disabled={isTradingDisabled}
+                          onClick={() => handleAcceptOrder(o.id, true)}
+                          style={{ fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                          title="Direct Intake: Accept & Route to Bank Counter"
                         >
-                          <IconFileText size={14} />
-                          <span>Inspect</span>
+                          <IconZap size={14} />
+                          <span>Accept &amp; Route to Bank</span>
                         </Button>
                         <Button
                           variant="destructive"
@@ -1168,6 +1172,18 @@ export default function ExchangePage({ state, onOpenProfile, adminPassword, conn
                             >
                               <IconShieldCheck size={14} />
                               <span>Review & Validate Slip</span>
+                            </Button>
+                            <Button
+                              variant="success"
+                              size="sm"
+                              loading={isProcessing}
+                              disabled={isTradingDisabled}
+                              onClick={() => handleAcceptOrder(o.id, true)}
+                              style={{ fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                              title="Direct Accept & Route to Bank Counter"
+                            >
+                              <IconZap size={14} />
+                              <span>Accept &amp; Route to Bank</span>
                             </Button>
                             <Button
                               variant="secondary"
@@ -1215,7 +1231,7 @@ export default function ExchangePage({ state, onOpenProfile, adminPassword, conn
                                 size="sm"
                                 loading={isProcessing}
                                 disabled={isTradingDisabled}
-                                onClick={() => handleAcceptOrder(o.id)}
+                                onClick={() => handleAcceptOrder(o.id, true)}
                                 style={{ flex: 1, minWidth: '160px', fontWeight: 900, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                               >
                                 <IconCheck size={15} />
@@ -1470,8 +1486,8 @@ export default function ExchangePage({ state, onOpenProfile, adminPassword, conn
               </Button>
               <Button
                 variant="outline"
-                style={{ fontWeight: 700, opacity: physicalSlipChecked ? 1 : 0.5, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                disabled={!physicalSlipChecked || isTradingDisabled || processingOrderIds.has(reviewOrder.id)}
+                style={{ fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                disabled={isTradingDisabled || processingOrderIds.has(reviewOrder.id)}
                 loading={processingOrderIds.has(reviewOrder.id)}
                 onClick={() => handleValidateOrder(reviewOrder.id, true)}
                 title="Validate slip and leave in queue for floor matching"
@@ -1481,8 +1497,8 @@ export default function ExchangePage({ state, onOpenProfile, adminPassword, conn
               </Button>
               <Button
                 variant="success"
-                style={{ fontWeight: 900, opacity: physicalSlipChecked ? 1 : 0.5, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                disabled={!physicalSlipChecked || isTradingDisabled || processingOrderIds.has(reviewOrder.id)}
+                style={{ fontWeight: 900, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                disabled={isTradingDisabled || processingOrderIds.has(reviewOrder.id)}
                 loading={processingOrderIds.has(reviewOrder.id)}
                 onClick={() => handleAcceptOrder(reviewOrder.id, true)}
                 title="Merged Desk Review: Validate slip, execute market order, and route directly to Bank Desk for review and settlement"

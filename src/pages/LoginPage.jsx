@@ -302,6 +302,20 @@ export default function LoginPage({ onLoginSuccess }) {
             }}
           />
 
+          {/* Institutional & Partner Branding */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', paddingBottom: '14px', borderBottom: '1px solid var(--color-border-subtle, #E2E8F0)' }}>
+            <img
+              src="/gatik-logo.png"
+              alt="Gatik Junior College"
+              style={{ height: '32px', width: 'auto', objectFit: 'contain' }}
+            />
+            <img
+              src="/cadfem-partner-logo.png"
+              alt="Industry Partner CADFEM"
+              style={{ height: '26px', width: 'auto', objectFit: 'contain' }}
+            />
+          </div>
+
           {/* SAAMX Brand Logo & Welcome Heading matching reference */}
           <div style={{ textAlign: 'center', marginBottom: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '14px' }}>

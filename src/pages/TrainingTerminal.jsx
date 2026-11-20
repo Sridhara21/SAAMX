@@ -285,7 +285,7 @@ export default function TrainingTerminal({ state }) {
           actionType: 'ACCEPT',
           deskId: 'DESK_1',
           operator: currentOperator,
-          physicalSlipChecked: physicalSlipChecked === true
+          physicalSlipChecked: physicalSlipChecked !== false
         })
       });
       if (res && res.success) {

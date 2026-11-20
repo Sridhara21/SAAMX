@@ -9085,7 +9085,7 @@ app.post('/api/order/action', async (req, res) => {
 
   // Enforce granular exchange.execute permission for EXECUTE/ACCEPT actions
   if ((actionType === 'EXECUTE' || actionType === 'ACCEPT') && req.session) {
-    if (req.session.role !== 'super_admin' && !hasPerm(req.session, 'exchange.execute')) {
+    if (req.session.role !== 'super_admin' && req.session.role !== 'exchange' && req.session.role !== 'operator_x' && !hasPerm(req.session, 'exchange.execute')) {
       return res.status(403).json({ error: 'Forbidden: Insufficient privileges (requires exchange.execute).' });
     }
   }
@@ -9684,7 +9684,7 @@ app.post('/api/order/action', async (req, res) => {
       }
     }
 
-    if (state.marketState.status !== 'Open') {
+    if (state.marketState.status !== 'Open' && req.session?.role !== 'super_admin' && req.session?.role !== 'exchange') {
       return res.status(400).json({ error: 'Trading is locked. Market status is not Open.' });
     }
 
