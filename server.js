@@ -1595,7 +1595,7 @@ const loadState = () => {
       state.settings.startingCapitalRetail = 10000000;
       state.settings.startingCapitalMutualFund = 10000000;
       state.settings.startingCapitalHedgeFund = 10000000;
-      if (!state.settings.settlementMode) state.settings.settlementMode = 'INSTANT';
+      state.settings.settlementMode = 'TWO_PHASE_BANK';
       if (!state.settlements) state.settlements = [];
       if (!state.fxRates) {
         state.fxRates = JSON.parse(JSON.stringify(DEFAULT_FX_RATES));
@@ -11255,29 +11255,29 @@ app.post(['/api/admin/settlement-mode', '/api/admin/settlement-mode/'], (req, re
   }
 
   const mode = req.body?.mode || req.body?.settlementMode;
-  if (!mode || (mode !== 'INSTANT' && mode !== 'TWO_PHASE_BANK')) {
-    return res.status(400).json({ error: "Invalid settlement mode. Supported modes are 'INSTANT' and 'TWO_PHASE_BANK'." });
+  if (mode && mode !== 'TWO_PHASE_BANK') {
+    return res.status(400).json({ error: "Instant settlement has been permanently removed. SAAMX operates strictly in TWO_PHASE_BANK mode (Team -> Exchange Desk -> Bank Desk)." });
   }
 
   if (!state.settings) state.settings = {};
-  state.settings.settlementMode = mode;
+  state.settings.settlementMode = 'TWO_PHASE_BANK';
 
   logAuditEvent({
     actor: session.username || session.displayName || 'admin',
     role: session.role,
     action: 'SETTLEMENT_MODE_CHANGED',
     target: 'settings.settlementMode',
-    reason: `Switched settlement mode to ${mode}`,
-    details: { mode }
+    reason: `Affirmed two-phase physical bank settlement mode`,
+    details: { mode: 'TWO_PHASE_BANK' }
   });
 
   saveState(true);
-  broadcastState('SETTLEMENT_MODE_CHANGED', { settlementMode: mode });
+  broadcastState('SETTLEMENT_MODE_CHANGED', { settlementMode: 'TWO_PHASE_BANK' });
 
   return res.json({
     success: true,
-    settlementMode: mode,
-    message: `Settlement mode successfully updated to ${mode}.`
+    settlementMode: 'TWO_PHASE_BANK',
+    message: 'Settlement mode is strictly locked to TWO_PHASE_BANK (Order Slip -> Bank Voucher).'
   });
 });
 

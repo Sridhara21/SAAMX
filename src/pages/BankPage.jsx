@@ -70,9 +70,8 @@ export default function BankPage({ state, connected }) {
   const [reconciliationData, setReconciliationData] = useState(null);
   const [isLoadingReconciliation, setIsLoadingReconciliation] = useState(false);
 
-  // Settlement Mode Toggle
-  const currentMode = state?.settings?.settlementMode || 'INSTANT';
-  const [isTogglingMode, setIsTogglingMode] = useState(false);
+  // Two-Phase Bank Settlement Protocol (Instant mode permanently removed)
+  const currentMode = 'TWO_PHASE_BANK';
 
   const addToast = (message, type = 'success') => {
     const id = Date.now();
@@ -246,29 +245,6 @@ export default function BankPage({ state, connected }) {
     }
   };
 
-  // Action: Toggle Mode (Admin Only)
-  const handleToggleMode = async () => {
-    const nextMode = currentMode === 'INSTANT' ? 'TWO_PHASE_BANK' : 'INSTANT';
-    setIsTogglingMode(true);
-    try {
-      const res = await apiFetch('/api/admin/settlement-mode', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode: nextMode })
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && (data.success || !data.error)) {
-        addToast(`Settlement mode switched to ${nextMode}!`, 'success');
-      } else {
-        addToast(data?.error || 'Failed to update settlement mode.', 'error');
-      }
-    } catch (e) {
-      addToast(e.message || 'Error updating settlement mode.', 'error');
-    } finally {
-      setIsTogglingMode(false);
-    }
-  };
-
   const getCurrencySymbol = (cur) => {
     switch (cur) {
       case 'USD': return '$';
@@ -338,19 +314,19 @@ export default function BankPage({ state, connected }) {
           <div style={{
             padding: density === 'compact' ? '6px 12px' : '8px 16px',
             borderRadius: '8px',
-            backgroundColor: currentMode === 'TWO_PHASE_BANK' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(16, 185, 129, 0.1)',
-            border: `1px solid ${currentMode === 'TWO_PHASE_BANK' ? 'rgba(59, 130, 246, 0.3)' : 'rgba(16, 185, 129, 0.3)'}`,
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            border: '1px solid rgba(59, 130, 246, 0.3)',
             display: 'flex',
             alignItems: 'center',
             gap: '8px'
           }}>
-            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>Settlement Engine:</span>
+            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>Settlement Protocol:</span>
             <span style={{
               fontSize: '0.85rem',
               fontWeight: 800,
-              color: currentMode === 'TWO_PHASE_BANK' ? 'var(--color-primary, #3B82F6)' : 'var(--color-rise, #10B981)'
+              color: 'var(--color-primary, #3B82F6)'
             }}>
-              {currentMode === 'TWO_PHASE_BANK' ? 'TWO-PHASE (PHYSICAL BANK)' : 'INSTANT (AUTOMATIC)'}
+              2-PHASE (TEAM ➔ EXCHANGE ➔ BANK)
             </span>
           </div>
 
@@ -395,32 +371,18 @@ export default function BankPage({ state, connected }) {
           >
             Desk Queue Dashboard
           </Button>
-
-          {isAdmin && (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleToggleMode}
-              disabled={isTogglingMode}
-            >
-              {currentMode === 'INSTANT' ? '⚡ Switch to Two-Phase Bank' : '🔄 Switch to Instant'}
-            </Button>
-          )}
         </div>
       </div>
 
-      {/* Mode Advisory Banner */}
-      {currentMode === 'INSTANT' && isStaff && (
-        <Alert variant="info" style={{ marginBottom: '20px' }}>
-          <strong>Compatibility Mode Notice:</strong> SAAMX is currently operating in <strong>INSTANT</strong> settlement mode. Trades clear cash and transfer shares automatically upon exchange execution. Switch to <strong>TWO_PHASE_BANK</strong> mode to enforce the physical paper slip cash-settlement desk workflow for the event.
-        </Alert>
-      )}
-
-      {isTeam && (
-        <Alert variant="info" style={{ marginBottom: '20px' }}>
-          <strong>Floor Trading Protocol:</strong> Bring your physical trade slips signed by your Investment House to the Central Bank Desk on the floor. For <strong>BUY</strong> orders, pay cash to receive your holdings. For <strong>SELL</strong> orders, present your voucher to collect your currency proceeds.
-        </Alert>
-      )}
+      {/* Two-Phase Settlement Institutional Protocol Banner */}
+      <Alert variant="info" style={{ marginBottom: '20px' }}>
+        <strong>Two-Phase Settlement Protocol Enforced:</strong> All floor trading strictly follows the two-phase institutional clearing pipeline:
+        <span style={{ display: 'block', marginTop: '6px', fontSize: '0.88rem', lineHeight: '1.6' }}>
+          <strong>1. Order Slip (Team &rarr; Exchange Desk):</strong> Investment House submits physical/digital Order Slip to Exchange Desk. Exchange verifies cash/holdings, approves execution, and automatically issues an authoritative Bank Settlement Voucher.
+          <br />
+          <strong>2. Bank Voucher (Exchange &rarr; Bank Counter):</strong> Participant presents Bank Voucher at the Bank Desk. Teller verifies physical voucher against live ledger, settles cash payment (BUY) or disburses proceeds (SELL), releasing final share custody. Instant settlement has been retired.
+        </span>
+      </Alert>
 
       {/* Tabs Navigation */}
       <div style={{
