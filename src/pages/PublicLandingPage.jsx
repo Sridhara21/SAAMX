@@ -18,42 +18,35 @@ import {
 export default function PublicLandingPage() {
   const [showExploreModal, setShowExploreModal] = useState(false);
 
-  // Exact Official Event Schedule
+  // Exact Official Event Schedule from Authoritative Visual Reference
   const officialSchedule = [
     {
       time: '8:00 AM – 8:30 AM',
-      title: 'Registration & Participant Verification',
-      desc: 'Official credential issuance, team registration and security verification at entry desks.'
+      activity: 'Registration and participant verification'
     },
     {
       time: '8:30 AM – 9:00 AM',
-      title: 'Seating, Team Verification & Platform Briefing',
-      desc: 'Investment House station setup, floor rules orientation, and simulated market operational walkthrough.'
+      activity: 'Seating, team verification and platform briefing'
     },
     {
       time: '9:00 AM – 9:30 AM',
-      title: 'Opening Ceremony & Official Instructions',
-      desc: 'Directorate address, SEBI surveillance mandate announcement, and ceremonial opening procedures.'
+      activity: 'Opening ceremony and official instructions'
     },
     {
       time: '9:30 AM – 12:15 PM',
-      title: 'Opening Market Session',
-      desc: 'Continuous live floor trading: primary intake, paper order matching, foreign exchange, and portfolio actions.'
+      activity: 'Opening market session'
     },
     {
       time: '12:15 PM – 12:45 PM',
-      title: 'Lunch Break',
-      desc: 'Trading paused; order queues held; investment houses conduct mid-session strategy review.'
+      activity: 'Lunch break'
     },
     {
       time: '12:45 PM – 3:30 PM',
-      title: 'Afternoon Market Session',
-      desc: 'Dynamic corporate events, primary IPO window, macro news bulletins, and high-tempo position management.'
+      activity: 'Afternoon market session'
     },
     {
       time: '3:30 PM – 4:00 PM',
-      title: 'Reconciliation, Results Announcement & Post-Event Sessions',
-      desc: 'Certified immutable valuation freeze, SEBI audit audit reconciliation, rankings announcement, and valediction.'
+      activity: 'Reconciliation, results announcement and post-event sessions'
     }
   ];
 
@@ -1094,31 +1087,64 @@ export default function PublicLandingPage() {
           </p>
         </div>
 
-        {/* Schedule Table/Timeline */}
+        {/* Schedule Table/Timeline - Exact Visual Match to Official Specification Graphic */}
         <div
           style={{
+            maxWidth: '960px',
+            margin: '0 auto',
             backgroundColor: '#FFFFFF',
-            borderRadius: '12px',
-            border: '1px solid #E2E8F0',
+            borderRadius: '18px',
+            border: '2px solid #7E8B9B',
             overflow: 'hidden',
-            boxShadow: '0 4px 16px rgba(11, 25, 44, 0.04)'
+            boxShadow: '0 8px 30px rgba(11, 25, 44, 0.06)'
           }}
         >
-          {/* Header Bar matching event official branding */}
+          {/* Header Bar with Exact Navy + Orange Tabs matching graphic */}
           <div
             style={{
-              display: 'grid',
-              gridTemplateColumns: '240px 1fr',
-              backgroundColor: '#0B192C',
-              color: '#FFFFFF',
-              padding: '14px 24px',
-              fontWeight: 800,
-              fontSize: '0.92rem',
-              letterSpacing: '0.04em'
+              display: 'flex',
+              alignItems: 'flex-end',
+              borderBottom: '2px solid #7E8B9B',
+              backgroundColor: '#FFFFFF'
             }}
           >
-            <div>Time (IST)</div>
-            <div>Activity</div>
+            {/* Time (IST) Navy Block */}
+            <div
+              className="saamx-schedule-tab-time"
+              style={{
+                width: '320px',
+                backgroundColor: '#172A4E',
+                color: '#FFFFFF',
+                padding: '14px 24px',
+                fontWeight: 800,
+                fontSize: '1.35rem',
+                textAlign: 'center',
+                letterSpacing: '0.02em',
+                fontFamily: "'Inter', sans-serif"
+              }}
+            >
+              Time (IST)
+            </div>
+
+            {/* Activity Orange Tab */}
+            <div
+              className="saamx-schedule-tab-activity"
+              style={{
+                padding: '14px 42px',
+                backgroundColor: '#EB5220',
+                color: '#FFFFFF',
+                fontWeight: 800,
+                fontSize: '1.35rem',
+                borderRadius: '12px 12px 0 0',
+                letterSpacing: '0.02em',
+                fontFamily: "'Inter', sans-serif"
+              }}
+            >
+              Activity
+            </div>
+
+            {/* Remaining empty space to the right */}
+            <div style={{ flex: 1 }} />
           </div>
 
           {/* Schedule Rows */}
@@ -1126,37 +1152,50 @@ export default function PublicLandingPage() {
             {officialSchedule.map((row, idx) => (
               <div
                 key={idx}
+                className="saamx-schedule-row"
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '240px 1fr',
-                  padding: '20px 24px',
-                  borderBottom: idx < officialSchedule.length - 1 ? '1px solid #F1F5F9' : 'none',
-                  backgroundColor: idx % 2 === 1 ? '#F8FAFC' : '#FFFFFF',
-                  alignItems: 'baseline'
+                  gridTemplateColumns: '320px 1fr',
+                  padding: '18px 28px',
+                  borderBottom: idx < officialSchedule.length - 1 ? '1px solid #CBD5E1' : 'none',
+                  backgroundColor: '#FFFFFF',
+                  alignItems: 'center'
                 }}
               >
                 <div
                   style={{
-                    fontFamily: 'monospace',
-                    fontWeight: 800,
-                    fontSize: '0.95rem',
-                    color: '#0B192C'
+                    fontFamily: "'Inter', -apple-system, sans-serif",
+                    fontWeight: 500,
+                    fontSize: '1.1rem',
+                    color: '#0F172A'
                   }}
                 >
                   {row.time}
                 </div>
-                <div>
-                  <div style={{ fontWeight: 800, fontSize: '1rem', color: '#0B192C', marginBottom: '4px' }}>
-                    {row.title}
-                  </div>
-                  <div style={{ fontSize: '0.88rem', color: '#64748B', lineHeight: 1.5 }}>
-                    {row.desc}
-                  </div>
+                <div
+                  style={{
+                    fontFamily: "'Inter', -apple-system, sans-serif",
+                    fontWeight: 500,
+                    fontSize: '1.1rem',
+                    color: '#0F172A',
+                    paddingLeft: '16px'
+                  }}
+                >
+                  {row.activity}
                 </div>
               </div>
             ))}
           </div>
         </div>
+
+        <style>{`
+          @media (max-width: 640px) {
+            .saamx-schedule-tab-time { width: 44% !important; font-size: 1.05rem !important; padding: 10px 14px !important; }
+            .saamx-schedule-tab-activity { padding: 10px 24px !important; font-size: 1.05rem !important; }
+            .saamx-schedule-row { grid-template-columns: 44% 56% !important; padding: 12px 14px !important; }
+            .saamx-schedule-row > div { font-size: 0.92rem !important; }
+          }
+        `}</style>
       </section>
 
       {/* 9. Final Call to Action */}
