@@ -3438,6 +3438,17 @@ export function getSanitizedState(rawState = state, role = null, teamCode = null
     }
   }
 
+  // 7. Judge Scorecards & Unreleased Results Privacy Filter
+  // Before official results release (resultsLifecycle === 'PUBLISHED'), non-judges and teams
+  // MUST NOT see other teams' unfinished scores, judge scorecards, or unreleased rankings
+  const isJudgeOrAdmin = ['admin', 'super_admin', 'judge', 'coordinator'].includes(role);
+  if (!isJudgeOrAdmin) {
+    delete clone.judgeScorecards;
+  }
+  if (clone.resultsLifecycle !== 'PUBLISHED' && !isJudgeOrAdmin) {
+    delete clone.publishedResults;
+  }
+
   clone.version = state.version || 1;
   clone.lastUpdated = state.lastUpdated || Date.now();
 
@@ -5736,20 +5747,22 @@ app.post('/api/judging/scorecard/save', (req, res) => {
     return res.status(400).json({ error: 'Cannot modify scorecards after official results have been published.' });
   }
 
-  const {
-    teamCode,
-    responseToEvents = 3,
-    decisionTiming = 3,
-    adaptability = 3,
-    riskRecognition = 3,
-    forwardPositioning = 3,
-    resilience = 3,
-    balance = 3,
-    adaptCapacity = 3,
-    notes = '',
-    isLocked = false,
-    overrideLock = false
-  } = req.body || {};
+  const body = req.body || {};
+  const dm = body.decisionMakingRatings || {};
+  const fp = body.futurePotentialRatings || {};
+
+  const teamCode = body.teamCode;
+  const responseToEvents = body.responseToEvents ?? dm.responseToEvents ?? dm.eventResponse ?? 3;
+  const decisionTiming = body.decisionTiming ?? dm.decisionTiming ?? dm.timing ?? 3;
+  const adaptability = body.adaptability ?? dm.adaptability ?? 3;
+  const riskRecognition = body.riskRecognition ?? dm.riskRecognition ?? 3;
+  const forwardPositioning = body.forwardPositioning ?? fp.forwardPositioning ?? 3;
+  const resilience = body.resilience ?? fp.resilience ?? fp.scenarioResilience ?? 3;
+  const balance = body.balance ?? fp.balance ?? fp.opportunityBalance ?? 3;
+  const adaptCapacity = body.adaptCapacity ?? fp.adaptCapacity ?? fp.capacityToAdapt ?? 3;
+  const notes = body.notes ?? '';
+  const isLocked = body.isLocked ?? false;
+  const overrideLock = body.overrideLock ?? false;
 
   if (!teamCode || typeof teamCode !== 'string' || !teamCode.trim()) {
     return res.status(400).json({ error: 'Team Code is required.' });
@@ -5764,9 +5777,10 @@ app.post('/api/judging/scorecard/save', (req, res) => {
     return res.status(404).json({ error: `Team ${cleanTeamCode} not found in competition roster.` });
   }
 
-  // Derive judge identity strictly from authenticated session
-  const effectiveJudgeId = session.personnelId || session.username;
-  const effectiveJudgeName = session.displayName || session.username || 'Official Judge';
+  // Derive judge identity strictly from authenticated session (with admin assignment support)
+  const canAssignJudge = session.role === 'admin' || session.role === 'super_admin' || hasPerm(session, 'results.approve');
+  const effectiveJudgeId = (canAssignJudge && body.judgeId) ? body.judgeId : (session.personnelId || session.username);
+  const effectiveJudgeName = (canAssignJudge && body.judgeName) ? body.judgeName : (session.displayName || session.username || 'Official Judge');
 
   // Validate rubric scores (must be numbers between 0 and 5)
   const rubricFields = [
@@ -5867,28 +5881,28 @@ app.post('/api/judging/moderate', (req, res) => {
     return res.status(404).json({ error: `Team ${cleanTeamCode} not found in competition roster.` });
   }
 
-  if (!adjustedCard || typeof adjustedCard !== 'object') {
-    return res.status(400).json({ error: 'Adjusted scorecard object required.' });
-  }
-
   // Derive moderator identity from session
   const effectiveModerator = session.displayName || session.username || 'Chief Judge';
 
   if (!state.judgeScorecards) state.judgeScorecards = [];
+
+  // If adjustedCard is provided, use it; otherwise harmonized average of existing cards
+  const existingCards = state.judgeScorecards.filter(c => (c.teamCode || '').toUpperCase() === cleanTeamCode);
+  const cardData = adjustedCard || {};
 
   const modCard = {
     id: `MOD_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
     judgeId: 'MODERATOR',
     judgeName: `Moderator (${effectiveModerator})`,
     teamCode: cleanTeamCode,
-    responseToEvents: Math.min(5, Math.max(0, Number(adjustedCard.responseToEvents ?? 3))),
-    decisionTiming: Math.min(5, Math.max(0, Number(adjustedCard.decisionTiming ?? 3))),
-    adaptability: Math.min(5, Math.max(0, Number(adjustedCard.adaptability ?? 3))),
-    riskRecognition: Math.min(5, Math.max(0, Number(adjustedCard.riskRecognition ?? 3))),
-    forwardPositioning: Math.min(5, Math.max(0, Number(adjustedCard.forwardPositioning ?? 3))),
-    resilience: Math.min(5, Math.max(0, Number(adjustedCard.resilience ?? 3))),
-    balance: Math.min(5, Math.max(0, Number(adjustedCard.balance ?? 3))),
-    adaptCapacity: Math.min(5, Math.max(0, Number(adjustedCard.adaptCapacity ?? 3))),
+    responseToEvents: Math.min(5, Math.max(0, Number(cardData.responseToEvents ?? (existingCards.length ? (existingCards.reduce((a,c)=>a+Number(c.responseToEvents||3),0)/existingCards.length) : 3)))),
+    decisionTiming: Math.min(5, Math.max(0, Number(cardData.decisionTiming ?? (existingCards.length ? (existingCards.reduce((a,c)=>a+Number(c.decisionTiming||3),0)/existingCards.length) : 3)))),
+    adaptability: Math.min(5, Math.max(0, Number(cardData.adaptability ?? (existingCards.length ? (existingCards.reduce((a,c)=>a+Number(c.adaptability||3),0)/existingCards.length) : 3)))),
+    riskRecognition: Math.min(5, Math.max(0, Number(cardData.riskRecognition ?? (existingCards.length ? (existingCards.reduce((a,c)=>a+Number(c.riskRecognition||3),0)/existingCards.length) : 3)))),
+    forwardPositioning: Math.min(5, Math.max(0, Number(cardData.forwardPositioning ?? (existingCards.length ? (existingCards.reduce((a,c)=>a+Number(c.forwardPositioning||3),0)/existingCards.length) : 3)))),
+    resilience: Math.min(5, Math.max(0, Number(cardData.resilience ?? (existingCards.length ? (existingCards.reduce((a,c)=>a+Number(c.resilience||3),0)/existingCards.length) : 3)))),
+    balance: Math.min(5, Math.max(0, Number(cardData.balance ?? (existingCards.length ? (existingCards.reduce((a,c)=>a+Number(c.balance||3),0)/existingCards.length) : 3)))),
+    adaptCapacity: Math.min(5, Math.max(0, Number(cardData.adaptCapacity ?? (existingCards.length ? (existingCards.reduce((a,c)=>a+Number(c.adaptCapacity||3),0)/existingCards.length) : 3)))),
     isLocked: true,
     isModerated: true,
     moderationNotes: String(resolutionNotes || '').trim(),

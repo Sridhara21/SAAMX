@@ -545,6 +545,59 @@ function calculateJudgeScores(scorecards = [], teamCode = '') {
     };
   }
 
+  // If a Chief Judge official moderation card exists, it is the authoritative resolved score
+  const modCard = teamCards.find(c => c.isModerated || c.judgeId === 'MODERATOR');
+  if (modCard) {
+    const dmResp = Number(modCard.responseToEvents ?? defaultRating);
+    const dmTime = Number(modCard.decisionTiming ?? defaultRating);
+    const dmAdapt = Number(modCard.adaptability ?? defaultRating);
+    const dmRisk = Number(modCard.riskRecognition ?? defaultRating);
+
+    const fpFwd = Number(modCard.forwardPositioning ?? defaultRating);
+    const fpRes = Number(modCard.resilience ?? defaultRating);
+    const fpBal = Number(modCard.balance ?? defaultRating);
+    const fpCap = Number(modCard.adaptCapacity ?? defaultRating);
+
+    const dmResponseScore = Math.round((dmResp / 5) * 45);
+    const dmTimingScore = Math.round((dmTime / 5) * 35);
+    const dmAdaptScore = Math.round((dmAdapt / 5) * 35);
+    const dmRiskScore = Math.round((dmRisk / 5) * 35);
+    const totalDM = dmResponseScore + dmTimingScore + dmAdaptScore + dmRiskScore;
+
+    const fpForwardScore = Math.round((fpFwd / 5) * 35);
+    const fpResilienceScore = Math.round((fpRes / 5) * 30);
+    const fpBalanceScore = Math.round((fpBal / 5) * 20);
+    const fpCapacityScore = Math.round((fpCap / 5) * 15);
+    const totalFP = fpForwardScore + fpResilienceScore + fpBalanceScore + fpCapacityScore;
+
+    return {
+      decisionMaking: {
+        total: Math.min(150, Math.max(0, totalDM)),
+        isProvisional: false,
+        breakdown: {
+          responseToEvents: { rating: dmResp, score: dmResponseScore, max: 45 },
+          decisionTiming: { rating: dmTime, score: dmTimingScore, max: 35 },
+          adaptability: { rating: dmAdapt, score: dmAdaptScore, max: 35 },
+          riskRecognition: { rating: dmRisk, score: dmRiskScore, max: 35 }
+        }
+      },
+      futurePotential: {
+        total: Math.min(100, Math.max(0, totalFP)),
+        isProvisional: false,
+        breakdown: {
+          forwardPositioning: { rating: fpFwd, score: fpForwardScore, max: 35 },
+          resilience: { rating: fpRes, score: fpResilienceScore, max: 30 },
+          balance: { rating: fpBal, score: fpBalanceScore, max: 20 },
+          adaptCapacity: { rating: fpCap, score: fpCapacityScore, max: 15 }
+        }
+      },
+      judgesCount: teamCards.length,
+      moderationRequired: false,
+      isModerated: true,
+      moderationNotes: modCard.moderationNotes || ''
+    };
+  }
+
   // Average ratings across available judges
   const sumDM = { response: 0, timing: 0, adapt: 0, risk: 0 };
   const sumFP = { forward: 0, resilience: 0, balance: 0, capacity: 0 };

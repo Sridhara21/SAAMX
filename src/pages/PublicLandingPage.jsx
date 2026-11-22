@@ -1188,6 +1188,61 @@ export default function PublicLandingPage() {
           </div>
         </div>
 
+        {/* Authoritative Operational Market Milestones */}
+        <div style={{ maxWidth: '960px', margin: '32px auto 0' }}>
+          <div
+            style={{
+              fontSize: '0.82rem',
+              fontWeight: 800,
+              color: '#FF6800',
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+              marginBottom: '12px',
+              textAlign: 'center'
+            }}
+          >
+            Authoritative Operational Market Milestones
+          </div>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+              gap: '12px'
+            }}
+          >
+            {[
+              { time: '09:30 AM', title: 'Market Opens', desc: 'Opening Bell' },
+              { time: '10:00 AM', title: 'Morning News', desc: 'Prep from 09:15' },
+              { time: '11:45 AM', title: 'Floor Debate', desc: 'Prep from 11:30' },
+              { time: '03:00 PM', title: 'Evening News', desc: 'Prep from 02:45' },
+              { time: '03:30 PM', title: 'Market Closes', desc: 'Valuation Freeze' },
+              { time: '04:00 PM', title: 'Championship Results', desc: 'Final Lock' }
+            ].map((m, idx) => (
+              <div
+                key={idx}
+                style={{
+                  backgroundColor: '#FFFFFF',
+                  border: '1px solid #E2E8F0',
+                  borderRadius: '10px',
+                  padding: '14px 12px',
+                  textAlign: 'center',
+                  boxShadow: '0 2px 6px rgba(11, 25, 44, 0.04)'
+                }}
+              >
+                <div style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: '0.98rem', color: '#FF6800', marginBottom: '4px' }}>
+                  {m.time}
+                </div>
+                <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#0B192C', marginBottom: '2px' }}>
+                  {m.title}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>
+                  {m.desc}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <style>{`
           @media (max-width: 640px) {
             .saamx-schedule-tab-time { width: 44% !important; font-size: 1.05rem !important; padding: 10px 14px !important; }
