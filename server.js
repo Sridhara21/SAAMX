@@ -6,7 +6,47 @@ import path from 'path';
 import http from 'http';
 import crypto from 'crypto';
 import { INITIAL_SECURITIES_TEMPLATES } from './initial_securities.js';
-import { generateFullSecurityUniverse } from './universe_generator.js';
+import { generateFullSecurityUniverse, NEW_SIMULATED_IPOS } from './universe_generator.js';
+
+export function isIpoSubscriptionOpen(ipo) {
+  if (!ipo) return false;
+  return ipo.isSubscriptionOpen === true ||
+         ipo.ipoStage === 'OPEN' ||
+         ipo.ipoStage === 'SUBSCRIPTION_OPEN' ||
+         ipo.ipoStatus === 'SUBSCRIPTION_OPEN' ||
+         ipo.status === 'IPO_OPEN';
+}
+
+export function isIpoListed(ipo) {
+  if (!ipo) return false;
+  const stage = String(ipo.ipoStage || ipo.ipoStatus || '').toUpperCase();
+  return stage === 'LISTING' || stage === 'LISTED' || stage === 'POST_LISTING';
+}
+
+function getRealtimeEntityType(eventType) {
+  if (!eventType) return 'SYSTEM';
+  if (eventType.startsWith('ORDER_')) return 'ORDER';
+  if (eventType.startsWith('SETTLEMENT_')) return 'SETTLEMENT';
+  if (eventType.startsWith('PRICE_')) return 'PRICE';
+  if (eventType.startsWith('NEWS_')) return 'NEWS';
+  if (eventType.startsWith('FX_')) return 'FX';
+  if (eventType.startsWith('IPO_')) return 'IPO';
+  if (eventType.startsWith('PERSONNEL_')) return 'PERSONNEL';
+  if (eventType.startsWith('TEAM_')) return 'TEAM';
+  return 'MARKET_STATE';
+}
+
+function getRealtimeEntityId(eventType, dataExtra) {
+  if (!dataExtra) return 'SYSTEM';
+  if (dataExtra.order?.id) return dataExtra.order.id;
+  if (dataExtra.orderId) return dataExtra.orderId;
+  if (dataExtra.settlement?.id) return dataExtra.settlement.id;
+  if (dataExtra.settlementId) return dataExtra.settlementId;
+  if (dataExtra.ticker) return dataExtra.ticker;
+  if (dataExtra.news?.id) return dataExtra.news.id;
+  if (dataExtra.currency) return dataExtra.currency;
+  return 'SYSTEM';
+}
 import { calculateEventImpact, processVodafoneCrisisAct, processIpoStage } from './src/lib/eventEngine.js';
 import * as scoringEngine from './scoring_engine.js';
 import {
@@ -1164,10 +1204,12 @@ export function getSeedPersonnel() {
 // Initial default state with Multi-Currency & FX Engine
 const createInitialState = () => ({
   securities: [],
+  ipos: JSON.parse(JSON.stringify(NEW_SIMULATED_IPOS)),
   teams: [],
   transactions: [],
   orders: [],
   settlements: [],
+  version: 1,
   settings: {
     settlementMode: 'TWO_PHASE_BANK'
   },
@@ -1630,8 +1672,8 @@ const loadState = () => {
         }
       }
 
-      if (!state.securities || state.securities.length < 2849) {
-        console.log(`Securities list has ${state.securities?.length || 0} instruments (< 2849). Auto-seeding full 2,849 securities universe...`);
+      if (!state.securities || state.securities.length < 3409) {
+        console.log(`Securities list has ${state.securities?.length || 0} instruments (< 3409). Auto-seeding full 3,409 securities universe from SAAMX_Final_Securities_List.xlsx...`);
         const existingSecMap = new Map((state.securities || []).map(s => [s.ticker, s]));
         const fullUniverse = generateFullSecurityUniverse();
         state.securities = fullUniverse.map(s => {
@@ -1650,20 +1692,31 @@ const loadState = () => {
         if (process.env.STATE_FILE && process.env.STATE_FILE !== 'state.json') {
           saveState();
         }
-      } else {
-        // Ensure initial simulated IPOs have visibility defaults if not set
-        ['OAI', 'STRP', 'CNVA', 'DISC', 'POLY'].forEach(ticker => {
-          const s = state.securities.find(sec => sec.ticker === ticker);
-          if (s) {
-            if (s.visibleToParticipants === undefined) {
-              s.visibleToParticipants = (s.status === 'Active' || s.ipoStatus === 'LISTED');
-            }
-            if (!s.ipoStage) {
-              s.ipoStage = s.status === 'Active' ? 'LISTING' : 'HIDDEN';
-            }
-          }
-        });
       }
+
+      // Ensure five controlled simulated IPOs are initialized in separate state.ipos layer
+      if (!state.ipos || state.ipos.length === 0) {
+        state.ipos = JSON.parse(JSON.stringify(NEW_SIMULATED_IPOS));
+      }
+
+      // Strict server-side invariant: Unlisted IPOs and legacy non-canonical securities must NOT contaminate the static securities universe
+      const authoritativeUniverse = generateFullSecurityUniverse();
+      const authoritativeIdSet = new Set(authoritativeUniverse.map(u => u.id));
+      const ipoTickers = ['OAI', 'STRP', 'CNVA', 'DISC', 'POLY'];
+
+      state.securities = (state.securities || []).filter(s => {
+        if (ipoTickers.includes(s.ticker) || s.isIpo || s.id?.startsWith('IPO_')) {
+          const existingIpo = state.ipos.find(i => i.ticker === s.ticker);
+          if (existingIpo) {
+            Object.assign(existingIpo, s);
+          }
+          return isIpoListed(s);
+        }
+        return authoritativeIdSet.has(s.id);
+      });
+
+      state.version = (state.version || 0) + 1;
+      saveState(true);
 
       console.log(`Successfully loaded state from state.json with ${state.securities.length} securities.`);
       return;
@@ -3357,6 +3410,37 @@ export function getSanitizedState(rawState = state, role = null, teamCode = null
     clone.settlements = [];
   }
 
+  // 6. Securities & IPO Visibility Enforcement (Server-Side Boundary)
+  const isStaffOrAdmin = ['admin', 'super_admin', 'operator_x', 'coordinator'].includes(role);
+  if (!isStaffOrAdmin) {
+    // For Teams, secondary market desks, and public viewers:
+    // Strip all unlisted IPO instruments from securities catalog.
+    // Unlisted IPOs (DRAFT, ANNOUNCED, RUMOUR, CONFIRMED, OPENING_SOON, OPEN, SUBSCRIPTION_CLOSED, ALLOTMENT)
+    // MUST NEVER appear in tradable securities or search interfaces!
+    if (Array.isArray(clone.securities)) {
+      clone.securities = clone.securities.filter(s => {
+        const isIpoInstrument = s.isIpo || s.id?.startsWith('IPO_') || ['OAI', 'STRP', 'CNVA', 'DISC', 'POLY'].includes(s.ticker);
+        if (isIpoInstrument) {
+          return isIpoListed(s) && s.visibleToParticipants !== false;
+        }
+        return s.visibleToParticipants !== false;
+      });
+    }
+
+    // 7. Controlled IPO Layer
+    // Teams only receive IPO instruments in state.ipos if subscription is currently open!
+    const allIpos = Array.isArray(clone.ipos) ? clone.ipos : (Array.isArray(state.ipos) ? state.ipos : []);
+    clone.ipos = allIpos.filter(ipo => isIpoSubscriptionOpen(ipo));
+  } else {
+    // Admin / Staff can see all 5 simulated IPOs in state.ipos at all times
+    if (!clone.ipos && Array.isArray(state.ipos)) {
+      clone.ipos = state.ipos;
+    }
+  }
+
+  clone.version = state.version || 1;
+  clone.lastUpdated = state.lastUpdated || Date.now();
+
   return clone;
 }
 
@@ -3430,10 +3514,20 @@ server.on('upgrade', (request, socket, head) => {
 });
 
 const broadcastState = (eventType = 'STATE_UPDATE', dataExtra = {}) => {
+  // Monotonic version counter for strict stale-data protection
+  state.version = (state.version || 0) + 1;
+  state.lastUpdated = Date.now();
+
   // Ultra-lightweight delta for high-frequency price updates
   if (eventType === 'PRICE_UPDATE') {
     const payloadStr = JSON.stringify({
       type: 'PRICE_UPDATE',
+      eventType: 'PRICE_UPDATE',
+      entityType: 'PRICE',
+      entityId: 'ALL',
+      timestamp: state.lastUpdated,
+      version: state.version,
+      source: 'SAAMX_COORDINATOR',
       priceUpdates: dataExtra.priceUpdates || {},
       marketIndices: dataExtra.marketIndices || state.marketIndices || {},
       marketState: state.marketState || {}
@@ -3450,7 +3544,7 @@ const broadcastState = (eventType = 'STATE_UPDATE', dataExtra = {}) => {
 
   const isFullStateEvent = eventType === 'STATE_UPDATE' || eventType === 'STOCK_SPLIT' || eventType === 'BANKRUPTCY' || eventType === 'DIVIDEND_ANNOUNCEMENT' || eventType === 'IPO_LAUNCH';
 
-  // Fast path for delta events (ORDER_CLAIMED, ORDER_EXECUTED, ORDER_CREATED, etc.)
+  // Fast path for delta events (ORDER_CLAIMED, ORDER_EXECUTED, ORDER_CREATED, SETTLEMENT_COMPLETED, etc.)
   if (!isFullStateEvent) {
     for (const client of clients) {
       if (client.readyState === 1) {
@@ -3468,6 +3562,35 @@ const broadcastState = (eventType = 'STATE_UPDATE', dataExtra = {}) => {
             clientOrders = (state.orders || []).filter(o => o.teamCode === teamCode || o.teamId === teamCode);
             clientSettlements = (state.settlements || []).filter(s => s.teamCode === teamCode || s.teamId === teamCode);
           }
+
+          let clientTeams = [];
+          if (isDeskOrAdmin) {
+            clientTeams = state.teams || [];
+          } else if (role === 'team') {
+            clientTeams = (state.teams || []).map(t => {
+              const { password: _p, passwordHash: _ph, tempPin: _tp, ...safeT } = t;
+              if (teamCode && (t.teamCode === teamCode || t.id === teamCode)) {
+                return safeT;
+              }
+              return {
+                id: t.id,
+                teamCode: t.teamCode,
+                teamName: t.teamName,
+                school: t.school,
+                isActive: t.isActive,
+                teamType: t.teamType,
+                portfolioValue: t.portfolioValue,
+                pnl: t.pnl,
+                roi: t.roi,
+                tradeCount: t.tradeCount
+              };
+            });
+          }
+
+          const allIpos = Array.isArray(state.ipos) ? state.ipos : [];
+          const clientIpos = isDeskOrAdmin
+            ? allIpos
+            : allIpos.filter(ipo => isIpoSubscriptionOpen(ipo));
 
           // Sanitize dataExtra per recipient to prevent leakage
           const clientDataExtra = { ...dataExtra };
@@ -3495,9 +3618,20 @@ const broadcastState = (eventType = 'STATE_UPDATE', dataExtra = {}) => {
 
           const deltaPayload = JSON.stringify({
             type: eventType,
+            eventType: eventType,
+            entityType: getRealtimeEntityType(eventType),
+            entityId: getRealtimeEntityId(eventType, dataExtra),
+            timestamp: state.lastUpdated,
+            version: state.version,
+            source: 'SAAMX_COORDINATOR',
             state: {
               orders: clientOrders,
               settlements: clientSettlements,
+              teams: clientTeams,
+              ipos: clientIpos,
+              newsEvents: state.newsEvents || [],
+              fxRates: state.fxRates || {},
+              fxMarketState: state.fxMarketState || {},
               orderDesks: state.orderDesks || {},
               marketState: state.marketState || {}
             },
@@ -3548,6 +3682,12 @@ const broadcastState = (eventType = 'STATE_UPDATE', dataExtra = {}) => {
 
         const payload = JSON.stringify({
           type: eventType,
+          eventType: eventType,
+          entityType: getRealtimeEntityType(eventType),
+          entityId: getRealtimeEntityId(eventType, dataExtra),
+          timestamp: state.lastUpdated,
+          version: state.version,
+          source: 'SAAMX_COORDINATOR',
           state: clientState,
           activeAlerts: Array.from(activeAlerts),
           ...clientDataExtra
@@ -14400,10 +14540,18 @@ app.post('/api/admin/master-reset', (req, res) => {
 // SAAMX SIMULATED IPO ENGINE & LIFECYCLE
 // ----------------------------------------------------
 app.get('/api/ipos', (req, res) => {
-  const ipoSecurities = (state.securities || []).filter(s => 
-    (s.ipoStatus && s.ipoStatus !== 'NONE') || s.status === 'IPO_PENDING' || s.status === 'IPO_STAGED' || s.simulationLabel
-  );
-  res.json({ success: true, ipos: ipoSecurities });
+  const session = req.session || verifySessionToken(req.headers['authorization'] || req.headers['x-fms-token'] || req.query.token);
+  const role = session?.role || req.role;
+  const isPrivileged = ['admin', 'super_admin', 'operator_x', 'coordinator'].includes(role);
+  const allIpos = (Array.isArray(state.ipos) && state.ipos.length > 0) ? state.ipos : NEW_SIMULATED_IPOS;
+
+  if (isPrivileged) {
+    return res.json({ success: true, ipos: allIpos });
+  }
+
+  // Strict Server-Side Team Boundary: Only return IPOs whose subscription window is currently OPEN
+  const teamVisibleIpos = allIpos.filter(ipo => isIpoSubscriptionOpen(ipo));
+  res.json({ success: true, ipos: teamVisibleIpos });
 });
 
 app.post('/api/ipo/bid', (req, res) => {
@@ -14433,13 +14581,13 @@ app.post('/api/ipo/bid', (req, res) => {
     return res.status(400).json({ error: 'Valid ticker and positive bid quantity are required.' });
   }
 
-  const security = state.securities.find(s => s.ticker === ticker);
+  const security = (state.ipos || []).find(s => s.ticker === ticker) || (state.securities || []).find(s => s.ticker === ticker);
   if (!security) {
-    return res.status(404).json({ error: `Security ${ticker} not found in database.` });
+    return res.status(404).json({ error: `IPO instrument ${ticker} not found in database.` });
   }
 
-  if (security.status !== 'IPO_PENDING' && security.status !== 'IPO_STAGED' && security.ipoStatus !== 'SUBSCRIPTION_OPEN') {
-    return res.status(400).json({ error: `${ticker} is not currently accepting primary IPO subscriptions (Status: ${security.status || security.ipoStatus}).` });
+  if (!isIpoSubscriptionOpen(security)) {
+    return res.status(400).json({ error: `Subscription window for ${ticker} is not currently open (Stage: ${security.ipoStage || security.ipoStatus || security.status}).` });
   }
 
   if (security.lotSize && Q % security.lotSize !== 0) {
@@ -14530,13 +14678,13 @@ app.post('/api/ipo/subscribe', (req, res) => {
     return res.status(400).json({ error: 'Valid ticker and positive bid quantity are required.' });
   }
 
-  const security = state.securities.find(s => s.ticker === ticker);
+  const security = (state.ipos || []).find(s => s.ticker === ticker) || (state.securities || []).find(s => s.ticker === ticker);
   if (!security) {
     return res.status(404).json({ error: `Security ${ticker} not found in database.` });
   }
 
-  if (security.status !== 'IPO_PENDING' && security.status !== 'IPO_STAGED' && security.ipoStatus !== 'SUBSCRIPTION_OPEN') {
-    return res.status(400).json({ error: `${ticker} is not currently accepting primary IPO subscriptions (Status: ${security.status || security.ipoStatus}).` });
+  if (!isIpoSubscriptionOpen(security)) {
+    return res.status(400).json({ error: `${ticker} is not currently accepting primary IPO subscriptions (Status: ${security.status || security.ipoStatus || security.ipoStage}).` });
   }
 
   const team = state.teams.find(t => t.id === effectiveTeamCode || t.teamCode === effectiveTeamCode);
@@ -14596,7 +14744,7 @@ app.post('/api/ipo/subscribe', (req, res) => {
 async function executeIpoAllotmentInternal(ticker, floatUnitsOverride, session) {
   if (!ticker) return { success: false, status: 400, error: 'Ticker is required for allotment.' };
 
-  const security = state.securities.find(s => s.ticker === ticker);
+  const security = (state.ipos || []).find(s => s.ticker === ticker) || (state.securities || []).find(s => s.ticker === ticker);
   if (!security) return { success: false, status: 404, error: `Security ${ticker} not found.` };
 
   if (security.ipoStatus === 'ALLOTMENT_FINALIZED' || (security.status === 'Active' && !security.bids)) {
@@ -14845,12 +14993,26 @@ app.post('/api/ipo/transition', (req, res) => {
   const { ticker, nextStatus } = req.body;
   if (!ticker || !nextStatus) return res.status(400).json({ error: 'Ticker and nextStatus required.' });
 
-  const security = state.securities.find(s => s.ticker === ticker);
+  const security = (state.ipos || []).find(s => s.ticker === ticker) || (state.securities || []).find(s => s.ticker === ticker);
   if (!security) return res.status(404).json({ error: `Security ${ticker} not found.` });
 
   security.ipoStatus = nextStatus;
-  if (nextStatus === 'ACTIVE') security.status = 'Active';
-  if (nextStatus === 'SUBSCRIPTION_OPEN') security.status = 'IPO_PENDING';
+  security.ipoStage = nextStatus;
+  if (nextStatus === 'ACTIVE' || nextStatus === 'LISTED') {
+    security.status = 'Active';
+    security.isSubscriptionOpen = false;
+    security.visibleToParticipants = true;
+    if (!state.securities.some(s => s.ticker === ticker)) {
+      state.securities.push({ ...security });
+    }
+  } else if (nextStatus === 'SUBSCRIPTION_OPEN' || nextStatus === 'OPEN') {
+    security.status = 'IPO_OPEN';
+    security.isSubscriptionOpen = true;
+    state.securities = (state.securities || []).filter(s => s.ticker !== ticker);
+  } else {
+    security.isSubscriptionOpen = false;
+    state.securities = (state.securities || []).filter(s => s.ticker !== ticker);
+  }
 
   saveState(true);
   broadcastState();
@@ -14864,7 +15026,7 @@ app.post(['/api/ipo/advance', '/api/ipo/stage'], async (req, res) => {
   const targetStage = stageName || stage;
   if (!ticker || !targetStage) return res.status(400).json({ error: 'Ticker and stage are required.' });
 
-  const security = state.securities.find(s => s.ticker === ticker);
+  const security = (state.ipos || []).find(s => s.ticker === ticker) || (state.securities || []).find(s => s.ticker === ticker);
   if (!security) return res.status(404).json({ error: `Security ${ticker} not found.` });
 
   const session = req.session || verifySessionToken(req.headers['authorization'] || req.headers['x-fms-token'] || req.query.token);
@@ -14880,33 +15042,52 @@ app.post(['/api/ipo/advance', '/api/ipo/stage'], async (req, res) => {
 
   if (visibleToParticipants !== undefined) {
     security.visibleToParticipants = Boolean(visibleToParticipants);
-  } else if (targetStage === 'HIDDEN') {
+  } else if (targetStage === 'HIDDEN' || targetStage === 'DRAFT') {
     security.visibleToParticipants = false;
   } else {
     security.visibleToParticipants = true;
   }
 
-  if (targetStage === 'HIDDEN') {
+  if (targetStage === 'HIDDEN' || targetStage === 'DRAFT') {
     security.status = 'IPO_STAGED';
-    security.ipoStatus = 'HIDDEN';
+    security.ipoStatus = targetStage;
+    security.isSubscriptionOpen = false;
+    state.securities = (state.securities || []).filter(s => s.ticker !== ticker);
   } else if (targetStage === 'RUMOUR' || targetStage === 'SPECULATION') {
     security.status = 'IPO_STAGED';
-  } else if (targetStage === 'OFFICIAL_ANNOUNCEMENT' || targetStage === 'ANNOUNCED') {
+    security.isSubscriptionOpen = false;
+    state.securities = (state.securities || []).filter(s => s.ticker !== ticker);
+  } else if (targetStage === 'OFFICIAL_ANNOUNCEMENT' || targetStage === 'ANNOUNCED' || targetStage === 'CONFIRMED' || targetStage === 'OPENING_SOON') {
     security.status = 'IPO_PENDING';
-  } else if (targetStage === 'SUBSCRIPTION_OPEN') {
+    security.isSubscriptionOpen = false;
+    state.securities = (state.securities || []).filter(s => s.ticker !== ticker);
+  } else if (targetStage === 'SUBSCRIPTION_OPEN' || targetStage === 'OPEN') {
     security.status = 'IPO_OPEN';
-  } else if (targetStage === 'SUBSCRIPTION_CLOSED') {
+    security.isSubscriptionOpen = true;
+    state.securities = (state.securities || []).filter(s => s.ticker !== ticker);
+  } else if (targetStage === 'SUBSCRIPTION_CLOSED' || targetStage === 'CLOSED') {
     security.status = 'IPO_CLOSED';
+    security.isSubscriptionOpen = false;
+    state.securities = (state.securities || []).filter(s => s.ticker !== ticker);
   } else if (targetStage === 'ALLOTMENT') {
     security.status = 'IPO_ALLOTTED';
-  } else if (targetStage === 'LISTING' || targetStage === 'LISTED') {
+    security.isSubscriptionOpen = false;
+  } else if (targetStage === 'LISTING' || targetStage === 'LISTED' || targetStage === 'POST_LISTING') {
     security.status = 'Active';
     security.ipoStatus = 'LISTED';
+    security.ipoStage = 'LISTED';
+    security.isSubscriptionOpen = false;
     security.visibleToParticipants = true;
+    if (!state.securities.some(s => s.ticker === ticker)) {
+      state.securities.push({ ...security });
+    } else {
+      const idx = state.securities.findIndex(s => s.ticker === ticker);
+      state.securities[idx] = { ...state.securities[idx], ...security };
+    }
   }
 
   // Create news flash if not HIDDEN
-  if (targetStage !== 'HIDDEN') {
+  if (targetStage !== 'HIDDEN' && targetStage !== 'DRAFT') {
     const news = {
       id: `NW_IPO_${security.ticker}_${targetStage}_${Date.now()}`,
       headline: `📢 IPO Stage Update: ${security.name} (${security.ticker}) moves to ${targetStage.replace(/_/g, ' ')}`,
@@ -14942,7 +15123,7 @@ app.post('/api/ipo/visibility', (req, res) => {
     return res.status(400).json({ error: 'Ticker and visibleToParticipants boolean are required.' });
   }
 
-  const security = state.securities.find(s => s.ticker === ticker);
+  const security = (state.ipos || []).find(s => s.ticker === ticker) || (state.securities || []).find(s => s.ticker === ticker);
   if (!security) return res.status(404).json({ error: `Security ${ticker} not found.` });
 
   security.visibleToParticipants = Boolean(visibleToParticipants);
@@ -17359,6 +17540,22 @@ server.listen(PORT, '0.0.0.0', async () => {
         const hydration = await hydrateStateFromPg(pool, state);
         if (hydration.hydrated && hydration.state) {
           Object.assign(state, hydration.state);
+
+          // Strict server-side invariant: Filter hydrated securities against authoritative universe
+          const authUniverse = generateFullSecurityUniverse();
+          const authIdSet = new Set(authUniverse.map(u => u.id));
+          const ipoTickers = ['OAI', 'STRP', 'CNVA', 'DISC', 'POLY'];
+          state.securities = (state.securities || []).filter(s => {
+            if (ipoTickers.includes(s.ticker) || s.isIpo || s.id?.startsWith('IPO_')) {
+              const existingIpo = (state.ipos || []).find(i => i.ticker === s.ticker);
+              if (existingIpo) {
+                Object.assign(existingIpo, s);
+              }
+              return isIpoListed(s);
+            }
+            return authIdSet.has(s.id);
+          });
+
           // Re-sync seed personnel to ensure new designated desk and advisor accounts are present
           const seedStaff = getSeedPersonnel();
           if (!Array.isArray(state.personnel)) state.personnel = [];

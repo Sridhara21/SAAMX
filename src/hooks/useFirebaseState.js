@@ -8,13 +8,15 @@ export function useFirebaseState() {
     teams: {},
     transactions: {},
     orders: {},
+    settlements: {},
+    ipos: [],
     newsEvents: {},
     corporateActions: {},
     marketState: { status: 'Open', sessionState: 'AFTERNOON_SESSION', mode: 'EVENT' }
   }));
   const [connected, setConnected] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
-  const syncedToRemoteRef = useRef(false);
+  const latestVersionRef = useRef(0);
 
   useEffect(() => {
     // 1. Immediate backend fetch to ensure zero-lag instant bootstrap with all securities
@@ -47,8 +49,7 @@ export function useFirebaseState() {
       // Offline standalone fallback: lazily import full dataset without blocking initial bundle
       try {
         const { ALL_SECURITIES_DATA } = await import('../../universe_data.js');
-        const { NEW_SIMULATED_IPOS } = await import('../../universe_generator.js');
-        const fallbackList = [...ALL_SECURITIES_DATA, ...NEW_SIMULATED_IPOS];
+        const fallbackList = ALL_SECURITIES_DATA;
         setState(prevState => {
           if (prevState.securities && prevState.securities.length > 0) return prevState;
           return {
@@ -72,7 +73,11 @@ export function useFirebaseState() {
       'marketState',
       'securities',
       'teams',
+      'orders',
+      'settlements',
+      'ipos',
       'fxRates',
+      'fxMarketState',
       'fxTransactions',
       'newsEvents',
       'corporateActions',
@@ -324,6 +329,13 @@ export function useFirebaseState() {
               });
               setLastUpdated(Date.now());
             } else if (payload.state) {
+              // Stale-data protection: ignore older version/timestamp arrivals
+              if (payload.version && latestVersionRef.current && payload.version < latestVersionRef.current) {
+                return;
+              }
+              if (payload.version) {
+                latestVersionRef.current = Math.max(latestVersionRef.current, payload.version);
+              }
               setState(prevState => ({
                 ...(prevState || {}),
                 ...payload.state
@@ -368,6 +380,37 @@ export function useFirebaseState() {
       }
     };
   }, []);
+
+  // Lightweight fallback polling when disconnected from realtime subscriptions
+  useEffect(() => {
+    if (connected) return;
+    const interval = setInterval(async () => {
+      try {
+        const baseUrl = getApiBaseUrl();
+        const apiUrl = baseUrl ? `${baseUrl}/api/state` : '/api/state';
+        const res = await fetch(apiUrl);
+        if (res.ok) {
+          const apiData = await res.json();
+          const serverState = apiData.state || apiData;
+          if (serverState) {
+            if (serverState.version && latestVersionRef.current && serverState.version < latestVersionRef.current) {
+              return;
+            }
+            if (serverState.version) {
+              latestVersionRef.current = Math.max(latestVersionRef.current, serverState.version);
+            }
+            setState(prevState => ({
+              ...(prevState || {}),
+              ...serverState
+            }));
+            setLastUpdated(Date.now());
+          }
+        }
+      } catch (err) {}
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [connected]);
 
   return { state, connected, lastUpdated };
 }

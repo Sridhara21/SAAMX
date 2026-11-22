@@ -2,8 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import XLSX from 'xlsx';
 
-const WORKBOOK_PATH = path.resolve('SAAMX_Securities_Universe.xlsx');
-console.log('Loading workbook from:', WORKBOOK_PATH);
+const WORKBOOK_PATH = path.resolve('SAAMX_Final_Securities_List.xlsx');
+console.log('Loading authoritative final workbook from:', WORKBOOK_PATH);
 
 const wb = XLSX.readFile(WORKBOOK_PATH);
 const secSheet = wb.Sheets['Securities'];
@@ -36,21 +36,23 @@ const currencyCounts = {};
 
 rows.forEach((row, idx) => {
   const id = String(row['Security ID'] || row['id']).trim();
-  const name = String(row['Name'] || row['name']).trim();
-  const ticker = String(row['Ticker / Symbol'] || row['ticker'] || row['Ticker']).trim();
-  const assetType = String(row['Asset Type'] || row['type'] || row['assetType']).trim();
+  const name = String(row['Security Name'] || row['Name'] || row['name']).trim();
+  const ticker = String(row['Ticker'] || row['Ticker / Symbol'] || row['ticker']).trim();
+  const appSymbol = String(row['App Symbol'] || row['appSymbol'] || ticker).trim();
+  const assetClass = String(row['Asset Class'] || row['Asset Type'] || row['assetType'] || 'Stock').trim();
   const currency = String(row['Currency'] || row['currency']).trim();
-  const exchange = String(row['Exchange / Market'] || row['exchange']).trim();
+  const exchange = String(row['Exchange'] || row['Exchange / Market'] || row['exchange']).trim();
+  const exchangeCode = String(row['Exchange Code'] || row['exchangeCode'] || exchange).trim();
   const sector = String(row['Sector'] || '').trim();
   const industry = String(row['Industry'] || '').trim();
   const country = String(row['Country'] || '').trim();
-  const region = String(row['Region'] || '').trim();
+  const geography = String(row['Geography'] || row['Region'] || '').trim();
 
-  const openPrice = Number(row['Opening Price']);
-  const currPrice = Number(row['Current Price'] !== undefined ? row['Current Price'] : openPrice);
-  const prevClose = Number(row['Previous Close'] !== undefined ? row['Previous Close'] : openPrice);
-  const dayHigh = Number(row['Day High'] !== undefined ? row['Day High'] : openPrice);
-  const dayLow = Number(row['Day Low'] !== undefined ? row['Day Low'] : openPrice);
+  const ltp = Number(row['LTP'] !== undefined ? row['LTP'] : row['Opening Price']);
+  const openPrice = Number(row['Opening Price'] !== undefined ? row['Opening Price'] : ltp);
+  const prevClose = Number(row['Prev Close'] !== undefined ? row['Prev Close'] : (row['Previous Close'] !== undefined ? row['Previous Close'] : ltp));
+  const dayHigh = Number(row['Day High'] !== undefined ? row['Day High'] : ltp);
+  const dayLow = Number(row['Day Low'] !== undefined ? row['Day Low'] : ltp);
 
   const availUnits = Number(row['Available Units']);
   const totalUnits = Number(row['Total Units']);
@@ -58,12 +60,15 @@ rows.forEach((row, idx) => {
   const lotSize = Number(row['Lot Size']);
   const minOrderQty = Number(row['Min Order Qty'] || lotSize);
 
-  const seedTradingVolume = Number(row['Seed Trading Volume'] || 0);
+  const volume = Number(row['Volume'] !== undefined ? row['Volume'] : (row['Seed Trading Volume'] || 0));
   const volatility = Number(row['Volatility'] || 1.0);
   const riskRating = String(row['Risk Rating'] || 'Medium').trim();
   const marketCapTier = String(row['Market Cap Tier'] || '').trim();
   const status = String(row['Status'] || 'Active').trim();
-  const ipoStatus = String(row['IPO Status'] || 'NONE').trim();
+  const movement = String(row['Movement'] || 'Unchanged').trim();
+  const ltpInr = Number(row['LTP in INR'] || 0);
+  const tradableSupplyValueInr = Number(row['Tradable Supply Value (INR)'] || 0);
+  const supplyPercentOfCapital = Number(row['Supply as % of Total Capital'] || 0);
   const googleFinanceLink = String(row['Google Finance Link'] || '').trim();
   const description = String(row['Description'] || '').trim();
 
@@ -72,70 +77,69 @@ rows.forEach((row, idx) => {
   }
   idSet.add(id);
 
-  assetTypeCounts[assetType] = (assetTypeCounts[assetType] || 0) + 1;
+  assetTypeCounts[assetClass] = (assetTypeCounts[assetClass] || 0) + 1;
   currencyCounts[currency] = (currencyCounts[currency] || 0) + 1;
 
   // Build normalized base security object
   const sec = {
     id,
     ticker,
+    appSymbol,
+    symbol: appSymbol,
     name,
-    assetType,
-    type: assetType, // Universal type property
+    companyName: name,
+    assetClass,
+    assetType: assetClass === 'Stock' ? 'Equity' : (assetClass === 'Govt Bond' ? 'Government Bond' : (assetClass === 'Corp Bond' ? 'Corporate Bond' : assetClass)),
+    type: assetClass === 'Stock' ? 'Stock' : assetClass,
     currency,
     openingPrice: openPrice,
-    basePrice: openPrice,
-    referencePrice: openPrice,
-    currentPrice: currPrice,
+    basePrice: ltp,
+    referencePrice: ltp,
+    currentPrice: ltp,
     previousClose: prevClose,
+    prevClose,
+    ltp,
     dayHigh,
     dayLow,
+    movement,
     availableUnits: availUnits,
     availableFloat: availUnits,
     totalUnits,
     tickSize,
     lotSize,
     minOrderQty,
+    ltpInr,
+    tradableSupplyValueInr,
+    supplyPercentOfCapital,
     exchange,
+    exchangeCode,
     sector,
     industry,
     country,
-    region,
-    tradingVolume: seedTradingVolume,
-    seedTradingVolume,
+    geography,
+    region: geography,
+    volume,
+    tradingVolume: volume,
+    seedTradingVolume: volume,
     volatility,
     riskRating,
     marketCapTier,
     marketCategory: marketCapTier,
     status,
-    ipoStatus,
+    ipoStatus: 'NONE',
+    ipoStage: null,
+    isIpo: false,
+    visibleToParticipants: true,
     googleFinanceLink,
     financeUrl: googleFinanceLink,
     description,
     priceHistory: [
-      { timestamp: 1792340000000, price: currPrice }
+      { timestamp: 1792340000000, price: ltp }
     ]
   };
 
-  // Derive standardized assetClass
-  if (assetType === 'Equity') {
-    sec.assetClass = 'Equity';
-  } else if (assetType === 'ETF') {
-    sec.assetClass = 'ETF';
-  } else if (assetType === 'Mutual Fund') {
-    sec.assetClass = 'Mutual Fund';
-  } else if (assetType.includes('Bond')) {
-    sec.assetClass = 'Bond';
-  } else if (assetType === 'REIT') {
-    sec.assetClass = 'REIT';
-  } else if (assetType === 'InvIT') {
-    sec.assetClass = 'InvIT';
-  } else {
-    sec.assetClass = assetType;
-  }
-
   // Extract specialized metadata from descriptions
-  if (assetType === 'Government Bond') {
+  if (assetClass === 'Govt Bond' || assetClass === 'Government Bond') {
     const m = description.match(/issued by ([^,]+), maturing ([^,]+), carrying a coupon of ([0-9.]+)%/);
     if (m) {
       sec.issuer = m[1].trim();
@@ -144,7 +148,7 @@ rows.forEach((row, idx) => {
       sec.couponRate = Number(m[3]);
       sec.creditRating = 'AAA (Sovereign)';
     }
-  } else if (assetType === 'Corporate Bond') {
+  } else if (assetClass === 'Corp Bond' || assetClass === 'Corporate Bond') {
     const m = description.match(/issued by ([^,]+), rated ([^.]+)\. This instrument offers a fixed coupon of ([0-9.]+)%/);
     if (m) {
       sec.issuer = m[1].trim();
@@ -152,20 +156,20 @@ rows.forEach((row, idx) => {
       sec.creditRating = m[2].trim();
       sec.couponRate = Number(m[3]);
     }
-  } else if (assetType === 'Mutual Fund') {
+  } else if (assetClass === 'Mutual Fund') {
     const m = description.match(/offered by ([^,]+), managed by ([^.]+)\./);
     if (m) {
       sec.fundHouse = m[1].trim();
       sec.fundManager = m[2].trim();
     }
     sec.investmentCategory = sector || 'Mutual Fund';
-  } else if (assetType === 'ETF') {
+  } else if (assetClass === 'ETF') {
     const m = description.match(/managed by ([^,]+), tracking the (.+?)\. It offers/);
     if (m) {
       sec.fundManager = m[1].trim();
       sec.underlyingIndex = m[2].trim();
     }
-  } else if (assetType === 'REIT' || assetType === 'InvIT') {
+  } else if (assetClass === 'REIT' || assetClass === 'InvIT') {
     const m = description.match(/sponsored by ([^,]+), holding a portfolio of (.+?) assets across ([^.]+)\./);
     if (m) {
       sec.sponsor = m[1].trim();
@@ -196,7 +200,7 @@ rows.forEach((row, idx) => {
 });
 
 console.log(`\nSuccessfully compiled ${compiledSecurities.length} authoritative securities.`);
-console.log('Asset Type breakdown:', assetTypeCounts);
+console.log('Asset Class breakdown:', assetTypeCounts);
 console.log('Currency breakdown:', currencyCounts);
 
 // Write parsed_universe.json
@@ -206,9 +210,9 @@ console.log(`✓ Wrote parsed_universe.json (${Buffer.byteLength(jsonOutput)} by
 
 // Write universe_data.js
 const jsContent = `/**
- * SAAMX 2026 — Master Global Universe Dataset (Authoritative 2,849 Securities)
- * Compiled directly from SAAMX_Securities_Universe.xlsx
- * Total Instruments: 2,849 across 7 asset types and 10 verified currencies.
+ * SAAMX 2026 — Master Global Universe Dataset (Authoritative 3,409 Securities)
+ * Compiled directly from SAAMX_Final_Securities_List.xlsx
+ * Total Instruments: 3,409 across 7 asset types and 10 verified currencies.
  */
 
 export const ALL_SECURITIES_DATA = ${jsonOutput};
@@ -221,25 +225,27 @@ console.log(`✓ Wrote universe_data.js (${Buffer.byteLength(jsContent)} bytes).
 
 // Generate SAAMX_SECURITIES_DIRECTORY.csv
 const csvHeaders = [
-  'Security ID', 'Ticker', 'Name', 'Asset Type', 'Currency',
-  'Opening Price', 'Tick Size', 'Lot Size', 'Exchange',
-  'Sector', 'Industry', 'Country', 'Region', 'Risk Rating', 'Market Cap Tier'
+  'Security ID', 'App Symbol', 'Ticker', 'Name', 'Asset Class', 'Currency',
+  'LTP', 'Tick Size', 'Lot Size', 'Min Order Qty', 'Exchange',
+  'Sector', 'Industry', 'Country', 'Geography', 'Risk Rating', 'Market Cap Tier'
 ];
 
 const csvRows = compiledSecurities.map(s => [
   `"${s.id}"`,
+  `"${s.appSymbol}"`,
   `"${s.ticker}"`,
   `"${s.name.replace(/"/g, '""')}"`,
-  `"${s.assetType}"`,
+  `"${s.assetClass}"`,
   `"${s.currency}"`,
-  s.openingPrice,
+  s.ltp,
   s.tickSize,
   s.lotSize,
+  s.minOrderQty,
   `"${s.exchange}"`,
   `"${s.sector.replace(/"/g, '""')}"`,
   `"${s.industry.replace(/"/g, '""')}"`,
   `"${s.country}"`,
-  `"${s.region}"`,
+  `"${s.geography}"`,
   `"${s.riskRating}"`,
   `"${s.marketCapTier}"`
 ].join(','));

@@ -410,31 +410,35 @@ export default function MarketWatchPage({ state, onOpenProfile, connected }) {
     const ipoTickers = ['OAI', 'STRP', 'CNVA', 'DISC', 'POLY'];
     const visibleList = [];
     ipoTickers.forEach(ticker => {
-      const sec = rawSecuritiesList.find(s => s.ticker === ticker) || {};
-      const isVisible = sec.visibleToParticipants !== false && sec.ipoStage !== 'HIDDEN' && sec.ipoStatus !== 'HIDDEN';
-      if (!isVisible) return;
+      const sec = rawSecuritiesList.find(s => s.ticker === ticker);
+      if (!sec) return;
+      if (sec.visibleToParticipants === false || sec.ipoStage === 'HIDDEN' || sec.ipoStatus === 'HIDDEN' || sec.status === 'IPO_STAGED') return;
 
-      const stage = sec.status === 'Active' || sec.ipoStatus === 'LISTED' 
+      const isListed = sec.status === 'Active' || sec.ipoStatus === 'LISTED';
+      const isOpen = sec.isSubscriptionOpen || sec.ipoStatus === 'SUBSCRIPTION_OPEN' || sec.ipoStage === 'SUBSCRIPTION_OPEN' || sec.ipoStage === 'OPEN';
+      const isAllotment = sec.ipoStatus === 'ALLOTMENT_FINALIZED' || sec.ipoStage === 'ALLOTMENT';
+
+      if (!isListed && !isOpen && !isAllotment) return;
+
+      const stage = isListed 
         ? 'Trading' 
-        : sec.ipoStatus === 'ALLOTMENT_FINALIZED' 
+        : isAllotment 
         ? 'Allotment' 
-        : sec.ipoStatus === 'SUBSCRIPTION_OPEN' || sec.ipoStatus === 'SUBSCRIPTION_CLOSING_SOON' 
+        : isOpen 
         ? 'Subscription Open' 
-        : sec.status === 'IPO_PENDING' 
-        ? 'Announced' 
-        : 'Rumored';
+        : 'Announced';
 
       visibleList.push({
         ticker,
-        name: sec.name || (ticker === 'OAI' ? 'OpenAI Hyperscale' : ticker === 'STRP' ? 'Stripe Global Infra' : ticker === 'CNVA' ? 'Canva Creative' : ticker === 'DISC' ? 'Discord Media' : 'Polymarket Protocol'),
+        name: sec.name || ticker,
         exchange: sec.exchange || 'NASDAQ',
         currency: sec.currency || 'USD',
         curSym: sec.currency === 'INR' ? '₹' : '$',
         issuePrice: sec.basePrice || sec.currentPrice || 100,
-        lotSize: sec.ipoLotSize || (ticker === 'CNVA' ? 25 : ticker === 'POLY' ? 50 : 10),
+        lotSize: sec.ipoLotSize || sec.lotSize || 10,
         stage,
-        multiple: sec.ipoSubscriptionMultiple || '1.0x',
-        status: sec.status || 'IPO_STAGED',
+        multiple: sec.ipoSubscriptionMultiple || sec.subscriptionMultiple || '1.0x',
+        status: sec.status || 'IPO_OPEN',
         description: sec.description || 'Simulated academic IPO offering.'
       });
     });

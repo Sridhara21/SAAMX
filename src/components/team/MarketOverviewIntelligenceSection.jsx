@@ -148,21 +148,12 @@ export default function MarketOverviewIntelligenceSection({
     };
   }, [securitiesList, marketIndices]);
 
-  // Landmark Venture IPOs (OAI, STRP, CNVA, DISC, POLY)
+  // Landmark Venture IPOs (OAI, STRP, CNVA, DISC, POLY) - Only visible if officially LISTED
   const landmarkIpos = useMemo(() => {
     const ipoTickers = ['OAI', 'STRP', 'CNVA', 'DISC', 'POLY'];
-    return ipoTickers.map(ticker => {
-      const found = (securitiesList || []).find(s => s.ticker === ticker);
-      if (found) return found;
-      const fallbacks = {
-        OAI: { ticker: 'OAI', name: 'OpenAI Global Hyperscale IPO', currentPrice: 180, exchange: 'NASDAQ' },
-        STRP: { ticker: 'STRP', name: 'Stripe Global Financial Infrastructure IPO', currentPrice: 95, exchange: 'NYSE' },
-        CNVA: { ticker: 'CNVA', name: 'Canva Visual Communications IPO', currentPrice: 62, exchange: 'NASDAQ' },
-        DISC: { ticker: 'DISC', name: 'Discord Real-Time Community Platform IPO', currentPrice: 48, exchange: 'NYSE' },
-        POLY: { ticker: 'POLY', name: 'Polymarket Information Markets IPO', currentPrice: 35, exchange: 'NASDAQ' }
-      };
-      return fallbacks[ticker];
-    });
+    return (securitiesList || []).filter(s => 
+      ipoTickers.includes(s.ticker) && (s.status === 'Active' || s.ipoStatus === 'LISTED')
+    );
   }, [securitiesList]);
 
   // 2. Filtered & Sorted Securities Explorer (2,062 securities)
@@ -686,90 +677,92 @@ export default function MarketOverviewIntelligenceSection({
         </div>
 
         {/* Landmark Venture IPOs Spotlight Strip */}
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '10px', 
-          flexWrap: 'wrap', 
-          fontSize: '0.75rem', 
-          color: 'var(--color-ink-muted, #64748B)',
-          marginTop: '14px',
-          paddingTop: '14px',
-          borderTop: '1px solid var(--color-border)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ 
-              background: 'rgba(255, 104, 0, 0.1)', 
-              color: 'var(--color-orange, #FF6800)', 
-              padding: '3px 8px', 
-              borderRadius: '6px', 
-              fontWeight: 800, 
-              fontSize: '0.7rem',
-              letterSpacing: '0.04em',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}>
-              <IconTarget size={13} /> STAGED IPO LAUNCHPAD
-            </span>
-            <span style={{ fontSize: '0.72rem', color: 'var(--color-ink-muted, #64748B)' }}>
-              Secondary Float:
-            </span>
-          </div>
-
-          {landmarkIpos.map(ipo => (
-            <div
-              key={ipo.ticker}
-              style={{ 
-                padding: '4px 10px', 
-                fontSize: '0.72rem', 
-                display: 'inline-flex', 
-                alignItems: 'center', 
-                gap: '8px',
-                borderRadius: '8px',
-                border: selectedSecurityId === ipo.ticker ? '1px solid var(--color-orange, #FF6800)' : '1px solid var(--color-border)',
-                background: selectedSecurityId === ipo.ticker ? 'rgba(255, 104, 0, 0.08)' : 'rgba(255, 255, 255, 0.8)'
-              }}
-            >
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => { 
-                  setSecSearch(ipo.ticker); 
-                  setSelectedSecurityId(ipo.ticker); 
-                }}
-                style={{
-                  border: 'none',
-                  background: 'transparent',
-                  padding: 0,
-                  fontSize: '0.72rem',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}
-              >
-                <strong style={{ color: 'var(--color-navy, #0B192C)', fontFamily: 'var(--font-mono)' }}>{ipo.ticker}</strong>
-                <span className="tabular-nums font-data" style={{ color: 'var(--color-ink-muted, #64748B)' }}>${ipo.currentPrice || ipo.basePrice}</span>
-              </Button>
-              <button
-                type="button"
-                onClick={() => setOrderModalSecurity(ipo)}
-                style={{
-                  background: 'var(--color-orange, #FF6800)',
-                  color: '#FFFFFF',
-                  border: 'none',
-                  borderRadius: '4px',
-                  padding: '2px 8px',
-                  fontWeight: 800,
-                  fontSize: '0.68rem',
-                  cursor: 'pointer'
-                }}
-              >
-                Apply
-              </button>
+        {landmarkIpos.length > 0 && (
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '10px', 
+            flexWrap: 'wrap', 
+            fontSize: '0.75rem', 
+            color: 'var(--color-ink-muted, #64748B)',
+            marginTop: '14px',
+            paddingTop: '14px',
+            borderTop: '1px solid var(--color-border)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ 
+                background: 'rgba(255, 104, 0, 0.1)', 
+                color: 'var(--color-orange, #FF6800)', 
+                padding: '3px 8px', 
+                borderRadius: '6px', 
+                fontWeight: 800, 
+                fontSize: '0.7rem',
+                letterSpacing: '0.04em',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}>
+                <IconTarget size={13} /> STAGED IPO LAUNCHPAD
+              </span>
+              <span style={{ fontSize: '0.72rem', color: 'var(--color-ink-muted, #64748B)' }}>
+                Secondary Float:
+              </span>
             </div>
-          ))}
-        </div>
+
+            {landmarkIpos.map(ipo => (
+              <div
+                key={ipo.ticker}
+                style={{ 
+                  padding: '4px 10px', 
+                  fontSize: '0.72rem', 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  gap: '8px',
+                  borderRadius: '8px',
+                  border: selectedSecurityId === ipo.ticker ? '1px solid var(--color-orange, #FF6800)' : '1px solid var(--color-border)',
+                  background: selectedSecurityId === ipo.ticker ? 'rgba(255, 104, 0, 0.08)' : 'rgba(255, 255, 255, 0.8)'
+                }}
+              >
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => { 
+                    setSecSearch(ipo.ticker); 
+                    setSelectedSecurityId(ipo.ticker); 
+                  }}
+                  style={{
+                    border: 'none',
+                    background: 'transparent',
+                    padding: 0,
+                    fontSize: '0.72rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  <strong style={{ color: 'var(--color-navy, #0B192C)', fontFamily: 'var(--font-mono)' }}>{ipo.ticker}</strong>
+                  <span className="tabular-nums font-data" style={{ color: 'var(--color-ink-muted, #64748B)' }}>${ipo.currentPrice || ipo.basePrice}</span>
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => setOrderModalSecurity(ipo)}
+                  style={{
+                    background: 'var(--color-orange, #FF6800)',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: '4px',
+                    padding: '2px 8px',
+                    fontWeight: 800,
+                    fontSize: '0.68rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Apply
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </Card>
 
       {/* 2. Main Two-Column Cohesive Workspace: Left = Security Discovery, Right = Unified Intelligence Feed */}

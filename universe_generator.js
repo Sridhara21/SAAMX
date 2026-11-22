@@ -39,9 +39,11 @@ export const NEW_SIMULATED_IPOS = [
     country: 'United States',
     currency: 'USD',
     type: 'Stock',
+    isIpo: true,
+    isSubscriptionOpen: false,
     status: 'IPO_STAGED',
-    ipoStatus: 'HIDDEN',
-    ipoStage: 'HIDDEN',
+    ipoStatus: 'DRAFT',
+    ipoStage: 'DRAFT',
     visibleToParticipants: false,
     simulationLabel: 'SAAMX SIMULATED IPO — HYPOTHETICAL EVENT SCENARIO',
     personality: 'AI Frenzy, Extreme Attention, High Volatility, Heavy Oversubscription',
@@ -96,9 +98,11 @@ export const NEW_SIMULATED_IPOS = [
     country: 'United States',
     currency: 'USD',
     type: 'Stock',
+    isIpo: true,
+    isSubscriptionOpen: false,
     status: 'IPO_STAGED',
-    ipoStatus: 'HIDDEN',
-    ipoStage: 'HIDDEN',
+    ipoStatus: 'DRAFT',
+    ipoStage: 'DRAFT',
     visibleToParticipants: false,
     simulationLabel: 'SAAMX SIMULATED IPO — HYPOTHETICAL EVENT SCENARIO',
     personality: 'Fundamentals, Digital Payments, Moderate Volatility, Institutional Confidence',
@@ -153,9 +157,11 @@ export const NEW_SIMULATED_IPOS = [
     country: 'United States',
     currency: 'USD',
     type: 'Stock',
+    isIpo: true,
+    isSubscriptionOpen: false,
     status: 'IPO_STAGED',
-    ipoStatus: 'HIDDEN',
-    ipoStage: 'HIDDEN',
+    ipoStatus: 'DRAFT',
+    ipoStage: 'DRAFT',
     visibleToParticipants: false,
     simulationLabel: 'SAAMX SIMULATED IPO — HYPOTHETICAL EVENT SCENARIO',
     personality: 'Retail Sentiment, Strong Brand Recognition, Technology Growth, Medium-High Volatility',
@@ -210,9 +216,11 @@ export const NEW_SIMULATED_IPOS = [
     country: 'United States',
     currency: 'USD',
     type: 'Stock',
+    isIpo: true,
+    isSubscriptionOpen: false,
     status: 'IPO_STAGED',
-    ipoStatus: 'HIDDEN',
-    ipoStage: 'HIDDEN',
+    ipoStatus: 'DRAFT',
+    ipoStage: 'DRAFT',
     visibleToParticipants: false,
     simulationLabel: 'SAAMX SIMULATED IPO — HYPOTHETICAL EVENT SCENARIO',
     personality: 'Community, Network Effects, Monetization Debate, High Uncertainty',
@@ -267,9 +275,11 @@ export const NEW_SIMULATED_IPOS = [
     country: 'United States',
     currency: 'USD',
     type: 'Stock',
+    isIpo: true,
+    isSubscriptionOpen: false,
     status: 'IPO_STAGED',
-    ipoStatus: 'HIDDEN',
-    ipoStage: 'HIDDEN',
+    ipoStatus: 'DRAFT',
+    ipoStage: 'DRAFT',
     visibleToParticipants: false,
     simulationLabel: 'SAAMX SIMULATED IPO — HYPOTHETICAL EVENT SCENARIO',
     personality: 'Speculation, Extreme Volatility, Uncertainty, Late-Market Drama',
@@ -394,30 +404,9 @@ export const SCOPED_COLLISION_TICKER_MAP = {
 };
 
 export function generateFullSecurityUniverse(targetCount = ALL_SECURITIES_DATA.length) {
+  // Authoritative Final Securities Universe: exactly the contents of SAAMX_Final_Securities_List.xlsx
+  // The five simulated IPOs are a separate controlled layer and must NEVER contaminate this static dataset.
   const cloned = JSON.parse(JSON.stringify(ALL_SECURITIES_DATA.slice(0, targetCount)));
-  cloned.forEach(s => {
-    if (SCOPED_COLLISION_TICKER_MAP[s.id]) {
-      s.ticker = SCOPED_COLLISION_TICKER_MAP[s.id];
-    }
-  });
-
-  NEW_SIMULATED_IPOS.forEach(pristineIpo => {
-    const idx = cloned.findIndex(s => s.ticker === pristineIpo.ticker);
-    if (idx !== -1) {
-      cloned[idx] = JSON.parse(JSON.stringify(pristineIpo));
-    } else {
-      cloned.push(JSON.parse(JSON.stringify(pristineIpo)));
-    }
-  });
-
-  // Ensure DTAI (Project Phoenix) and RELI exist in the active universe
-  if (!cloned.some(s => s.ticker === 'DTAI')) {
-    cloned.push(JSON.parse(JSON.stringify(PHOENIX_SIMULATED_STOCK)));
-  }
-  if (!cloned.some(s => s.ticker === 'RELI')) {
-    cloned.push(JSON.parse(JSON.stringify(RELI_SIMULATED_STOCK)));
-  }
-
   return cloned;
 }
 

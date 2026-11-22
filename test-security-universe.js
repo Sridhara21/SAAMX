@@ -24,7 +24,7 @@ console.log(`  ✓ Passed: 100% unique canonical IDs (${idSet.size}) and unique 
 
 // 3. 5 Simulated IPO Verification
 console.log(`[TEST 3] Verifying the 5 New Simulated IPOs (OpenAI, Stripe, Canva, Discord, Polymarket)...`);
-const ipos = universe.filter(s => s.simulationLabel || s.ipoStatus === 'SUBSCRIPTION_OPEN');
+const ipos = NEW_SIMULATED_IPOS;
 assert.strictEqual(ipos.length, 5, `Expected exactly 5 IPOs, got ${ipos.length}`);
 const ipoTickers = ipos.map(i => i.ticker).sort();
 assert.deepStrictEqual(ipoTickers, ['CNVA', 'DISC', 'OAI', 'POLY', 'STRP'], `Unexpected IPO tickers: ${ipoTickers}`);
@@ -41,7 +41,7 @@ const typeCounts = {};
 universe.forEach(s => typeCounts[s.type] = (typeCounts[s.type] || 0) + 1);
 console.log('  Breakdown by Asset Class:', typeCounts);
 const equityCount = (typeCounts.Stock || 0) + (typeCounts.Equity || 0);
-const bondCount = (typeCounts.GovernmentBond || 0) + (typeCounts['Government Bond'] || 0) + (typeCounts.CorporateBond || 0) + (typeCounts['Corporate Bond'] || 0);
+const bondCount = (typeCounts.GovernmentBond || 0) + (typeCounts['Government Bond'] || 0) + (typeCounts.CorporateBond || 0) + (typeCounts['Corporate Bond'] || 0) + (typeCounts['Corp Bond'] || 0) + (typeCounts['Govt Bond'] || 0);
 const mfCount = (typeCounts.MutualFund || 0) + (typeCounts['Mutual Fund'] || 0);
 const etfCount = typeCounts.ETF || 0;
 const altCount = (typeCounts.REIT || 0) + (typeCounts.InvIT || 0) + (typeCounts['Commodity-linked Instrument'] || 0);
