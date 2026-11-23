@@ -467,9 +467,9 @@ export default function OrderHistorySection({
                         {order.deskId.replace('DESK_', 'Desk ')}
                       </span>
                     )}
-                    {order.bankDeskId && (
+                    {(order.bankDeskId || (['EXCHANGE_APPROVED', 'AWAITING_BANK_SETTLEMENT', 'SETTLED'].includes(order.status) && order.teamCode)) && (
                       <span style={{ fontSize: '0.73rem', color: '#10B981', fontWeight: 700 }}>
-                        {order.bankDeskId.replace('BANK_', 'Bank ')}
+                        {(order.bankDeskId || `BANK_${(((parseInt(String(order.teamCode).replace(/\D/g, '') || 1) - 1) % 4) + 1)}`).replace('BANK_', 'Bank ')}
                       </span>
                     )}
                   </div>

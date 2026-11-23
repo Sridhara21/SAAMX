@@ -2,10 +2,23 @@ import { useEffect, useState, useRef } from 'react';
 import { db, ref, onValue, off } from '../lib/firebase';
 import { getApiBaseUrl } from '../lib/api';
 
+export const DEFAULT_TEAMS_MAP = {
+  T01: { id: 'T01', teamCode: 'T01', teamName: 'Apex Capital Partners', name: 'Apex Capital Partners', school: 'Collegiate Division', cashBalance: 10000000, startingCapital: 10000000, portfolioValue: 10000000, cashWallets: { INR: 10000000 }, holdings: {}, isActive: true },
+  T02: { id: 'T02', teamCode: 'T02', teamName: 'BlueChip Asset Management', name: 'BlueChip Asset Management', school: 'Collegiate Division', cashBalance: 10000000, startingCapital: 10000000, portfolioValue: 10000000, cashWallets: { INR: 10000000 }, holdings: {}, isActive: true },
+  T03: { id: 'T03', teamCode: 'T03', teamName: 'Crescent Value Fund', name: 'Crescent Value Fund', school: 'Collegiate Division', cashBalance: 10000000, startingCapital: 10000000, portfolioValue: 10000000, cashWallets: { INR: 10000000 }, holdings: {}, isActive: true },
+  T04: { id: 'T04', teamCode: 'T04', teamName: 'Dynamic Quantitative Ventures', name: 'Dynamic Quantitative Ventures', school: 'Collegiate Division', cashBalance: 10000000, startingCapital: 10000000, portfolioValue: 10000000, cashWallets: { INR: 10000000 }, holdings: {}, isActive: true },
+  T05: { id: 'T05', teamCode: 'T05', teamName: 'Equinox Global Capital', name: 'Equinox Global Capital', school: 'Collegiate Division', cashBalance: 10000000, startingCapital: 10000000, portfolioValue: 10000000, cashWallets: { INR: 10000000 }, holdings: {}, isActive: true },
+  T06: { id: 'T06', teamCode: 'T06', teamName: 'Fortis Macro Strategies', name: 'Fortis Macro Strategies', school: 'Collegiate Division', cashBalance: 10000000, startingCapital: 10000000, portfolioValue: 10000000, cashWallets: { INR: 10000000 }, holdings: {}, isActive: true },
+  T07: { id: 'T07', teamCode: 'T07', teamName: 'Genesis Institutional Trust', name: 'Genesis Institutional Trust', school: 'Collegiate Division', cashBalance: 10000000, startingCapital: 10000000, portfolioValue: 10000000, cashWallets: { INR: 10000000 }, holdings: {}, isActive: true },
+  T08: { id: 'T08', teamCode: 'T08', teamName: 'Horizon Alpha Fund', name: 'Horizon Alpha Fund', school: 'Collegiate Division', cashBalance: 10000000, startingCapital: 10000000, portfolioValue: 10000000, cashWallets: { INR: 10000000 }, holdings: {}, isActive: true },
+  T09: { id: 'T09', teamCode: 'T09', teamName: 'Infinity Growth Equities', name: 'Infinity Growth Equities', school: 'Collegiate Division', cashBalance: 10000000, startingCapital: 10000000, portfolioValue: 10000000, cashWallets: { INR: 10000000 }, holdings: {}, isActive: true },
+  T10: { id: 'T10', teamCode: 'T10', teamName: 'Jupiter Sovereign Holdings', name: 'Jupiter Sovereign Holdings', school: 'Collegiate Division', cashBalance: 10000000, startingCapital: 10000000, portfolioValue: 10000000, cashWallets: { INR: 10000000 }, holdings: {}, isActive: true }
+};
+
 export function useFirebaseState() {
   const [state, setState] = useState(() => ({
     securities: [],
-    teams: {},
+    teams: DEFAULT_TEAMS_MAP,
     transactions: {},
     orders: {},
     settlements: {},
@@ -32,10 +45,16 @@ export function useFirebaseState() {
             const rawSecs = serverState.securities;
             const secCount = Array.isArray(rawSecs) ? rawSecs.length : Object.keys(rawSecs).length;
             if (secCount > 0) {
+              const serverTeams = serverState.teams
+                ? (Array.isArray(serverState.teams)
+                    ? Object.fromEntries(serverState.teams.map(t => [t.teamCode || t.id, t]))
+                    : serverState.teams)
+                : {};
               setState(prevState => ({
                 ...(prevState || {}),
                 ...serverState,
-                securities: rawSecs
+                securities: rawSecs,
+                teams: { ...DEFAULT_TEAMS_MAP, ...(prevState?.teams || {}), ...(serverTeams || {}) }
               }));
               setLastUpdated(Date.now());
               return;

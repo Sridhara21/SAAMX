@@ -1280,7 +1280,7 @@ export async function executeMarketOrderInDb(client, {
     const voucherRef = voucherReference || `BNK-${action === 'BUY' ? 'PAY' : 'REC'}-${orderRow.ticket_number || orderId.slice(-4)}-${Date.now().toString(36).toUpperCase()}`;
     const dir = direction || (action === 'BUY' ? 'PAY_IN' : 'PAY_OUT');
     const cls = classification || (action === 'BUY' ? 'PAY_IN' : 'PAY_OUT');
-    const assignedBankDesk = bankDeskId || 'BANK_1';
+    const assignedBankDesk = bankDeskId || (teamId ? `BANK_${(((parseInt(String(teamId).replace(/\D/g, '') || 1) - 1) % 4) + 1)}` : 'BANK_1');
 
     await client.query(
       `INSERT INTO settlement_vouchers (
@@ -1339,7 +1339,7 @@ export async function executeMarketOrderInDb(client, {
          final_status = $3, execution_quantity = $4, execution_price = $5, execution_value = $6,
          bank_desk_id = $7, executed_at = NOW(), updated_at = NOW()
      WHERE id = $8`,
-    [newStatus, stage, isTwoPhaseBank ? 'PENDING_SETTLEMENT' : 'EXECUTED', quantity, price, totalValue, isTwoPhaseBank ? (bankDeskId || 'BANK_1') : null, orderId]
+    [newStatus, stage, isTwoPhaseBank ? 'PENDING_SETTLEMENT' : 'EXECUTED', quantity, price, totalValue, isTwoPhaseBank ? (bankDeskId || (teamId ? `BANK_${(((parseInt(String(teamId).replace(/\D/g, '') || 1) - 1) % 4) + 1)}` : 'BANK_1')) : null, orderId]
   );
 
   return {

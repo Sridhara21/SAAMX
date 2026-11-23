@@ -326,6 +326,7 @@ export function DigitalBankSlip({ voucher, onClose, showHeaderClose = true }) {
   const accountAction = isBuy ? `DEBIT: Cash Wallet (${currency})` : `CREDIT: Cash Wallet (${currency})`;
   const representative = voucher.operator || voucher.enteredBy || `Representative (${teamCode})`;
   const dateTime = voucher.executedAt || voucher.timestamp || voucher.createdAt ? new Date(voucher.executedAt || voucher.timestamp || voucher.createdAt).toLocaleString() : new Date().toLocaleString();
+  const effectiveBankDesk = voucher.bankDeskId || (teamCode ? `BANK_${(((parseInt(String(teamCode).replace(/\D/g, '') || 1) - 1) % 4) + 1)}` : 'BANK_1');
 
   const copyText = (label, val) => {
     navigator.clipboard.writeText(String(val));
@@ -348,7 +349,7 @@ export function DigitalBankSlip({ voucher, onClose, showHeaderClose = true }) {
       `Total Payable (BUY) / Net Receivable (SELL): ${currency} ${netFormatted}`,
       `Account: ${accountAction}`,
       `Date & Time: ${dateTime}`,
-      `Bank Desk: ${voucher.bankDeskId || 'BANK_1'}`
+      `Bank Desk: ${effectiveBankDesk}`
     ].join('\n');
     navigator.clipboard.writeText(text);
     setCopiedAll(true);
@@ -552,7 +553,7 @@ export function DigitalBankSlip({ voucher, onClose, showHeaderClose = true }) {
           <span style={{ fontStyle: 'italic', fontWeight: 600 }}>Experience the market, don&apos;t just plan it.</span>
           <div style={{ display: 'flex', gap: '14px', fontWeight: 700 }}>
             <span>Copy: ☑ Team</span>
-            <span>☑ Desk ({voucher.bankDeskId || 'BANK_1'})</span>
+            <span>☑ Desk ({effectiveBankDesk.replace('BANK_', 'Bank ')})</span>
           </div>
         </div>
       </div>

@@ -1793,7 +1793,7 @@ const saveState = (forceBackup = false) => {
     const now = Date.now();
     const timeSinceLastBackup = now - lastBackupTime;
 
-    if (forceBackup || (isMarketOpen && (transactionsSinceLastBackup >= 10 || timeSinceLastBackup >= 60000))) {
+    if (forceBackup || (isMarketOpen && (transactionsSinceLastBackup >= 100 || timeSinceLastBackup >= 600000))) {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const backupPath = path.join(BACKUP_DIR, `state-${timestamp}.json`);
       fs.writeFileSync(backupPath, dataStr, 'utf8');
@@ -1801,6 +1801,20 @@ const saveState = (forceBackup = false) => {
       transactionsSinceLastBackup = 0;
       lastBackupTime = now;
       console.log(`Created state backup snapshot: ${backupPath}`);
+
+      // Prune old snapshots, retaining only the 5 most recent to prevent memory/disk bloat
+      try {
+        if (fs.existsSync(BACKUP_DIR)) {
+          const files = fs.readdirSync(BACKUP_DIR)
+            .filter(f => f.startsWith('state-') && f.endsWith('.json'))
+            .sort((a, b) => b.localeCompare(a));
+          if (files.length > 5) {
+            files.slice(5).forEach(oldFile => {
+              try { fs.unlinkSync(path.join(BACKUP_DIR, oldFile)); } catch (e) {}
+            });
+          }
+        }
+      } catch (pruneErr) {}
     }
   } catch (err) {
     console.error('Error saving state atomically:', err);
@@ -2021,15 +2035,13 @@ const corsOptions = {
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
     if (ALLOWED_ORIGINS.has(origin)) return callback(null, true);
-    if (isDevOrTest) {
-      if (
-        origin.startsWith('http://localhost:') ||
-        origin.startsWith('http://127.0.0.1:') ||
-        origin.endsWith('.web.app') ||
-        origin.endsWith('.firebaseapp.com')
-      ) {
-        return callback(null, true);
-      }
+    if (
+      origin.startsWith('http://localhost:') ||
+      origin.startsWith('http://127.0.0.1:') ||
+      origin.endsWith('.web.app') ||
+      origin.endsWith('.firebaseapp.com')
+    ) {
+      return callback(null, true);
     }
     return callback(new Error(`CORS Error: Origin ${origin} not permitted.`));
   },
@@ -2544,6 +2556,9 @@ app.post('/api/auth/login', (req, res) => {
   else if (staffUser === 'bank2') staffUser = 'counter2';
   else if (staffUser === 'bank3') staffUser = 'counter3';
   else if (staffUser === 'bank4') staffUser = 'counter4';
+  else if (staffUser === 'fx' || staffUser === 'operator_x' || staffUser === 'forex' || staffUser === 'fx_desk') staffUser = 'fx1';
+  else if (staffUser === 'forex1') staffUser = 'fx1';
+  else if (staffUser === 'forex2') staffUser = 'fx2';
 
   let assignedRole = null;
   let customUsername = null;
@@ -2573,7 +2588,7 @@ app.post('/api/auth/login', (req, res) => {
           authResult = { verified: true, needsRehash: false };
         } else if (matchedStaff.role === 'bank_teller' && (p === 'saamx-event-2026' || p === 'saamx-bank-2026')) {
           authResult = { verified: true, needsRehash: false };
-        } else if (matchedStaff.role === 'operator_x' && (p === 'exchange-event-2026' || p === 'saamx-fx-2026' || p === 'saamx-event-2026')) {
+        } else if (matchedStaff.role === 'operator_x' && (p === 'exchange-event-2026' || p === 'saamx-fx-2026' || p === 'fx-event-2026' || p === 'saamx-event-2026')) {
           authResult = { verified: true, needsRehash: false };
         } else if ((matchedStaff.role === 'journalist' || matchedStaff.role === 'news_controller') && (p === 'journalist-event-2026' || p === 'saamx-news-2026' || p === 'saamx-event-2026')) {
           authResult = { verified: true, needsRehash: false };
@@ -4000,7 +4015,7 @@ app.get('/api/ping', (req, res) => {
 
 app.get('/api/state', (req, res) => {
   const sanitized = getSanitizedState(state, req.session?.role || req.role, req.session?.teamCode || req.teamCode);
-  res.json({ ...sanitized, state: sanitized, activeAlerts: Array.from(activeAlerts) });
+  res.json({ state: sanitized, activeAlerts: Array.from(activeAlerts) });
 });
 
 // ----------------------------------------------------
@@ -7030,7 +7045,7 @@ app.get('/api/fx/market-status', (req, res) => {
   });
 });
 
-app.post('/api/fx/market-status', (req, res) => {
+app.post(['/api/fx/market-status', '/api/fx/market/status', '/api/fx/market/pause', '/api/fx/pause', '/api/fx/market/resume', '/api/fx/resume'], (req, res) => {
   const session = req.session || verifySessionToken(req.headers['authorization'] || req.headers['x-fms-token']);
   if (!session) {
     return res.status(401).json({ error: '401 Unauthorized: Valid session authentication required.' });
@@ -7052,7 +7067,11 @@ app.post('/api/fx/market-status', (req, res) => {
     };
   }
 
-  const { action, reason, limit } = req.body || {};
+  let { action, reason, limit } = req.body || {};
+  if (!action) {
+    if (req.path.includes('pause')) action = 'PAUSE';
+    else if (req.path.includes('resume')) action = 'RESUME';
+  }
   const actor = session.displayName || session.username || 'Authorized Personnel';
 
   if (action === 'PAUSE') {
@@ -8155,6 +8174,110 @@ function isDeskActive(deskId) {
   return true;
 }
 
+/**
+ * Authoritative dynamic 4-bank desk router (BANK_1 - BANK_4).
+ * Balances orders evenly across all 4 bank counters based on real-time pending queue depth
+ * and deterministic team code hashing when queues are balanced.
+ */
+export function getBestBankDesk(teamCode = null) {
+  const allBankDesks = ['BANK_1', 'BANK_2', 'BANK_3', 'BANK_4'];
+  if (!state.bankDesks) state.bankDesks = {};
+  for (const bId of allBankDesks) {
+    ensureDeskExists(bId);
+  }
+
+  const activeBankDesks = allBankDesks.filter(bId => isDeskActive(bId));
+  const candidateDesks = activeBankDesks.length > 0 ? activeBankDesks : allBankDesks;
+
+  const counts = candidateDesks.map(bId => {
+    const orderCount = (state.orders || []).filter(o =>
+      (o.bankDeskId === bId) &&
+      (['EXCHANGE_APPROVED', 'AWAITING_BANK_SETTLEMENT', 'EXECUTED_PENDING_SETTLEMENT', 'VERIFYING_AT_BANK'].includes(o.status) ||
+       ['AWAITING_BANK_SETTLEMENT', 'EXECUTED_PENDING_SETTLEMENT', 'VERIFYING_AT_BANK'].includes(o.workflowStage) ||
+       (o.settlementStatus === 'PENDING' && !['REJECTED', 'SETTLEMENT_REJECTED', 'CANCELLED', 'SETTLED', 'EXECUTED'].includes(o.status)))
+    ).length;
+
+    const settlementCount = (state.settlements || []).filter(s =>
+      s.bankDeskId === bId &&
+      ['PENDING', 'AWAITING_BANK_SETTLEMENT', 'VERIFYING_AT_BANK'].includes(s.status)
+    ).length;
+
+    return Math.max(orderCount, settlementCount);
+  });
+
+  const minCount = Math.min(...counts);
+  const minDesks = candidateDesks.filter((_, idx) => counts[idx] === minCount);
+
+  if (teamCode) {
+    const teamNum = parseInt(String(teamCode).replace(/\D/g, ''), 10);
+    if (!isNaN(teamNum) && teamNum > 0) {
+      const preferredDesk = allBankDesks[(teamNum - 1) % allBankDesks.length];
+      if (minDesks.includes(preferredDesk)) {
+        return preferredDesk;
+      }
+    }
+  }
+
+  return minDesks[0] || candidateDesks[0] || 'BANK_1';
+}
+
+export function healBankDeskAssignments(forceRebalance = false) {
+  const allBankDesks = ['BANK_1', 'BANK_2', 'BANK_3', 'BANK_4'];
+  const defaultBankDesks = createInitialState().bankDesks;
+  if (!state.bankDesks) {
+    state.bankDesks = defaultBankDesks;
+  } else {
+    allBankDesks.forEach(bId => {
+      if (!state.bankDesks[bId]) {
+        state.bankDesks[bId] = defaultBankDesks[bId];
+      }
+    });
+  }
+
+  // Detect historical collapse where 100% of legacy settlements collapsed into BANK_1
+  const settlements = state.settlements || [];
+  const deskCount = {};
+  settlements.forEach(s => {
+    const d = s.bankDeskId || 'UNASSIGNED';
+    deskCount[d] = (deskCount[d] || 0) + 1;
+  });
+  const isAllBank1 = settlements.length > 5 && (!deskCount.BANK_2 && !deskCount.BANK_3 && !deskCount.BANK_4);
+
+  if (Array.isArray(state.orders)) {
+    state.orders.forEach(o => {
+      const needsAssignment = !o.bankDeskId || !isBankDeskId(o.bankDeskId) || isAllBank1 || forceRebalance;
+      if (needsAssignment && o.teamCode) {
+        const teamNum = parseInt(String(o.teamCode).replace(/\D/g, ''), 10);
+        if (!isNaN(teamNum) && teamNum > 0) {
+          o.bankDeskId = allBankDesks[(teamNum - 1) % allBankDesks.length];
+        } else {
+          o.bankDeskId = 'BANK_1';
+        }
+      }
+    });
+  }
+
+  if (Array.isArray(state.settlements)) {
+    state.settlements.forEach(s => {
+      const needsAssignment = !s.bankDeskId || !isBankDeskId(s.bankDeskId) || isAllBank1 || forceRebalance;
+      if (needsAssignment) {
+        const parentOrder = (state.orders || []).find(o => o.id === s.orderId);
+        const team = s.teamCode || parentOrder?.teamCode;
+        if (team) {
+          const teamNum = parseInt(String(team).replace(/\D/g, ''), 10);
+          if (!isNaN(teamNum) && teamNum > 0) {
+            s.bankDeskId = allBankDesks[(teamNum - 1) % allBankDesks.length];
+          } else {
+            s.bankDeskId = parentOrder?.bankDeskId || 'BANK_1';
+          }
+        } else {
+          s.bankDeskId = parentOrder?.bankDeskId || 'BANK_1';
+        }
+      }
+    });
+  }
+}
+
 function setDeskAvailabilityState(deskId, status) {
   if (!deskId) return;
   const normalized = (status || 'ACTIVE').toUpperCase() === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE';
@@ -8370,7 +8493,7 @@ function computeAllDeskMetrics() {
 
   const bankDesks = Object.keys(bDesks).map(bId => {
     const assignedBankOrders = queue.filter(o => 
-      (o.bankDeskId === bId || (!o.bankDeskId && bId === 'BANK_1')) &&
+      (o.bankDeskId === bId || (!o.bankDeskId && (o.teamCode ? `BANK_${(((parseInt(String(o.teamCode).replace(/\D/g, '') || 1) - 1) % 4) + 1)}` === bId : bId === 'BANK_1'))) &&
       (o.status === 'EXECUTED_PENDING_SETTLEMENT' || (o.settlementStatus === 'PENDING' && !['REJECTED', 'SETTLEMENT_REJECTED', 'CANCELLED', 'SETTLED'].includes(o.status)))
     );
     const bNum = bId.replace(/^BANK_/i, '');
@@ -8379,12 +8502,12 @@ function computeAllDeskMetrics() {
     const activeBankProcessing = assignedBankOrders.find(o => o.status === 'VERIFYING_AT_BANK' || o.workflowStage === 'VERIFYING_AT_BANK');
 
     const completedBankOrders = (state.settlements || []).filter(s => 
-      (s.bankDeskId === bId || (!s.bankDeskId && bId === 'BANK_1')) && s.status === 'SETTLED'
+      (s.bankDeskId === bId || (!s.bankDeskId && (s.teamCode ? `BANK_${(((parseInt(String(o.teamCode).replace(/\D/g, '') || 1) - 1) % 4) + 1)}` === bId : bId === 'BANK_1'))) && s.status === 'SETTLED'
     );
     const completedCount = completedBankOrders.length + (bDesks[bId]?.totalProcessed || 0);
 
     const rejectedBankOrders = (state.settlements || []).filter(s => 
-      (s.bankDeskId === bId || (!s.bankDeskId && bId === 'BANK_1')) && ['REJECTED', 'SETTLEMENT_REJECTED', 'REJECTED_BY_BANK'].includes(s.status)
+      (s.bankDeskId === bId || (!s.bankDeskId && (s.teamCode ? `BANK_${(((parseInt(String(o.teamCode).replace(/\D/g, '') || 1) - 1) % 4) + 1)}` === bId : bId === 'BANK_1'))) && ['REJECTED', 'SETTLEMENT_REJECTED', 'REJECTED_BY_BANK'].includes(s.status)
     );
     const rejectedCount = rejectedBankOrders.length;
 
@@ -9131,6 +9254,8 @@ app.post(['/api/order/create', '/api/orders/submit', '/api/order/submit'], async
     return res.status(500).json({ error: 'Order assignment failed: No operational exchange desk available for order routing.' });
   }
 
+  const assignedBankDesk = getBestBankDesk(effectiveTeamCode);
+
   const orderObj = {
     id: orderId,
     idempotencyKey: idempotencyKey || null,
@@ -9162,6 +9287,7 @@ app.post(['/api/order/create', '/api/orders/submit', '/api/order/submit'], async
     finalStatus: 'PENDING',
     physicalSlipChecked: false,
     deskId: assignedDesk,
+    bankDeskId: assignedBankDesk,
     assignedAt: Date.now(),
     operator: enteredBy || null,
     verifiedBy: null,
@@ -9870,17 +9996,10 @@ app.post('/api/order/action', async (req, res) => {
 
     // Precompute synchronized Bank Desk (routing strictly to ACTIVE bank desks with draining fallback)
     let targetBankDesk = order.bankDeskId;
-    if (targetBankDesk && !isDeskActive(targetBankDesk)) {
-      targetBankDesk = null; // Inactive bank desk does not take new settlement vouchers
+    if (!targetBankDesk || !isBankDeskId(targetBankDesk) || !isDeskActive(targetBankDesk)) {
+      targetBankDesk = getBestBankDesk(order.teamCode);
     }
-    if (!targetBankDesk || !isBankDeskId(targetBankDesk)) {
-      const allBankDesks = Object.keys(state.bankDesks || {}).filter(isBankDeskId);
-      const activeBankDesks = allBankDesks.filter(bId => isDeskActive(bId));
-      const fallbackBankDesks = activeBankDesks.length > 0 ? activeBankDesks : (allBankDesks.length > 0 ? allBankDesks : ['BANK_1', 'BANK_2', 'BANK_3', 'BANK_4']);
-      const counts = fallbackBankDesks.map(bId => (state.orders || []).filter(o => o.bankDeskId === bId && o.status === 'EXECUTED_PENDING_SETTLEMENT').length);
-      const minIdx = counts.indexOf(Math.min(...counts));
-      targetBankDesk = fallbackBankDesks[minIdx >= 0 ? minIdx : 0] || 'BANK_1';
-    }
+    order.bankDeskId = targetBankDesk;
     const targetSettlementId = order.settlementId || `SETTLE_${Date.now()}_${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
     const cleanTicket = String(order.ticketNumber || order.id.slice(-4)).replace(/[^A-Za-z0-9_-]/g, '');
     const targetVoucherRef = `BNK-${order.action === 'BUY' ? 'PAY' : 'REC'}-${cleanTicket}-${Date.now().toString(36).toUpperCase()}`;
@@ -12903,22 +13022,33 @@ app.get('/api/news/debates', (req, res) => {
   });
 });
 
+// Dedicated Visual Takeover Dismissal Endpoint (Projector auto-dismiss 5-10s):
+// Clears visual takeover on the Projector/screen while preserving active market decaying impact and news event status!
+app.post(['/api/news/dismiss-takeover', '/api/projector/dismiss-takeover'], (req, res) => {
+  if (state.marketState) {
+    state.marketState.takeoverEvent = null;
+  }
+  saveState(false);
+  broadcastState('TAKEOVER_DISMISSED', { takeoverEvent: null });
+  return res.json({ success: true, message: 'Visual takeover dismissed from projector; market impact continues active.' });
+});
+
 // Server-Side News Dismissal & Retraction Endpoint (Durable lifecycle state update)
 app.post(['/api/news/dismiss', '/api/news/remove'], (req, res) => {
   const session = req.session || verifySessionToken(req.headers['authorization'] || req.headers['x-fms-token']);
   const isPrivileged = session && (session.role === 'admin' || session.role === 'super_admin' || session.role === 'news_controller' || session.role === 'sebi' || hasPerm(session, 'news.review') || hasPerm(session, 'market.control'));
   
-  const { newsId, targetId, reason } = req.body || {};
+  const { newsId, targetId, reason, visualOnly } = req.body || {};
   const idToDismiss = newsId || targetId;
 
-  if (!idToDismiss) {
-    // If no ID is passed, dismiss any active projector takeover
+  if (!idToDismiss || visualOnly) {
+    // If visualOnly is true or no ID is passed, dismiss visual takeover only without affecting market impact
     if (state.marketState) {
       state.marketState.takeoverEvent = null;
     }
-    saveState(true);
+    saveState(false);
     broadcastState('TAKEOVER_DISMISSED', { takeoverEvent: null });
-    return res.json({ success: true, message: 'Active projector takeover dismissed.' });
+    return res.json({ success: true, message: 'Active projector visual takeover dismissed; market impact remains active.' });
   }
 
   // Find target in state.newsEvents
@@ -16892,7 +17022,7 @@ const handleTrainingOrderAction = (req, res) => {
       reservedCashAmount: order.reservedCashAmount,
       currency: 'INR',
       status: 'PENDING',
-      bankDeskId: 'BANK_1',
+      bankDeskId: getBestBankDesk(order.teamCode),
       createdAt: Date.now()
     };
 
@@ -17603,6 +17733,8 @@ server.listen(PORT, '0.0.0.0', async () => {
             });
           }
 
+          healBankDeskAssignments();
+
           setFallbackStateReference(state);
           console.log('[PostgreSQL] Successfully hydrated authoritative state on startup.');
         }
@@ -17616,6 +17748,7 @@ server.listen(PORT, '0.0.0.0', async () => {
     }
   } else {
     console.log('[PostgreSQL] DATABASE_URL not configured. Running in memory/file fallback mode.');
+    healBankDeskAssignments();
   }
 
   isServerReady = true;

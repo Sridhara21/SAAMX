@@ -104,15 +104,15 @@ export default function ProjectorPage({
       } catch (err) {}
     }
     setActiveTakeover(null);
-    // Notify server to clear takeoverEvent state authoritatively
-    apiFetch('/api/news/dismiss', {
+    // Notify server to clear visual takeover banner ONLY without canceling market effect
+    apiFetch('/api/news/dismiss-takeover', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ newsId: currentId })
+      body: JSON.stringify({ newsId: currentId, visualOnly: true })
     }).catch(() => {});
   };
 
-  // Auto-dismiss breaking overlays after 8 seconds so overlays never get stuck on projector
+  // Auto-dismiss breaking overlays after 8 seconds (in the 5-10s window) while keeping market impact active
   useEffect(() => {
     if (takeoverEvent && (takeoverEvent.headline || takeoverEvent.name || takeoverEvent.type || takeoverEvent.title)) {
       const eventKey = takeoverEvent.id || takeoverEvent.eventId || `${takeoverEvent.headline}_${takeoverEvent.triggeredAt}`;
@@ -131,6 +131,7 @@ export default function ProjectorPage({
         type: takeoverEvent.type || 'NEWS_FLASH'
       };
       setActiveTakeover(normalized);
+      // Auto-dismiss after 8 seconds on projector
       const timer = setTimeout(() => {
         handleDismissTakeover();
       }, 8000);
@@ -645,8 +646,8 @@ export default function ProjectorPage({
                     {impactPercent > 0 ? '+' : ''}{impactPercent}% Primary Shock
                   </span>
                 </div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--color-ink-muted, #94A3B8)', fontStyle: 'italic' }}>
-                  Auto-dismissing in 8 seconds &bull; Click anywhere to dismiss
+                <div style={{ fontSize: '0.8rem', color: 'var(--color-ink-muted, #94A3B8)', fontWeight: 600 }}>
+                  ⏱️ Projector display (~8s) &bull; ⚡ Market impact remains active on trading floor
                 </div>
               </div>
             </div>

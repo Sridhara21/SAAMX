@@ -180,7 +180,7 @@ export default function DeskQueueDashboard({ state = {}, isEmbedded = false, onO
       bankList = Object.keys(bankDesks).map(bId => {
         const bNum = bId.replace('BANK_', '');
         const assignedBankOrders = orders.filter(o =>
-          (o.bankDeskId === bId || (!o.bankDeskId && bId === 'BANK_1')) &&
+          (o.bankDeskId === bId || (!o.bankDeskId && (o.teamCode ? `BANK_${(((parseInt(String(o.teamCode).replace(/\D/g, '') || 1) - 1) % 4) + 1)}` === bId : bId === 'BANK_1'))) &&
           (o.status === 'EXECUTED_PENDING_SETTLEMENT' || (o.settlementStatus === 'PENDING' && !['REJECTED', 'SETTLEMENT_REJECTED', 'CANCELLED', 'SETTLED'].includes(o.status)))
         );
         return {

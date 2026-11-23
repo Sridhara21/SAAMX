@@ -127,7 +127,10 @@ export default function BankPage({ state, connected }) {
       list = list.filter(s => (s.teamCode || '').toUpperCase() === sessionTeamCode);
     }
     if (bankDeskFilter !== 'ALL') {
-      list = list.filter(s => s.bankDeskId === bankDeskFilter);
+      list = list.filter(s => {
+        const effectiveDesk = s.bankDeskId || (s.teamCode ? `BANK_${(((parseInt(String(s.teamCode).replace(/\D/g, '') || 1) - 1) % 4) + 1)}` : 'BANK_1');
+        return effectiveDesk === bankDeskFilter;
+      });
     }
     return list;
   }, [rawSettlements, isTeam, sessionTeamCode, bankDeskFilter]);
