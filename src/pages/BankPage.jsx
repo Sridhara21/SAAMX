@@ -49,6 +49,39 @@ export default function BankPage({ state, connected }) {
   const [bankDeskFilter, setBankDeskFilter] = useState('ALL');
   const [toasts, setToasts] = useState([]);
 
+  // Auto-scope bank filter if teller is assigned to a specific counter
+  useEffect(() => {
+    const assigned = sessionStorage.getItem('saamx_assigned_desk');
+    if (assigned && assigned.startsWith('BANK_')) {
+      setBankDeskFilter(assigned);
+    } else if (sessionUsername === 'counter1') {
+      setBankDeskFilter('BANK_1');
+    } else if (sessionUsername === 'counter2') {
+      setBankDeskFilter('BANK_2');
+    } else if (sessionUsername === 'counter3') {
+      setBankDeskFilter('BANK_3');
+    } else if (sessionUsername === 'counter4') {
+      setBankDeskFilter('BANK_4');
+    }
+  }, [sessionUsername]);
+
+  const getBankDeskName = (id) => {
+    if (!id) return 'Bank Desk 1';
+    if (state?.bankDesks?.[id]?.name) return state.bankDesks[id].name;
+    const num = String(id).replace(/^BANK_/i, '');
+    return `Bank Desk ${num}`;
+  };
+
+  const getBankDeskBadgeStyle = (id) => {
+    switch (id) {
+      case 'BANK_1': return { bg: '#FEF3C7', color: '#B45309' };
+      case 'BANK_2': return { bg: '#DBEAFE', color: '#1E40AF' };
+      case 'BANK_3': return { bg: '#D1FAE5', color: '#065F46' };
+      case 'BANK_4': return { bg: '#EDE9FE', color: '#5B21B6' };
+      default: return { bg: '#F1F5F9', color: '#475569' };
+    }
+  };
+
   // Modals
   const [settleModalItem, setSettleModalItem] = useState(null);
   const [voucherSlipInput, setVoucherSlipInput] = useState('');
@@ -355,9 +388,11 @@ export default function BankPage({ state, connected }) {
                   cursor: 'pointer'
                 }}
               >
-                <option value="ALL">All Desks (BANK_1 &amp; BANK_2)</option>
+                <option value="ALL">All Desks (BANK_1 – BANK_4)</option>
                 <option value="BANK_1">Bank Desk 1 Only</option>
                 <option value="BANK_2">Bank Desk 2 Only</option>
+                <option value="BANK_3">Bank Desk 3 Only</option>
+                <option value="BANK_4">Bank Desk 4 Only</option>
               </select>
             </div>
           )}
@@ -555,9 +590,14 @@ export default function BankPage({ state, connected }) {
                     <CardHeader style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                         <Badge variant="warning">PAY_IN (Cash Collection)</Badge>
-                        <span style={{ fontSize: '0.72rem', fontWeight: 800, padding: '2px 8px', borderRadius: '4px', backgroundColor: '#FEF3C7', color: '#B45309' }}>
-                          {s.bankDeskId === 'BANK_2' ? 'Bank Desk 2' : 'Bank Desk 1'}
-                        </span>
+                        {(() => {
+                          const deskStyle = getBankDeskBadgeStyle(s.bankDeskId || 'BANK_1');
+                          return (
+                            <span style={{ fontSize: '0.72rem', fontWeight: 800, padding: '2px 8px', borderRadius: '4px', backgroundColor: deskStyle.bg, color: deskStyle.color }}>
+                              {getBankDeskName(s.bankDeskId)}
+                            </span>
+                          );
+                        })()}
                         <span className="tabular-nums font-data" style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--color-text-primary)', fontFamily: 'var(--font-mono)' }}>
                           Ticket #{s.ticketNumber || 'N/A'}
                         </span>
@@ -689,9 +729,14 @@ export default function BankPage({ state, connected }) {
                     <CardHeader style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                         <Badge variant="primary">PAY_OUT (Disbursement)</Badge>
-                        <span style={{ fontSize: '0.72rem', fontWeight: 800, padding: '2px 8px', borderRadius: '4px', backgroundColor: '#DBEAFE', color: '#1E40AF' }}>
-                          {s.bankDeskId === 'BANK_2' ? 'Bank Desk 2' : 'Bank Desk 1'}
-                        </span>
+                        {(() => {
+                          const deskStyle = getBankDeskBadgeStyle(s.bankDeskId || 'BANK_1');
+                          return (
+                            <span style={{ fontSize: '0.72rem', fontWeight: 800, padding: '2px 8px', borderRadius: '4px', backgroundColor: deskStyle.bg, color: deskStyle.color }}>
+                              {getBankDeskName(s.bankDeskId)}
+                            </span>
+                          );
+                        })()}
                         <span className="tabular-nums font-data" style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--color-text-primary)', fontFamily: 'var(--font-mono)' }}>
                           Ticket #{s.ticketNumber || 'N/A'}
                         </span>
@@ -958,9 +1003,14 @@ export default function BankPage({ state, connected }) {
                               </Badge>
                             </td>
                             <td style={{ padding: density === 'compact' ? '8px 12px' : '12px 16px' }}>
-                              <span style={{ fontSize: '0.74rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', backgroundColor: s.bankDeskId === 'BANK_2' ? '#DBEAFE' : '#FEF3C7', color: s.bankDeskId === 'BANK_2' ? '#1E40AF' : '#B45309' }}>
-                                {s.bankDeskId || 'BANK_1'}
-                              </span>
+                              {(() => {
+                                const deskStyle = getBankDeskBadgeStyle(s.bankDeskId || 'BANK_1');
+                                return (
+                                  <span style={{ fontSize: '0.74rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', backgroundColor: deskStyle.bg, color: deskStyle.color }}>
+                                    {s.bankDeskId || 'BANK_1'}
+                                  </span>
+                                );
+                              })()}
                             </td>
                             <td style={{ padding: density === 'compact' ? '8px 12px' : '12px 16px' }}>
                               <span style={{ fontWeight: 700, color: 'var(--color-primary)' }}>{s.ticker}</span>

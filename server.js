@@ -1552,8 +1552,15 @@ const loadState = () => {
           }
         });
       }
+      const defaultBankDesks = createInitialState().bankDesks;
       if (!state.bankDesks) {
-        state.bankDesks = createInitialState().bankDesks;
+        state.bankDesks = defaultBankDesks;
+      } else {
+        Object.keys(defaultBankDesks).forEach(bId => {
+          if (!state.bankDesks[bId]) {
+            state.bankDesks[bId] = defaultBankDesks[bId];
+          }
+        });
       }
       if (!state.fxQueue) state.fxQueue = [];
       if (!state.fxReserves) state.fxReserves = JSON.parse(JSON.stringify(DEFAULT_FX_RESERVES));
@@ -8229,8 +8236,10 @@ function ensureDeskExists(deskId) {
 function computeAllDeskMetrics() {
   const desks = state.orderDesks || {};
   const bDesks = state.bankDesks || {
-    BANK_1: { id: 'BANK_1', name: 'Bank Desk 1', color: '#10B981', type: 'BANK', deskType: 'BANK', identifier: 'Desk 1', deskIdentifier: 'Desk 1', operator: 'Bank Teller 1', totalProcessed: 0 },
-    BANK_2: { id: 'BANK_2', name: 'Bank Desk 2', color: '#059669', type: 'BANK', deskType: 'BANK', identifier: 'Desk 2', deskIdentifier: 'Desk 2', operator: 'Bank Teller 2', totalProcessed: 0 }
+    BANK_1: { id: 'BANK_1', name: 'Bank Desk 1', color: '#10B981', type: 'BANK', deskType: 'BANK', identifier: 'Desk 1', deskIdentifier: 'Desk 1', operator: 'Bank Counter 1', totalProcessed: 0 },
+    BANK_2: { id: 'BANK_2', name: 'Bank Desk 2', color: '#059669', type: 'BANK', deskType: 'BANK', identifier: 'Desk 2', deskIdentifier: 'Desk 2', operator: 'Bank Counter 2', totalProcessed: 0 },
+    BANK_3: { id: 'BANK_3', name: 'Bank Desk 3', color: '#047857', type: 'BANK', deskType: 'BANK', identifier: 'Desk 3', deskIdentifier: 'Desk 3', operator: 'Bank Counter 3', totalProcessed: 0 },
+    BANK_4: { id: 'BANK_4', name: 'Bank Desk 4', color: '#065F46', type: 'BANK', deskType: 'BANK', identifier: 'Desk 4', deskIdentifier: 'Desk 4', operator: 'Bank Counter 4', totalProcessed: 0 }
   };
   const queue = state.orders || [];
   const personnelList = state.personnel || [];
@@ -9867,7 +9876,7 @@ app.post('/api/order/action', async (req, res) => {
     if (!targetBankDesk || !isBankDeskId(targetBankDesk)) {
       const allBankDesks = Object.keys(state.bankDesks || {}).filter(isBankDeskId);
       const activeBankDesks = allBankDesks.filter(bId => isDeskActive(bId));
-      const fallbackBankDesks = activeBankDesks.length > 0 ? activeBankDesks : (allBankDesks.length > 0 ? allBankDesks : ['BANK_1', 'BANK_2']);
+      const fallbackBankDesks = activeBankDesks.length > 0 ? activeBankDesks : (allBankDesks.length > 0 ? allBankDesks : ['BANK_1', 'BANK_2', 'BANK_3', 'BANK_4']);
       const counts = fallbackBankDesks.map(bId => (state.orders || []).filter(o => o.bankDeskId === bId && o.status === 'EXECUTED_PENDING_SETTLEMENT').length);
       const minIdx = counts.indexOf(Math.min(...counts));
       targetBankDesk = fallbackBankDesks[minIdx >= 0 ? minIdx : 0] || 'BANK_1';
@@ -17582,6 +17591,18 @@ server.listen(PORT, '0.0.0.0', async () => {
               state.personnel[existingIdx] = { ...seed, ...state.personnel[existingIdx], role: seed.role, permissions: seed.permissions, assignedDesk: seed.assignedDesk || state.personnel[existingIdx].assignedDesk };
             }
           });
+          // Ensure all 4 bank desks (BANK_1 - BANK_4) are always initialized in state.bankDesks
+          const defaultBankDesks = createInitialState().bankDesks;
+          if (!state.bankDesks) {
+            state.bankDesks = defaultBankDesks;
+          } else {
+            Object.keys(defaultBankDesks).forEach(bId => {
+              if (!state.bankDesks[bId]) {
+                state.bankDesks[bId] = defaultBankDesks[bId];
+              }
+            });
+          }
+
           setFallbackStateReference(state);
           console.log('[PostgreSQL] Successfully hydrated authoritative state on startup.');
         }

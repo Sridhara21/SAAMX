@@ -171,8 +171,10 @@ export default function DeskQueueDashboard({ state = {}, isEmbedded = false, onO
       bankList = dashboardData.bankDesks;
     } else {
       const bankDesks = state?.bankDesks || {
-        BANK_1: { id: 'BANK_1', name: 'Bank Desk 1', color: '#10B981', deskType: 'BANK', type: 'BANK', identifier: 'Desk 1', deskIdentifier: 'Desk 1', operator: 'Bank Teller 1' },
-        BANK_2: { id: 'BANK_2', name: 'Bank Desk 2', color: '#059669', deskType: 'BANK', type: 'BANK', identifier: 'Desk 2', deskIdentifier: 'Desk 2', operator: 'Bank Teller 2' }
+        BANK_1: { id: 'BANK_1', name: 'Bank Desk 1', color: '#10B981', deskType: 'BANK', type: 'BANK', identifier: 'Desk 1', deskIdentifier: 'Desk 1', operator: 'Bank Counter 1' },
+        BANK_2: { id: 'BANK_2', name: 'Bank Desk 2', color: '#059669', deskType: 'BANK', type: 'BANK', identifier: 'Desk 2', deskIdentifier: 'Desk 2', operator: 'Bank Counter 2' },
+        BANK_3: { id: 'BANK_3', name: 'Bank Desk 3', color: '#047857', deskType: 'BANK', type: 'BANK', identifier: 'Desk 3', deskIdentifier: 'Desk 3', operator: 'Bank Counter 3' },
+        BANK_4: { id: 'BANK_4', name: 'Bank Desk 4', color: '#065F46', deskType: 'BANK', type: 'BANK', identifier: 'Desk 4', deskIdentifier: 'Desk 4', operator: 'Bank Counter 4' }
       };
       const orders = Array.isArray(state?.orders) ? state.orders : Object.values(state?.orders || {});
       bankList = Object.keys(bankDesks).map(bId => {
