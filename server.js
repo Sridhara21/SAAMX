@@ -16843,8 +16843,19 @@ function updateScorecard(operatorId, { role = 'operator_x', isSuccess = true, is
   } else {
     sc.statusBadge = 'NON-COMPLIANT';
   }
-  return sc;
+return sc;
 }
+
+// Access Control: The Floor Speed-Training Terminal is restricted exclusively to Sridhara
+app.use('/api/training', (req, res, next) => {
+  const session = req.session || verifySessionToken(req.headers['authorization'] || req.headers['x-fms-token'] || req.query.token);
+  const username = (session?.username || req.query.operator || '').toLowerCase();
+  const isMaster = username === 'sridhara' || session?.isMaster || session?.role === 'super_admin';
+  if (!isMaster) {
+    return res.status(403).json({ error: 'Access Denied: The Floor Speed-Training Terminal is restricted exclusively to Sridhara.' });
+  }
+  next();
+});
 
 // 1. GET /api/training/state
 app.get('/api/training/state', (req, res) => {

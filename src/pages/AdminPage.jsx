@@ -2022,6 +2022,12 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
               >
                 <IconEye size={14} /> Make All Visible
               </button>
+              <a
+                href="#/ipo"
+                style={{ padding: '6px 14px', background: '#2563EB', color: '#fff', textDecoration: 'none', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 900, display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+              >
+                <span>Launch Dedicated IPO Hub (/#/ipo) ↗</span>
+              </a>
             </div>
           </div>
 

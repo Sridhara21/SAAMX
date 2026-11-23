@@ -14,6 +14,7 @@ const PortfolioPage = lazy(() => import('./pages/PortfolioPage.jsx'));
 const ParticipantTerminal = lazy(() => import('./pages/ParticipantTerminal.jsx'));
 const TrainingTerminal = lazy(() => import('./pages/TrainingTerminal.jsx'));
 const TrainingPage = lazy(() => import('./pages/TrainingPage.jsx'));
+const IpoPage = lazy(() => import('./pages/IpoPage.jsx'));
 const CurrencyExchangePage = lazy(() => import('./pages/CurrencyExchangePage.jsx'));
 const BrokerAdvisoryTerminal = lazy(() => import('./pages/BrokerAdvisoryTerminal.jsx'));
 const BullTerminal = lazy(() => import('./pages/BullTerminal.jsx'));
@@ -426,10 +427,18 @@ export default function App() {
       return true;
     }
 
-    // Training sandbox terminal is authorized for all authenticated roles
+    const isMasterUser = sessionUsername?.toLowerCase() === 'sridhara' || (typeof window !== 'undefined' && sessionStorage.getItem('saamx_is_master') === 'true');
+
+    // Training sandbox terminal is authorized EXCLUSIVELY for Sridhara
     if (currentRoute === '#/training' || currentRoute === '#training' ||
         currentRoute.startsWith('#/training?') || currentRoute.startsWith('#/training/')) {
-      return true;
+      return isMasterUser;
+    }
+
+    // Dedicated Primary Market IPO Hub: authorized exclusively for Sridhara / Master Admin
+    if (currentRoute === '#/ipo' || currentRoute === '#ipo' ||
+        currentRoute.startsWith('#/ipo?') || currentRoute.startsWith('#/ipo/')) {
+      return isMasterUser || r === 'super_admin';
     }
 
     // Multi-page staff access override: if explicitly granted this page
@@ -443,57 +452,57 @@ export default function App() {
       team: [
         '#/team', '#/terminal', '#/portfolio', '#/fx', '#/bank', '#/bank-desk', '#/settlement',
         '#/advisor', '#/broker', '#/bull', '#/bear', '#/bull-terminal', '#/bear-terminal',
-        '#/debate', '#/bull-bear', '#/market-watch', '#/market-intelligence', '#/results', '#/training', '#/projector'
+        '#/debate', '#/bull-bear', '#/market-watch', '#/market-intelligence', '#/results', '#/projector'
       ],
       exchange: [
         '#/exchange', '#/verification', '#/verification-desk', '#/desk-queues', '#/desk-dashboard',
         '#/queue-dashboard', '#/desk-queue', '#/floor-ops', '#/market-watch', '#/market-intelligence',
-        '#/results', '#/training', '#/projector'
+        '#/results', '#/projector'
       ],
       verification: [
         '#/exchange', '#/verification', '#/verification-desk', '#/desk-queues', '#/desk-dashboard',
         '#/queue-dashboard', '#/desk-queue', '#/floor-ops', '#/market-watch', '#/market-intelligence',
-        '#/results', '#/training', '#/projector'
+        '#/results', '#/projector'
       ],
       bank_teller: [
         '#/bank', '#/bank-desk', '#/settlement', '#/desk-queues', '#/desk-dashboard',
         '#/queue-dashboard', '#/desk-queue', '#/market-watch', '#/market-intelligence',
-        '#/results', '#/training', '#/projector'
+        '#/results', '#/projector'
       ],
       operator_x: [
         '#/fx', '#/exchange', '#/floor-ops', '#/verification', '#/desk-queues', '#/desk-dashboard',
         '#/queue-dashboard', '#/desk-queue', '#/market-watch', '#/portfolio',
-        '#/results', '#/training', '#/projector'
+        '#/results', '#/projector'
       ],
       advisor: [
         '#/advisor', '#/broker', '#/broker-desk', '#/bull', '#/bear', '#/bull-terminal',
         '#/bear-terminal', '#/debate', '#/bull-bear', '#/market-watch', '#/market-intelligence',
-        '#/results', '#/training', '#/projector'
+        '#/results', '#/projector'
       ],
       sebi: [
         '#/sebi', '#/tech-ops', '#/monitoring', '#/bank', '#/bank-desk', '#/settlement',
         '#/floor-ops', '#/desk-queues', '#/desk-dashboard', '#/queue-dashboard',
-        '#/desk-queue', '#/market-watch', '#/portfolio', '#/results', '#/training', '#/projector'
+        '#/desk-queue', '#/market-watch', '#/portfolio', '#/results', '#/projector'
       ],
       news_controller: [
         '#/news-controller', '#/news-control', '#/journalist', '#/news', '#/anchor',
         '#/newsroom', '#/news-room', '#/market-watch', '#/market-intelligence',
-        '#/results', '#/training', '#/projector'
+        '#/results', '#/projector'
       ],
       journalist: [
         '#/journalist', '#/news', '#/newsroom', '#/news-room', '#/anchor',
         '#/news-controller', '#/market-watch', '#/market-intelligence',
-        '#/results', '#/training', '#/projector'
+        '#/results', '#/projector'
       ],
       judge: [
-        '#/results', '#/market-watch', '#/training', '#/projector'
+        '#/results', '#/market-watch', '#/projector'
       ],
       observer: [
-        '#/projector', '#/market-watch', '#/results', '#/training'
+        '#/projector', '#/market-watch', '#/results'
       ],
       portfolio: [
         '#/portfolio', '#/floor-ops', '#/desk-queues', '#/desk-dashboard',
-        '#/queue-dashboard', '#/desk-queue', '#/market-watch', '#/results', '#/training', '#/projector'
+        '#/queue-dashboard', '#/desk-queue', '#/market-watch', '#/results', '#/projector'
       ]
     };
 
@@ -765,7 +774,40 @@ export default function App() {
           content = <JournalistPage state={normalizedState} adminPassword={currentPassword} initialMode="anchor" />;
           break;
         case '#/training':
-          content = <TrainingTerminal state={normalizedState} />;
+          {
+            const isMasterAccess = sessionUsername?.toLowerCase() === 'sridhara' || sessionStorage.getItem('saamx_is_master') === 'true';
+            if (!isMasterAccess) {
+              content = (
+                <div style={{ padding: '60px 20px', textAlign: 'center', color: '#F8FAFC' }}>
+                  <h2 style={{ color: '#EF4444', fontWeight: 900, fontSize: '1.8rem' }}>Access Restricted</h2>
+                  <p style={{ color: '#94A3B8', marginTop: '8px' }}>The Floor Speed-Training Terminal is restricted exclusively to Sridhara (Master Floor Director).</p>
+                  <div style={{ marginTop: '20px' }}>
+                    <a href="#/portals" style={{ color: '#38BDF8', fontWeight: 700, textDecoration: 'underline' }}>Return to Portals Directory</a>
+                  </div>
+                </div>
+              );
+            } else {
+              content = <TrainingTerminal state={normalizedState} />;
+            }
+          }
+          break;
+        case '#/ipo':
+          {
+            const isMasterAccess = sessionUsername?.toLowerCase() === 'sridhara' || sessionStorage.getItem('saamx_is_master') === 'true' || sessionRole === 'super_admin';
+            if (!isMasterAccess) {
+              content = (
+                <div style={{ padding: '60px 20px', textAlign: 'center', color: '#F8FAFC' }}>
+                  <h2 style={{ color: '#EF4444', fontWeight: 900, fontSize: '1.8rem' }}>Access Restricted</h2>
+                  <p style={{ color: '#94A3B8', marginTop: '8px' }}>The Primary Market IPO Command Hub is restricted exclusively to Sridhara (Master Floor Director).</p>
+                  <div style={{ marginTop: '20px' }}>
+                    <a href="#/portals" style={{ color: '#38BDF8', fontWeight: 700, textDecoration: 'underline' }}>Return to Portals Directory</a>
+                  </div>
+                </div>
+              );
+            } else {
+              content = <IpoPage state={normalizedState} />;
+            }
+          }
           break;
         case '#/fx':
           content = <CurrencyExchangePage state={normalizedState} connected={dbConnected} />;
@@ -823,7 +865,7 @@ export default function App() {
     );
   };
 
-  const showIndicator = ['#/projector', '#/exchange', '#/sebi', '#/admin', '#/journalist', '#/training', '#/team'].includes(route);
+  const showIndicator = ['#/projector', '#/exchange', '#/sebi', '#/admin', '#/journalist', '#/training', '#/ipo', '#/team'].includes(route);
 
   return (
     <DrawerProvider>

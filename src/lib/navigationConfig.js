@@ -140,13 +140,25 @@ export const NAVIGATION_SECTIONS = [
     title: 'Operations & Control',
     items: [
       {
+        id: 'ipo-hub',
+        name: 'Primary Market & IPOs',
+        path: '#/ipo',
+        routes: ['#/ipo'],
+        icon: 'trending-up',
+        roles: ['super_admin'],
+        masterOnly: true,
+        badge: 'PRIMARY',
+        description: 'Simulated IPO Stage Control, Bidding & Allotment Engine'
+      },
+      {
         id: 'training-terminal',
         name: 'Training Terminal',
         path: '#/training',
         routes: ['#/training'],
         icon: 'target',
-        roles: ['team', 'exchange', 'operator_x', 'verification', 'bank_teller', 'advisor', 'sebi', 'journalist', 'news_controller', 'judge', 'observer', 'portfolio', 'admin', 'super_admin', 'coordinator'],
-        badge: 'SANDBOX',
+        roles: ['super_admin'],
+        masterOnly: true,
+        badge: 'SRIDHARA ONLY',
         description: 'Multi-Role Rehearsal Simulator & Operator Performance Scorecard'
       },
       {
@@ -215,14 +227,20 @@ export const NAVIGATION_SECTIONS = [
   }
 ];
 
-export function getFilteredNavSections(userRole, grantedPermissions = [], grantedPages = []) {
+export function getFilteredNavSections(userRole, grantedPermissions = [], grantedPages = [], username = null) {
   if (!userRole) return [];
   const normalizedRole = userRole.toLowerCase();
+  const effectiveUsername = (username || (typeof window !== 'undefined' ? (sessionStorage.getItem('saamx_username') || sessionStorage.getItem('fms_username') || '') : '')).toLowerCase();
+  const isMaster = effectiveUsername === 'sridhara' || (typeof window !== 'undefined' && sessionStorage.getItem('saamx_is_master') === 'true');
 
   return NAVIGATION_SECTIONS.map(section => {
     const visibleItems = section.items.filter(item => {
+      // Training Terminal and IPO Hub are restricted strictly to Sridhara
+      if (item.id === 'training-terminal' || item.id === 'ipo-hub' || item.masterOnly) {
+        return isMaster;
+      }
       if (normalizedRole === 'admin' || normalizedRole === 'super_admin' || normalizedRole === 'coordinator') return true;
-      if (item.roles.includes(normalizedRole)) return true;
+      if (item.roles && item.roles.includes(normalizedRole)) return true;
       if (Array.isArray(grantedPages) && grantedPages.length > 0) {
         if (grantedPages.includes(item.path) || item.routes?.some(r => grantedPages.includes(r))) {
           return true;

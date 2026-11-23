@@ -162,7 +162,10 @@ export default function DrawerManager({
     // C. Quick Actions
     if (searchCategory === 'ALL' || searchCategory === 'ACTIONS') {
       const quickActionsList = [
-        
+        ...(isMaster ? [
+          { id: 'act_ipo', label: 'Primary Market & IPO Command Hub', icon: 'trending-up', run: () => handleNav('#/ipo') },
+          { id: 'act_training', label: 'Floor Speed-Training Terminal (Sridhara)', icon: 'target', run: () => handleNav('#/training') }
+        ] : []),
         { id: 'act_density', label: `Switch to ${density === 'compact' ? 'Comfortable Studio' : 'Compact Terminal'} Density`, icon: 'sliders', run: toggleDensity },
         { id: 'act_nav', label: 'Open Navigation Drawer (Ctrl+B)', icon: 'dock', run: () => drawerCtx.openDrawer(DRAWER_TYPES.PORTALS) },
         { id: 'act_portfolio', label: 'Inspect Portfolio & 12 Currencies (Ctrl+P)', icon: 'briefcase', run: () => drawerCtx.openDrawer(DRAWER_TYPES.PORTFOLIO) },
