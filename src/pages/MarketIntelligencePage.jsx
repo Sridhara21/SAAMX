@@ -24,6 +24,7 @@ export default function MarketIntelligencePage({ state, teamCode, onOpenProfile,
   const [activeTab, setActiveTab] = useState('OVERVIEW');
   // 'OVERVIEW', 'NEWS', 'BULL_BEAR', 'BROKER', 'SENTIMENT', 'IPO', 'REGULATORY', 'HISTORY'
 
+  const [searchQuery, setSearchQuery] = useState('');
   const [newsCategoryFilter, setNewsCategoryFilter] = useState('ALL');
   const [historySearch, setHistorySearch] = useState('');
   const [historyCategoryFilter, setHistoryCategoryFilter] = useState('ALL');
@@ -70,6 +71,40 @@ export default function MarketIntelligencePage({ state, teamCode, onOpenProfile,
     { ticker: 'DISC', name: 'Discord Platforms', sector: 'Consumer Internet', exchange: 'NYSE', currency: 'USD', basePrice: 64.00 },
     { ticker: 'POLY', name: 'Polymarket Protocol', sector: 'Prediction Tech', exchange: 'NASDAQ', currency: 'USD', basePrice: 45.00 }
   ], []);
+
+  // Universal Filtered News across Live News & Overview Search
+  const filteredNews = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return newsEvents.filter(n => {
+      const catMatch = newsCategoryFilter === 'ALL' || (n.category && n.category.toUpperCase() === newsCategoryFilter);
+      if (!catMatch) return false;
+      if (!q) return true;
+      return (
+        (n.headline && n.headline.toLowerCase().includes(q)) ||
+        (n.title && n.title.toLowerCase().includes(q)) ||
+        (n.description && n.description.toLowerCase().includes(q)) ||
+        (n.body && n.body.toLowerCase().includes(q)) ||
+        (n.category && n.category.toLowerCase().includes(q)) ||
+        (Array.isArray(n.affectedAssets) && n.affectedAssets.some(a => String(a).toLowerCase().includes(q))) ||
+        (Array.isArray(n.affectedSecurities) && n.affectedSecurities.some(a => String(a).toLowerCase().includes(q)))
+      );
+    });
+  }, [newsEvents, newsCategoryFilter, searchQuery]);
+
+  // Matching Securities for Global Intelligence Search
+  const matchingSecurities = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return [];
+    const list = Array.isArray(state?.securities) ? state.securities : Object.values(state?.securities || {});
+    return list.filter(s =>
+      (s.ticker && s.ticker.toLowerCase().includes(q)) ||
+      (s.appSymbol && s.appSymbol.toLowerCase().includes(q)) ||
+      (s.name && s.name.toLowerCase().includes(q)) ||
+      (s.companyName && s.companyName.toLowerCase().includes(q)) ||
+      (s.sector && s.sector.toLowerCase().includes(q)) ||
+      (s.industry && s.industry.toLowerCase().includes(q))
+    ).slice(0, 8);
+  }, [state?.securities, searchQuery]);
 
   // Market Breadth & Sentiment Calculations
   const { advancers, decliners, unchanged, totalVolume, totalTrades, marketSentiment } = useMemo(() => {
@@ -238,6 +273,146 @@ export default function MarketIntelligencePage({ state, teamCode, onOpenProfile,
           );
         })}
       </div>
+
+      {/* 2b. Universal Market Intelligence Search Bar */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          background: '#FFFFFF',
+          border: '1.5px solid var(--color-border)',
+          borderRadius: '10px',
+          padding: '12px 18px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+        }}
+      >
+        <span style={{ fontSize: '1.2rem' }}>🔍</span>
+        <input
+          type="text"
+          placeholder="Search market overview, breaking wires, securities (e.g. RELIANCE, TCS, NVDA), sectors, or broker calls..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          style={{
+            flex: 1,
+            border: 'none',
+            outline: 'none',
+            fontSize: '0.94rem',
+            fontFamily: 'inherit',
+            fontWeight: 500,
+            color: 'var(--color-ink)',
+            background: 'transparent'
+          }}
+        />
+        {searchQuery && (
+          <button
+            type="button"
+            onClick={() => setSearchQuery('')}
+            style={{
+              background: 'rgba(148, 163, 184, 0.15)',
+              border: '1px solid #CBD5E1',
+              borderRadius: '6px',
+              padding: '4px 10px',
+              cursor: 'pointer',
+              color: 'var(--color-ink-2)',
+              fontWeight: 800,
+              fontSize: '0.80rem'
+            }}
+          >
+            ✕ Clear
+          </button>
+        )}
+      </div>
+
+      {/* Global Search Results Overlay/Card when Search Query Active */}
+      {searchQuery.trim() && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', background: '#F8FAFC', border: '1.5px solid #CBD5E1', borderRadius: '10px', padding: '16px 20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--color-ink)' }}>
+              🔎 SEARCH RESULTS FOR &ldquo;{searchQuery}&rdquo;: {filteredNews.length} News Events &bull; {matchingSecurities.length} Securities
+            </span>
+            <button
+              onClick={() => setSearchQuery('')}
+              style={{ background: 'none', border: 'none', color: '#EF4444', fontWeight: 800, cursor: 'pointer', fontSize: '0.8rem' }}
+            >
+              Close Results ✕
+            </button>
+          </div>
+
+          {/* Matching Securities Strip */}
+          {matchingSecurities.length > 0 && (
+            <div>
+              <div style={{ fontSize: '0.74rem', fontWeight: 800, color: 'var(--color-ink-2)', textTransform: 'uppercase', marginBottom: '8px' }}>
+                MATCHING TRADABLE INSTRUMENTS
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '8px' }}>
+                {matchingSecurities.map(s => (
+                  <div
+                    key={s.id || s.ticker}
+                    onClick={() => onOpenProfile && onOpenProfile(s.ticker)}
+                    style={{
+                      background: '#FFFFFF',
+                      border: '1px solid #E2E8F0',
+                      borderRadius: '8px',
+                      padding: '10px 14px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}
+                  >
+                    <div>
+                      <strong style={{ fontFamily: 'monospace', color: 'var(--color-primary, #FF6800)' }}>{s.ticker}</strong>
+                      <div style={{ fontSize: '0.78rem', color: '#64748B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '140px' }}>
+                        {s.name}
+                      </div>
+                    </div>
+                    <span style={{ fontWeight: 800, fontSize: '0.85rem' }}>
+                      ₹{(s.currentPrice || s.basePrice || 0).toFixed(2)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Matching News Headlines */}
+          {filteredNews.length > 0 && (
+            <div>
+              <div style={{ fontSize: '0.74rem', fontWeight: 800, color: 'var(--color-ink-2)', textTransform: 'uppercase', marginBottom: '8px' }}>
+                MATCHING BREAKING NEWS &amp; WIRES
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {filteredNews.slice(0, 5).map(n => (
+                  <div
+                    key={n.id}
+                    style={{
+                      background: '#FFFFFF',
+                      border: '1px solid #E2E8F0',
+                      borderLeft: '4px solid #FF6800',
+                      borderRadius: '6px',
+                      padding: '10px 14px'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#FF6800' }}>{n.category}</span>
+                      <span style={{ fontSize: '0.7rem', color: '#94A3B8' }}>{new Date(n.triggeredAt || Date.now()).toLocaleTimeString()}</span>
+                    </div>
+                    <strong style={{ fontSize: '0.88rem', color: '#0F172A' }}>{n.headline || n.title}</strong>
+                    <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#64748B' }}>{n.description || n.body}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {matchingSecurities.length === 0 && filteredNews.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '20px', color: '#94A3B8', fontSize: '0.85rem' }}>
+              No direct matches found for &ldquo;{searchQuery}&rdquo;. Try searching by ticker (e.g. INFY, TCS), asset name, or broad sector.
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 3. Navigation Tabs */}
       <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', borderBottom: '2px solid var(--color-border)', paddingBottom: '2px' }}>
@@ -420,9 +595,16 @@ export default function MarketIntelligencePage({ state, teamCode, onOpenProfile,
 
           {/* News Stream */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {newsEvents
-              .filter(n => newsCategoryFilter === 'ALL' || n.category?.toUpperCase() === newsCategoryFilter)
-              .map(n => (
+            {filteredNews.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '36px 20px', background: 'var(--color-surface, #fff)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-ink-2)' }}>
+                <div style={{ fontSize: '2rem', marginBottom: '8px' }}>📰</div>
+                <strong>No breaking wires found matching your criteria.</strong>
+                <p style={{ margin: '4px 0 0', fontSize: '0.85rem' }}>
+                  {searchQuery ? `Try clearing your search query "${searchQuery}" or switching categories.` : 'Awaiting publication of new market intelligence bulletins.'}
+                </p>
+              </div>
+            ) : (
+              filteredNews.map(n => (
                 <div key={n.id} className="card-data" style={{ padding: '16px 20px', borderLeft: `5px solid ${n.tier === 'TIER_1' ? '#DC2626' : n.tier === 'TIER_2' ? '#D97706' : '#2563EB'}` }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -456,7 +638,8 @@ export default function MarketIntelligencePage({ state, teamCode, onOpenProfile,
                     </div>
                   )}
                 </div>
-              ))}
+              ))
+            )}
           </div>
         </div>
       )}

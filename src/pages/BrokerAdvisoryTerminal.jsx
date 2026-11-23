@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import CompanyProfileModal from '../components/CompanyProfileModal.jsx';
+import DeskAutoRefreshBar from '../components/DeskAutoRefreshBar.jsx';
 import { apiFetch } from '../lib/api.js';
 import { Card, Badge, Button, Input } from '../components/ui/index.js';
 import {
@@ -342,7 +343,8 @@ export default function BrokerAdvisoryTerminal({ state, onOpenProfile, initialVi
         </div>
 
         {/* Live FX & Status Pill */}
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <DeskAutoRefreshBar deskLabel="Advisor Desk" defaultInterval={3} />
           <div style={{
             background: 'var(--color-surface-sunken, #FAF8F3)',
             border: '1px solid var(--color-border, #E2DBD0)',

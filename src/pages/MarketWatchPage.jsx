@@ -179,14 +179,24 @@ export default function MarketWatchPage({ state, onOpenProfile, connected }) {
   const filteredSecurities = useMemo(() => {
     let list = securitiesList;
 
-    // Search filter
+    // Comprehensive Search filter across all identifiers, names, tickers, sectors & countries
     if (debouncedSearch) {
+      const q = debouncedSearch;
       list = list.filter(s =>
-        (s.ticker && s.ticker.toLowerCase().includes(debouncedSearch)) ||
-        (s.name && s.name.toLowerCase().includes(debouncedSearch)) ||
-        (s.exchange && s.exchange.toLowerCase().includes(debouncedSearch)) ||
-        (s.sector && s.sector.toLowerCase().includes(debouncedSearch)) ||
-        (s.industry && s.industry.toLowerCase().includes(debouncedSearch))
+        (s.ticker && s.ticker.toLowerCase().includes(q)) ||
+        (s.appSymbol && s.appSymbol.toLowerCase().includes(q)) ||
+        (s.symbol && s.symbol.toLowerCase().includes(q)) ||
+        (s.id && s.id.toLowerCase().includes(q)) ||
+        (s.name && s.name.toLowerCase().includes(q)) ||
+        (s.companyName && s.companyName.toLowerCase().includes(q)) ||
+        (s.exchange && s.exchange.toLowerCase().includes(q)) ||
+        (s.exchangeCode && s.exchangeCode.toLowerCase().includes(q)) ||
+        (s.sector && s.sector.toLowerCase().includes(q)) ||
+        (s.industry && s.industry.toLowerCase().includes(q)) ||
+        (s.country && s.country.toLowerCase().includes(q)) ||
+        (s.currency && s.currency.toLowerCase().includes(q)) ||
+        (s.assetClass && s.assetClass.toLowerCase().includes(q)) ||
+        (s.type && s.type.toLowerCase().includes(q))
       );
     }
 

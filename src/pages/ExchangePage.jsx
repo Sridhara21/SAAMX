@@ -44,6 +44,7 @@ import {
 import { CURRENCY_SYMBOLS } from '../lib/formatters.js';
 import PrintableVoucherModal from '../components/PrintableVoucherModal.jsx';
 import { DigitalTradeOrderSlip, DigitalBankSlip } from '../components/DigitalForms.jsx';
+import DeskAutoRefreshBar from '../components/DeskAutoRefreshBar.jsx';
 
 export default function ExchangePage({ state, onOpenProfile, adminPassword, connected, isCoordinatorOffline }) {
   const { density } = useDensity();
@@ -615,6 +616,7 @@ export default function ExchangePage({ state, onOpenProfile, adminPassword, conn
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <DeskAutoRefreshBar deskLabel="Exchange Desk" defaultInterval={3} />
             <Button
               variant="outline"
               size="sm"

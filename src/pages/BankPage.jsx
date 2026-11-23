@@ -30,6 +30,7 @@ import {
 } from '../lib/icons.jsx';
 import PrintableVoucherModal from '../components/PrintableVoucherModal.jsx';
 import { DigitalBankSlip } from '../components/DigitalForms.jsx';
+import DeskAutoRefreshBar from '../components/DeskAutoRefreshBar.jsx';
 
 export default function BankPage({ state, connected }) {
   const { density } = useDensity();
@@ -346,7 +347,8 @@ export default function BankPage({ state, connected }) {
         </div>
 
         {/* Status / Settlement Mode Pill */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <DeskAutoRefreshBar deskLabel="Bank Desk" defaultInterval={3} />
           <div style={{
             padding: density === 'compact' ? '6px 12px' : '8px 16px',
             borderRadius: '8px',

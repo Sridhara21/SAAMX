@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { apiFetch } from '../lib/api';
 import { CURRENCY_DIRECTORY, CURRENCY_SYMBOLS, DEFAULT_FX_RATES, ACTIVE_CURRENCIES, ACTIVE_FOREIGN_CURRENCIES, formatCurrency, roundCurrency } from '../lib/formatters';
 import { DigitalForexSlip } from '../components/DigitalForms.jsx';
+import DeskAutoRefreshBar from '../components/DeskAutoRefreshBar.jsx';
 
 export default function CurrencyExchangePage({ state, connected = true }) {
   const userRole = (sessionStorage.getItem('saamx_role') || sessionStorage.getItem('fms_role') || '').toLowerCase();
@@ -642,7 +643,8 @@ export default function CurrencyExchangePage({ state, connected = true }) {
             </p>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+            <DeskAutoRefreshBar deskLabel="FX Desk" defaultInterval={3} />
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: '600' }}>
               <span style={{ color: 'var(--text-muted)' }}>Operational Delay:</span>
               <select

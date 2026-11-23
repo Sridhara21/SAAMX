@@ -385,10 +385,41 @@ export function useFirebaseState() {
 
     connectWebSocket();
 
+    // Global manual & desk auto-refresh event listener
+    const handleManualRefresh = async () => {
+      try {
+        const baseUrl = getApiBaseUrl();
+        const apiUrl = baseUrl ? `${baseUrl}/api/state` : '/api/state';
+        const res = await fetch(apiUrl);
+        if (res.ok) {
+          const apiData = await res.json();
+          const serverState = apiData.state || apiData;
+          if (serverState) {
+            if (serverState.version && latestVersionRef.current && serverState.version < latestVersionRef.current) {
+              return;
+            }
+            if (serverState.version) {
+              latestVersionRef.current = Math.max(latestVersionRef.current, serverState.version);
+            }
+            setState(prevState => ({
+              ...(prevState || {}),
+              ...serverState
+            }));
+            setLastUpdated(Date.now());
+          }
+        }
+      } catch (err) {}
+    };
+
+    window.addEventListener('saamx_trigger_refresh', handleManualRefresh);
+    window.__saamx_refreshState = handleManualRefresh;
+
     // Cleanup on component unmount
     return () => {
       isUnmounted = true;
       if (reconnectTimeout) clearTimeout(reconnectTimeout);
+      window.removeEventListener('saamx_trigger_refresh', handleManualRefresh);
+      delete window.__saamx_refreshState;
       connectedUnsub();
       unsubs.forEach(({ ref: r, unsub: u }) => {
         if (typeof u === 'function') u();
