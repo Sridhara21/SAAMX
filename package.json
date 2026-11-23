@@ -5,11 +5,11 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "server": "node --max-old-space-size=2048 server.js",
+    "server": "node --max-old-space-size=3072 server.js",
     "build": "vite build",
     "preview": "vite preview",
     "dev": "vite",
-    "start": "node --max-old-space-size=2048 server.js",
+    "start": "node --max-old-space-size=3072 server.js",
     "test:full": "node test-full-audit.js",
     "test:master": "node test-e2e-master-runner.js",
     "test:milestones": "node test-milestone-m0-defects.js && node test-milestone-m1-order-lifecycle.js && node test-milestone-m2-fx-reserves.js && node test-milestone-m3-accounting.js && node test-milestone-m1-news-intelligence.js",
