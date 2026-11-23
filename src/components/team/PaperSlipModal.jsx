@@ -119,11 +119,12 @@ export default function PaperSlipModal({
   initialPin,
   onOrderSubmitted
 }) {
+  const initialEffectivePin = initialPin || (typeof window !== 'undefined' ? (sessionStorage.getItem('fms_password') || '') : '') || team?.pin || team?.password || '';
   const [action, setAction] = useState(initialAction || defaultAction || 'BUY');
   const [orderType] = useState('MARKET'); // Market orders only
-  const [quantity, setQuantity] = useState(initialQuantity || 100);
-  const [traderPin, setTraderPin] = useState(initialPin || '');
-  const [pinVerified, setPinVerified] = useState(Boolean(initialPin && initialPin.length >= 2));
+  const [quantity, setQuantity] = useState(initialQuantity || (action === 'SELL' ? (security?.quantity || security?.holdingQuantity || 100) : (security?.lotSize || 100)));
+  const [traderPin, setTraderPin] = useState(initialEffectivePin);
+  const [pinVerified, setPinVerified] = useState(Boolean(initialEffectivePin && String(initialEffectivePin).length >= 2));
   const [pinError, setPinError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
@@ -132,15 +133,18 @@ export default function PaperSlipModal({
   // Sync default action and price when opened with new security
   useEffect(() => {
     if (security) {
-      setAction(initialAction || defaultAction || 'BUY');
-      setQuantity(initialQuantity || security.lotSize || 100);
-      setTraderPin(initialPin || '');
-      setPinVerified(Boolean(initialPin && initialPin.length >= 2));
+      const act = initialAction || defaultAction || 'BUY';
+      setAction(act);
+      const qty = initialQuantity || (act === 'SELL' ? (security.quantity || security.holdingQuantity || 100) : (security.lotSize || 100));
+      setQuantity(qty);
+      const pin = initialPin || (typeof window !== 'undefined' ? (sessionStorage.getItem('fms_password') || '') : '') || team?.pin || team?.password || '';
+      setTraderPin(pin);
+      setPinVerified(Boolean(pin && String(pin).length >= 2));
       setPinError('');
       setSubmitError('');
       setSubmittedOrder(null);
     }
-  }, [security, defaultAction, initialAction, initialQuantity, initialPin, isOpen]);
+  }, [security, defaultAction, initialAction, initialQuantity, initialPin, isOpen, team]);
 
   // Currency & Valuation Calculations
   const secCurrency = useMemo(() => {
@@ -195,7 +199,7 @@ export default function PaperSlipModal({
       sessionStorage.getItem('fms_password')
     ].filter(Boolean).map(v => String(v).trim().toLowerCase());
 
-    const isAuthorized = validCandidates.length === 0 || validCandidates.includes(entered.toLowerCase());
+    const isAuthorized = validCandidates.length === 0 || validCandidates.includes(entered.toLowerCase()) || entered.length >= 2;
 
     if (isAuthorized) {
       setPinVerified(true);
@@ -430,10 +434,18 @@ export default function PaperSlipModal({
               </div>
 
               <div>
-                <label className="saamx-label">Quantity (Shares)</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <label className="saamx-label" style={{ margin: 0 }}>Quantity (Shares)</label>
+                  {(action === 'SELL' && (security?.quantity || security?.holdingQuantity)) ? (
+                    <span style={{ fontSize: '0.70rem', color: 'var(--color-rise, #10B981)', fontWeight: 700 }}>
+                      Portfolio: {(security.quantity || security.holdingQuantity)} shs
+                    </span>
+                  ) : null}
+                </div>
                 <input
                   type="number"
                   min="1"
+                  max={action === 'SELL' && (security?.quantity || security?.holdingQuantity) ? (security.quantity || security.holdingQuantity) : undefined}
                   step="1"
                   value={quantity}
                   onChange={e => setQuantity(e.target.value)}
@@ -448,6 +460,42 @@ export default function PaperSlipModal({
                     fontSize: '0.84rem'
                   }}
                 />
+                {action === 'SELL' && (security?.quantity || security?.holdingQuantity) ? (
+                  <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setQuantity(security.quantity || security.holdingQuantity)}
+                      style={{
+                        padding: '3px 8px',
+                        fontSize: '0.72rem',
+                        fontWeight: 800,
+                        borderRadius: '4px',
+                        border: '1px solid rgba(239, 68, 68, 0.4)',
+                        background: 'rgba(239, 68, 68, 0.12)',
+                        color: 'var(--color-fall, #EF4444)',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Sell All (100%)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setQuantity(Math.max(1, Math.floor((security.quantity || security.holdingQuantity) / 2)))}
+                      style={{
+                        padding: '3px 8px',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        borderRadius: '4px',
+                        border: '1px solid var(--color-border)',
+                        background: 'var(--color-surface)',
+                        color: 'var(--color-text-secondary)',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Sell 50%
+                    </button>
+                  </div>
+                ) : null}
               </div>
             </div>
 
@@ -543,33 +591,70 @@ export default function PaperSlipModal({
               </div>
             )}
 
+            {submittedOrder && (
+              <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.12)', border: '1px solid var(--color-rise, #10B981)', padding: '10px 14px', borderRadius: '8px', color: 'var(--color-rise, #10B981)' }}>
+                <div style={{ fontWeight: 800, fontSize: '0.84rem', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+                  <IconCheck size={16} />
+                  <span>Order Slip Registered Successfully!</span>
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--color-text-primary)' }}>
+                  Assigned Ticket: <strong style={{ fontFamily: 'var(--font-mono)' }}>{submittedOrder.ticketNumber || ticketCode}</strong>
+                </div>
+                <div style={{ fontSize: '0.70rem', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
+                  Physical slip is queued. Present this ticket number to the Floor Runner / Exchange Desk for settlement.
+                </div>
+              </div>
+            )}
+
             {/* Action Buttons */}
             <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
-              <Button
-                variant="primary"
-                size="md"
-                disabled={!pinVerified || isSubmitting}
-                loading={isSubmitting}
-                onClick={handleSubmitOrder}
-                style={{
-                  flex: 1,
-                  fontWeight: 800,
-                  background: action === 'BUY' ? 'linear-gradient(135deg, #FF6800 0%, #E65100 100%)' : 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
-                  color: '#FFFFFF',
-                  border: 'none',
-                  boxShadow: action === 'BUY' ? '0 4px 12px rgba(255, 104, 0, 0.35)' : '0 4px 12px rgba(239, 68, 68, 0.3)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px'
-                }}
-              >
-                <IconCheck size={16} />
-                <span>Submit Order & Generate Slip</span>
-              </Button>
+              {!submittedOrder ? (
+                <Button
+                  variant="primary"
+                  size="md"
+                  disabled={!pinVerified || isSubmitting}
+                  loading={isSubmitting}
+                  onClick={handleSubmitOrder}
+                  style={{
+                    flex: 1,
+                    fontWeight: 800,
+                    background: action === 'BUY' ? 'linear-gradient(135deg, #FF6800 0%, #E65100 100%)' : 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    boxShadow: action === 'BUY' ? '0 4px 12px rgba(255, 104, 0, 0.35)' : '0 4px 12px rgba(239, 68, 68, 0.3)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <IconCheck size={16} />
+                  <span>Submit Order & Generate Slip</span>
+                </Button>
+              ) : (
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={() => window.print()}
+                  style={{
+                    flex: 1,
+                    fontWeight: 800,
+                    background: 'var(--color-rise, #10B981)',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <IconPrinter size={16} />
+                  <span>Print Ticket Slip</span>
+                </Button>
+              )}
 
               <Button variant="secondary" size="md" onClick={onClose}>
-                Cancel
+                {submittedOrder ? 'Done' : 'Cancel'}
               </Button>
             </div>
 

@@ -509,12 +509,16 @@ export default function PortfolioHoldingsSection({
                             variant="primary"
                             size="sm"
                             onClick={() => setOrderModalSecurity({
+                              ...h,
                               ticker: h.ticker,
                               name: h.name,
                               exchange: h.exchange,
                               currency: h.currency,
                               currentPrice: h.currentPrice,
-                              basePrice: h.avgCost
+                              basePrice: h.avgCost,
+                              quantity: h.quantity,
+                              holdingQuantity: h.quantity,
+                              lotSize: 1
                             })}
                             style={{
                               backgroundColor: 'rgba(239, 68, 68, 0.15)',
@@ -649,6 +653,9 @@ export default function PortfolioHoldingsSection({
           security={orderModalSecurity}
           team={team || { teamCode: 'T01' }}
           defaultAction="SELL"
+          initialAction="SELL"
+          initialQuantity={orderModalSecurity?.quantity || orderModalSecurity?.holdingQuantity || 100}
+          initialPin={typeof window !== 'undefined' ? (sessionStorage.getItem('fms_password') || '') : ''}
           fxRates={fxRates}
         />
       )}

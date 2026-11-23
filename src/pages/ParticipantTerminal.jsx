@@ -506,6 +506,7 @@ export default function ParticipantTerminal({
           <TeamOverviewSection
             team={team}
             state={state}
+            securitiesList={securitiesList}
             sessionState={sessionState}
             clock={clock}
             fxRates={fxRates}

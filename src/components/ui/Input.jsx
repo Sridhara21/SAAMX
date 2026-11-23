@@ -100,6 +100,22 @@ export function SearchInput({
   style = {},
   ...rest
 }) {
+  const handleChange = (e) => {
+    if (!onChange) return;
+    const strVal = (e && e.target !== undefined) ? e.target.value : (typeof e === 'string' ? e : '');
+    onChange(strVal, e);
+  };
+
+  const handleClear = () => {
+    if (onClear) {
+      onClear();
+    } else if (onChange) {
+      onChange('', null);
+    }
+  };
+
+  const displayVal = (typeof value === 'string' || typeof value === 'number') ? value : '';
+
   return (
     <div
       style={{
@@ -116,17 +132,17 @@ export function SearchInput({
 
       <input
         type="search"
-        value={value}
-        onChange={onChange}
+        value={displayVal}
+        onChange={handleChange}
         placeholder={placeholder}
         className={`saamx-search-input ${className}`.trim()}
         {...rest}
       />
 
-      {value ? (
+      {displayVal ? (
         <button
           type="button"
-          onClick={onClear}
+          onClick={handleClear}
           aria-label="Clear search"
           className="saamx-search-clear-btn"
         >

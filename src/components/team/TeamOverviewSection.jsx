@@ -35,6 +35,7 @@ import {
 export default function TeamOverviewSection({
   team,
   state,
+  securitiesList,
   sessionState,
   clock,
   fxRates,
@@ -63,7 +64,7 @@ export default function TeamOverviewSection({
   const [orderSecurityTicker, setOrderSecurityTicker] = useState('RELIANCE');
   const [securitySearchQuery, setSecuritySearchQuery] = useState('');
   const [orderQuantity, setOrderQuantity] = useState(10);
-  const [traderPin, setTraderPin] = useState('');
+  const [traderPin, setTraderPin] = useState(() => (typeof window !== 'undefined' ? (sessionStorage.getItem('fms_password') || '') : '') || team?.pin || team?.password || '');
   const [showPin, setShowPin] = useState(false);
   const [isPlaceOrderActive, setIsPlaceOrderActive] = useState(true);
   const [showSlipModal, setShowSlipModal] = useState(false);
@@ -203,24 +204,44 @@ export default function TeamOverviewSection({
     ];
   }, [holdingsList]);
 
-  // Selected Security for Place Order
+  // Selected Security for Place Order (Full 3,409 securities universe)
   const activeSecurities = useMemo(() => {
-    const list = state?.securities ? (Array.isArray(state.securities) ? state.securities : Object.values(state.securities)) : [];
-    return list.filter(s => s.status === 'Active' || !s.status);
-  }, [state?.securities]);
+    const list = (securitiesList && securitiesList.length > 0)
+      ? securitiesList
+      : (state?.securities ? (Array.isArray(state.securities) ? state.securities : Object.values(state.securities)) : []);
+    return list.filter(s => {
+      if (s.visibleToParticipants === false || s.ipoStage === 'HIDDEN' || s.ipoStatus === 'HIDDEN') return false;
+      return true;
+    });
+  }, [securitiesList, state?.securities]);
 
   const filteredSecurities = useMemo(() => {
-    if (!securitySearchQuery.trim()) return activeSecurities.slice(0, 50);
+    if (!securitySearchQuery.trim()) return activeSecurities.slice(0, 100);
     const q = securitySearchQuery.trim().toLowerCase();
     return activeSecurities.filter(s =>
       (s.ticker && s.ticker.toLowerCase().includes(q)) ||
       (s.name && s.name.toLowerCase().includes(q)) ||
-      (s.sector && s.sector.toLowerCase().includes(q))
-    ).slice(0, 50);
+      (s.sector && s.sector.toLowerCase().includes(q)) ||
+      (s.industry && s.industry.toLowerCase().includes(q)) ||
+      (s.exchange && s.exchange.toLowerCase().includes(q)) ||
+      (s.appSymbol && s.appSymbol.toLowerCase().includes(q)) ||
+      (s.country && s.country.toLowerCase().includes(q)) ||
+      (s.id && s.id.toLowerCase().includes(q))
+    ).slice(0, 100);
   }, [activeSecurities, securitySearchQuery]);
 
+  // When filteredSecurities changes due to user searching, automatically sync orderSecurityTicker to top result if current is not in results
+  useEffect(() => {
+    if (securitySearchQuery.trim() && filteredSecurities.length > 0) {
+      const match = filteredSecurities.some(s => s.ticker === orderSecurityTicker);
+      if (!match) {
+        setOrderSecurityTicker(filteredSecurities[0].ticker);
+      }
+    }
+  }, [securitySearchQuery, filteredSecurities]);
+
   const selectedSecurityObj = useMemo(() => {
-    return activeSecurities.find(s => s.ticker === orderSecurityTicker) || {
+    return activeSecurities.find(s => s.ticker === orderSecurityTicker) || activeSecurities[0] || {
       ticker: 'RELIANCE',
       name: 'Reliance Industries Ltd.',
       exchange: 'NSE',
@@ -236,8 +257,8 @@ export default function TeamOverviewSection({
     setOrderSubmitError('');
     setOrderSubmitSuccess('');
 
-    if (!traderPin || traderPin.length < 4) {
-      setOrderSubmitError('Enter your 4-digit Trader PIN to authorize slip registration.');
+    if (!traderPin || traderPin.length < 2) {
+      setOrderSubmitError('Enter your Trader PIN to authorize slip registration.');
       return;
     }
 

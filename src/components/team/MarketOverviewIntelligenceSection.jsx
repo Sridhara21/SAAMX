@@ -156,17 +156,22 @@ export default function MarketOverviewIntelligenceSection({
     );
   }, [securitiesList]);
 
-  // 2. Filtered & Sorted Securities Explorer (2,062 securities)
+  // 2. Filtered & Sorted Securities Explorer (3,409 securities)
   const filteredSecurities = useMemo(() => {
     let list = securitiesList || [];
 
-    // Search by ticker or name
-    if (secSearch.trim()) {
-      const q = secSearch.toLowerCase();
+    // Search by ticker, name, sector, industry, exchange, appSymbol, country, or id
+    const cleanSearch = (typeof secSearch === 'string' ? secSearch : (secSearch?.target?.value || '')).trim().toLowerCase();
+    if (cleanSearch) {
       list = list.filter(s => 
-        (s.ticker || '').toLowerCase().includes(q) || 
-        (s.name || '').toLowerCase().includes(q) ||
-        (s.sector || '').toLowerCase().includes(q)
+        (s.ticker || '').toLowerCase().includes(cleanSearch) || 
+        (s.name || '').toLowerCase().includes(cleanSearch) ||
+        (s.sector || '').toLowerCase().includes(cleanSearch) ||
+        (s.industry || '').toLowerCase().includes(cleanSearch) ||
+        (s.exchange || '').toLowerCase().includes(cleanSearch) ||
+        (s.appSymbol || '').toLowerCase().includes(cleanSearch) ||
+        (s.country || '').toLowerCase().includes(cleanSearch) ||
+        (s.id || '').toLowerCase().includes(cleanSearch)
       );
     }
 
@@ -777,20 +782,100 @@ export default function MarketOverviewIntelligenceSection({
               <div>
                 <h2 style={{ margin: 0, fontSize: '1.1rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <IconSearch size={18} style={{ color: 'var(--color-primary)' }} />
-                  Securities Universe ({filteredSecurities.length} / {(securitiesList?.length || 2849).toLocaleString()})
+                  Securities Universe ({filteredSecurities.length} / {(securitiesList?.length || 3409).toLocaleString()})
                 </h2>
                 <p style={{ margin: '2px 0 0', fontSize: '0.74rem', color: 'var(--color-text-muted)' }}>
                   Search and evaluate equities, ETFs, commodities and simulated IPOs across covered exchanges.
                 </p>
               </div>
 
-              {/* Ticker Search Box */}
-              <div style={{ width: '220px' }}>
+              {/* Ticker Search Box with Instant Direct Order Placement */}
+              <div style={{ minWidth: '280px', position: 'relative' }}>
                 <SearchInput
-                  placeholder="Search ticker, name or sector..."
+                  placeholder="Search 3,400+ securities (ticker, name, exchange)..."
                   value={secSearch}
-                  onChange={val => { setSecSearch(val); setSecPage(1); }}
+                  onChange={val => {
+                    const str = typeof val === 'string' ? val : (val?.target?.value || '');
+                    setSecSearch(str);
+                    setSecPage(1);
+                  }}
+                  onClear={() => {
+                    setSecSearch('');
+                    setSecPage(1);
+                  }}
                 />
+
+                {/* Instant Quick Order Dropdown when searching */}
+                {secSearch && String(secSearch).trim().length >= 1 && filteredSecurities.length > 0 && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 4px)',
+                      left: 0,
+                      right: 0,
+                      maxHeight: '260px',
+                      overflowY: 'auto',
+                      backgroundColor: 'var(--color-surface, #1E293B)',
+                      border: '1px solid var(--color-border)',
+                      borderRadius: '8px',
+                      boxShadow: '0 12px 28px rgba(0,0,0,0.4)',
+                      zIndex: 100,
+                      padding: '4px'
+                    }}
+                  >
+                    <div style={{ padding: '4px 8px', fontSize: '0.68rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--color-border)' }}>
+                      Quick Order ({filteredSecurities.length} matches)
+                    </div>
+                    {filteredSecurities.slice(0, 6).map(s => {
+                      const cur = s.currency || (s.exchange === 'NASDAQ' || s.exchange === 'NYSE' ? 'USD' : s.exchange === 'LSE' ? 'GBP' : s.exchange === 'XETRA' ? 'EUR' : 'INR');
+                      const sym = cur === 'USD' ? '$' : cur === 'GBP' ? '£' : cur === 'EUR' ? '€' : '₹';
+                      return (
+                        <div
+                          key={s.ticker}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '6px 8px',
+                            borderRadius: '4px',
+                            borderBottom: '1px solid rgba(255,255,255,0.04)',
+                            gap: '8px'
+                          }}
+                        >
+                          <div style={{ overflow: 'hidden', flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <strong style={{ fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: 'var(--color-accent, #00E5FF)' }}>
+                                {s.ticker}
+                              </strong>
+                              <span style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)' }}>
+                                {s.exchange || 'NSE'}
+                              </span>
+                            </div>
+                            <div style={{ fontSize: '0.72rem', color: 'var(--color-text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {s.name}
+                            </div>
+                          </div>
+                          <div style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.80rem', fontWeight: 800 }}>
+                              {sym}{(s.currentPrice || s.basePrice || 0).toFixed(2)}
+                            </div>
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOrderModalSecurity(s);
+                              }}
+                              style={{ padding: '2px 8px', fontSize: '0.70rem', fontWeight: 800, marginTop: '2px' }}
+                            >
+                              ⚡ Order
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
 
