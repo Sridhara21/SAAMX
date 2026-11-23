@@ -1759,8 +1759,26 @@ const loadState = () => {
   state = createInitialState();
 };
 
-const saveState = (forceBackup = false) => {
+let saveStateDebounceTimer = null;
+let pendingForceBackup = false;
+
+const performSaveState = (forceBackup = false) => {
   try {
+    // 1. Proactive Memory Hygiene Pass: Cap historical arrays in memory
+    if (Array.isArray(state.transactions) && state.transactions.length > 2500) {
+      state.transactions.splice(0, state.transactions.length - 2500);
+    }
+    if (Array.isArray(state.auditLog) && state.auditLog.length > 2000) {
+      state.auditLog.splice(2000);
+    }
+    if (Array.isArray(state.securities)) {
+      for (const s of state.securities) {
+        if (Array.isArray(s.priceHistory) && s.priceHistory.length > 120) {
+          s.priceHistory.splice(0, s.priceHistory.length - 120);
+        }
+      }
+    }
+
     const dataStr = JSON.stringify(state);
     const tempFile = `${STATE_FILE}.tmp`;
     
@@ -1819,6 +1837,27 @@ const saveState = (forceBackup = false) => {
   } catch (err) {
     console.error('Error saving state atomically:', err);
   }
+};
+
+export const saveState = (forceBackup = false) => {
+  if (forceBackup) {
+    if (saveStateDebounceTimer) {
+      clearTimeout(saveStateDebounceTimer);
+      saveStateDebounceTimer = null;
+    }
+    performSaveState(true);
+    return;
+  }
+
+  pendingForceBackup = pendingForceBackup || forceBackup;
+  if (saveStateDebounceTimer) return;
+
+  saveStateDebounceTimer = setTimeout(() => {
+    saveStateDebounceTimer = null;
+    const shouldForce = pendingForceBackup;
+    pendingForceBackup = false;
+    performSaveState(shouldForce);
+  }, 250);
 };
 
 // ----------------------------------------------------
@@ -17758,10 +17797,50 @@ server.listen(PORT, '0.0.0.0', async () => {
   startDeltaPublisher({ getState: () => state, intervalMs: 1000 });
 });
 
+// Proactive High-Capacity Memory Watchdog & Self-Healing Guard (Checks every 60s)
+setInterval(() => {
+  try {
+    const mem = process.memoryUsage();
+    const heapUsedMB = Math.round(mem.heapUsed / 1024 / 1024);
+    const heapTotalMB = Math.round(mem.heapTotal / 1024 / 1024);
+    const rssMB = Math.round(mem.rss / 1024 / 1024);
+
+    // If heap used exceeds 1500 MB (out of 3072 MB), execute emergency in-memory reclamation
+    if (heapUsedMB > 1500) {
+      console.warn(`[Memory Watchdog WARNING] Elevated heap usage detected: ${heapUsedMB}MB. Reclaiming memory...`);
+      if (Array.isArray(state.securities)) {
+        for (const s of state.securities) {
+          if (Array.isArray(s.priceHistory) && s.priceHistory.length > 60) {
+            s.priceHistory.splice(0, s.priceHistory.length - 60);
+          }
+        }
+      }
+      if (Array.isArray(state.transactions) && state.transactions.length > 1000) {
+        state.transactions.splice(0, state.transactions.length - 1000);
+      }
+      if (Array.isArray(state.auditLog) && state.auditLog.length > 1000) {
+        state.auditLog.splice(1000);
+      }
+      if (typeof global.gc === 'function') {
+        global.gc();
+        console.log(`[Memory Watchdog] Garbage collection invoked. Post-GC heap: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`);
+      }
+    }
+  } catch (mErr) {
+    console.error('[Memory Watchdog Error]', mErr.message);
+  }
+}, 60000).unref();
+
 // Graceful Shutdown Handler
 async function gracefulShutdown(signal) {
   console.log(`[SHUTDOWN] Received ${signal}. Initiating graceful shutdown...`);
   isShuttingDown = true;
+
+  if (saveStateDebounceTimer) {
+    clearTimeout(saveStateDebounceTimer);
+    saveStateDebounceTimer = null;
+    performSaveState(true);
+  }
 
   server.close(async () => {
     console.log('[SHUTDOWN] HTTP server closed.');
