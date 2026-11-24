@@ -167,7 +167,7 @@ export default function PaperSlipModal({
   // Generated Ticket Number
   const ticketCode = useMemo(() => {
     if (submittedOrder?.ticketNumber) return submittedOrder.ticketNumber;
-    const tCode = team?.teamCode || 'T01';
+    const tCode = team?.teamCode || 'T02';
     const randPart = Math.floor(100000 + Math.random() * 900000);
     return `TKT-${tCode}-${randPart}`;
   }, [team, submittedOrder]);
@@ -229,8 +229,8 @@ export default function PaperSlipModal({
     try {
       const payload = {
         ticketNumber: ticketCode,
-        teamCode: team?.teamCode || 'T01',
-        teamId: team?.id || team?.teamCode || 'T01',
+        teamCode: team?.teamCode || 'T02',
+        teamId: team?.id || team?.teamCode || 'T02',
         ticker: security.ticker,
         securityName: security.name,
         exchange: security.exchange,

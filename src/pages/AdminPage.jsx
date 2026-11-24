@@ -181,7 +181,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
 
   // Judging Console State
   const [selectedJudge, setSelectedJudge] = useState('judge_1');
-  const [selectedHouseCode, setSelectedHouseCode] = useState('T01');
+  const [selectedHouseCode, setSelectedHouseCode] = useState('T02');
   const [judgeRatings, setJudgeRatings] = useState({
     responseToEvents: 4,
     decisionTiming: 4,

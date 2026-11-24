@@ -228,9 +228,9 @@ export default function DrawerManager({
   const defaultTeamCode = useMemo(() => {
     if (userRole === 'team') {
       const match = allTeams.find(t => (t.teamCode || t.id)?.toLowerCase() === sessionUsername?.toLowerCase());
-      return match ? (match.teamCode || match.id) : (sessionUsername || 'T01');
+      return match ? (match.teamCode || match.id) : (sessionUsername || 'T02');
     }
-    return allTeams[0]?.teamCode || allTeams[0]?.id || 'T01';
+    return allTeams[0]?.teamCode || allTeams[0]?.id || 'T02';
   }, [userRole, sessionUsername, allTeams]);
 
   const [selectedTeamCode, setSelectedTeamCode] = useState(defaultTeamCode);

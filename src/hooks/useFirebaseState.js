@@ -3,7 +3,6 @@ import { db, ref, onValue, off } from '../lib/firebase';
 import { getApiBaseUrl } from '../lib/api';
 
 export const DEFAULT_TEAMS_MAP = {
-  T01: { id: 'T01', teamCode: 'T01', teamName: 'Apex Capital Partners', name: 'Apex Capital Partners', school: 'Collegiate Division', cashBalance: 10000000, startingCapital: 10000000, portfolioValue: 10000000, cashWallets: { INR: 10000000 }, holdings: {}, isActive: true },
   T02: { id: 'T02', teamCode: 'T02', teamName: 'BlueChip Asset Management', name: 'BlueChip Asset Management', school: 'Collegiate Division', cashBalance: 10000000, startingCapital: 10000000, portfolioValue: 10000000, cashWallets: { INR: 10000000 }, holdings: {}, isActive: true },
   T03: { id: 'T03', teamCode: 'T03', teamName: 'Crescent Value Fund', name: 'Crescent Value Fund', school: 'Collegiate Division', cashBalance: 10000000, startingCapital: 10000000, portfolioValue: 10000000, cashWallets: { INR: 10000000 }, holdings: {}, isActive: true },
   T04: { id: 'T04', teamCode: 'T04', teamName: 'Dynamic Quantitative Ventures', name: 'Dynamic Quantitative Ventures', school: 'Collegiate Division', cashBalance: 10000000, startingCapital: 10000000, portfolioValue: 10000000, cashWallets: { INR: 10000000 }, holdings: {}, isActive: true },

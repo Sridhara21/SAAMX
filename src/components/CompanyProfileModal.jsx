@@ -29,7 +29,7 @@ export default function CompanyProfileModal({ securityId, securities, newsEvents
   const [advisorResponses, setAdvisorResponses] = useState([]);
 
   // Fetch advisor responses for this security & team
-  const teamCode = sessionStorage.getItem('fms_username') || sessionStorage.getItem('saamx_team_code') || 'T01';
+  const teamCode = sessionStorage.getItem('fms_username') || sessionStorage.getItem('saamx_team_code') || 'T02';
 
   const loadAdvisorResponses = async () => {
     try {

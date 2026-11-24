@@ -32,7 +32,7 @@ export default function FxMarketSection({ state, teamCode, onOpenProfile }) {
   // Authoritative team record
   const team = useMemo(() => {
     const list = state?.teams ? (Array.isArray(state.teams) ? state.teams : Object.values(state.teams)) : [];
-    return list.find(t => (t.teamCode || '').toUpperCase() === (teamCode || 'T01').toUpperCase() || (t.id || '').toUpperCase() === (teamCode || 'T01').toUpperCase()) || list[0];
+    return list.find(t => (t.teamCode || '').toUpperCase() === (teamCode || 'T02').toUpperCase() || (t.id || '').toUpperCase() === (teamCode || 'T02').toUpperCase()) || list[0];
   }, [state?.teams, teamCode]);
 
   // Market status & rates

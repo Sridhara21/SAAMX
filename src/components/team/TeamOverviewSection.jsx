@@ -94,7 +94,7 @@ export default function TeamOverviewSection({
         body: JSON.stringify({
           ticker: ipoSelected,
           quantity: ipoLots,
-          teamCode: team?.teamCode || team?.id || 'T01'
+          teamCode: team?.teamCode || team?.id || 'T02'
         })
       });
       if (res.ok) {

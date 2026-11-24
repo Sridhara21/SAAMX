@@ -651,7 +651,7 @@ export default function PortfolioHoldingsSection({
           isOpen={!!orderModalSecurity}
           onClose={() => setOrderModalSecurity(null)}
           security={orderModalSecurity}
-          team={team || { teamCode: 'T01' }}
+          team={team || { teamCode: 'T02' }}
           defaultAction="SELL"
           initialAction="SELL"
           initialQuantity={orderModalSecurity?.quantity || orderModalSecurity?.holdingQuantity || 100}

@@ -2033,9 +2033,9 @@ export async function hydrateStateFromPg(poolInstance, existingState = {}) {
       }));
     }
 
-    // 2. Teams
-    const teamsRes = await p.query('SELECT * FROM teams WHERE is_active = TRUE ORDER BY id ASC');
-    let teams = existingState.teams || [];
+    // 2. Teams (Strict Invariant: Team T01 decommissioned)
+    const teamsRes = await p.query("SELECT * FROM teams WHERE is_active = TRUE AND id != 'T01' AND team_code != 'T01' ORDER BY id ASC");
+    let teams = (existingState.teams || []).filter(t => t.id !== 'T01' && t.teamCode !== 'T01');
     if (teamsRes.rows && teamsRes.rows.length > 0) {
       teams = teamsRes.rows.map(r => {
         const existingTeam = (existingState.teams || []).find(et => et.id === r.id || et.teamCode === r.team_code);

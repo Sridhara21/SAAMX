@@ -27,7 +27,7 @@ export function DigitalTradeOrderSlip({ order, onClose, showHeaderClose = true }
   if (!order) return null;
 
   const tosNo = order.ticketNumber || order.tosNumber || order.id || 'TOS-PENDING';
-  const teamCode = order.teamCode || order.teamId || 'T01';
+  const teamCode = order.teamCode || order.teamId || 'T02';
   const teamName = order.teamName || order.investmentHouse || `Investment House ${teamCode}`;
   const representative = order.enteredBy || order.representative || `Representative (${teamCode})`;
   const secCode = order.ticker || order.securityCode || 'SEC';
@@ -310,7 +310,7 @@ export function DigitalBankSlip({ voucher, onClose, showHeaderClose = true }) {
 
   const pisPosNo = voucher.voucherReference || voucher.id || voucher.settlementId || 'PIS-PENDING';
   const linkedTosNo = voucher.ticketNumber || voucher.orderId || 'TOS-LINKED';
-  const teamCode = voucher.teamCode || 'T01';
+  const teamCode = voucher.teamCode || 'T02';
   const teamName = voucher.teamName || `Investment House ${teamCode}`;
   const currency = voucher.currency || 'INR';
   const isBuy = (voucher.action === 'BUY' || voucher.type === 'PAYMENT_COLLECTION' || voucher.direction === 'PAY_IN');
@@ -590,7 +590,7 @@ export function DigitalForexSlip({ fxItem, onClose, showHeaderClose = true }) {
   if (!fxItem) return null;
 
   const fcfNo = fxItem.fcfNumber || fxItem.id || 'FCF-PENDING';
-  const teamCode = fxItem.teamCode || 'T01';
+  const teamCode = fxItem.teamCode || 'T02';
   const teamName = fxItem.teamName || `Investment House ${teamCode}`;
   const fromCurrency = (fxItem.fromCurrency || fxItem.currencyFrom || 'INR').toUpperCase();
   const toCurrency = (fxItem.toCurrency || fxItem.currencyTo || 'USD').toUpperCase();
@@ -804,7 +804,7 @@ export function DigitalIpoSlip({ ipoBid, onClose, showHeaderClose = true }) {
   if (!ipoBid) return null;
 
   const ipoNo = ipoBid.ipoNumber || ipoBid.id || `IPO-${ipoBid.ticker}-${ipoBid.teamCode}`;
-  const teamCode = ipoBid.teamCode || 'T01';
+  const teamCode = ipoBid.teamCode || 'T02';
   const teamName = ipoBid.teamName || `Investment House ${teamCode}`;
   const companyName = ipoBid.companyName || ipoBid.name || ipoBid.ticker;
   const issuePrice = ipoBid.issuePrice || ipoBid.offerPrice || ipoBid.price || 100;
