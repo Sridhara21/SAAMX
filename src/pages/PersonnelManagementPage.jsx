@@ -133,14 +133,54 @@ export default function PersonnelManagementPage({ state, adminPassword }) {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  // View Mode: Floor Personnel vs Championship Teams
+  const [activeTab, setActiveTab] = useState('personnel'); // 'personnel' | 'teams'
+
+  // Championship Teams Live Monitoring State
+  const [teamSessionsList, setTeamSessionsList] = useState([]);
+  const [teamSearchQuery, setTeamSearchQuery] = useState('');
+  const [teamStatusFilter, setTeamStatusFilter] = useState('ALL'); // 'ALL' | 'ONLINE' | 'OFFLINE'
+  const [revokingTeam, setRevokingTeam] = useState(null);
+  const [resettingTeam, setResettingTeam] = useState(null);
+  const [newTeamPassword, setNewTeamPassword] = useState('');
+  const [newTeamPin, setNewTeamPin] = useState('');
+  const [showTeamCredentials, setShowTeamCredentials] = useState({});
+  const [copiedTeamCode, setCopiedTeamCode] = useState(null);
+
+  // Parse User Agent into readable client label
+  const parseUserAgent = (ua) => {
+    if (!ua || ua === 'Unknown Browser') return 'Web Terminal';
+    if (/windows/i.test(ua)) return /edg/i.test(ua) ? 'Edge / Windows' : /chrome/i.test(ua) ? 'Chrome / Windows' : /firefox/i.test(ua) ? 'Firefox / Windows' : 'Windows PC';
+    if (/macintosh|mac os x/i.test(ua)) return /chrome/i.test(ua) ? 'Chrome / macOS' : /safari/i.test(ua) ? 'Safari / macOS' : 'macOS';
+    if (/android/i.test(ua)) return 'Android Device';
+    if (/iphone|ipad/i.test(ua)) return 'iOS Device';
+    if (/linux/i.test(ua)) return 'Linux';
+    return String(ua).slice(0, 30);
+  };
+
+  const loadTeamSessions = async () => {
+    try {
+      const res = await apiFetch('/api/admin/team-sessions');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.teams) {
+          setTeamSessionsList(data.teams);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load team sessions:', err);
+    }
+  };
+
   // Fetch matrix and personnel directory from authoritative backend
   const loadDirectoryData = async () => {
     setLoading(true);
     setActionError('');
     try {
-      const [permRes, staffRes] = await Promise.all([
+      const [permRes, staffRes, teamRes] = await Promise.all([
         apiFetch('/api/permissions/matrix'),
-        apiFetch('/api/personnel')
+        apiFetch('/api/personnel'),
+        apiFetch('/api/admin/team-sessions').catch(() => ({ ok: false }))
       ]);
 
       if (permRes.ok) {
@@ -156,6 +196,29 @@ export default function PersonnelManagementPage({ state, adminPassword }) {
       } else if (state?.personnel) {
         setPersonnelList(state.personnel);
       }
+
+      if (teamRes && teamRes.ok) {
+        const tData = await teamRes.json();
+        if (tData.teams) {
+          setTeamSessionsList(tData.teams);
+        }
+      } else if (state?.teams) {
+        const fallbackTeams = state.teams.filter(t => t.teamCode !== 'T01').map(t => ({
+          teamCode: t.teamCode,
+          teamName: t.teamName || t.name,
+          teamType: t.teamType || 'Retail',
+          isOnline: false,
+          activeSessionCount: 0,
+          lastLogin: t.lastLogin || null,
+          lastLoginIp: t.lastLoginIp || null,
+          lastLoginUserAgent: t.lastLoginUserAgent || null,
+          credentials: {
+            password: t.credentials?.password || t.rawPassword || 'N/A',
+            pin: t.credentials?.pin || t.tempPin || 'N/A'
+          }
+        }));
+        setTeamSessionsList(fallbackTeams);
+      }
     } catch (err) {
       console.error('Failed to load personnel data:', err);
       if (state?.personnel) {
@@ -168,7 +231,9 @@ export default function PersonnelManagementPage({ state, adminPassword }) {
 
   useEffect(() => {
     loadDirectoryData();
-  }, [state?.personnel]);
+    const interval = setInterval(loadTeamSessions, 5000);
+    return () => clearInterval(interval);
+  }, [state?.personnel, state?.teams]);
 
   // Sync role defaults when role changes in provision modal
   const handleRoleChange = (selectedRole) => {
@@ -234,6 +299,99 @@ export default function PersonnelManagementPage({ state, adminPassword }) {
       return matchSearch && matchRole && matchStatus;
     });
   }, [personnelList, searchQuery, roleFilter, statusFilter]);
+
+  // Team KPI Calculations
+  const teamStats = useMemo(() => {
+    const total = teamSessionsList.length;
+    const online = teamSessionsList.filter(t => t.isOnline).length;
+    const offline = total - online;
+    const totalActiveSessions = teamSessionsList.reduce((acc, t) => acc + (t.activeSessionCount || 0), 0);
+    return { total, online, offline, totalActiveSessions };
+  }, [teamSessionsList]);
+
+  // Filtered Teams List
+  const filteredTeams = useMemo(() => {
+    return teamSessionsList.filter(t => {
+      const q = teamSearchQuery.toLowerCase().trim();
+      const matchesSearch = !q ||
+        t.teamCode?.toLowerCase().includes(q) ||
+        t.teamName?.toLowerCase().includes(q) ||
+        t.lastLoginIp?.toLowerCase().includes(q);
+      const matchesStatus =
+        teamStatusFilter === 'ALL' ||
+        (teamStatusFilter === 'ONLINE' && t.isOnline) ||
+        (teamStatusFilter === 'OFFLINE' && !t.isOnline);
+      return matchesSearch && matchesStatus;
+    });
+  }, [teamSessionsList, teamSearchQuery, teamStatusFilter]);
+
+  // Handle 1-Click Revoke Team Session
+  const handleRevokeTeamSession = async (teamCode) => {
+    setActionError('');
+    setActionSuccess('');
+    setIsSubmitting(true);
+    try {
+      const res = await apiFetch('/api/admin/sessions/revoke', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teamCode })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to revoke session');
+      setActionSuccess(`All active sessions for ${teamCode} have been terminated immediately.`);
+      setRevokingTeam(null);
+      await loadTeamSessions();
+    } catch (err) {
+      setActionError(err.message || 'Error revoking session');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Handle Team Password / PIN Reset Submit
+  const handleResetTeamPasswordSubmit = async (e) => {
+    e.preventDefault();
+    if (!resettingTeam) return;
+    setActionError('');
+    setActionSuccess('');
+    if (newTeamPassword.length < 6) {
+      setActionError('New password must be at least 6 characters long.');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const res = await apiFetch('/api/admin/teams/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          teamCode: resettingTeam.teamCode,
+          newPassword: newTeamPassword,
+          newPin: newTeamPin || undefined
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to reset credentials');
+      setActionSuccess(`Credentials updated for ${resettingTeam.teamCode}. Any active session was booted.`);
+      setResettingTeam(null);
+      setNewTeamPassword('');
+      setNewTeamPin('');
+      await loadTeamSessions();
+    } catch (err) {
+      setActionError(err.message || 'Error updating team credentials');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Copy Team Credentials Helper
+  const handleCopyCredentials = (team) => {
+    const pw = team.credentials?.password || 'N/A';
+    const pin = team.credentials?.pin || 'N/A';
+    const text = `Team: ${team.teamCode} (${team.teamName})\nPassword: ${pw}\nPIN: ${pin}`;
+    navigator.clipboard?.writeText(text);
+    setCopiedTeamCode(team.teamCode);
+    setTimeout(() => setCopiedTeamCode(null), 2500);
+  };
 
   // Provision Staff Account Submission
   const handleProvisionSubmit = async (e) => {
@@ -517,6 +675,465 @@ export default function PersonnelManagementPage({ state, adminPassword }) {
         </Alert>
       )}
 
+      {/* Primary Tab Switcher: Floor Personnel vs Championship Teams */}
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '12px',
+        marginBottom: '24px',
+        borderBottom: '1px solid var(--color-border-subtle)',
+        paddingBottom: '14px'
+      }}>
+        <button
+          type="button"
+          onClick={() => setActiveTab('personnel')}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 20px',
+            borderRadius: '8px',
+            border: activeTab === 'personnel' ? '1px solid var(--color-brass, #d4af37)' : '1px solid var(--color-border-subtle)',
+            backgroundColor: activeTab === 'personnel' ? 'rgba(212, 175, 55, 0.12)' : 'var(--color-surface-sunken)',
+            color: activeTab === 'personnel' ? 'var(--color-brass, #d4af37)' : 'var(--color-ink-secondary)',
+            fontWeight: 700,
+            fontSize: '0.90rem',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <IconUsers size={16} />
+          <span>Floor Personnel & Officials ({personnelList.length})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('teams')}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 20px',
+            borderRadius: '8px',
+            border: activeTab === 'teams' ? '1px solid var(--color-brass, #d4af37)' : '1px solid var(--color-border-subtle)',
+            backgroundColor: activeTab === 'teams' ? 'rgba(212, 175, 55, 0.12)' : 'var(--color-surface-sunken)',
+            color: activeTab === 'teams' ? 'var(--color-brass, #d4af37)' : 'var(--color-ink-secondary)',
+            fontWeight: 700,
+            fontSize: '0.90rem',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <IconTrophy size={16} />
+          <span>Championship Teams & Live Terminals ({teamSessionsList.length || 9})</span>
+          {teamStats.online > 0 && (
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '5px',
+              padding: '2px 8px',
+              borderRadius: '12px',
+              backgroundColor: 'rgba(34, 197, 94, 0.2)',
+              color: '#22c55e',
+              fontSize: '0.74rem',
+              fontWeight: 800
+            }}>
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#22c55e' }} />
+              {teamStats.online} ONLINE
+            </span>
+          )}
+        </button>
+      </div>
+
+      {activeTab === 'teams' ? (
+        <>
+          {/* Teams KPI Stats Row */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+            gap: '16px',
+            marginBottom: '24px'
+          }}>
+            <Card style={{ padding: '16px 20px', borderTop: '3px solid var(--color-info)' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-ink-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Championship Teams
+              </div>
+              <div className="font-mono tabular-nums" style={{ fontSize: '2rem', fontWeight: 800, marginTop: '4px', color: 'var(--color-ink-primary)' }}>
+                {teamStats.total}
+              </div>
+              <div style={{ fontSize: '0.76rem', color: 'var(--color-ink-muted)', marginTop: '4px' }}>
+                Teams T02–T10 (T01 Decommissioned)
+              </div>
+            </Card>
+
+            <Card style={{ padding: '16px 20px', borderTop: '3px solid var(--color-gain)' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-ink-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Online Terminals
+              </div>
+              <div className="font-mono tabular-nums" style={{ fontSize: '2rem', fontWeight: 800, marginTop: '4px', color: 'var(--color-gain)' }}>
+                {teamStats.online}
+              </div>
+              <div style={{ fontSize: '0.76rem', color: 'var(--color-ink-muted)', marginTop: '4px' }}>
+                Currently authenticated on floor
+              </div>
+            </Card>
+
+            <Card style={{ padding: '16px 20px', borderTop: '3px solid var(--color-loss)' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-ink-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Offline Terminals
+              </div>
+              <div className="font-mono tabular-nums" style={{ fontSize: '2rem', fontWeight: 800, marginTop: '4px', color: 'var(--color-loss)' }}>
+                {teamStats.offline}
+              </div>
+              <div style={{ fontSize: '0.76rem', color: 'var(--color-ink-muted)', marginTop: '4px' }}>
+                Awaiting team console check-in
+              </div>
+            </Card>
+
+            <Card style={{ padding: '16px 20px', borderTop: '3px solid var(--color-brass)' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-ink-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Active Live Sessions
+              </div>
+              <div className="font-mono tabular-nums" style={{ fontSize: '2rem', fontWeight: 800, marginTop: '4px', color: 'var(--color-brass)' }}>
+                {teamStats.totalActiveSessions}
+              </div>
+              <div style={{ fontSize: '0.76rem', color: 'var(--color-ink-muted)', marginTop: '4px' }}>
+                Concurrent authenticated tokens
+              </div>
+            </Card>
+          </div>
+
+          {/* Team Directory Search & Filters */}
+          <Card style={{ padding: '16px 20px', marginBottom: '24px' }}>
+            <div style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '14px',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              {/* Search Field */}
+              <div style={{ flex: '1 1 320px', position: 'relative' }}>
+                <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-ink-muted)', pointerEvents: 'none' }}>
+                  <IconSearch size={16} />
+                </span>
+                <input
+                  type="text"
+                  placeholder="Search team code (e.g. T02), name, or IP address..."
+                  value={teamSearchQuery}
+                  onChange={(e) => setTeamSearchQuery(e.target.value)}
+                  className="saamx-input"
+                  style={{
+                    width: '100%',
+                    paddingLeft: '38px',
+                    backgroundColor: 'var(--color-surface-sunken)',
+                    border: '1px solid var(--color-border-subtle)',
+                    borderRadius: '6px',
+                    height: '38px',
+                    fontSize: '0.88rem',
+                    color: 'var(--color-ink-primary)'
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px' }}>
+                {/* Status Filter */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <label style={{ fontSize: '0.80rem', fontWeight: 700, color: 'var(--color-ink-secondary)' }}>Status:</label>
+                  <select
+                    value={teamStatusFilter}
+                    onChange={(e) => setTeamStatusFilter(e.target.value)}
+                    className="saamx-select"
+                    style={{
+                      backgroundColor: 'var(--color-surface-sunken)',
+                      border: '1px solid var(--color-border-subtle)',
+                      borderRadius: '6px',
+                      height: '38px',
+                      padding: '0 12px',
+                      fontSize: '0.85rem',
+                      color: 'var(--color-ink-primary)',
+                      minWidth: '150px'
+                    }}
+                  >
+                    <option value="ALL">All Status ({teamSessionsList.length})</option>
+                    <option value="ONLINE">Online Only ({teamStats.online})</option>
+                    <option value="OFFLINE">Offline Only ({teamStats.offline})</option>
+                  </select>
+                </div>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  icon={<IconRefreshCw size={12} />}
+                  onClick={() => loadTeamSessions()}
+                >
+                  Refresh
+                </Button>
+              </div>
+            </div>
+          </Card>
+
+          {/* Championship Teams Table */}
+          <Card style={{ padding: 0, overflow: 'hidden' }}>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
+                <thead>
+                  <tr style={{
+                    backgroundColor: 'var(--color-surface-sunken)',
+                    borderBottom: '1px solid var(--color-border-subtle)',
+                    color: 'var(--color-ink-secondary)',
+                    textTransform: 'uppercase',
+                    fontSize: '0.74rem',
+                    letterSpacing: '0.05em'
+                  }}>
+                    <th style={{ padding: '12px 18px', fontWeight: 700 }}>Team Account</th>
+                    <th style={{ padding: '12px 18px', fontWeight: 700 }}>Terminal Status</th>
+                    <th style={{ padding: '12px 18px', fontWeight: 700 }}>Logged-in User / Rep</th>
+                    <th style={{ padding: '12px 18px', fontWeight: 700 }}>IP Address & Location</th>
+                    <th style={{ padding: '12px 18px', fontWeight: 700 }}>Client Device</th>
+                    <th style={{ padding: '12px 18px', fontWeight: 700 }}>Last Login</th>
+                    <th style={{ padding: '12px 18px', fontWeight: 700 }}>Credentials</th>
+                    <th style={{ padding: '12px 18px', textAlign: 'right', fontWeight: 700 }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredTeams.length === 0 ? (
+                    <tr>
+                      <td colSpan="8" style={{ padding: '40px', textAlign: 'center', color: 'var(--color-ink-muted)' }}>
+                        No team accounts match the current filter criteria.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredTeams.map(team => {
+                      const isOnline = team.isOnline;
+                      const isCredVisible = !!showTeamCredentials[team.teamCode];
+                      const activeSessionCount = team.activeSessionCount || 0;
+
+                      return (
+                        <tr
+                          key={team.teamCode}
+                          style={{
+                            borderBottom: '1px solid var(--color-border-subtle)',
+                            transition: 'background-color 0.15s ease'
+                          }}
+                        >
+                          {/* Team Account */}
+                          <td style={{ padding: '14px 18px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <div style={{
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '8px',
+                                backgroundColor: isOnline ? 'rgba(34, 197, 94, 0.12)' : 'var(--color-surface-sunken)',
+                                border: isOnline ? '1px solid rgba(34, 197, 94, 0.4)' : '1px solid var(--color-border-subtle)',
+                                color: isOnline ? '#22c55e' : 'var(--color-ink-secondary)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyCenter: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0
+                              }}>
+                                <IconTrophy size={18} />
+                              </div>
+                              <div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <span style={{ fontWeight: 800, color: 'var(--color-ink-primary)' }}>
+                                    {team.teamCode}
+                                  </span>
+                                  <span style={{ fontSize: '0.80rem', color: 'var(--color-ink-muted)' }}>•</span>
+                                  <span style={{ fontSize: '0.85rem', color: 'var(--color-ink-secondary)' }}>
+                                    {team.teamName}
+                                  </span>
+                                </div>
+                                <div className="font-mono tabular-nums" style={{ fontSize: '0.74rem', color: 'var(--color-ink-muted)' }}>
+                                  {team.teamType || 'Retail Trading Desk'}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Terminal Status */}
+                          <td style={{ padding: '14px 18px' }}>
+                            {isOnline ? (
+                              <span style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '4px 10px',
+                                borderRadius: '12px',
+                                backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                                color: '#22c55e',
+                                fontWeight: 700,
+                                fontSize: '0.78rem'
+                              }}>
+                                <span style={{
+                                  width: '8px',
+                                  height: '8px',
+                                  borderRadius: '50%',
+                                  backgroundColor: '#22c55e',
+                                  boxShadow: '0 0 6px #22c55e'
+                                }} />
+                                ONLINE ({activeSessionCount} {activeSessionCount === 1 ? 'session' : 'sessions'})
+                              </span>
+                            ) : (
+                              <span style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '4px 10px',
+                                borderRadius: '12px',
+                                backgroundColor: 'var(--color-surface-sunken)',
+                                border: '1px solid var(--color-border-subtle)',
+                                color: 'var(--color-ink-muted)',
+                                fontWeight: 600,
+                                fontSize: '0.78rem'
+                              }}>
+                                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--color-ink-muted)' }} />
+                                OFFLINE
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Logged-in User / Representative */}
+                          <td style={{ padding: '14px 18px' }}>
+                            <code className="font-mono tabular-nums" style={{
+                              backgroundColor: 'var(--color-surface-sunken)',
+                              padding: '3px 8px',
+                              borderRadius: '4px',
+                              border: '1px solid var(--color-border-subtle)',
+                              color: 'var(--color-ink-primary)',
+                              fontSize: '0.82rem',
+                              fontWeight: 600
+                            }}>
+                              {team.sessions?.[0]?.username || (isOnline ? team.teamCode : '—')}
+                            </code>
+                          </td>
+
+                          {/* IP Address & Location */}
+                          <td style={{ padding: '14px 18px' }}>
+                            {team.lastLoginIp ? (
+                              <span className="font-mono tabular-nums" style={{
+                                fontSize: '0.82rem',
+                                color: 'var(--color-ink-primary)',
+                                fontWeight: 600
+                              }}>
+                                {team.lastLoginIp}
+                              </span>
+                            ) : (
+                              <span style={{ color: 'var(--color-ink-muted)', fontSize: '0.80rem' }}>Never logged in</span>
+                            )}
+                          </td>
+
+                          {/* Client Device */}
+                          <td style={{ padding: '14px 18px' }}>
+                            <span style={{ fontSize: '0.82rem', color: 'var(--color-ink-secondary)' }}>
+                              {parseUserAgent(team.lastLoginUserAgent)}
+                            </span>
+                          </td>
+
+                          {/* Last Login Timestamp */}
+                          <td style={{ padding: '14px 18px', color: 'var(--color-ink-muted)', fontSize: '0.80rem' }}>
+                            <span className="font-mono tabular-nums">
+                              {formatTime(team.lastLogin)}
+                            </span>
+                          </td>
+
+                          {/* Credentials (Masked with Reveal & Copy) */}
+                          <td style={{ padding: '14px 18px' }}>
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                              <div style={{ fontSize: '0.78rem', fontFamily: 'monospace' }}>
+                                <div>
+                                  <span style={{ color: 'var(--color-ink-muted)' }}>PW: </span>
+                                  <span style={{ fontWeight: 600, color: 'var(--color-ink-primary)' }}>
+                                    {isCredVisible ? team.credentials?.password : '••••••••'}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span style={{ color: 'var(--color-ink-muted)' }}>PIN: </span>
+                                  <span style={{ fontWeight: 600, color: 'var(--color-brass)' }}>
+                                    {isCredVisible ? team.credentials?.pin : '••••'}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div style={{ display: 'flex', gap: '4px' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => setShowTeamCredentials(prev => ({ ...prev, [team.teamCode]: !prev[team.teamCode] }))}
+                                  title={isCredVisible ? 'Hide credentials' : 'Show credentials'}
+                                  style={{
+                                    background: 'none',
+                                    border: '1px solid var(--color-border-subtle)',
+                                    borderRadius: '4px',
+                                    padding: '2px 6px',
+                                    cursor: 'pointer',
+                                    color: 'var(--color-ink-secondary)',
+                                    fontSize: '0.70rem'
+                                  }}
+                                >
+                                  {isCredVisible ? 'Hide' : 'Show'}
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyCredentials(team)}
+                                  title="Copy credentials"
+                                  style={{
+                                    background: 'none',
+                                    border: '1px solid var(--color-border-subtle)',
+                                    borderRadius: '4px',
+                                    padding: '2px 6px',
+                                    cursor: 'pointer',
+                                    color: copiedTeamCode === team.teamCode ? 'var(--color-gain)' : 'var(--color-ink-secondary)',
+                                    fontSize: '0.70rem'
+                                  }}
+                                >
+                                  {copiedTeamCode === team.teamCode ? 'Copied!' : 'Copy'}
+                                </button>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Actions */}
+                          <td style={{ padding: '14px 18px', textAlign: 'right' }}>
+                            <div style={{ display: 'inline-flex', gap: '6px' }}>
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                icon={<IconLock size={12} />}
+                                onClick={() => {
+                                  setResettingTeam(team);
+                                  setNewTeamPassword(team.credentials?.password || '');
+                                  setNewTeamPin(team.credentials?.pin || '');
+                                }}
+                                title="Reset team password / PIN"
+                              >
+                                Reset
+                              </Button>
+
+                              <Button
+                                variant="danger"
+                                size="sm"
+                                icon={<IconSlash size={12} />}
+                                disabled={!isOnline}
+                                onClick={() => setRevokingTeam(team)}
+                                title={isOnline ? 'Immediately boot and terminate active session' : 'Team is currently offline'}
+                              >
+                                Revoke
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </>
+      ) : (
+        <>
       {/* KPI Stats Row */}
       <div style={{
         display: 'grid',
@@ -882,6 +1499,8 @@ export default function PersonnelManagementPage({ state, adminPassword }) {
           </table>
         </div>
       </Card>
+      </>
+      )}
 
       {/* ======================================================== */}
       {/* 1. PROVISION STAFF MODAL                                 */}
@@ -1639,6 +2258,146 @@ export default function PersonnelManagementPage({ state, adminPassword }) {
                 loading={isSubmitting}
               >
                 Update Password
+              </Button>
+            </div>
+          </form>
+        )}
+      </Modal>
+
+      {/* ======================================================== */}
+      {/* 5. REVOKE TEAM SESSION MODAL                             */}
+      {/* ======================================================== */}
+      <Modal
+        isOpen={!!revokingTeam}
+        onClose={() => setRevokingTeam(null)}
+        title={`Revoke Active Session: ${revokingTeam?.teamCode}?`}
+        subtitle="Terminating active sessions immediately boots the team terminal back to the login screen."
+        size="sm"
+      >
+        {revokingTeam && (
+          <div>
+            <p style={{ margin: '0 0 20px', color: 'var(--color-ink-secondary)', fontSize: '0.92rem', lineHeight: 1.5 }}>
+              Are you sure you want to terminate all live sessions for <strong>{revokingTeam.teamCode} ({revokingTeam.teamName})</strong>? Their authentication token will be permanently revoked in memory and in the database.
+            </p>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setRevokingTeam(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="danger"
+                loading={isSubmitting}
+                onClick={() => handleRevokeTeamSession(revokingTeam.teamCode)}
+              >
+                Terminate Session
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* ======================================================== */}
+      {/* 6. RESET TEAM CREDENTIALS MODAL                          */}
+      {/* ======================================================== */}
+      <Modal
+        isOpen={!!resettingTeam}
+        onClose={() => setResettingTeam(null)}
+        title={`Reset Credentials for ${resettingTeam?.teamCode}`}
+        subtitle="Update team password and 4-digit PIN. Existing active sessions will be terminated automatically."
+        size="md"
+      >
+        {resettingTeam && (
+          <form onSubmit={handleResetTeamPasswordSubmit}>
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '0.80rem', fontWeight: 700, marginBottom: '6px', color: 'var(--color-ink-secondary)' }}>
+                Team Account
+              </label>
+              <input
+                type="text"
+                disabled
+                value={`${resettingTeam.teamCode} • ${resettingTeam.teamName}`}
+                className="saamx-input"
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  backgroundColor: 'var(--color-surface-sunken)',
+                  border: '1px solid var(--color-border-subtle)',
+                  borderRadius: '6px',
+                  fontSize: '0.88rem',
+                  color: 'var(--color-ink-muted)'
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '0.80rem', fontWeight: 700, marginBottom: '6px', color: 'var(--color-ink-secondary)' }}>
+                New Password * (Min 6 characters)
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. T02#Alpha2026"
+                value={newTeamPassword}
+                onChange={(e) => setNewTeamPassword(e.target.value)}
+                className="saamx-input"
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  backgroundColor: 'var(--color-surface-sunken)',
+                  border: '1px solid var(--color-border-subtle)',
+                  borderRadius: '6px',
+                  fontSize: '0.88rem',
+                  color: 'var(--color-ink-primary)'
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', fontSize: '0.80rem', fontWeight: 700, marginBottom: '6px', color: 'var(--color-ink-secondary)' }}>
+                New 4-Digit PIN (Optional)
+              </label>
+              <input
+                type="text"
+                maxLength={4}
+                placeholder="e.g. 2491"
+                value={newTeamPin}
+                onChange={(e) => setNewTeamPin(e.target.value)}
+                className="saamx-input font-mono"
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  backgroundColor: 'var(--color-surface-sunken)',
+                  border: '1px solid var(--color-border-subtle)',
+                  borderRadius: '6px',
+                  fontSize: '0.88rem',
+                  color: 'var(--color-ink-primary)'
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  setResettingTeam(null);
+                  setNewTeamPassword('');
+                  setNewTeamPin('');
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="primary"
+                loading={isSubmitting}
+              >
+                Save Credentials & Revoke Sessions
               </Button>
             </div>
           </form>

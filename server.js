@@ -763,6 +763,18 @@ export function getEffectivePermissions(account) {
   return Array.from(combined);
 }
 
+export const TEAM_CANONICAL_CREDENTIALS = {
+  T02: { name: 'Trader Elite 2', password: 'T02#Alpha2026', pin: '2491' },
+  T03: { name: 'Trader Elite 3', password: 'T03#Bravo2026', pin: '3827' },
+  T04: { name: 'Trader Elite 4', password: 'T04#Charlie2026', pin: '4193' },
+  T05: { name: 'Trader Elite 5', password: 'T05#Delta2026', pin: '5732' },
+  T06: { name: 'Trader Elite 6', password: 'T06#Echo2026', pin: '6284' },
+  T07: { name: 'Trader Elite 7', password: 'T07#Foxtrot2026', pin: '7391' },
+  T08: { name: 'Trader Elite 8', password: 'T08#Golf2026', pin: '8415' },
+  T09: { name: 'Trader Elite 9', password: 'T09#Hotel2026', pin: '9526' },
+  T10: { name: 'Trader Elite 10', password: 'T10#India2026', pin: '1067' }
+};
+
 export function getSeedPersonnel() {
   const now = Date.now();
   return [
@@ -774,7 +786,7 @@ export function getSeedPersonnel() {
       status: 'ACTIVE',
       staffId: 'STAFF-DIR-01',
       department: 'Executive & Floor Directorate',
-      passwordHash: hashPassword('sridhara@saamx26'),
+      passwordHash: hashPassword('sridhara#elite2026'),
       permissions: [...ROLE_PERMISSIONS.super_admin],
       createdAt: now,
       lastLogin: null
@@ -787,7 +799,7 @@ export function getSeedPersonnel() {
       status: 'ACTIVE',
       staffId: 'STAFF-ADM-01',
       department: 'Floor Operations',
-      passwordHash: hashPassword('admin@saamx26'),
+      passwordHash: hashPassword('admin#master2026'),
       permissions: [...ROLE_PERMISSIONS.admin],
       createdAt: now,
       lastLogin: null
@@ -800,7 +812,7 @@ export function getSeedPersonnel() {
       status: 'ACTIVE',
       staffId: 'STAFF-ADM-02',
       department: 'Floor Operations',
-      passwordHash: hashPassword('admin@saamx26'),
+      passwordHash: hashPassword('admin#master2026'),
       permissions: [...ROLE_PERMISSIONS.admin],
       createdAt: now,
       lastLogin: null
@@ -813,7 +825,7 @@ export function getSeedPersonnel() {
       status: 'ACTIVE',
       staffId: 'STAFF-ADM-03',
       department: 'Floor Operations',
-      passwordHash: hashPassword('admin@saamx26'),
+      passwordHash: hashPassword('admin#master2026'),
       permissions: [...ROLE_PERMISSIONS.admin],
       createdAt: now,
       lastLogin: null
@@ -826,7 +838,7 @@ export function getSeedPersonnel() {
       status: 'ACTIVE',
       staffId: 'STAFF-CRD-01',
       department: 'Scenario & Event Control',
-      passwordHash: hashPassword('coord@saamx26'),
+      passwordHash: hashPassword('coord#control2026'),
       permissions: [...ROLE_PERMISSIONS.coordinator],
       createdAt: now,
       lastLogin: null
@@ -839,7 +851,7 @@ export function getSeedPersonnel() {
       status: 'ACTIVE',
       staffId: 'STAFF-VRF-01',
       department: 'Physical Slip Verification Desk',
-      passwordHash: hashPassword('verify@saamx26'),
+      passwordHash: hashPassword('verify#audit2026'),
       permissions: [...ROLE_PERMISSIONS.verification],
       createdAt: now,
       lastLogin: null
@@ -854,7 +866,7 @@ export function getSeedPersonnel() {
       status: 'ACTIVE',
       staffId: 'STAFF-EXC-01',
       department: 'Central Exchange Desk',
-      passwordHash: hashPassword('desk@saamx26'),
+      passwordHash: hashPassword('exchange#desk2026'),
       permissions: [...ROLE_PERMISSIONS.exchange],
       createdAt: now,
       lastLogin: null
@@ -868,7 +880,7 @@ export function getSeedPersonnel() {
       status: 'ACTIVE',
       staffId: 'STAFF-EXC-02',
       department: 'Central Exchange Desk',
-      passwordHash: hashPassword('desk@saamx26'),
+      passwordHash: hashPassword('exchange#desk2026'),
       permissions: [...ROLE_PERMISSIONS.exchange],
       createdAt: now,
       lastLogin: null
@@ -882,7 +894,7 @@ export function getSeedPersonnel() {
       status: 'ACTIVE',
       staffId: 'STAFF-EXC-03',
       department: 'Central Exchange Desk',
-      passwordHash: hashPassword('desk@saamx26'),
+      passwordHash: hashPassword('exchange#desk2026'),
       permissions: [...ROLE_PERMISSIONS.exchange],
       createdAt: now,
       lastLogin: null
@@ -896,7 +908,7 @@ export function getSeedPersonnel() {
       status: 'ACTIVE',
       staffId: 'STAFF-EXC-04',
       department: 'Central Exchange Desk',
-      passwordHash: hashPassword('desk@saamx26'),
+      passwordHash: hashPassword('exchange#desk2026'),
       permissions: [...ROLE_PERMISSIONS.exchange],
       createdAt: now,
       lastLogin: null
@@ -910,7 +922,7 @@ export function getSeedPersonnel() {
       status: 'ACTIVE',
       staffId: 'STAFF-EXC-05',
       department: 'Central Exchange Desk',
-      passwordHash: hashPassword('desk@saamx26'),
+      passwordHash: hashPassword('exchange#desk2026'),
       permissions: [...ROLE_PERMISSIONS.exchange],
       createdAt: now,
       lastLogin: null
@@ -925,7 +937,7 @@ export function getSeedPersonnel() {
       status: 'ACTIVE',
       staffId: 'STAFF-EXC-M',
       department: 'Central Exchange Desk',
-      passwordHash: hashPassword('desk@saamx26'),
+      passwordHash: hashPassword('exchange#desk2026'),
       permissions: [...ROLE_PERMISSIONS.exchange],
       createdAt: now,
       lastLogin: null
@@ -940,7 +952,7 @@ export function getSeedPersonnel() {
       status: 'ACTIVE',
       staffId: 'STAFF-BNK-01',
       department: 'Cash & Settlement Operations',
-      passwordHash: hashPassword('bank@saamx26'),
+      passwordHash: hashPassword('bank#vault2026'),
       permissions: [...ROLE_PERMISSIONS.bank_teller],
       createdAt: now,
       lastLogin: null
@@ -954,7 +966,7 @@ export function getSeedPersonnel() {
       status: 'ACTIVE',
       staffId: 'STAFF-BNK-02',
       department: 'Cash & Settlement Operations',
-      passwordHash: hashPassword('bank@saamx26'),
+      passwordHash: hashPassword('bank#vault2026'),
       permissions: [...ROLE_PERMISSIONS.bank_teller],
       createdAt: now,
       lastLogin: null
@@ -968,7 +980,7 @@ export function getSeedPersonnel() {
       status: 'ACTIVE',
       staffId: 'STAFF-BNK-03',
       department: 'Cash & Settlement Operations',
-      passwordHash: hashPassword('bank@saamx26'),
+      passwordHash: hashPassword('bank#vault2026'),
       permissions: [...ROLE_PERMISSIONS.bank_teller],
       createdAt: now,
       lastLogin: null
@@ -982,7 +994,7 @@ export function getSeedPersonnel() {
       status: 'ACTIVE',
       staffId: 'STAFF-BNK-04',
       department: 'Cash & Settlement Operations',
-      passwordHash: hashPassword('bank@saamx26'),
+      passwordHash: hashPassword('bank#vault2026'),
       permissions: [...ROLE_PERMISSIONS.bank_teller],
       createdAt: now,
       lastLogin: null
@@ -996,7 +1008,7 @@ export function getSeedPersonnel() {
       status: 'ACTIVE',
       staffId: 'STAFF-BNK-M',
       department: 'Cash & Settlement Operations',
-      passwordHash: hashPassword('bank@saamx26'),
+      passwordHash: hashPassword('bank#vault2026'),
       permissions: [...ROLE_PERMISSIONS.bank_teller],
       createdAt: now,
       lastLogin: null
@@ -1010,7 +1022,7 @@ export function getSeedPersonnel() {
       status: 'ACTIVE',
       staffId: 'STAFF-FX-01',
       department: 'Foreign Exchange Operations',
-      passwordHash: hashPassword('fx@saamx26'),
+      passwordHash: hashPassword('fx#treasury2026'),
       permissions: [...ROLE_PERMISSIONS.operator_x],
       createdAt: now,
       lastLogin: null
@@ -1023,7 +1035,7 @@ export function getSeedPersonnel() {
       status: 'ACTIVE',
       staffId: 'STAFF-FX-02',
       department: 'Foreign Exchange Operations',
-      passwordHash: hashPassword('fx@saamx26'),
+      passwordHash: hashPassword('fx#treasury2026'),
       permissions: [...ROLE_PERMISSIONS.operator_x],
       createdAt: now,
       lastLogin: null
@@ -1037,7 +1049,7 @@ export function getSeedPersonnel() {
       status: 'ACTIVE',
       staffId: 'STAFF-ADV-AYAN',
       department: 'Floor Brokerage & Advisory',
-      passwordHash: hashPassword('advisor@saamx26'),
+      passwordHash: hashPassword('advisor#floor2026'),
       permissions: [...ROLE_PERMISSIONS.advisor],
       createdAt: now,
       lastLogin: null
@@ -1050,7 +1062,7 @@ export function getSeedPersonnel() {
       status: 'ACTIVE',
       staffId: 'STAFF-ADV-PRERNA',
       department: 'Floor Brokerage & Advisory',
-      passwordHash: hashPassword('advisor@saamx26'),
+      passwordHash: hashPassword('advisor#floor2026'),
       permissions: [...ROLE_PERMISSIONS.advisor],
       createdAt: now,
       lastLogin: null
@@ -1063,7 +1075,7 @@ export function getSeedPersonnel() {
       status: 'ACTIVE',
       staffId: 'STAFF-ADV-CHETAN',
       department: 'Floor Brokerage & Advisory',
-      passwordHash: hashPassword('advisor@saamx26'),
+      passwordHash: hashPassword('advisor#floor2026'),
       permissions: [...ROLE_PERMISSIONS.advisor],
       createdAt: now,
       lastLogin: null
@@ -1076,7 +1088,7 @@ export function getSeedPersonnel() {
       status: 'ACTIVE',
       staffId: 'STAFF-ADV-ARMAN',
       department: 'Floor Brokerage & Advisory',
-      passwordHash: hashPassword('advisor@saamx26'),
+      passwordHash: hashPassword('advisor#floor2026'),
       permissions: [...ROLE_PERMISSIONS.advisor],
       createdAt: now,
       lastLogin: null
@@ -1089,7 +1101,7 @@ export function getSeedPersonnel() {
       status: 'ACTIVE',
       staffId: 'STAFF-ADV-01',
       department: 'Floor Brokerage & Advisory',
-      passwordHash: hashPassword('advisor@saamx26'),
+      passwordHash: hashPassword('advisor#floor2026'),
       permissions: [...ROLE_PERMISSIONS.advisor],
       createdAt: now,
       lastLogin: null
@@ -1103,7 +1115,7 @@ export function getSeedPersonnel() {
       status: 'ACTIVE',
       staffId: 'STAFF-PRS-01',
       department: 'Market Press & Wire',
-      passwordHash: hashPassword('news@saamx26'),
+      passwordHash: hashPassword('news#wire2026'),
       permissions: [...ROLE_PERMISSIONS.news_controller],
       createdAt: now,
       lastLogin: null
@@ -1116,7 +1128,7 @@ export function getSeedPersonnel() {
       status: 'ACTIVE',
       staffId: 'STAFF-PRS-02',
       department: 'Market Press & Wire',
-      passwordHash: hashPassword('news@saamx26'),
+      passwordHash: hashPassword('news#wire2026'),
       permissions: [...ROLE_PERMISSIONS.journalist],
       createdAt: now,
       lastLogin: null
@@ -1129,7 +1141,7 @@ export function getSeedPersonnel() {
       status: 'ACTIVE',
       staffId: 'STAFF-PRS-03',
       department: 'Market Press & Wire',
-      passwordHash: hashPassword('news@saamx26'),
+      passwordHash: hashPassword('news#wire2026'),
       permissions: [...ROLE_PERMISSIONS.journalist],
       createdAt: now,
       lastLogin: null
@@ -1142,7 +1154,7 @@ export function getSeedPersonnel() {
       status: 'ACTIVE',
       staffId: 'STAFF-PRS-L',
       department: 'Market Press & Wire',
-      passwordHash: hashPassword('news@saamx26'),
+      passwordHash: hashPassword('news#wire2026'),
       permissions: [...ROLE_PERMISSIONS.journalist],
       createdAt: now,
       lastLogin: null
@@ -1155,7 +1167,7 @@ export function getSeedPersonnel() {
       status: 'ACTIVE',
       staffId: 'STAFF-NCTL-01',
       department: 'Newsroom Editorial & Clearance',
-      passwordHash: hashPassword('admin@saamx26'),
+      passwordHash: hashPassword('news#editor2026'),
       permissions: [...ROLE_PERMISSIONS.news_controller],
       createdAt: now,
       lastLogin: null
@@ -1168,7 +1180,7 @@ export function getSeedPersonnel() {
       status: 'ACTIVE',
       staffId: 'STAFF-REG-01',
       department: 'Market Surveillance & Enforcement',
-      passwordHash: hashPassword('sebi@saamx26'),
+      passwordHash: hashPassword('sebi#surveil2026'),
       permissions: [...ROLE_PERMISSIONS.sebi],
       createdAt: now,
       lastLogin: null
@@ -1181,7 +1193,7 @@ export function getSeedPersonnel() {
       status: 'ACTIVE',
       staffId: 'STAFF-JDG-01',
       department: 'Judging & Deliberation Panel',
-      passwordHash: hashPassword('judge@saamx26'),
+      passwordHash: hashPassword('judge#verdict2026'),
       permissions: [...ROLE_PERMISSIONS.judge],
       createdAt: now,
       lastLogin: null
@@ -1194,7 +1206,7 @@ export function getSeedPersonnel() {
       status: 'ACTIVE',
       staffId: 'STAFF-OBS-01',
       department: 'Auditorium & Public Gallery',
-      passwordHash: hashPassword('observer@saamx26'),
+      passwordHash: hashPassword('observer#gallery2026'),
       permissions: [...ROLE_PERMISSIONS.observer],
       createdAt: now,
       lastLogin: null
@@ -2313,7 +2325,7 @@ function getAuthSecret() {
 
 const activeSessions = new Map(); // sessionId -> { token, role, teamCode, username, createdAt, expiresAt }
 
-function createSessionToken(role, teamCode = null, username = null, personnelId = null, assignedDesk = null) {
+function createSessionToken(role, teamCode = null, username = null, personnelId = null, assignedDesk = null, ip = null, userAgent = null) {
   const sessionId = crypto.randomBytes(16).toString('hex');
   const createdAt = Date.now();
   const expiresAt = createdAt + (12 * 60 * 60 * 1000); // 12 hours validity
@@ -2342,6 +2354,8 @@ function createSessionToken(role, teamCode = null, username = null, personnelId 
     username: username || (teamCode ? teamCode : role),
     personnelId: personnelId || null,
     assignedDesk: authoritativeDesk || null,
+    ip: ip || null,
+    userAgent: userAgent || null,
     createdAt,
     expiresAt
   };
@@ -2632,7 +2646,10 @@ app.post('/api/auth/login', (req, res) => {
     }
     recordSuccessfulLogin(throttleKey);
     const sessionUser = matchedMember ? `${targetTeam.teamCode} (${matchedMember.name})` : targetTeam.teamCode;
-    const { token, expiresAt } = createSessionToken('team', targetTeam.teamCode, sessionUser);
+    targetTeam.lastLogin = Date.now();
+    targetTeam.lastLoginIp = clientIp;
+    targetTeam.lastLoginUserAgent = req.headers['user-agent'] || 'Unknown Browser';
+    const { token, expiresAt } = createSessionToken('team', targetTeam.teamCode, sessionUser, null, null, clientIp, req.headers['user-agent']);
     const { password: _p, pin: _pin, ...safeTeam } = targetTeam;
     return res.json({
       success: true,
@@ -2682,6 +2699,8 @@ app.post('/api/auth/login', (req, res) => {
       if (authResult.verified) {
         matchedPersonnel = matchedStaff;
         matchedPersonnel.lastLogin = Date.now();
+        matchedPersonnel.lastLoginIp = clientIp;
+        matchedPersonnel.lastLoginUserAgent = req.headers['user-agent'] || 'Unknown Browser';
         if (authResult.needsRehash) {
           matchedPersonnel.passwordHash = hashPassword(p);
           saveState();
@@ -2700,6 +2719,8 @@ app.post('/api/auth/login', (req, res) => {
       console.warn('[SECURITY AUDIT] Emergency disaster recovery authentication invoked for @sridhara using environment recovery secret.');
       matchedPersonnel = sridharaStaff;
       matchedPersonnel.lastLogin = Date.now();
+      matchedPersonnel.lastLoginIp = clientIp;
+      matchedPersonnel.lastLoginUserAgent = req.headers['user-agent'] || 'Unknown Browser';
       assignedRole = 'admin';
       customUsername = sridharaStaff.displayName || sridharaStaff.username;
     }
@@ -2711,7 +2732,7 @@ app.post('/api/auth/login', (req, res) => {
     const finalDisplayName = matchedPersonnel ? (matchedPersonnel.displayName || matchedPersonnel.username) : (customUsername || staffUser || assignedRole);
     const personnelId = matchedPersonnel ? matchedPersonnel.id : null;
     const finalAssignedDesk = matchedPersonnel?.assignedDesk || null;
-    const { token, expiresAt } = createSessionToken(assignedRole, null, finalUsername, personnelId, finalAssignedDesk);
+    const { token, expiresAt } = createSessionToken(assignedRole, null, finalUsername, personnelId, finalAssignedDesk, clientIp, req.headers['user-agent']);
 
     const userPermissions = matchedPersonnel 
       ? getEffectivePermissions(matchedPersonnel) 
@@ -4627,12 +4648,14 @@ app.post('/api/admin/reset', async (req, res) => {
   state.teams = Array.from({ length: 9 }, (_, idx) => {
     const i = idx + 2;
     const num = String(i).padStart(2, '0');
-    const pw = `team${num}@2026`;
-    const pin = `${num}${num}`;
+    const tCode = `T${num}`;
+    const cred = TEAM_CANONICAL_CREDENTIALS[tCode] || { name: `Trader Elite ${i}`, password: `T${num}#Secure2026`, pin: `${num}${num}` };
+    const pw = cred.password;
+    const pin = cred.pin;
     return {
-      id: `T${num}`,
-      teamCode: `T${num}`,
-      teamName: `Trader Elite ${i}`,
+      id: tCode,
+      teamCode: tCode,
+      teamName: cred.name || `Trader Elite ${i}`,
       name: `Team ${num}`,
       teamType: 'Retail',
       cashBalance: 10000000,
@@ -4809,6 +4832,86 @@ app.post('/api/admin/sessions/revoke-all', async (req, res) => {
   activeSessions.clear();
   const count = await sessionStore.revokeAllSessions();
   return res.json({ success: true, revokedCount: count });
+});
+
+// Live Championship Team Sessions Administration & Monitoring
+app.get('/api/admin/team-sessions', async (req, res) => {
+  const session = req.session || verifySessionToken(req.headers['authorization'] || req.headers['x-fms-token']);
+  if (!session || (session.role !== 'admin' && session.role !== 'super_admin')) {
+    return res.status(403).json({ error: 'Forbidden: Administrator privileges required.' });
+  }
+
+  const now = Date.now();
+  const teamsList = (state.teams || []).filter(t => t.teamCode?.toUpperCase() !== 'T01');
+  const teamSessions = [];
+
+  for (const t of teamsList) {
+    const sessions = [];
+    for (const [sId, sData] of activeSessions.entries()) {
+      if (sData.teamCode?.toUpperCase() === t.teamCode?.toUpperCase() && sData.expiresAt > now) {
+        sessions.push({
+          sessionId: sId,
+          createdAt: sData.createdAt,
+          expiresAt: sData.expiresAt,
+          ip: sData.ip || t.lastLoginIp || 'Unknown',
+          userAgent: sData.userAgent || t.lastLoginUserAgent || 'Unknown Browser',
+          username: sData.username
+        });
+      }
+    }
+    const isOnline = sessions.length > 0;
+    teamSessions.push({
+      teamCode: t.teamCode,
+      teamName: t.teamName || t.name,
+      teamType: t.teamType || 'Retail',
+      isActive: t.isActive !== false,
+      isOnline,
+      activeSessionCount: sessions.length,
+      sessions,
+      lastLogin: t.lastLogin || (sessions[0]?.createdAt) || null,
+      lastLoginIp: t.lastLoginIp || (sessions[0]?.ip) || null,
+      lastLoginUserAgent: t.lastLoginUserAgent || (sessions[0]?.userAgent) || null,
+      credentials: {
+        password: t.credentials?.password || t.rawPassword || 'N/A',
+        pin: t.credentials?.pin || t.tempPin || 'N/A'
+      }
+    });
+  }
+
+  return res.json({ success: true, count: teamSessions.length, teams: teamSessions });
+});
+
+app.post('/api/admin/teams/reset-password', async (req, res) => {
+  const session = req.session || verifySessionToken(req.headers['authorization'] || req.headers['x-fms-token']);
+  if (!session || (session.role !== 'admin' && session.role !== 'super_admin')) {
+    return res.status(403).json({ error: 'Forbidden: Administrator privileges required.' });
+  }
+  const { teamCode, newPassword, newPin } = req.body || {};
+  if (!teamCode || !newPassword) {
+    return res.status(400).json({ error: 'Team code and new password are required.' });
+  }
+  const team = (state.teams || []).find(t => t.teamCode?.toUpperCase() === teamCode.toUpperCase());
+  if (!team) {
+    return res.status(404).json({ error: `Team ${teamCode} not found.` });
+  }
+  const hashed = hashPassword(newPassword);
+  team.passwordHash = hashed;
+  if (!team.credentials) team.credentials = {};
+  team.credentials.password = newPassword;
+  team.credentials.passwordHash = hashed;
+  if (newPin) {
+    team.credentials.pin = String(newPin).trim();
+    team.credentials.tempPin = String(newPin).trim();
+    team.tempPin = String(newPin).trim();
+  }
+  for (const [sId, sData] of activeSessions.entries()) {
+    if (sData.teamCode?.toUpperCase() === teamCode.toUpperCase()) {
+      activeSessions.delete(sId);
+    }
+  }
+  await sessionStore.revokeSessionsByTeam(teamCode).catch(() => {});
+  saveState();
+  return res.json({ success: true, message: `Credentials updated for ${teamCode}. Active sessions revoked.` });
 });
 
 // Database Connection & Pool Status
@@ -14806,12 +14909,14 @@ app.post('/api/admin/master-reset', (req, res) => {
   state.teams = Array.from({ length: 9 }, (_, idx) => {
     const i = idx + 2;
     const num = String(i).padStart(2, '0');
-    const pw = `team${num}@2026`;
-    const pin = `${num}${num}`;
+    const tCode = `T${num}`;
+    const cred = TEAM_CANONICAL_CREDENTIALS[tCode] || { name: `Trader Elite ${i}`, password: `T${num}#Secure2026`, pin: `${num}${num}` };
+    const pw = cred.password;
+    const pin = cred.pin;
     return {
-      id: `T${num}`,
-      teamCode: `T${num}`,
-      teamName: `Trader Elite ${i}`,
+      id: tCode,
+      teamCode: tCode,
+      teamName: cred.name || `Trader Elite ${i}`,
       name: `Team ${num}`,
       teamType: 'Retail',
       cashBalance: 10000000,
