@@ -47,6 +47,9 @@ export default function NewsControllerConsole({ state, adminPassword }) {
   const [presetSentiment, setPresetSentiment] = useState('All');
   const [presetPriority, setPresetPriority] = useState('All');
   const [selectedPresetDetail, setSelectedPresetDetail] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [jumpSequence, setJumpSequence] = useState('');
 
   // Workspace 3: Custom Composer State
   const [compHeadline, setCompHeadline] = useState('');
@@ -144,6 +147,37 @@ export default function NewsControllerConsole({ state, adminPassword }) {
       alert(`Network error: ${err.message}`);
     } finally {
       setEngineUpdating(false);
+    }
+  };
+
+  // Reset page when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [presetScope, presetCategory, presetSentiment, presetPriority, presetSearch]);
+
+  const handleJumpToSequence = (e) => {
+    if (e) e.preventDefault();
+    if (!jumpSequence) return;
+    const cleanNum = parseInt(jumpSequence.toString().replace(/^news-?/i, ''), 10);
+    if (isNaN(cleanNum) || cleanNum < 1 || cleanNum > 500) {
+      alert('Please enter a valid preset sequence number between 1 and 500 (e.g. 137 or NEWS-137).');
+      return;
+    }
+    let idx = filteredPresets.findIndex(p => p.sequence === cleanNum);
+    if (idx === -1) {
+      setPresetScope('All');
+      setPresetCategory('All');
+      setPresetSentiment('All');
+      setPresetPriority('All');
+      setPresetSearch('');
+      idx = NEWS_PRESETS_LIBRARY.findIndex(p => p.sequence === cleanNum);
+    }
+    if (idx !== -1) {
+      const targetPage = Math.floor(idx / pageSize) + 1;
+      setCurrentPage(targetPage);
+      const targetPreset = NEWS_PRESETS_LIBRARY.find(p => p.sequence === cleanNum);
+      if (targetPreset) setSelectedPresetDetail(targetPreset);
+      setJumpSequence('');
     }
   };
 
@@ -670,87 +704,268 @@ export default function NewsControllerConsole({ state, adminPassword }) {
             </div>
           )}
 
-          {/* Presets Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(420px, 1fr))', gap: '16px' }}>
-            {filteredPresets.slice(0, 60).map(p => {
-              const delta = p.impactParameters?.priceImpactPercent !== undefined ? p.impactParameters.priceImpactPercent : p.impactMagnitude;
-              const isPos = p.sentiment === 'Positive' || p.primaryDirection === 'BULLISH';
-              const isNeg = p.sentiment === 'Negative' || p.primaryDirection === 'BEARISH';
+          {/* Pagination Controls & Presets Grid */}
+          {(() => {
+            const totalPages = Math.max(1, Math.ceil(filteredPresets.length / pageSize));
+            const safePage = Math.min(Math.max(1, currentPage), totalPages);
+            const startIdx = (safePage - 1) * pageSize;
+            const endIdx = Math.min(startIdx + pageSize, filteredPresets.length);
 
-              return (
-                <div
-                  key={p.id}
-                  className="glass card"
-                  onClick={() => setSelectedPresetDetail(p)}
-                  style={{
-                    padding: '16px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    cursor: 'pointer',
-                    border: selectedPresetDetail?.id === p.id ? '2px solid #4F46E5' : '1px solid var(--color-border)',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
-                  }}
-                >
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <span className="font-mono" style={{ fontSize: '0.78rem', fontWeight: 900, color: 'var(--color-brass, #845508)' }}>
-                        #{p.sequence} &bull; {p.presetId || p.id} &bull; <span style={{ color: p.scope === 'INDIA' ? '#065F3E' : '#4F46E5' }}>{p.scope}</span>
-                      </span>
-                      <span style={{
-                        fontSize: '0.72rem',
-                        fontWeight: 900,
-                        padding: '2px 8px',
+            // Generate page window (e.g. 1..5 around safePage)
+            const pageButtons = [];
+            let startPage = Math.max(1, safePage - 2);
+            let endPage = Math.min(totalPages, startPage + 4);
+            if (endPage - startPage < 4) {
+              startPage = Math.max(1, endPage - 4);
+            }
+            for (let i = startPage; i <= endPage; i++) {
+              pageButtons.push(i);
+            }
+
+            const renderPaginationBar = (position = 'top') => (
+              <div
+                className="glass card"
+                style={{
+                  padding: '12px 18px',
+                  margin: position === 'top' ? '0 0 16px 0' : '20px 0 0 0',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '12px',
+                  background: '#FFFFFF',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: '8px'
+                }}
+              >
+                {/* Left Telemetry */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>
+                  <span style={{ fontWeight: 800, color: 'var(--color-ink)' }}>
+                    Showing {filteredPresets.length === 0 ? 0 : startIdx + 1}–{endIdx} of {filteredPresets.length} presets
+                  </span>
+                  <span style={{ color: 'var(--color-ink-3)' }}>•</span>
+                  <span style={{ color: 'var(--color-ink-2)' }}>
+                    Page <strong>{safePage}</strong> of <strong>{totalPages}</strong>
+                  </span>
+                </div>
+
+                {/* Right Pagination Buttons & Jump */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline"
+                    disabled={safePage <= 1}
+                    onClick={() => { setCurrentPage(1); window.scrollTo({ top: 300, behavior: 'smooth' }); }}
+                    title="Jump to First Page (NEWS-001)"
+                    style={{ fontWeight: 700, padding: '4px 8px', fontSize: '0.78rem' }}
+                  >
+                    « First
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline"
+                    disabled={safePage <= 1}
+                    onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 300, behavior: 'smooth' }); }}
+                    style={{ fontWeight: 700, padding: '4px 8px', fontSize: '0.78rem' }}
+                  >
+                    ‹ Prev
+                  </button>
+
+                  {startPage > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline"
+                        onClick={() => { setCurrentPage(1); window.scrollTo({ top: 300, behavior: 'smooth' }); }}
+                        style={{ padding: '4px 8px', fontSize: '0.78rem' }}
+                      >
+                        1
+                      </button>
+                      {startPage > 2 && <span style={{ color: 'var(--color-ink-3)', padding: '0 2px' }}>…</span>}
+                    </>
+                  )}
+
+                  {pageButtons.map(pg => (
+                    <button
+                      key={pg}
+                      type="button"
+                      className="btn btn-sm"
+                      onClick={() => { setCurrentPage(pg); window.scrollTo({ top: 300, behavior: 'smooth' }); }}
+                      style={{
+                        padding: '4px 10px',
+                        fontSize: '0.78rem',
+                        fontWeight: pg === safePage ? 900 : 700,
+                        backgroundColor: pg === safePage ? '#4F46E5' : 'transparent',
+                        color: pg === safePage ? '#FFFFFF' : 'var(--color-ink)',
+                        border: pg === safePage ? '1px solid #4F46E5' : '1px solid var(--color-border)',
                         borderRadius: '4px',
-                        background: isPos ? '#D1FAE5' : isNeg ? '#FEE2E2' : '#F1F5F9',
-                        color: isPos ? '#065F46' : isNeg ? '#991B1B' : '#475569'
-                      }}>
-                        {delta > 0 ? '+' : ''}{delta}% {p.primaryDirection || p.sentiment}
-                      </span>
-                    </div>
-
-                    <h4 style={{ fontSize: '0.98rem', fontWeight: 800, margin: '0 0 6px', color: 'var(--color-ink)', lineHeight: 1.3 }}>
-                      {p.headline}
-                    </h4>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--color-ink-2)', lineHeight: 1.35, margin: '0 0 10px' }}>
-                      {p.description}
-                    </p>
-
-                    <div style={{ fontSize: '0.74rem', color: 'var(--color-ink-2)', marginBottom: '10px' }}>
-                      <strong>Target:</strong> {(p.affectedTickers || p.affectedSecurityIds || []).join(', ') || 'Macro / Sector'}
-                      <span style={{ marginLeft: '10px', color: '#64748B' }}>Category: {p.category}</span>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '8px', borderTop: '1px solid var(--color-border)', paddingTop: '10px' }} onClick={e => e.stopPropagation()}>
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-primary"
-                      style={{ flex: 1, fontWeight: 800 }}
-                      onClick={() => handleTriggerPreset(p)}
-                      disabled={actionInProgress}
+                        cursor: 'pointer'
+                      }}
                     >
-                      ⚡ Publish Now
+                      {pg}
                     </button>
+                  ))}
+
+                  {endPage < totalPages && (
+                    <>
+                      {endPage < totalPages - 1 && <span style={{ color: 'var(--color-ink-3)', padding: '0 2px' }}>…</span>}
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline"
+                        onClick={() => { setCurrentPage(totalPages); window.scrollTo({ top: 300, behavior: 'smooth' }); }}
+                        style={{ padding: '4px 8px', fontSize: '0.78rem' }}
+                      >
+                        {totalPages}
+                      </button>
+                    </>
+                  )}
+
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline"
+                    disabled={safePage >= totalPages}
+                    onClick={() => { setCurrentPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 300, behavior: 'smooth' }); }}
+                    style={{ fontWeight: 700, padding: '4px 8px', fontSize: '0.78rem' }}
+                  >
+                    Next ›
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline"
+                    disabled={safePage >= totalPages}
+                    onClick={() => { setCurrentPage(totalPages); window.scrollTo({ top: 300, behavior: 'smooth' }); }}
+                    title="Jump to Last Page (NEWS-500)"
+                    style={{ fontWeight: 700, padding: '4px 8px', fontSize: '0.78rem' }}
+                  >
+                    Last »
+                  </button>
+
+                  {/* Jump directly to preset sequence # */}
+                  <form onSubmit={handleJumpToSequence} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginLeft: '8px' }}>
+                    <input
+                      type="text"
+                      placeholder="Preset # (1-500)"
+                      value={jumpSequence}
+                      onChange={e => setJumpSequence(e.target.value)}
+                      style={{
+                        width: '110px',
+                        padding: '4px 8px',
+                        fontSize: '0.78rem',
+                        borderRadius: '4px',
+                        border: '1px solid var(--color-border)',
+                        fontFamily: 'monospace'
+                      }}
+                    />
                     <button
-                      type="button"
+                      type="submit"
                       className="btn btn-sm btn-outline"
-                      style={{ flex: 1 }}
-                      onClick={() => setSelectedPresetDetail(p)}
+                      style={{ padding: '4px 8px', fontSize: '0.78rem', fontWeight: 800 }}
                     >
-                      🔍 Inspect Data
+                      Go
                     </button>
+                  </form>
+
+                  {/* Page Size Selector */}
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginLeft: '8px' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--color-ink-2)' }}>Per page:</span>
+                    <select
+                      value={pageSize}
+                      onChange={e => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
+                      style={{ padding: '4px 6px', fontSize: '0.78rem', borderRadius: '4px', border: '1px solid var(--color-border)' }}
+                    >
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </select>
                   </div>
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            );
 
-          {filteredPresets.length > 60 && (
-            <div style={{ textAlign: 'center', marginTop: '20px', color: 'var(--color-ink-2)', fontSize: '0.85rem' }}>
-              Displaying first 60 presets of {filteredPresets.length}. Use scope or category filters to navigate the full 500 library.
-            </div>
-          )}
+            return (
+              <>
+                {renderPaginationBar('top')}
+
+                {/* Presets Grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(420px, 1fr))', gap: '16px' }}>
+                  {filteredPresets.slice(startIdx, startIdx + pageSize).map(p => {
+                    const delta = p.impactParameters?.priceImpactPercent !== undefined ? p.impactParameters.priceImpactPercent : p.impactMagnitude;
+                    const isPos = p.sentiment === 'Positive' || p.primaryDirection === 'BULLISH';
+                    const isNeg = p.sentiment === 'Negative' || p.primaryDirection === 'BEARISH';
+
+                    return (
+                      <div
+                        key={p.id}
+                        className="glass card"
+                        onClick={() => setSelectedPresetDetail(p)}
+                        style={{
+                          padding: '16px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                          cursor: 'pointer',
+                          border: selectedPresetDetail?.id === p.id ? '2px solid #4F46E5' : '1px solid var(--color-border)',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
+                        }}
+                      >
+                        <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                            <span className="font-mono" style={{ fontSize: '0.78rem', fontWeight: 900, color: 'var(--color-brass, #845508)' }}>
+                              #{p.sequence} &bull; {p.presetId || p.id} &bull; <span style={{ color: p.scope === 'INDIA' ? '#065F3E' : '#4F46E5' }}>{p.scope}</span>
+                            </span>
+                            <span style={{
+                              fontSize: '0.72rem',
+                              fontWeight: 900,
+                              padding: '2px 8px',
+                              borderRadius: '4px',
+                              background: isPos ? '#D1FAE5' : isNeg ? '#FEE2E2' : '#F1F5F9',
+                              color: isPos ? '#065F46' : isNeg ? '#991B1B' : '#475569'
+                            }}>
+                              {delta > 0 ? '+' : ''}{delta}% {p.primaryDirection || p.sentiment}
+                            </span>
+                          </div>
+
+                          <h4 style={{ fontSize: '0.98rem', fontWeight: 800, margin: '0 0 6px', color: 'var(--color-ink)', lineHeight: 1.3 }}>
+                            {p.headline}
+                          </h4>
+                          <p style={{ fontSize: '0.8rem', color: 'var(--color-ink-2)', lineHeight: 1.35, margin: '0 0 10px' }}>
+                            {p.description}
+                          </p>
+
+                          <div style={{ fontSize: '0.74rem', color: 'var(--color-ink-2)', marginBottom: '10px' }}>
+                            <strong>Target:</strong> {(p.affectedTickers || p.affectedSecurityIds || []).join(', ') || 'Macro / Sector'}
+                            <span style={{ marginLeft: '10px', color: '#64748B' }}>Category: {p.category}</span>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '8px', borderTop: '1px solid var(--color-border)', paddingTop: '10px' }} onClick={e => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-primary"
+                            style={{ flex: 1, fontWeight: 800 }}
+                            onClick={() => handleTriggerPreset(p)}
+                            disabled={actionInProgress}
+                          >
+                            ⚡ Publish Now
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline"
+                            style={{ flex: 1 }}
+                            onClick={() => setSelectedPresetDetail(p)}
+                          >
+                            🔍 Inspect Data
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {renderPaginationBar('bottom')}
+              </>
+            );
+          })()}
         </div>
       )}
 

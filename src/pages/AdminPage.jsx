@@ -553,11 +553,24 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
   const handleTriggerEvent = async (evt) => {
     try {
       setActiveEventId(evt.id);
-      await apiFetch('/api/events/trigger', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
-        body: JSON.stringify({ event: evt, impactMultiplier, actor: 'Admin Command' })
-      });
+      const presetId = evt.presetId || evt.id;
+      if (presetId && (presetId.startsWith('NEWS-') || evt.sequence)) {
+        await apiFetch('/api/news/publish', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
+          body: JSON.stringify({ triggerPresetId: presetId })
+        });
+      } else {
+        await apiFetch('/api/events/trigger', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
+          body: JSON.stringify({ event: evt, impactMultiplier, actor: 'Admin Command' })
+        });
+      }
+      setFiredEvents(prev => ({
+        ...prev,
+        [evt.id]: { timestamp: Date.now(), title: evt.title || evt.headline, sequence: evt.sequence }
+      }));
     } catch (e) {
       alert('Error deploying event: ' + e.message);
     }
@@ -569,10 +582,12 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-FMS-Password': adminPassword },
         body: JSON.stringify({
-          headline: evt.title,
+          headline: evt.title || evt.headline,
           description: evt.description,
-          tier: evt.tier,
-          category: evt.category
+          tier: evt.tier || 'TIER_2',
+          category: evt.category,
+          presetId: evt.presetId || evt.id,
+          sequence: evt.sequence
         })
       });
     } catch (e) {
@@ -1765,7 +1780,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
           { id: 'judging', label: 'Judging Console', icon: IconScale },
           { id: 'penalties', label: 'Penalties & Appeals', icon: IconShieldAlert },
           { id: 'analytics', label: 'Event Analytics', icon: IconBarChart },
-          { id: 'timeline', label: 'Master Timeline', icon: IconClock },
+          { id: 'timeline', label: 'Master Timeline & News (500)', icon: IconClock },
           { id: 'audit', label: 'Audit & Reset', icon: IconLock }
         ].map(tab => {
           const isActive = activeTab === tab.id;
@@ -1852,7 +1867,7 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
             </div>
 
             <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
-              Select any event from the 315-signal library below to deploy live pricing & news updates.
+              Canonical 500 Institutional News Presets (155 India + 345 Global) in strict chronological sequence. Navigate pages or jump to any preset to deploy live pricing & news updates.
             </span>
           </div>
 

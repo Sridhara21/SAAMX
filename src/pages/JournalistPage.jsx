@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiFetch } from '../lib/api.js';
 import NewsAnchorConsole from './NewsAnchorConsole.jsx';
-import { NEWS_PRESET_CATEGORIES } from '../lib/newsPresetsLibrary.js';
+import { NEWS_PRESETS_LIBRARY, NEWS_PRESET_CATEGORIES } from '../lib/newsPresetsLibrary.js';
 import {
   Button,
   Input,
@@ -48,6 +48,29 @@ export default function JournalistPage({ state, adminPassword, initialMode = 'dr
   const [classification, setClassification] = useState('confirmed');
   const [durationMinutes, setDurationMinutes] = useState('5');
   const [trainingEligibility, setTrainingEligibility] = useState(false);
+  const [selectedTemplatePreset, setSelectedTemplatePreset] = useState('');
+
+  const handleApplyPresetTemplate = (presetId) => {
+    setSelectedTemplatePreset(presetId);
+    if (!presetId) return;
+    const p = NEWS_PRESETS_LIBRARY.find(item => item.id === presetId || item.presetId === presetId || String(item.sequence) === String(presetId));
+    if (p) {
+      setHeadline(p.headline);
+      setDescription(p.description);
+      setCategory(p.category);
+      if (p.subcategory) setSubcategory(p.subcategory);
+      setPriority(p.priority || 'IMPORTANT');
+      setSentiment(p.sentiment || 'Positive');
+      setImpactMagnitude(String(p.impactMagnitude || 8.0));
+      if (p.affectedTickers && p.affectedTickers[0]) {
+        setTargetScope('Specific Asset');
+        setTargetSecId(p.affectedTickers[0]);
+      } else if (p.affectedSectors && p.affectedSectors[0]) {
+        setTargetScope('Whole Sector');
+        setTargetSector(p.affectedSectors[0]);
+      }
+    }
+  };
 
   // Local drafts list synced with state
   const [drafts, setDrafts] = useState([]);
@@ -363,6 +386,25 @@ export default function JournalistPage({ state, adminPassword, initialMode = 'dr
                 <label htmlFor="includeSimTag" style={{ fontSize: '0.85rem', color: 'var(--color-ink-2)', cursor: 'pointer' }}>
                   Auto-prefix headline with <code>[SIMULATION WIRE]</code>
                 </label>
+              </div>
+
+              {/* Optional Preset Template Loader */}
+              <div style={{ background: 'var(--color-paper-subtle, #F8FAFC)', padding: '10px 14px', borderRadius: '6px', border: '1px solid var(--color-border)', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 800, marginBottom: '6px', color: 'var(--color-brass, #845508)' }}>
+                  ⚡ Quick Load from 500 Canonical Presets:
+                </label>
+                <select
+                  value={selectedTemplatePreset}
+                  onChange={e => handleApplyPresetTemplate(e.target.value)}
+                  style={{ width: '100%', padding: '6px 10px', fontSize: '0.82rem', borderRadius: '4px', border: '1px solid var(--color-border)', background: '#FFFFFF' }}
+                >
+                  <option value="">-- Select a preset template (NEWS-001 to NEWS-500) --</option>
+                  {NEWS_PRESETS_LIBRARY.map(p => (
+                    <option key={p.id} value={p.id}>
+                      #{p.sequence} • {p.presetId || p.id} [{p.scope}] - {p.headline.slice(0, 75)}...
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Headline Input */}
