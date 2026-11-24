@@ -390,7 +390,9 @@ export function useFirebaseState() {
       try {
         const baseUrl = getApiBaseUrl();
         const apiUrl = baseUrl ? `${baseUrl}/api/state` : '/api/state';
-        const res = await fetch(apiUrl);
+        const headers = latestVersionRef.current ? { 'If-None-Match': `"${latestVersionRef.current}"` } : {};
+        const res = await fetch(apiUrl, { headers });
+        if (res.status === 304) return; // 0 bytes transferred
         if (res.ok) {
           const apiData = await res.json();
           const serverState = apiData.state || apiData;
@@ -438,7 +440,11 @@ export function useFirebaseState() {
       try {
         const baseUrl = getApiBaseUrl();
         const apiUrl = baseUrl ? `${baseUrl}/api/state` : '/api/state';
-        const res = await fetch(apiUrl);
+        const headers = latestVersionRef.current ? { 'If-None-Match': `"${latestVersionRef.current}"` } : {};
+        const res = await fetch(apiUrl, { headers });
+        if (res.status === 304) {
+          return; // State unmodified: 0 bytes transferred
+        }
         if (res.ok) {
           const apiData = await res.json();
           const serverState = apiData.state || apiData;
@@ -457,7 +463,7 @@ export function useFirebaseState() {
           }
         }
       } catch (err) {}
-    }, 4000);
+    }, 15000); // Throttled to 15s with ETag 304 caching to protect network egress
 
     return () => clearInterval(interval);
   }, [connected]);

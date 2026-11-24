@@ -5,6 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import http from 'http';
 import crypto from 'crypto';
+import zlib from 'zlib';
 import { INITIAL_SECURITIES_TEMPLATES } from './initial_securities.js';
 import { generateFullSecurityUniverse, NEW_SIMULATED_IPOS } from './universe_generator.js';
 
@@ -2103,6 +2104,42 @@ let isServerReady = !isPgConfigured();
 
 export const app = express();
 app.use(cors(corsOptions));
+
+// High-Performance Native Gzip / Deflate Response Compression Middleware (Phase 8 Cost Control)
+app.use((req, res, next) => {
+  const acceptEncoding = req.headers['accept-encoding'] || '';
+  if (!acceptEncoding.includes('gzip') && !acceptEncoding.includes('deflate')) {
+    return next();
+  }
+
+  const originalSend = res.send;
+  res.send = function (body) {
+    if (res.headersSent) return originalSend.call(this, body);
+    if ((typeof body === 'string' || Buffer.isBuffer(body)) && body.length > 1024) {
+      try {
+        const buf = Buffer.isBuffer(body) ? body : Buffer.from(body, 'utf8');
+        if (acceptEncoding.includes('gzip')) {
+          res.setHeader('Content-Encoding', 'gzip');
+          res.setHeader('Vary', 'Accept-Encoding');
+          const compressed = zlib.gzipSync(buf, { level: 6 });
+          res.setHeader('Content-Length', compressed.length);
+          return originalSend.call(this, compressed);
+        } else if (acceptEncoding.includes('deflate')) {
+          res.setHeader('Content-Encoding', 'deflate');
+          res.setHeader('Vary', 'Accept-Encoding');
+          const compressed = zlib.deflateSync(buf, { level: 6 });
+          res.setHeader('Content-Length', compressed.length);
+          return originalSend.call(this, compressed);
+        }
+      } catch (compErr) {
+        // Fall back to uncompressed body if compression error occurs
+      }
+    }
+    return originalSend.call(this, body);
+  };
+  next();
+});
+
 app.use(express.json());
 
 // Startup & Shutdown Readiness Guard
@@ -3510,6 +3547,19 @@ export function getSanitizedState(rawState = state, role = null, teamCode = null
     delete clone.publishedResults;
   }
 
+  // 8. Network Egress Bandwidth Optimization: Cap priceHistory in sanitized state to last 10 points
+  if (Array.isArray(clone.securities)) {
+    clone.securities = clone.securities.map(s => {
+      if (Array.isArray(s.priceHistory) && s.priceHistory.length > 10) {
+        return {
+          ...s,
+          priceHistory: s.priceHistory.slice(-10)
+        };
+      }
+      return s;
+    });
+  }
+
   clone.version = state.version || 1;
   clone.lastUpdated = state.lastUpdated || Date.now();
 
@@ -4053,6 +4103,17 @@ app.get('/api/ping', (req, res) => {
 });
 
 app.get('/api/state', (req, res) => {
+  const currentVersion = String(state.version || 0);
+  const etagValue = `"${currentVersion}"`;
+  const clientEtag = req.headers['if-none-match'];
+
+  res.setHeader('ETag', etagValue);
+  res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+
+  if (clientEtag && (clientEtag === etagValue || clientEtag === currentVersion || clientEtag === `W/${etagValue}`)) {
+    return res.status(304).end();
+  }
+
   const sanitized = getSanitizedState(state, req.session?.role || req.role, req.session?.teamCode || req.teamCode);
   res.json({ state: sanitized, activeAlerts: Array.from(activeAlerts) });
 });
@@ -16121,6 +16182,8 @@ async function executeParsedCommand(cmd) {
 // ----------------------------------------------------
 setInterval(() => {
   let changed = false;
+  const velocityPriceUpdates = {};
+  const now = Date.now();
   Object.entries(activeVelocityTargets).forEach(([secId, velocity]) => {
     const security = state.securities.find(s => s.id === secId);
     if (!security || security.status !== 'Active') {
@@ -16130,13 +16193,15 @@ setInterval(() => {
 
     if (velocity.stepsRemaining <= 0) {
       security.currentPrice = velocity.targetPrice;
-      security.priceHistory.push({ timestamp: Date.now(), price: security.currentPrice });
+      security.priceHistory.push({ timestamp: now, price: security.currentPrice });
       delete activeVelocityTargets[secId];
+      velocityPriceUpdates[security.ticker] = { currentPrice: security.currentPrice };
       changed = true;
     } else {
       security.currentPrice = parseFloat((security.currentPrice + velocity.stepVal).toFixed(2));
-      security.priceHistory.push({ timestamp: Date.now(), price: security.currentPrice });
+      security.priceHistory.push({ timestamp: now, price: security.currentPrice });
       velocity.stepsRemaining--;
+      velocityPriceUpdates[security.ticker] = { currentPrice: security.currentPrice };
       changed = true;
     }
 
@@ -16148,7 +16213,7 @@ setInterval(() => {
   if (changed) {
     updateMarketIndex();
     saveState(false);
-    broadcastState();
+    broadcastState('PRICE_UPDATE', { priceUpdates: velocityPriceUpdates, marketIndices: state.marketIndices });
   }
 }, 1000);
 
