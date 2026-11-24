@@ -53,6 +53,7 @@ COPY --chown=node:node --from=builder /app/initial_securities.js ./initial_secur
 COPY --chown=node:node --from=builder /app/universe_generator.js ./universe_generator.js
 COPY --chown=node:node --from=builder /app/universe_data.js ./universe_data.js
 COPY --chown=node:node --from=builder /app/parsed_universe.json ./parsed_universe.json
+COPY --chown=node:node --from=builder /app/event_state.json ./event_state.json
 COPY --chown=node:node --from=builder /app/database ./database
 COPY --chown=node:node --from=builder /app/src ./src
 COPY --chown=node:node --from=builder /app/services ./services
