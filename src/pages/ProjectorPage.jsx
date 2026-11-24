@@ -599,21 +599,6 @@ export default function ProjectorPage({
                 {headline || name}
               </h1>
 
-              {/* Target Security & Sector Badge */}
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--color-ink-muted, #6B6863)', textTransform: 'uppercase' }}>
-                  AFFECTED ASSETS:
-                </span>
-                <strong style={{ fontSize: '0.9rem', color: 'var(--color-brass, #845508)', background: 'rgba(132, 85, 8, 0.08)', padding: '2px 8px', borderRadius: '4px' }}>
-                  {(activeTakeover.affectedTickers && activeTakeover.affectedTickers.length > 0) ? activeTakeover.affectedTickers.join(', ') : (ticker || 'Broad Market')}
-                </strong>
-                {activeTakeover.affectedSectors && activeTakeover.affectedSectors.length > 0 && (
-                  <span style={{ fontSize: '0.8rem', color: 'var(--color-ink-muted, #4A5568)', background: 'var(--color-surface-sunken, #F1F5F9)', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
-                    {activeTakeover.affectedSectors.join(', ')}
-                  </span>
-                )}
-              </div>
-
               <p style={{
                 fontSize: '1.15rem',
                 color: 'var(--color-ink-muted, #4A5568)',
@@ -632,22 +617,11 @@ export default function ProjectorPage({
                 flexWrap: 'wrap',
                 gap: '12px'
               }}>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--color-ink-muted, #6B6863)', fontWeight: 800 }}>DIRECTION:</span>
-                  <Badge variant={activeTakeover.primaryDirection === 'BEARISH' || (impactPercent && impactPercent < 0) ? 'danger' : 'success'} style={{ fontSize: '0.85rem', fontWeight: 900 }}>
-                    {activeTakeover.primaryDirection || (impactPercent && impactPercent < 0 ? 'BEARISH' : 'BULLISH')}
-                  </Badge>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--color-ink-muted, #6B6863)', fontWeight: 800, marginLeft: '12px' }}>IMPACT LEVEL:</span>
-                  <span className="font-mono tabular-nums" style={{
-                    fontSize: '1.15rem',
-                    fontWeight: 900,
-                    color: impactPercent < 0 ? 'var(--color-fall, #931913)' : 'var(--color-rise, #065F3E)'
-                  }}>
-                    {impactPercent > 0 ? '+' : ''}{impactPercent}% Primary Shock
-                  </span>
+                <div style={{ fontSize: '0.85rem', color: 'var(--color-brass, #845508)', fontWeight: 700, letterSpacing: '0.5px' }}>
+                  ⚡ SAAMX GLOBAL WIRE DISPATCH
                 </div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--color-ink-muted, #94A3B8)', fontWeight: 600 }}>
-                  ⏱️ Projector display (~8s) &bull; ⚡ Market impact remains active on trading floor
+                  ⏱️ Projector display (~8s) &bull; Press [ESC] to dismiss
                 </div>
               </div>
             </div>
@@ -1708,9 +1682,8 @@ export default function ProjectorPage({
                 <p style={{ margin: '0 0 6px 0', fontSize: '0.78rem', color: 'var(--color-ink-muted, #4A5568)', lineHeight: 1.35 }}>
                   {latestNews.description}
                 </p>
-                <div style={{ display: 'flex', gap: '12px', fontSize: '0.7rem', color: 'var(--color-ink-muted, #6B6863)' }}>
-                  <span>Impact: <strong className="font-mono tabular-nums" style={{ color: (latestNews.impactPercent || 0) >= 0 ? 'var(--color-rise, #065F3E)' : 'var(--color-fall, #931913)' }}>{latestNews.impactPercent > 0 ? '+' : ''}{latestNews.impactPercent}%</strong></span>
-                  <span>Target: <strong style={{ color: 'var(--color-ink, #1E232B)' }}>{latestNews.affectedSector || 'Macro Universe'}</strong></span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.7rem', color: 'var(--color-ink-muted, #6B6863)' }}>
+                  <span style={{ color: 'var(--color-brass, #845508)', fontWeight: 700 }}>SAAMX Wire</span>
                   <span>Time: <strong className="font-mono tabular-nums" style={{ color: 'var(--color-ink, #1E232B)' }}>{new Date(latestNews.triggeredAt).toLocaleTimeString()}</strong></span>
                 </div>
               </div>

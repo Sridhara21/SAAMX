@@ -623,20 +623,9 @@ export default function MarketIntelligencePage({ state, teamCode, onOpenProfile,
                   <h3 style={{ fontSize: '1.1rem', fontWeight: 900, margin: '0 0 6px 0', color: 'var(--color-ink)' }}>
                     {n.headline || n.title}
                   </h3>
-                  <p style={{ margin: '0 0 10px 0', fontSize: '0.85rem', color: 'var(--color-ink-2)', lineHeight: '1.45' }}>
+                  <p style={{ margin: '0', fontSize: '0.85rem', color: 'var(--color-ink-2)', lineHeight: '1.45' }}>
                     {n.description || n.body}
                   </p>
-
-                  {n.affectedAssets && n.affectedAssets.length > 0 && (
-                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: '0.7rem', color: 'var(--color-ink-2)', fontWeight: 800 }}>AFFECTED ASSETS:</span>
-                      {n.affectedAssets.map(t => (
-                        <span key={t} onClick={() => onOpenProfile && onOpenProfile(t)} style={{ padding: '2px 6px', borderRadius: '3px', background: 'var(--color-paper-subtle)', border: '1px solid var(--color-border)', fontSize: '0.72rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'monospace' }}>
-                          {t}
-                        </span>
-                      ))}
-                    </div>
-                  )}
                 </div>
               ))
             )}

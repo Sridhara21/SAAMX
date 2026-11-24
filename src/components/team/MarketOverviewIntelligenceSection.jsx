@@ -1366,38 +1366,14 @@ export default function MarketOverviewIntelligenceSection({
                         {item.body}
                       </p>
 
-                      {/* Footer: Issuing Authority & Linked Securities / Tags */}
+                      {/* Footer: Issuing Authority */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px', paddingTop: '6px', borderTop: '1px solid var(--color-border-subtle)', fontSize: '0.68rem' }}>
                         <span style={{ color: 'var(--color-text-muted)' }}>
                           Source: <strong>{item.issuingAuthority}</strong>
                         </span>
-
-                        {/* Clickable Affected Tickers */}
-                        {item.affectedTickers && item.affectedTickers.length > 0 && (
-                          <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                            <span style={{ color: 'var(--color-text-muted)' }}>Relevant:</span>
-                            {item.affectedTickers.map(t => (
-                              <button
-                                key={t}
-                                type="button"
-                                onClick={() => { setSecSearch(t); setSelectedSecurityId(t); }}
-                                style={{
-                                  background: 'var(--color-primary-subtle, rgba(37, 99, 235, 0.1))',
-                                  color: 'var(--color-primary)',
-                                  border: 'none',
-                                  borderRadius: '3px',
-                                  padding: '1px 6px',
-                                  fontSize: '0.68rem',
-                                  fontWeight: 800,
-                                  fontFamily: 'var(--font-mono)',
-                                  cursor: 'pointer'
-                                }}
-                              >
-                                {t}
-                              </button>
-                            ))}
-                          </div>
-                        )}
+                        <span style={{ color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+                          SAAMX Dispatched Wire
+                        </span>
                       </div>
                     </div>
                   );
