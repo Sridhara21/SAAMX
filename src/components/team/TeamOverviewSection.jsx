@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { apiFetch } from '../../lib/api.js';
 import { useDensity } from '../../context/DensityContext.jsx';
 import PaperSlipModal from './PaperSlipModal.jsx';

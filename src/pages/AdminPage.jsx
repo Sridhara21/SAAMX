@@ -253,9 +253,12 @@ export default function AdminPage({ state, onOpenProfile, adminPassword, connect
   const [cfgConcentration, setCfgConcentration] = useState(riskControls.concentrationThresholdPercent || 65);
   const [cfgShortSelling, setCfgShortSelling] = useState(riskControls.shortSellingAllowed !== false);
 
-  // Snapshot State
+  // Snapshot & Backups State
   const [snapshotLabel, setSnapshotLabel] = useState('Pre-Market Baseline Checkpoint');
   const [snapshotType, setSnapshotType] = useState('PRE_MARKET');
+  const [backupsList, setBackupsList] = useState([]);
+  const [loadingBackups, setLoadingBackups] = useState(false);
+  const [backupActionStatus, setBackupActionStatus] = useState('');
 
   // Credential View Modal
   const [credentialSlipHouse, setCredentialSlipHouse] = useState(null);

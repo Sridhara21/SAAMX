@@ -6735,6 +6735,48 @@ app.post('/api/admin/restore', (req, res) => {
   }
 });
 
+app.get('/api/admin/backups', (req, res) => {
+  try {
+    if (!fs.existsSync(BACKUP_DIR)) {
+      return res.json({ success: true, backups: [] });
+    }
+    const files = fs.readdirSync(BACKUP_DIR)
+      .filter(f => f.endsWith('.json'))
+      .sort((a, b) => b.localeCompare(a));
+    const list = files.map(file => {
+      const filePath = path.join(BACKUP_DIR, file);
+      const stat = fs.statSync(filePath);
+      return {
+        id: file.replace('.json', ''),
+        fileName: file,
+        sizeKB: Math.round(stat.size / 1024),
+        createdAt: stat.mtimeMs,
+        timestamp: stat.mtime.toISOString()
+      };
+    });
+    res.json({ success: true, backups: list });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get(['/api/admin/backup/:id/download', '/api/admin/backups/:id/download'], (req, res) => {
+  const backupId = req.params.id;
+  const backupPath = path.join(BACKUP_DIR, `${backupId}.json`);
+  if (!fs.existsSync(backupPath)) {
+    return res.status(404).json({ error: 'Backup not found' });
+  }
+  res.download(backupPath, `${backupId}.json`);
+});
+
+app.get(['/api/admin/state/download', '/api/state/download'], (req, res) => {
+  const tempExport = path.join(BACKUP_DIR, `saamx_export_${Date.now()}.json`);
+  fs.writeFileSync(tempExport, JSON.stringify(state, null, 2), 'utf8');
+  res.download(tempExport, `saamx_live_state_${new Date().toISOString().replace(/[:.]/g, '-')}.json`, () => {
+    try { fs.unlinkSync(tempExport); } catch (e) {}
+  });
+});
+
 app.get('/api/audit-log', (req, res) => {
   res.json({ success: true, log: state.auditLog || [], logs: state.auditLog || [], auditLog: state.auditLog || [] });
 });
