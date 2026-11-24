@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 
 export default function PortfolioPage({ state, onOpenProfile }) {
   const [teamQuery, setTeamQuery] = useState('');
@@ -6,11 +6,21 @@ export default function PortfolioPage({ state, onOpenProfile }) {
   const [txFilter, setTxFilter] = useState('ALL'); // ALL, BUY, SELL
   const [txSort, setTxSort] = useState('LATEST'); // LATEST, OLDEST, VALUE_DESC
 
-  const matchedTeams = teamQuery.trim() !== '' && !selectedTeam ? state.teams
-    .filter(t => t.isActive)
+  const teamsList = useMemo(() => {
+    if (!state?.teams) return [];
+    return Array.isArray(state.teams) ? state.teams : Object.values(state.teams);
+  }, [state?.teams]);
+
+  const securitiesList = useMemo(() => {
+    if (!state?.securities) return [];
+    return Array.isArray(state.securities) ? state.securities : Object.values(state.securities);
+  }, [state?.securities]);
+
+  const matchedTeams = teamQuery.trim() !== '' && !selectedTeam ? teamsList
+    .filter(t => t && t.isActive)
     .filter(t => 
-      t.teamCode.toLowerCase().startsWith(teamQuery.toLowerCase()) ||
-      t.teamName.toLowerCase().includes(teamQuery.toLowerCase())
+      (t.teamCode && t.teamCode.toLowerCase().startsWith(teamQuery.toLowerCase())) ||
+      (t.teamName && t.teamName.toLowerCase().includes(teamQuery.toLowerCase()))
     ).slice(0, 6) : [];
 
   const handleTeamSelect = (team) => {
@@ -22,25 +32,26 @@ export default function PortfolioPage({ state, onOpenProfile }) {
     return state?.settings?.startingCapitalRetail || 10000000; // ₹1,00,00,000 (₹1 Crore)
   };
 
-  const currentTeam = selectedTeam ? state.teams.find(t => t.id === selectedTeam.id && t.isActive) : null;
+  const currentTeam = selectedTeam ? teamsList.find(t => t && t.id === selectedTeam.id && t.isActive) : null;
 
   const getTeamStats = () => {
     if (!currentTeam) return null;
 
     const startCapital = getStartingCapital(currentTeam.teamType);
-    let portfolioValue = currentTeam.cashBalance;
+    let portfolioValue = currentTeam.cashBalance || 0;
     let totalHeldValue = 0;
-    const sectorsCount = new Set(state.securities.map(s => s.sector)).size || 1;
+    const sectorsCount = new Set(securitiesList.map(s => s.sector).filter(Boolean)).size || 1;
     const heldSectors = new Set();
     const holdingsList = [];
 
     Object.entries(currentTeam.holdings || {}).forEach(([secId, qty]) => {
-      const sec = state.securities.find(s => s.id === secId || s.ticker === secId);
+      const sec = securitiesList.find(s => s && (s.id === secId || s.ticker === secId));
       if (sec && qty > 0) {
-        const value = qty * sec.currentPrice;
+        const curPrice = sec.currentPrice || sec.basePrice || sec.ltp || 0;
+        const value = qty * curPrice;
         portfolioValue += value;
         totalHeldValue += value;
-        heldSectors.add(sec.sector);
+        if (sec.sector) heldSectors.add(sec.sector);
 
         holdingsList.push({
           ...sec,

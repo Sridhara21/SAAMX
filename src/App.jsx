@@ -793,7 +793,7 @@ export default function App() {
           break;
         case '#/ipo':
           {
-            const isMasterAccess = sessionUsername?.toLowerCase() === 'sridhara' || sessionStorage.getItem('saamx_is_master') === 'true' || sessionRole === 'super_admin';
+            const isMasterAccess = sessionUsername?.toLowerCase() === 'sridhara' || sessionStorage.getItem('saamx_is_master') === 'true' || userRole === 'super_admin';
             if (!isMasterAccess) {
               content = (
                 <div style={{ padding: '60px 20px', textAlign: 'center', color: '#F8FAFC' }}>
@@ -821,11 +821,14 @@ export default function App() {
           content = <MarketWatchPage state={normalizedState} onOpenProfile={openCompanyProfile} connected={dbConnected} />;
           break;
         case '#/market-intelligence':
-          content = <MarketIntelligencePage state={normalizedState} teamCode={sessionUsername || sessionStorage.getItem('fms_username') || 'T01'} onOpenProfile={openCompanyProfile} connected={dbConnected} />;
+          content = <MarketIntelligencePage state={normalizedState} teamCode={sessionStorage.getItem('saamx_team_code') || sessionUsername || sessionStorage.getItem('fms_username') || 'T01'} onOpenProfile={openCompanyProfile} connected={dbConnected} />;
           break;
         case '#/team':
         case '#/terminal':
-          content = <ParticipantTerminal state={normalizedState} teamCode={sessionUsername || sessionStorage.getItem('fms_username')} onOpenProfile={openCompanyProfile} connected={dbConnected} isCoordinatorOffline={isCoordinatorOffline} />;
+          {
+            const resolvedTeamCode = sessionStorage.getItem('saamx_team_code') || sessionUsername || sessionStorage.getItem('fms_username') || 'T01';
+            content = <ParticipantTerminal state={normalizedState} teamCode={resolvedTeamCode} onOpenProfile={openCompanyProfile} connected={dbConnected} isCoordinatorOffline={isCoordinatorOffline} />;
+          }
           break;
         case '#/register':
           content = <RegistrationPage state={normalizedState} onNavigateHome={() => { window.location.hash = '#/'; }} />;

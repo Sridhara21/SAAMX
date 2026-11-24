@@ -24,7 +24,7 @@ export default function ParticipantTerminal({
   connected = true,
   isCoordinatorOffline = false
 }) {
-  const teamCode = propTeamCode || sessionStorage.getItem('fms_username') || sessionStorage.getItem('saamx_team_code') || 'T01';
+  const teamCode = propTeamCode || sessionStorage.getItem('saamx_team_code') || sessionStorage.getItem('fms_username') || 'T01';
 
   // Primary Sections: 'overview', 'market', 'fx', 'portfolio', 'orders'
   const [activeSection, setActiveSection] = useState(() => {
@@ -58,38 +58,65 @@ export default function ParticipantTerminal({
     }
   };
 
-  // Find authoritative team record
+  // Find authoritative team record with resilient fallbacks
   const team = useMemo(() => {
     const list = state?.teams ? (Array.isArray(state.teams) ? state.teams : Object.values(state.teams)) : [];
-    const found = list.find(t => (t.teamCode || '').toUpperCase() === teamCode.toUpperCase() || (t.id || '').toUpperCase() === teamCode.toUpperCase());
+    const effectiveCode = (teamCode || 'T01').trim();
+
+    // 1. Direct match by teamCode or ID
+    let found = list.find(t => 
+      (t.teamCode || '').toUpperCase() === effectiveCode.toUpperCase() || 
+      (t.id || '').toUpperCase() === effectiveCode.toUpperCase()
+    );
     if (found) return found;
 
-    // Synthesize authoritative baseline profile for standard team code format (e.g. T01-T20)
-    const match = String(teamCode).match(/^T0*(\d+)$/i);
-    if (match) {
-      const num = parseInt(match[1], 10);
-      const names = [
-        'Apex Capital Partners', 'BlueChip Asset Management', 'Crescent Value Fund',
-        'Dynamic Quantitative Ventures', 'Equinox Global Capital', 'Fortis Macro Strategies',
-        'Genesis Institutional Trust', 'Horizon Alpha Fund', 'Infinity Growth Equities',
-        'Jupiter Sovereign Holdings'
-      ];
-      const name = names[num - 1] || `Investment House ${num}`;
-      return {
-        id: teamCode.toUpperCase(),
-        teamCode: teamCode.toUpperCase(),
-        teamName: name,
-        name: name,
-        school: 'Collegiate Division',
-        cashBalance: 10000000,
-        startingCapital: 10000000,
-        portfolioValue: 10000000,
-        cashWallets: { INR: 10000000 },
-        holdings: {},
-        isActive: true
-      };
+    // 2. Stored team code fallback if effectiveCode is a personal delegate name or email
+    const storedTeam = typeof window !== 'undefined' ? sessionStorage.getItem('saamx_team_code') : null;
+    if (storedTeam && storedTeam.toUpperCase() !== effectiveCode.toUpperCase()) {
+      found = list.find(t => 
+        (t.teamCode || '').toUpperCase() === storedTeam.toUpperCase() || 
+        (t.id || '').toUpperCase() === storedTeam.toUpperCase()
+      );
+      if (found) return found;
     }
-    return list[0] || null;
+
+    // 3. Member / Delegate lookup inside t.members
+    const targetUser = ((typeof window !== 'undefined' && (sessionStorage.getItem('saamx_username') || sessionStorage.getItem('fms_username'))) || effectiveCode || '').toLowerCase();
+    if (targetUser) {
+      found = list.find(t => Array.isArray(t.members) && t.members.some(m => {
+        if (!m) return false;
+        if (typeof m === 'string') return m.toLowerCase() === targetUser;
+        return (m.name && m.name.toLowerCase() === targetUser) ||
+               (m.username && m.username.toLowerCase() === targetUser) ||
+               (m.email && m.email.toLowerCase() === targetUser);
+      }));
+      if (found) return found;
+    }
+
+    // 4. Synthesize authoritative baseline profile for standard team code format (e.g. T01-T20)
+    const codeToSynthesize = (storedTeam || effectiveCode || 'T01').toUpperCase();
+    const match = codeToSynthesize.match(/^T0*(\d+)$/i);
+    const num = match ? parseInt(match[1], 10) : 1;
+    const names = [
+      'Apex Capital Partners', 'BlueChip Asset Management', 'Crescent Value Fund',
+      'Dynamic Quantitative Ventures', 'Equinox Global Capital', 'Fortis Macro Strategies',
+      'Genesis Institutional Trust', 'Horizon Alpha Fund', 'Infinity Growth Equities',
+      'Jupiter Sovereign Holdings'
+    ];
+    const name = names[num - 1] || `Investment House ${num}`;
+    return {
+      id: codeToSynthesize,
+      teamCode: codeToSynthesize,
+      teamName: name,
+      name: name,
+      school: 'Collegiate Division',
+      cashBalance: 10000000,
+      startingCapital: 10000000,
+      portfolioValue: 10000000,
+      cashWallets: { INR: 10000000 },
+      holdings: {},
+      isActive: true
+    };
   }, [state?.teams, teamCode]);
 
   // Market State & Clock
@@ -353,7 +380,7 @@ export default function ParticipantTerminal({
                   Team Trading Workstation
                 </h1>
                 <Badge variant="brass">
-                  House #{team.teamCode}
+                  House #{team?.teamCode || teamCode || 'T01'}
                 </Badge>
               </div>
               <span
@@ -364,7 +391,7 @@ export default function ParticipantTerminal({
                   marginTop: '3px'
                 }}
               >
-                Logged in as: <strong style={{ color: 'var(--color-text-primary, #F8FAFC)' }}>{team.teamName || team.teamCode}</strong> &bull; {team.school || 'Championship Delegation'}
+                Logged in as: <strong style={{ color: 'var(--color-text-primary, #F8FAFC)' }}>{team?.teamName || team?.name || team?.teamCode || teamCode || 'Investment House'}</strong> &bull; {team?.school || 'Championship Delegation'}
               </span>
             </div>
           </div>
@@ -533,7 +560,7 @@ export default function ParticipantTerminal({
             clock={clock}
             fxRates={fxRates}
             onOpenProfile={handleOpenProfile}
-            teamCode={team.teamCode}
+            teamCode={team?.teamCode || teamCode || 'T01'}
             team={team}
             onNavigate={handleSectionChange}
           />
@@ -542,7 +569,7 @@ export default function ParticipantTerminal({
         {activeSection === 'fx' && (
           <FxMarketSection
             state={state}
-            teamCode={team?.teamCode || teamCode}
+            teamCode={team?.teamCode || teamCode || 'T01'}
             onOpenProfile={handleOpenProfile}
           />
         )}
@@ -568,7 +595,7 @@ export default function ParticipantTerminal({
         {activeSection === 'orders' && (
           <OrderHistorySection
             teamOrders={teamOrders}
-            teamCode={team.teamCode}
+            teamCode={team?.teamCode || teamCode || 'T01'}
             onNavigate={handleSectionChange}
           />
         )}
