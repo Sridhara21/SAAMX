@@ -2487,22 +2487,13 @@ function verifyTeamPassword(team, password) {
     } catch (e) {}
   }
 
-  // 2. Standard and temporary PIN candidates
-  const teamNum = parseInt(team.teamCode?.replace(/\D/g, '') || team.id?.replace(/\D/g, '') || '0', 10);
-  const padNum = String(teamNum).padStart(2, '0');
-
+  // 2. Official designated credentials & PIN verification strictly enforced
   const candidates = [
-    team.rawPassword,
     team.credentials?.password,
+    team.credentials?.pin,
     team.credentials?.tempPin,
     team.tempPin,
-    padNum,
-    String(teamNum),
-    `saamx-team-${padNum}`,
-    `saamx-team-${teamNum}`,
-    `team-${padNum}`,
-    `team-${teamNum}`,
-    team.teamCode?.toLowerCase()
+    team.rawPassword
   ].filter(Boolean).map(v => String(v).trim().toLowerCase());
 
   return candidates.includes(p);
@@ -2687,23 +2678,7 @@ app.post('/api/auth/login', (req, res) => {
       if (matchedStaff.status === 'DISABLED') {
         return res.status(403).json({ error: 'Account is deactivated. Please contact floor administrator.' });
       }
-      let authResult = verifyPassword(p, matchedStaff.passwordHash);
-      if (!authResult.verified) {
-        // Also permit role-wide master event keys for official accounts
-        if (matchedStaff.role === 'advisor' && (p === 'advisor-event-2026' || p === 'saamx-advisor-2026')) {
-          authResult = { verified: true, needsRehash: false };
-        } else if (matchedStaff.role === 'exchange' && (p === 'exchange-event-2026' || p === 'saamx-desk-2026')) {
-          authResult = { verified: true, needsRehash: false };
-        } else if (matchedStaff.role === 'bank_teller' && (p === 'saamx-event-2026' || p === 'saamx-bank-2026')) {
-          authResult = { verified: true, needsRehash: false };
-        } else if (matchedStaff.role === 'operator_x' && (p === 'exchange-event-2026' || p === 'saamx-fx-2026' || p === 'fx-event-2026' || p === 'saamx-event-2026')) {
-          authResult = { verified: true, needsRehash: false };
-        } else if ((matchedStaff.role === 'journalist' || matchedStaff.role === 'news_controller') && (p === 'journalist-event-2026' || p === 'saamx-news-2026' || p === 'saamx-event-2026')) {
-          authResult = { verified: true, needsRehash: false };
-        } else if (matchedStaff.role === 'admin' && (p === 'saamx-event-2026' || p === 'saamx-admin-2026')) {
-          authResult = { verified: true, needsRehash: false };
-        }
-      }
+      const authResult = verifyPassword(p, matchedStaff.passwordHash);
       if (authResult.verified) {
         matchedPersonnel = matchedStaff;
         matchedPersonnel.lastLogin = Date.now();
