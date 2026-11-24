@@ -1452,6 +1452,9 @@ const loadState = () => {
     if (!fs.existsSync(targetFile) && fs.existsSync('state.json')) {
       targetFile = 'state.json';
     }
+    if (!fs.existsSync(targetFile) && fs.existsSync('event_state.json')) {
+      targetFile = 'event_state.json';
+    }
     if (fs.existsSync(targetFile)) {
       const data = fs.readFileSync(targetFile, 'utf8');
       state = JSON.parse(data);
@@ -1754,6 +1757,17 @@ const loadState = () => {
     }
   } catch (dirErr) {
     console.error('Failed to read backups directory', dirErr);
+  }
+
+  if (fs.existsSync('event_state.json')) {
+    try {
+      const data = fs.readFileSync('event_state.json', 'utf8');
+      state = JSON.parse(data);
+      console.log(`Successfully loaded event state from event_state.json with ${state.securities?.length} securities.`);
+      return;
+    } catch (eErr) {
+      console.error('Failed to parse event_state.json:', eErr);
+    }
   }
 
   console.log('No valid state or backup found. Initializing empty state.');
@@ -6793,6 +6807,52 @@ app.post('/api/admin/restore', (req, res) => {
     res.json({ success: true, message: `System state restored from ${backupId}` });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+app.post(['/api/admin/reinstate-event-data', '/api/admin/import-event-data'], (req, res) => {
+  try {
+    let sourceData = null;
+    if (req.body && req.body.state) {
+      sourceData = req.body.state;
+    } else if (fs.existsSync('event_state.json')) {
+      const raw = fs.readFileSync('event_state.json', 'utf8');
+      sourceData = JSON.parse(raw);
+    } else if (fs.existsSync('state.json')) {
+      const raw = fs.readFileSync('state.json', 'utf8');
+      sourceData = JSON.parse(raw);
+    }
+
+    if (!sourceData) {
+      return res.status(404).json({ error: 'No event state data available to reinstate.' });
+    }
+
+    // Merge or assign authoritative state
+    state = sourceData;
+    state.version = (state.version || 0) + 1;
+    saveState(true);
+    broadcastState('STATE_UPDATE', { message: 'Authoritative event data reinstated.' });
+
+    logAuditEvent({
+      actor: req.body?.actor || 'Admin',
+      role: 'admin',
+      action: 'REINSTATE_EVENT_DATA',
+      target: 'ALL',
+      reason: 'Authoritative event data reinstated to market floor.'
+    });
+
+    console.log(`[EVENT DATA REINSTATED] Securities: ${state.securities?.length}, Transactions: ${state.transactions?.length}, News: ${state.newsEvents?.length}, Version: ${state.version}`);
+    return res.json({
+      success: true,
+      message: 'Event data successfully reinstated.',
+      version: state.version,
+      securitiesCount: state.securities?.length,
+      transactionsCount: state.transactions?.length,
+      newsEventsCount: state.newsEvents?.length
+    });
+  } catch (err) {
+    console.error('Error reinstating event data:', err);
+    return res.status(500).json({ error: err.message });
   }
 });
 
@@ -17849,7 +17909,18 @@ server.listen(PORT, '0.0.0.0', async () => {
         `).catch(err => console.warn('[PostgreSQL] Constraint sync notice:', err.message));
         const hydration = await hydrateStateFromPg(pool, state);
         if (hydration.hydrated && hydration.state) {
+          const currentTx = (state.transactions && state.transactions.length > 0) ? state.transactions : (hydration.state.transactions || []);
+          const currentNews = (state.newsEvents && state.newsEvents.length > 0) ? state.newsEvents : (hydration.state.newsEvents || []);
+          const currentEvents = (state.events && state.events.length > 0) ? state.events : (hydration.state.events || []);
+          const currentEventId = state.currentEventId || hydration.state.currentEventId || 'EVT_LIVE_MAIN';
+          const currentVersion = Math.max(state.version || 0, hydration.state.version || 0);
+
           Object.assign(state, hydration.state);
+          state.transactions = currentTx;
+          state.newsEvents = currentNews;
+          state.events = currentEvents;
+          state.currentEventId = currentEventId;
+          state.version = currentVersion;
 
           // Strict server-side invariant: Filter hydrated securities against authoritative universe
           const authUniverse = generateFullSecurityUniverse();
